@@ -1,0 +1,17 @@
+[package]
+name = "confium"
+version = "0.1.0"
+authors = ["Daniel Wyatt <daniel.wyatt@ribose.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+libc = "0.2"
+libloading = "0.6"
+slog = "2.5"
+slog-stdlog = "4.1"
+slog-term = "2.6"
+slog-async = "2.5"
+
