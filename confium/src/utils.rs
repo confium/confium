@@ -1,16 +1,11 @@
 #[macro_escape]
-macro_rules! cstring {
-    ($str:ident) => {{
-        if ($str.is_null()) {
-            return u32::from(Error::NullPointer);
-        }
-        unsafe {
-            match CStr::from_ptr($str).to_str() {
-                Ok(s) => s,
-                Err(_) => {
-                    return u32::from(Error::InvalidUTF8);
-                }
+macro_rules! check_not_null {
+    ($param:ident) => {{
+        if $param.is_null() {
+            return Err($crate::error::NullPointer {
+                param: stringify!($param),
             }
+            .build());
         }
     }};
 }

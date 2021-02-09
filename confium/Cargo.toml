@@ -8,10 +8,9 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-libc = "0.2"
-libloading = "0.6"
+libloading = "0.7"
 slog = "2.5"
 slog-stdlog = "4.1"
 slog-term = "2.6"
 slog-async = "2.5"
-
+snafu = "0.6"
