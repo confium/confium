@@ -2,9 +2,9 @@ name: tests
 
 on:
   push:
-    branches:
-      - master
-      - wip
+    branches: [ main ]
+    tags: [ v* ]
+  pull_request:
 
 jobs:
   tests:
@@ -13,69 +13,80 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-latest
             env:
               CFM_HASH_BOTAN_PLUGIN_PATH: plugins/hash-botan/build/libcfm-hash-botan.so
-          - os: macos-10.15
+          - os: macos-latest
             env:
               CFM_HASH_BOTAN_PLUGIN_PATH: plugins/hash-botan/build/libcfm-hash-botan.dylib
-          - os: windows-2019
+          - os: windows-latest
             cmake_opts: -G "MSYS Makefiles"
             env:
               CFM_HASH_BOTAN_PLUGIN_PATH:
-            
+
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
         with:
           fetch-depth: 1
 
       # install rust
-      - uses: actions-rs/toolchain@v1
+      - name: install rust
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
       # cargo build
-      - uses: actions-rs/cargo@v1
+      - name: cargo build
+        uses: actions-rs/cargo@v1
         with:
           toolchain: nightly
           command: build
       # cargo tests
-      - uses: actions-rs/cargo@v1
+      - name: cargo tests
+        uses: actions-rs/cargo@v1
         with:
           toolchain: nightly
           command: test
 
       # install ruby
-      - uses: ruby/setup-ruby@v1
+      - name: install ruby
+        uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.0
 
       # install os-specific build deps
-      - if: runner.os == 'Linux'
+      - name: install os-specific build deps (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt -y install libbotan-2-dev cmake make g++
-      - if: runner.os == 'macOS'
+      - name: install os-specific build deps (macOS)
+        if: runner.os == 'macOS'
         run: |
           brew install botan
-      - if: runner.os == 'Windows'
+      - name: install os-specific build deps (Windows)
+        if: runner.os == 'Windows'
         shell: bash
         run: |
           set -eux
           pacman --noconfirm -S --needed mingw64/mingw-w64-x86_64-libbotan
 
       # prepare to build
-      - run: |
+      - name: prepare to build
+        run: |
           gem install ffi rspec
           mkdir plugins/hash-botan/build
 
       # build plugin
-      - run: |
+      - name: build plugin
+        run: |
           cd plugins/hash-botan/build
           cmake ${{ matrix.cmake_opts }} ..
           make
 
       # ruby tests
-      - env: ${{ matrix.env }}
+      - name: ruby tests
+        env: ${{ matrix.env }}
         shell: bash
         run: |
           export LD_LIBRARY_PATH=$PWD/target/debug
@@ -84,4 +95,3 @@ jobs:
             export CFM_HASH_BOTAN_PLUGIN_PATH="$(cygpath -w $PWD/plugins/hash-botan/build/libcfm-hash-botan.dll)"
           fi
           rspec spec/
-
