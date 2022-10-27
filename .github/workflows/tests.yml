@@ -65,11 +65,13 @@ jobs:
         run: |
           brew install botan
       - name: install os-specific build deps (Windows)
+      # install deps with pacboy. It is slower for single lib but ubiquitous
         if: runner.os == 'Windows'
         shell: bash
         run: |
           set -eux
-          pacman --noconfirm -S --needed mingw64/mingw-w64-x86_64-libbotan
+          pacman --noconfirm -S --needed pactoys
+          pacboy sync --noconfirm libbotan:p
 
       # prepare to build
       - name: prepare to build

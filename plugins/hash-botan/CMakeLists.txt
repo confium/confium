@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.24)
+
 project(cfm-hash-botan
     LANGUAGES CXX
 )
@@ -19,4 +21,3 @@ target_link_libraries(cfm-hash-botan
 set_target_properties(cfm-hash-botan PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 install(TARGETS cfm-hash-botan DESTINATION .)
-
