@@ -213,4 +213,58 @@ project.
 
 
 
+=== Usage
 
+==== Prerequisites
+
+===== Install Botan
+
+Ubuntu:
+[source,sh]
+----
+sudo apt -y install libbotan-2-dev cmake make g++
+----
+
+macOS:
+[source,sh]
+----
+brew install botan
+----
+
+Windows:
+[source,sh]
+----
+pacman --noconfirm -S --needed mingw64/mingw-w64-x86_64-libbotan
+----
+
+===== Install necessary gems
+
+[source,sh]
+----
+gem install ffi rspec
+----
+
+==== Build Botan bindings
+
+[source,sh]
+----
+mkdir plugins/hash-botan/build
+cd plugins/hash-botan/build
+# on Linux or macOS
+cmake ..
+# on Windows
+# cmake -G "MSYS Makefiles" ..
+make
+----
+
+=== Run tests
+
+[source,sh]
+----
+export LD_LIBRARY_PATH=$PWD/target/debug
+if [[ "$OSTYPE" == *msys* ]]; then
+export RUBY_DLL_PATH="$(cygpath -w $PWD/target/debug)"
+export CFM_HASH_BOTAN_PLUGIN_PATH="$(cygpath -w $PWD/plugins/hash-botan/build/libcfm-hash-botan.dll)"
+fi
+rspec spec/
+----
