@@ -1,0 +1,216 @@
+== Confium: distributed trust store framework
+
+=== Purpose
+
+Confium is an open-source distributed trust store framework that is a component
+of https://github.com/rnpgp/rnp[RNP], an openly-licensed high performance
+OpenPGP toolkit.
+
+Typically, using new cryptographic families with existing technologies is an
+immense challenge, requiring code change in the application and in the
+cryptographic library. This challenge extends from the use of cryptographic
+algorithms, the storage of secrets, to newly created mechanisms such as the
+networked cryptographic modes used in threshold cryptography.
+
+Confium aims to provide a generalized API and an extensible architecture for the
+usage of trust stores and future cryptographic families, to support
+standardization efforts of threshold cryptography, and to bridge cryptographers
+with the practical usage of cryptography.
+
+RNP was created by Ribose and has received funding support from the Mozilla Open
+Source Support fund and NLNet.
+
+
+=== Drawbacks in traditional trust stores
+
+Traditional cross-platform trust stores are challenged in many ways, including:
+
+1. Inability to support smart cards and other trust mediums. This is usually
+controlled solely by the operating system;
+
+2. Inability to retrieve keys from external sources. Traditional trust stores
+are inward-looking.
+
+3. Types of secrets stored entirely depend on underlying cryptographic
+libraries. e.g. addition of plaintext padding in an updated version can screw
+the whole stack.
+
+4. Inability to adopt or extend to future cryptographic families. New
+cryptographic primitives like threshold cryptography and searchable encryption
+are out of scope of traditional trust stores.
+
+5. Cryptographers are unable to contribute or influence the key types and
+mechanisms of the trust store.
+
+Confium aims to address these challenges into opportunities.
+
+
+=== Design goals
+
+The design goals of the Confium trust store include:
+
+1. Provide an extensible architecture to support usage of new cryptographic
+families. This includes providing "cryptographic provider plugins" to bridge
+existing cryptographic libraries, and "cryptographic storage plugins" to support
+different types of keys and parameters.
+
+2. Allow decoupling of dependencies between cryptographic design,
+implementation, distribution and adoption (at the control of the user).
+
+3. Platform-independent, interoperable key storage for better confidentiality
+and integrity. This also allows better ease of use, backup and restore
+capabilities.
+
+4. Utilizes a standardized and accessible key storage format to facilitate
+interoperability and data portability.
+
+5. Secure storage of secrets with compartmentalized internal security.
+
+6. User applications can control extension activity. For example, using a secret
+key stored on a locally available, single smartcard device should be possible,
+even if a cloud key storage module is disabled.
+
+7. Performance and able to serve multiple applications at once.
+
+8. Cross-platform on major operating systems.
+
+
+INEXTENSIBLE KEY MANAGEMENT.
+
+Key management [10][8] is a recurrent topic in cryptographic research. Previous works focus on encryption and signature schemes for simple communication between different parties. [12] is a more recent work that develops a distributed cloud keystore. In this scheme, keys are divided into shares and the shares are stored by different cloud servers. As a result, no single cloud can see the actual keys, only the user able to collect all shares can recover the actual keys.
+
+While numerous patents [15][7] exist on keystore-related technologies, they are not designed to be extensible. If a user would like to use a new encryption scheme in his application for his own purposes, it is not feasible without modifying the underlying source codes of the application.
+
+
+
+=== Architecture
+
+==== General
+
+Confium follows the design of an extensible architecture consisting of three
+layers:
+
+1. the application layer;
+
+2. the crypto-primitive layer; and
+
+3. the keystore layer.
+
+The application layer represents any application that makes use of modules
+provided in the crypto-primitive layer. For example, Mozilla's Thunderbird
+represents an application that relies on the crypto-primitive layer. The
+application layer resides outside of Confium and is considered a user of
+Confium.
+
+The crypto-primitive layer contains a set of modules, each implementing an
+individual cryptographic scheme, e.g., AES, RSA. This layer interfaces with the
+keystore layer to access and store private and public parameters.
+
+The crypto-primitive layer is extensible through its "plugin manager", where
+third-party cryptographers (developers) could contribute modules implementing
+new cryptographic schemes, primitives and keystore mechanisms. These
+cryptographic plugins are meant to be publicly available and downloadable
+through a public cryptographic scheme repository.
+
+This layer supports threshold cryptography through the threshold cryptographic
+module, for which support of multiple threshold cryptographic schemes can be
+implemented in form of plugins.
+
+The keystore layer is responsible for managing keys. There are two separate
+storage spaces at the keystore layer:
+
+1. The private space is for holding private parameters, such as private keys.
+
+2. The public space is for holding and broadcasting public parameters, such as
+public keys.
+
+
+==== Crypto-primitive layer
+
+The Confium framework provides a mechanism of identifying and facilitating reuse
+of cryptographic schemes. By allowing potential multiplexing and adoption of
+multiple cryptographic libraries, authors of cryptographic scheme modules can be
+free from fear of an updated underlying cryptographic library accidentally
+breaking compatibility.
+
+Two types of cryptographic plugins are supported in Confium:
+
+1. Cryptographic module that implements one or more cryptographic schemes;
+
+2. Cryptographic interface that allows one or more cryptographic schemes to act
+upon it.
+
+Modules in the crypto-primitive layer are developed by different developers. The
+layer here needs to provide a general enough model specification for developers
+to follow. The model allows the developer to declare a new module or interface
+that conforms to our framework.
+
+Confium aims to support new cryptographic families and threshold cryptography is
+one of them. The threshold cryptography module is implemented in Confium's
+crypto-primitive layer, where threshold algorithms could:
+
+1. depend on existing cryptographic algorithms for calculations, such as
+threshold RSA to RSA
+
+2. have access its own private keystore, and the public keystore of the Confium
+keystore layer
+
+3. have access to hardware modules exposed by Confium
+
+4. access network interfaces if the scheme is an interactive one
+
+
+==== Keystore layer
+
+The keystore is compartmentalized for every separate cryptographic scheme,
+associated with the combination of module and application identifiers.
+
+The keystore layer contains a private and public portion, where plugins are used
+to access secrets for different cryptographic schemes.
+
+A module in a particular application can freely put and get keys in its private
+space.
+
+In order to support micro-management of access to individual keys, each
+individual private key can be associated with the combination of module
+identifier and a key identifier provided by the application. Only when the
+module identifier and key identifier matches, the private key can be retrieved.
+
+In public key cryptographic schemes, the public key is supposed to be known by
+other parties. This is an important part of the keystore as it has been a
+challenging task to ship one's public key to another via the Internet. A typical
+man-in-the-middle attack is practical in many scenarios to let one obtain a
+forged public key and so the rest of the cryptographic scheme fails.
+
+To address this challenge, there is a public keystore in the keystore layer,
+that facilitates distribution of public keys. An identity-based signature scheme
+is used, where the public key in identity-based schemes is the user's unique
+information, such as the email address. To upload a new public key, the identity
+and its signature are also provided to the public space. A key-value store
+database can be used to store the parameters and provide efficient search in a
+large number of parameters.
+
+
+==== Public module repository
+
+The public module repository is the counterpart to Confium just like how CTAN
+and CPAN are module repositories for LaTeX and Perl. Installation of modules
+must be a direct choice of the user.
+
+Consider the example in an email client. When a user receives an email with a
+signature signed by a module that is not yet installed on the user's computer,
+the user needs to find and install this module in order to verify the signature.
+
+The typical user may not know where and how to find and install such a module.
+The public module repository can automate this search and install process.
+
+When the application sees that it requires a particular module, it can connect
+to the module repository and download and install the module automatically after
+the user permits the action.
+
+Implementation of the repository will be an extension of the currently proposed
+project.
+
+
+
+
