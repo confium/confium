@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "spec_helper"
+
 # RSpec.describe Confium do
 #   it "has a version number" do
 #     expect(Confium::VERSION).not_to be nil
@@ -48,4 +50,3 @@ RSpec.describe Confium::Digest do
   end
 
 end
-
