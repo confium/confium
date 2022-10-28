@@ -11,18 +11,9 @@ jobs:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     timeout-minutes: 30
     strategy:
+      fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-            env:
-              CFM_HASH_BOTAN_PLUGIN_PATH: plugins/hash-botan/build/libcfm-hash-botan.so
-          - os: macos-latest
-            env:
-              CFM_HASH_BOTAN_PLUGIN_PATH: plugins/hash-botan/build/libcfm-hash-botan.dylib
-          - os: windows-latest
-            cmake_opts: -G "MSYS Makefiles"
-            env:
-              CFM_HASH_BOTAN_PLUGIN_PATH:
+        os: [ windows-latest, macos-latest, ubuntu-latest ]
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -55,16 +46,20 @@ jobs:
         with:
           ruby-version: 3.0
 
-      # install os-specific build deps
-      - name: install os-specific build deps (Linux)
+      # install os-specific build deps and environment
+      - name: install os-specific build deps and environment (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt -y install libbotan-2-dev cmake make g++
-      - name: install os-specific build deps (macOS)
+          echo "CFM_HASH_BOTAN_PLUGIN_PATH=$PWD/plugins/hash-botan/build/libcfm-hash-botan.so" >> $GITHUB_ENV
+
+      - name: install os-specific build deps and environment (macOS)
         if: runner.os == 'macOS'
         run: |
           brew install botan
-      - name: install os-specific build deps (Windows)
+          echo "CFM_HASH_BOTAN_PLUGIN_PATH=$PWD/plugins/hash-botan/build/libcfm-hash-botan.dylib" >> $GITHUB_ENV
+
+      - name: install os-specific build deps and environment (Windows)
       # install deps with pacboy. It is slower for single lib but ubiquitous
         if: runner.os == 'Windows'
         shell: bash
@@ -72,6 +67,9 @@ jobs:
           set -eux
           pacman --noconfirm -S --needed pactoys
           pacboy sync --noconfirm libbotan:p
+          echo "RUBY_DLL_PATH=$(cygpath -w $PWD/target/debug)" >> $GITHUB_ENV
+          echo "CFM_HASH_BOTAN_PLUGIN_PATH=$(cygpath -w $PWD/plugins/hash-botan/build/libcfm-hash-botan.dll)" >> $GITHUB_ENV
+          echo "CMAKE_GENERATOR=MSYS Makefiles" >> $GITHUB_ENV
 
       # prepare to build
       - name: install test dependencies
@@ -84,20 +82,14 @@ jobs:
         run: |
           mkdir plugins/hash-botan/build
           cd plugins/hash-botan/build
-          cmake ${{ matrix.cmake_opts }} ..
+          cmake ..
           make
 
       # ruby tests
       - name: ruby tests
-        env: ${{ matrix.env }}
         shell: bash
         run: |
           export LD_LIBRARY_PATH=$PWD/target/debug
           export CONFIUM_LIBRARY_PATH=$PWD/target/debug
-          if [[ "$OSTYPE" == *msys* ]]; then
-            export RUBY_DLL_PATH="$(cygpath -w $PWD/target/debug)"
-            export CFM_HASH_BOTAN_PLUGIN_PATH="$(cygpath -w $PWD/plugins/hash-botan/build/libcfm-hash-botan.dll)"
-          fi
-
           cd confium-ruby
           bundle exec rspec
