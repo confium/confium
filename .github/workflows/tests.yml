@@ -74,14 +74,14 @@ jobs:
           pacboy sync --noconfirm libbotan:p
 
       # prepare to build
-      - name: prepare to build
+      - name: install test dependencies
         run: |
           gem install ffi rspec
-          mkdir plugins/hash-botan/build
 
       # build plugin
       - name: build plugin
         run: |
+          mkdir plugins/hash-botan/build
           cd plugins/hash-botan/build
           cmake ${{ matrix.cmake_opts }} ..
           make
