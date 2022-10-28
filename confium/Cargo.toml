@@ -1,7 +1,7 @@
 [package]
 name = "confium"
-version = "0.1.0"
-authors = ["Daniel Wyatt <daniel.wyatt@ribose.com>"]
+version = "0.1.1"
+authors = ["Ribose Open <open.source@ribose.com>"]
 edition = "2018"
 
 [lib]
