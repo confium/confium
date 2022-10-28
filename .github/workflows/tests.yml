@@ -75,8 +75,9 @@ jobs:
 
       # prepare to build
       - name: install test dependencies
+        working-directory: confium-ruby
         run: |
-          gem install ffi rspec
+          bundle
 
       # build plugin
       - name: build plugin
@@ -92,8 +93,11 @@ jobs:
         shell: bash
         run: |
           export LD_LIBRARY_PATH=$PWD/target/debug
+          export CONFIUM_LIBRARY_PATH=$PWD/target/debug
           if [[ "$OSTYPE" == *msys* ]]; then
             export RUBY_DLL_PATH="$(cygpath -w $PWD/target/debug)"
             export CFM_HASH_BOTAN_PLUGIN_PATH="$(cygpath -w $PWD/plugins/hash-botan/build/libcfm-hash-botan.dll)"
           fi
-          rspec spec/
+
+          cd confium-ruby
+          bundle exec rspec
