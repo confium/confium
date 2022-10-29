@@ -213,11 +213,11 @@ project.
 
 
 
-=== Usage
+=== Prerequisites
 
-==== Prerequisites
+==== Install build dependencies
 
-===== Install Botan
+The Rust toolchain (nightly channel) and Ruby (3.0+) shall already be installed.
 
 Ubuntu:
 [source,sh]
@@ -234,37 +234,72 @@ brew install botan
 Windows:
 [source,sh]
 ----
-pacman --noconfirm -S --needed mingw64/mingw-w64-x86_64-libbotan
+pacman --noconfirm -S --needed pactoys
+pacboy sync --noconfirm libbotan:p
 ----
 
-===== Install necessary gems
+
+=== Build steps
+
+==== Build Confium core
 
 [source,sh]
 ----
-gem install ffi rspec
+cargo build
 ----
 
-==== Build Botan bindings
 
+==== Build Confium plugin for Botan
+
+Set environments.
+
+Linux:
+[source,sh]
+----
+export CFM_HASH_BOTAN_PLUGIN_PATH=$PWD/plugins/hash-botan/build/libcfm-hash-botan.so
+----
+
+macOS:
+[source,sh]
+----
+export CFM_HASH_BOTAN_PLUGIN_PATH=$PWD/plugins/hash-botan/build/libcfm-hash-botan.dylib
+----
+
+Windows:
+[source,sh]
+----
+export RUBY_DLL_PATH=$(cygpath -w $PWD/target/debug)
+export CFM_HASH_BOTAN_PLUGIN_PATH=$(cygpath -w $PWD/plugins/hash-botan/build/libcfm-hash-botan.dll)
+export CMAKE_GENERATOR=MSYS Makefiles
+----
+
+Build plugin:
 [source,sh]
 ----
 mkdir plugins/hash-botan/build
 cd plugins/hash-botan/build
-# on Linux or macOS
 cmake ..
-# on Windows
-# cmake -G "MSYS Makefiles" ..
 make
 ----
 
-=== Run tests
+
+==== Install Confium Ruby bindings
+
+[source,sh]
+----
+cd confium-ruby
+bundle install
+----
+
+
+=== Tests
+
+==== Run Confium tests
 
 [source,sh]
 ----
 export LD_LIBRARY_PATH=$PWD/target/debug
-if [[ "$OSTYPE" == *msys* ]]; then
-export RUBY_DLL_PATH="$(cygpath -w $PWD/target/debug)"
-export CFM_HASH_BOTAN_PLUGIN_PATH="$(cygpath -w $PWD/plugins/hash-botan/build/libcfm-hash-botan.dll)"
-fi
-rspec spec/
+export CONFIUM_LIBRARY_PATH=$PWD/target/debug
+cd confium-ruby
+bundle exec rspec
 ----
