@@ -145,9 +145,9 @@ layer here needs to provide a general enough model specification for developers
 to follow. The model allows the developer to declare a new module or interface
 that conforms to our framework.
 
-Confium aims to support new cryptographic families and threshold cryptography is
-one of them. The threshold cryptography module is implemented in Confium's
-crypto-primitive layer, where threshold algorithms could:
+Confium aims to support new cryptographic families, and these cryptography
+modules will be implemented in Confium's crypto-primitive layer, where
+algorithms could:
 
 1. depend on existing cryptographic algorithms for calculations, such as
 threshold RSA to RSA
@@ -215,9 +215,12 @@ project.
 
 === Prerequisites
 
-==== Install build dependencies
+==== General
 
-The Rust toolchain (nightly channel) and Ruby (3.0+) shall already be installed.
+The Rust toolchain (nightly channel) and Ruby (3.0+) must be installed.
+
+
+==== Install build dependencies
 
 Ubuntu:
 [source,sh]
@@ -251,29 +254,13 @@ cargo build
 
 ==== Build Confium plugin for Botan
 
-Set environments.
-
-Linux:
-[source,sh]
-----
-export CFM_HASH_BOTAN_PLUGIN_PATH=$PWD/plugins/hash-botan/build/libcfm-hash-botan.so
-----
-
-macOS:
-[source,sh]
-----
-export CFM_HASH_BOTAN_PLUGIN_PATH=$PWD/plugins/hash-botan/build/libcfm-hash-botan.dylib
-----
-
 Windows:
 [source,sh]
 ----
-export RUBY_DLL_PATH=$(cygpath -w $PWD/target/debug)
-export CFM_HASH_BOTAN_PLUGIN_PATH=$(cygpath -w $PWD/plugins/hash-botan/build/libcfm-hash-botan.dll)
 export CMAKE_GENERATOR=MSYS Makefiles
 ----
 
-Build plugin:
+Build plugin (all platforms):
 [source,sh]
 ----
 mkdir plugins/hash-botan/build
@@ -295,6 +282,25 @@ bundle install
 === Tests
 
 ==== Run Confium tests
+
+Linux:
+[source,sh]
+----
+export CFM_HASH_BOTAN_PLUGIN_PATH=$PWD/plugins/hash-botan/build/libcfm-hash-botan.so
+----
+
+macOS:
+[source,sh]
+----
+export CFM_HASH_BOTAN_PLUGIN_PATH=$PWD/plugins/hash-botan/build/libcfm-hash-botan.dylib
+----
+
+Windows:
+[source,sh]
+----
+export CFM_HASH_BOTAN_PLUGIN_PATH=$(cygpath -w $PWD/plugins/hash-botan/build/libcfm-hash-botan.dll)
+export RUBY_DLL_PATH=$(cygpath -w $PWD/target/debug)
+----
 
 [source,sh]
 ----
