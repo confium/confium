@@ -75,13 +75,6 @@ even if a cloud key storage module is disabled.
 8. Cross-platform on major operating systems.
 
 
-INEXTENSIBLE KEY MANAGEMENT.
-
-Key management [10][8] is a recurrent topic in cryptographic research. Previous works focus on encryption and signature schemes for simple communication between different parties. [12] is a more recent work that develops a distributed cloud keystore. In this scheme, keys are divided into shares and the shares are stored by different cloud servers. As a result, no single cloud can see the actual keys, only the user able to collect all shares can recover the actual keys.
-
-While numerous patents [15][7] exist on keystore-related technologies, they are not designed to be extensible. If a user would like to use a new encryption scheme in his application for his own purposes, it is not feasible without modifying the underlying source codes of the application.
-
-
 
 === Architecture
 
