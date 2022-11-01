@@ -40,12 +40,6 @@ jobs:
           toolchain: nightly
           command: test
 
-      # install ruby
-      - name: install ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: 3.0
-
       # install os-specific build deps and environment
       - name: install os-specific build deps and environment (Linux)
         if: runner.os == 'Linux'
@@ -59,37 +53,34 @@ jobs:
           brew install botan
           echo "CFM_HASH_BOTAN_PLUGIN_PATH=$PWD/plugins/hash-botan/build/libcfm-hash-botan.dylib" >> $GITHUB_ENV
 
-      - name: install os-specific build deps and environment (Windows)
-      # install deps with pacboy. It is slower for single lib but ubiquitous
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          set -eux
-          pacman --noconfirm -S --needed pactoys
-          pacboy sync --noconfirm libbotan:p
-          echo "RUBY_DLL_PATH=$(cygpath -w $PWD/target/debug)" >> $GITHUB_ENV
-          echo "CFM_HASH_BOTAN_PLUGIN_PATH=$(cygpath -w $PWD/plugins/hash-botan/build/libcfm-hash-botan.dll)" >> $GITHUB_ENV
-          echo "CMAKE_GENERATOR=MSYS Makefiles" >> $GITHUB_ENV
 
-      # prepare to build
-      - name: install test dependencies
-        working-directory: confium-ruby
-        run: |
-          bundle
+      - name: install MSys and Windows-specific dependencies
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ucrt64
+          pacboy: >-
+            toolchain:p
+            cmake:p
+            libbotan:p
 
       # build plugin
       - name: build plugin
+        if: runner.os == 'Windows'
+        shell:  msys2 {0}
+        run: |
+          set -eux
+          echo "CFM_HASH_BOTAN_PLUGIN_PATH=$(cygpath -w $PWD/plugins/hash-botan/build/libcfm-hash-botan.dll)" >> $GITHUB_ENV
+          mkdir plugins/hash-botan/build
+          cd plugins/hash-botan/build
+          cmake ..
+          cmake --build .
+
+      - name: build plugin
+        if: runner.os != 'Windows'
+        shell:  bash
         run: |
           mkdir plugins/hash-botan/build
           cd plugins/hash-botan/build
           cmake ..
           make
-
-      # ruby tests
-      - name: ruby tests
-        shell: bash
-        run: |
-          export LD_LIBRARY_PATH=$PWD/target/debug
-          export CONFIUM_LIBRARY_PATH=$PWD/target/debug
-          cd confium-ruby
-          bundle exec rspec
