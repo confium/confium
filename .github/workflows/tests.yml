@@ -59,6 +59,9 @@ jobs:
           set -eux
           pacman --noconfirm -S --needed pactoys
           pacboy sync --noconfirm libbotan:p
+          echo "RUBY_DLL_PATH=$(cygpath -w $PWD/target/debug)" >> $GITHUB_ENV
+          echo "CFM_HASH_BOTAN_PLUGIN_PATH=$(cygpath -w $PWD/plugins/hash-botan/build/libcfm-hash-botan.dll)" >> $GITHUB_ENV
+          echo "CMAKE_GENERATOR=MSYS Makefiles" >> $GITHUB_ENV
 
       # build plugin
       - name: build plugin

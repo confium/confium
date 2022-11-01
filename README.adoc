@@ -75,13 +75,6 @@ even if a cloud key storage module is disabled.
 8. Cross-platform on major operating systems.
 
 
-INEXTENSIBLE KEY MANAGEMENT.
-
-Key management [10][8] is a recurrent topic in cryptographic research. Previous works focus on encryption and signature schemes for simple communication between different parties. [12] is a more recent work that develops a distributed cloud keystore. In this scheme, keys are divided into shares and the shares are stored by different cloud servers. As a result, no single cloud can see the actual keys, only the user able to collect all shares can recover the actual keys.
-
-While numerous patents [15][7] exist on keystore-related technologies, they are not designed to be extensible. If a user would like to use a new encryption scheme in his application for his own purposes, it is not feasible without modifying the underlying source codes of the application.
-
-
 
 === Architecture
 
@@ -145,9 +138,9 @@ layer here needs to provide a general enough model specification for developers
 to follow. The model allows the developer to declare a new module or interface
 that conforms to our framework.
 
-Confium aims to support new cryptographic families and threshold cryptography is
-one of them. The threshold cryptography module is implemented in Confium's
-crypto-primitive layer, where threshold algorithms could:
+Confium aims to support new cryptographic families, and these cryptography
+modules will be implemented in Confium's crypto-primitive layer, where
+algorithms could:
 
 1. depend on existing cryptographic algorithms for calculations, such as
 threshold RSA to RSA
@@ -213,11 +206,14 @@ project.
 
 
 
-=== Usage
+=== Prerequisites
 
-==== Prerequisites
+==== General
 
-===== Install Botan
+The Rust toolchain (nightly channel) and Ruby (3.0+) must be installed.
+
+
+==== Install build dependencies
 
 Ubuntu:
 [source,sh]
@@ -234,37 +230,75 @@ brew install botan
 Windows:
 [source,sh]
 ----
-pacman --noconfirm -S --needed mingw64/mingw-w64-x86_64-libbotan
+pacman --noconfirm -S --needed pactoys
+pacboy sync --noconfirm libbotan:p
 ----
 
-===== Install necessary gems
+
+=== Build steps
+
+==== Build Confium core
 
 [source,sh]
 ----
-gem install ffi rspec
+cargo build
 ----
 
-==== Build Botan bindings
 
+==== Build Confium plugin for Botan
+
+Windows:
+[source,sh]
+----
+export CMAKE_GENERATOR=MSYS Makefiles
+----
+
+Build plugin (all platforms):
 [source,sh]
 ----
 mkdir plugins/hash-botan/build
 cd plugins/hash-botan/build
-# on Linux or macOS
 cmake ..
-# on Windows
-# cmake -G "MSYS Makefiles" ..
 make
 ----
 
-=== Run tests
+
+==== Install Confium Ruby bindings
+
+[source,sh]
+----
+cd confium-ruby
+bundle install
+----
+
+
+=== Tests
+
+==== Run Confium tests
+
+Linux:
+[source,sh]
+----
+export CFM_HASH_BOTAN_PLUGIN_PATH=$PWD/plugins/hash-botan/build/libcfm-hash-botan.so
+----
+
+macOS:
+[source,sh]
+----
+export CFM_HASH_BOTAN_PLUGIN_PATH=$PWD/plugins/hash-botan/build/libcfm-hash-botan.dylib
+----
+
+Windows:
+[source,sh]
+----
+export CFM_HASH_BOTAN_PLUGIN_PATH=$(cygpath -w $PWD/plugins/hash-botan/build/libcfm-hash-botan.dll)
+export RUBY_DLL_PATH=$(cygpath -w $PWD/target/debug)
+----
 
 [source,sh]
 ----
 export LD_LIBRARY_PATH=$PWD/target/debug
-if [[ "$OSTYPE" == *msys* ]]; then
-export RUBY_DLL_PATH="$(cygpath -w $PWD/target/debug)"
-export CFM_HASH_BOTAN_PLUGIN_PATH="$(cygpath -w $PWD/plugins/hash-botan/build/libcfm-hash-botan.dll)"
-fi
-rspec spec/
+export CONFIUM_LIBRARY_PATH=$PWD/target/debug
+cd confium-ruby
+bundle exec rspec
 ----
