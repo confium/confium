@@ -2,3 +2,11 @@
 members = [
   "confium",
 ]
+
+default-members = [
+  "confium",
+]
+
+[workspace.metadata.nix]
+# app = true
+# build = true
