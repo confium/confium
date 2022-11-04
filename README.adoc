@@ -1,5 +1,7 @@
 == Confium: distributed trust store framework
 
+image:https://github.com/confium/confium/actions/workflows/tests.yml/badge.svg["tests", link="https://github.com/confium/confium/actions/workflows/tests.yml"]
+
 === Purpose
 
 Confium is an open-source distributed trust store framework that is a component
