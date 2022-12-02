@@ -3,6 +3,11 @@ name = "confium"
 version = "0.1.1"
 authors = ["Ribose Open <open.source@ribose.com>"]
 edition = "2018"
+description="Open-source distributed trust store framework"
+homepage="https://www.confium.org/"
+repository="https://github.com/confium/confium"
+categories = ["authentication", "cryptography"]
+license = "MIT"
 
 [lib]
 crate-type = ["cdylib"]
