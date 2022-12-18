@@ -1,6 +1,6 @@
 == Confium: distributed trust store framework
 
-image:https://github.com/confium/confium/actions/workflows/tests.yml/badge.svg["tests", link="https://github.com/confium/confium/actions/workflows/tests.yml"]
+image:https://github.com/confium/confium/actions/workflows/test-and-publish.yml/badge.svg["Test and publish", link="https://github.com/confium/confium/actions/workflows/test-and-publish.yml"]
 
 === Purpose
 
