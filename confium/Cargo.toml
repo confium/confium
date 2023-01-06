@@ -7,7 +7,7 @@ description="Open-source distributed trust store framework"
 homepage="https://www.confium.org/"
 repository="https://github.com/confium/confium"
 categories = ["authentication", "cryptography"]
-license = "MIT"
+license = "BSD-2-Clause"
 
 [lib]
 crate-type = ["cdylib"]
