@@ -4,7 +4,7 @@ use snafu::Snafu;
 #[derive(Snafu, Debug)]
 #[snafu(visibility = "pub(crate)")]
 pub enum Error {
-    #[snafu(display("Null pointer on parameter '{}'", param))]
+    #[snafu(display("NULL pointer on parameter '{}'", param))]
     NullPointer {
         param: &'static str,
         backtrace: Backtrace,
