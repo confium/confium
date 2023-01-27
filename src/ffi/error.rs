@@ -47,6 +47,7 @@ pub extern "C" fn cfm_err_get_code(err: *const Error, code: *mut u32) -> u32 {
 
 #[no_mangle]
 pub extern "C" fn cfm_err_get_source(err: *const Error, src: *mut *mut Error) -> u32 {
+    err_check_not_null!(err);
     unimplemented!();
 }
 
