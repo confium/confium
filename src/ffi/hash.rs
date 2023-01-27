@@ -207,7 +207,7 @@ pub extern "C" fn cfm_hash_finalize_(hash: *mut Hash, result: *mut u8, size: u32
     unsafe {
         let vec = (*hash).finalize()?;
         if (size as usize) < vec.len() {
-            return Err(error::InsufficientBuffer {}.build());
+            return error::InsufficientBuffer {}.fail();
         }
         std::ptr::copy(vec.as_ptr(), result, vec.len());
     }
