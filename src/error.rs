@@ -41,8 +41,6 @@ pub enum Error {
     },
     #[snafu(display("Plugin '{}' interface version unsupported", name))]
     PluginInterfaceVersionUnsupported { name: String },
-    #[snafu(display("Plugin '{}' failed to initialize", name))]
-    PluginInitializeFailed { name: String },
     #[snafu(display("Plugin '{}' name collision", name))]
     PluginNameCollision { name: String },
     #[snafu(display("Plugin '{}' missing interface '{}'", name, ifname))]
@@ -97,7 +95,6 @@ fn error_code(error: &Error) -> u32 {
 
         Error::PluginLoadFailed { .. } => ErrorCode::PLUGIN_LOAD_FAILED.into(),
         Error::PluginSymbolError { .. } => ErrorCode::PLUGIN_SYMBOL_ERROR.into(),
-        Error::PluginInitializeFailed { .. } => ErrorCode::PLUGIN_INITIALIZATION_FAILED.into(),
         Error::PluginInterfaceVersionUnsupported { .. } => {
             ErrorCode::PLUGIN_INTERFACE_VERSION_UNSUPPORTED.into()
         }
