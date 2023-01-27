@@ -84,7 +84,7 @@ fn load_plugin_v0(
         get_plugin_symbol::<QueryInterfacesFnV0>(&lib, name, QUERY_INTERFACES_FN_V0_NAME)?;
     let code = initialize(cfm, opts);
     if code != 0 {
-        return PluginInitializeFailed { name }.fail();
+        return PluginInternalError { name, code }.fail();
     }
     let vtable = PluginVTable::V0(PluginV0 {
         initialize: initialize,
