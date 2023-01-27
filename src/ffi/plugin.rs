@@ -113,7 +113,7 @@ fn enumerate_plugin_interfaces(cfm: &mut Confium, vtable: &PluginVTable) -> Resu
                 }
                 let name =
                     unsafe { std::slice::from_raw_parts(ifs.offset(start as isize), end - start) };
-                let name = std::str::from_utf8(name).map_err(|_| InvalidUTF8 {}.build())?;
+                let name = std::str::from_utf8(name).context(InvalidUTF8 {})?;
                 if name == "" {
                     break;
                 }
