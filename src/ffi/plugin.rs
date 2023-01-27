@@ -49,10 +49,10 @@ pub enum PluginVTable {
 macro_rules! check_not_null {
     ($param:ident) => {{
         if $param.is_null() {
-            return Err($crate::error::NullPointer {
+            return $crate::error::NullPointer {
                 param: stringify!($param),
             }
-            .build());
+            .fail();
         }
     }};
 }
@@ -84,7 +84,7 @@ fn load_plugin_v0(
         get_plugin_symbol::<QueryInterfacesFnV0>(&lib, name, QUERY_INTERFACES_FN_V0_NAME)?;
     let code = initialize(cfm, opts);
     if code != 0 {
-        return Err(PluginInitializeFailed { name }.build());
+        return PluginInitializeFailed { name }.fail();
     }
     let vtable = PluginVTable::V0(PluginV0 {
         initialize: initialize,
@@ -190,7 +190,7 @@ fn cfm_plugin_load_(
     let path = std::path::PathBuf::from(cstring(c_path)?);
     for provider in &cfm.providers {
         if provider.name == name {
-            return Err(PluginNameCollision { name }.build());
+            return PluginNameCollision { name }.fail();
         }
     }
     let lib = unsafe { Library::new(&path).context(PluginLoadFailed { name: &name })? };
@@ -201,7 +201,7 @@ fn cfm_plugin_load_(
         0 => {
             plugin = load_plugin_v0(cfm, &name, lib, unsafe { &mut *opts })?;
         }
-        _ => return Err(PluginInterfaceVersionUnsupported { name }.build()),
+        _ => return PluginInterfaceVersionUnsupported { name }.fail(),
     }
     plugin.interfaces =
         load_plugin_interfaces(cfm, &plugin.library, &plugin.vtable).or_else(|e| {

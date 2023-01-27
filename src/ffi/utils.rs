@@ -37,7 +37,7 @@ pub(crate) fn cstring(cstr: *const c_char) -> Result<String> {
     match cstr {
         Ok(s) => Ok(s.to_string()),
         Err(_) => {
-            return Err(crate::error::InvalidUTF8 {}.build());
+            return crate::error::InvalidUTF8 {}.fail();
         }
     }
 }

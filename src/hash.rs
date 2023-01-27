@@ -68,11 +68,11 @@ fn create_v0(
     let cname = CString::new(name).unwrap();
     let code = (*v0.create)(cfm, &mut obj, cname.as_ptr(), opts);
     if code != 0 {
-        return Err(error::PluginInternalError {
+        return error::PluginInternalError {
             name: plugin_name,
             code,
         }
-        .build());
+        .fail();
     }
     if obj.is_null() {
         return Ok(None);
@@ -112,7 +112,7 @@ impl Hash {
                 });
             }
         }
-        Err(error::UnsupportedAlgorithm { name }.build())
+        error::UnsupportedAlgorithm { name }.fail()
     }
 
     pub fn new(
@@ -153,7 +153,7 @@ impl Hash {
                 let code = (*hashif.update)(self.obj, data.as_ptr(), data.len() as u32);
                 if code != 0 {
                     // TODO: name...
-                    return Err(error::PluginInternalError { name: "", code }.build());
+                    return error::PluginInternalError { name: "", code }.fail();
                 }
                 Ok(())
             }
@@ -167,7 +167,7 @@ impl Hash {
                 let code = (*hashif.reset)(self.obj);
                 if code != 0 {
                     // TODO: name...
-                    return Err(error::PluginInternalError { name: "", code }.build());
+                    return error::PluginInternalError { name: "", code }.fail();
                 }
                 Ok(())
             }
@@ -182,7 +182,7 @@ impl Hash {
                 let code = (*hashif.clone)(self.obj, &mut dst);
                 if code != 0 || dst.is_null() {
                     // TODO: name...
-                    return Err(error::PluginInternalError { name: "", code }.build());
+                    return error::PluginInternalError { name: "", code }.fail();
                 }
                 Ok(Hash {
                     obj: dst,
@@ -204,7 +204,7 @@ impl Hash {
                 let code = (*hashif.finalize)(self.obj, result.as_mut_ptr(), size);
                 if code != 0 {
                     // TODO: name...
-                    return Err(error::PluginInternalError { name: "", code }.build());
+                    return error::PluginInternalError { name: "", code }.fail();
                 }
                 Ok(result)
             }
@@ -219,7 +219,7 @@ impl Hash {
                 let code = (*hashif.block_size)(self.obj, &mut size);
                 if code != 0 {
                     // TODO: name...
-                    return Err(error::PluginInternalError { name: "", code }.build());
+                    return error::PluginInternalError { name: "", code }.fail();
                 }
                 Ok(size)
             }
@@ -234,7 +234,7 @@ impl Hash {
                 let code = (*hashif.output_size)(self.obj, &mut size);
                 if code != 0 {
                     // TODO: name...
-                    return Err(error::PluginInternalError { name: "", code }.build());
+                    return error::PluginInternalError { name: "", code }.fail();
                 }
                 Ok(size)
             }
