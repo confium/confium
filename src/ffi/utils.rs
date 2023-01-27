@@ -1,5 +1,6 @@
 use crate::error::Error;
 use crate::Result;
+use snafu::ResultExt;
 use std::os::raw::c_char;
 
 #[macro_use]
@@ -33,12 +34,11 @@ macro_rules! ffi_check_not_null {
 
 pub(crate) fn cstring(cstr: *const c_char) -> Result<String> {
     check_not_null!(cstr);
-    let cstr = unsafe { std::ffi::CStr::from_ptr(cstr).to_str() };
-    match cstr {
-        Ok(s) => Ok(s.to_string()),
-        Err(_) => {
-            return crate::error::InvalidUTF8 {}.fail();
-        }
+    unsafe {
+        Ok(std::ffi::CStr::from_ptr(cstr)
+            .to_str()
+            .context(crate::error::InvalidUTF8 {})?
+            .to_string())
     }
 }
 

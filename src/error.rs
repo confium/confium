@@ -10,7 +10,10 @@ pub enum Error {
         backtrace: Backtrace,
     },
     #[snafu(display("Invalid UTF-8"))]
-    InvalidUTF8 { backtrace: Backtrace },
+    InvalidUTF8 {
+        backtrace: Backtrace,
+        source: std::str::Utf8Error,
+    },
 
     #[snafu(display("Wrong type (expected '{}')", expected))]
     WrongType {
