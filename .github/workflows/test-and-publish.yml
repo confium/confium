@@ -39,6 +39,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 1
+          submodules: recursive
 
       # install rust
       - name: install rust
@@ -51,12 +52,23 @@ jobs:
         with:
           toolchain: nightly
           command: build
-      # cargo tests
-      - name: cargo tests
-        uses: actions-rs/cargo@v1
+      - name: install cmake
+        uses: lukka/get-cmake@latest
+      - name: install boost
+        id: install-boost
+        uses: MarkusJx/install-boost@v2.4.1
         with:
-          toolchain: nightly
-          command: test
+          boost_version: 1.81.0
+      - name: ctest
+        env:
+          BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
+        run: |
+          mkdir build
+          cd build
+          cmake -DBUILD_TESTING=yes -DBUILD_C_BINDINGS=yes  ..
+          cmake --build .
+          ctest -C Debug -V
+
   publish:
     if: contains(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest

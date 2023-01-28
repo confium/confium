@@ -1,0 +1,9 @@
+[submodule "cmake/corrosion"]
+	path = cmake/corrosion
+	url = git@github.com:corrosion-rs/corrosion.git
+[submodule "cpp-tests/deps/toml11"]
+	path = cpp-tests/deps/toml11
+	url = git@github.com:ToruNiina/toml11
+[submodule "cpp-tests/deps/utest.h"]
+	path = cpp-tests/deps/utest.h
+	url = git@github.com:sheredom/utest.h
