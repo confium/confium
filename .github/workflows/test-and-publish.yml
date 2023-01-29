@@ -13,7 +13,7 @@ on:
       - '**.nix'
       - 'flake.lock'
       - '.github/workflows/*.yml'
-      - '!.github/workflows/tests.yml'
+      - '!.github/workflows/test-and-publish.yml'
   pull_request:
     paths-ignore:
       - '/*.sh'
