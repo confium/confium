@@ -8,7 +8,7 @@ This license file adheres to the formatting guidelines of
 Ribose BSD 2-Clause License
 ---------------------------
 
-Copyright (c) 2017-2022, [Ribose Inc](https://www.ribose.com).
+Copyright (c) 2017-2023, [Ribose Inc](https://www.ribose.com).
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
