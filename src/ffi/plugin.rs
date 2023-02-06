@@ -16,6 +16,10 @@ use crate::Plugin;
 use crate::Provider;
 use crate::Result;
 
+use std::env::consts::DLL_EXTENSION;
+use std::env::consts::DLL_PREFIX;
+use std::path::PathBuf;
+
 #[derive(Debug)]
 pub enum PluginInterface {
     Hash(HashInterface),
@@ -175,6 +179,20 @@ fn finalize_plugin(cfm: &mut Confium, plugin: &Plugin) {
     }
 }
 
+fn plugin_load_lib(name: &str, paths: &Vec<PathBuf>) -> Result<libloading::Library> {
+    let mut err = None;
+    for path in paths {
+        let lib = unsafe { Library::new(&path) }.context(PluginLoadFailed { name: name });
+        if lib.is_ok() {
+            return Ok(lib?);
+        } else {
+            err = Some(lib.unwrap_err());
+        }
+    }
+    // paths vec must contain at least one element or we panic
+    Err(err.unwrap())
+}
+
 fn cfm_plugin_load_(
     cfm: *mut Confium,
     c_name: *const c_char,
@@ -186,13 +204,28 @@ fn cfm_plugin_load_(
     check_not_null!(c_path);
     let cfm = unsafe { &mut *cfm };
     let name = cstring(c_name)?;
-    let path = std::path::PathBuf::from(cstring(c_path)?);
     for provider in &cfm.providers {
         if provider.name == name {
             return PluginNameCollision { name }.fail();
         }
     }
-    let lib = unsafe { Library::new(&path).context(PluginLoadFailed { name: &name })? };
+    let path = PathBuf::from(cstring(c_path)?);
+    let mut paths: Vec<PathBuf> = vec![path.clone()];
+    // If the path has a shared library extension, the client is presumed to
+    // be platform-aware, and we will not try alternate paths. Otherwise,
+    // we will try to helpfully prepend the platform's shared library prefix,
+    // and/or extension.
+    if (&path).extension().and_then(std::ffi::OsStr::to_str) != Some(&DLL_EXTENSION) {
+        let path_with_ext = path.with_extension(DLL_EXTENSION);
+        paths.push(path_with_ext.clone());
+        if let Some(filename) = path_with_ext.file_name() && !DLL_PREFIX.is_empty() {
+            let mut prefixed_filename = std::ffi::OsString::new();
+            prefixed_filename.push(DLL_PREFIX);
+            prefixed_filename.push(filename);
+            paths.push(path_with_ext.with_file_name(&prefixed_filename));
+        }
+    }
+    let lib = plugin_load_lib(&name, &paths)?;
     let plugin_iface_ver =
         get_plugin_symbol::<InterfaceVersionFn>(&lib, &name, INTERFACE_VERSION_FN_NAME)?;
     let mut plugin;
