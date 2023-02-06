@@ -223,7 +223,7 @@ pub extern "C" fn cfm_hash_finalize(hash: *mut Hash, result: *mut u8, size: u32)
 pub extern "C" fn cfm_hash_destroy(hash: *mut Hash) -> u32 {
     unsafe {
         if !hash.is_null() {
-            Box::from_raw(hash);
+            std::mem::drop(Box::from_raw(hash));
         }
     }
     0

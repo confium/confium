@@ -71,6 +71,6 @@ pub extern "C" fn cfm_err_get_backtrace(err: *mut Error, backtrace: *mut *const 
 #[no_mangle]
 pub extern "C" fn cfm_err_destroy(err: *mut Error) {
     unsafe {
-        Box::from_raw(err);
+        std::mem::drop(Box::from_raw(err));
     }
 }
