@@ -203,7 +203,7 @@ pub extern "C" fn cfm_hash_clone(src: *mut Hash, dst: *mut *mut Hash) -> u32 {
     cfm_hash_clone_(src, dst).map_or_else(|e| e.code(), |_| 0)
 }
 
-pub extern "C" fn cfm_hash_finalize_(hash: *mut Hash, result: *mut u8, size: u32) -> Result<()> {
+fn cfm_hash_finalize_(hash: *mut Hash, result: *mut u8, size: u32) -> Result<()> {
     unsafe {
         let vec = (*hash).finalize()?;
         if (size as usize) < vec.len() {
