@@ -105,7 +105,7 @@ fn enumerate_plugin_interfaces(cfm: &mut Confium, vtable: &PluginVTable) -> Resu
             let ifs = (*v0.query_interfaces)(cfm);
             let mut idx: usize = 0;
             loop {
-                let mut start = idx;
+                let start = idx;
                 let mut end = start;
                 while unsafe { *(ifs.offset(end as isize)) } != 0 {
                     end += 1;
