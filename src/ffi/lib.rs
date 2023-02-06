@@ -1,7 +1,6 @@
 use std::ffi::CString;
 use std::os::raw::c_char;
 
-use crate::error::Error;
 use crate::Confium;
 
 #[no_mangle]
