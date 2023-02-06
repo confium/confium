@@ -44,7 +44,7 @@ pub(crate) fn cstring(cstr: *const c_char) -> Result<String> {
 
 pub extern "C" fn cfm_string_destroy(s: *mut c_char) -> u32 {
     unsafe {
-        Box::from_raw(s);
+        std::mem::drop(Box::from_raw(s));
     }
     0
 }

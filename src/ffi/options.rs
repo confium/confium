@@ -19,7 +19,7 @@ pub extern "C" fn cfm_opts_create(opts: *mut *mut Options, err: *mut *mut Error)
 pub extern "C" fn cfm_opts_destroy(opts: *mut Options) -> u32 {
     if !opts.is_null() {
         unsafe {
-            Box::from_raw(opts);
+            std::mem::drop(Box::from_raw(opts));
         }
     }
     0
