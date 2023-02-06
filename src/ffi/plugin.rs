@@ -45,7 +45,6 @@ pub enum PluginVTable {
     V0(PluginV0),
 }
 
-#[macro_escape]
 macro_rules! check_not_null {
     ($param:ident) => {{
         if $param.is_null() {

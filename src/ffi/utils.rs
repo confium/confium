@@ -1,12 +1,7 @@
-use crate::error::Error;
 use crate::Result;
 use snafu::ResultExt;
 use std::os::raw::c_char;
 
-#[macro_use]
-use crate::utils;
-
-#[macro_escape]
 macro_rules! ffi_return_err {
     ($error:ident, $errptr:ident) => {{
         let code = $error.code();
@@ -19,7 +14,6 @@ macro_rules! ffi_return_err {
     }};
 }
 
-#[macro_escape]
 macro_rules! ffi_check_not_null {
     ($param:ident, $errptr:ident) => {{
         if $param.is_null() {
