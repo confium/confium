@@ -1,5 +1,4 @@
-#![feature(backtrace)]
-#![feature(let_else)]
+#![feature(let_chains)]
 
 #[macro_use]
 pub extern crate slog;
