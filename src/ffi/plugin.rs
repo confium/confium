@@ -218,9 +218,10 @@ fn cfm_plugin_load_(
     if (&path).extension().and_then(std::ffi::OsStr::to_str) != Some(&DLL_EXTENSION) {
         let path_with_ext = path.with_extension(DLL_EXTENSION);
         paths.push(path_with_ext.clone());
-        if let Some(filename) = path_with_ext.file_name() && !DLL_PREFIX.is_empty() {
+        if let Some(filename) = path_with_ext.file_name() {
             let mut prefixed_filename = std::ffi::OsString::new();
-            prefixed_filename.push(DLL_PREFIX);
+            // We try a lib prefix regardless of DLL_PREFIX, mostly because of MinGW
+            prefixed_filename.push("lib");
             prefixed_filename.push(filename);
             paths.push(path_with_ext.with_file_name(&prefixed_filename));
         }
