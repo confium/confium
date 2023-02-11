@@ -46,6 +46,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
+          profile: minimal
       # cargo build
       - name: cargo build
         uses: actions-rs/cargo@v1
@@ -83,6 +84,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
+          profile: minimal
       # cargo publish
       - name: cargo publish
         uses: katyo/publish-crates@v1
