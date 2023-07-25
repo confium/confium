@@ -23,24 +23,26 @@
       rust = pkgs.rust-bin.fromRustupToolchainFile "${cwd}/rust-toolchain";
     in
     with pkgs; {
-      devShell = clangStdenv.mkDerivation {
-        name = "rust";
-        nativeBuildInputs = [
-          binutils
+      devShell = pkgs.devshell.mkShell {
+        env = [
+          {
+            name = "RUST_SRC_PATH";
+            value = "${rust}/lib/rustlib/src/rust/library";
+          }
+          {
+            name = "LIBRARY_PATH";
+            value = "${libiconv}/lib";
+          }
+        ];
+        packages = [
           cargo-release
-          clangStdenv
+          cargo-watch
+          clang
+          cmake
           git-cliff # For generating changelog from git commit messages
-          openssl
-          openssl.dev
           rust
           rust-analyzer
-          cargo-watch
-          cmake
         ];
-        RUST_SRC_PATH = "${rust}/lib/rustlib/src/rust/library";
-        OPENSSL_DIR = "${openssl.bin}/bin";
-        OPENSSL_LIB_DIR = "${openssl.out}/lib";
-        OPENSSL_INCLUDE_DIR = "${openssl.out.dev}/include";
       };
     });
 }
