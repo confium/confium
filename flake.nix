@@ -2,47 +2,65 @@
   description = "Confium Development Environment";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    cargo2nix.url = "github:cargo2nix/cargo2nix";
     flake-utils.url = "github:numtide/flake-utils";
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs = { nixpkgs.follows = "nixpkgs"; };
     };
-    devshell.url = "github:numtide/devshell/master";
+    devshell.url = "github:numtide/devshell/main";
     flake-compat = {
       url = "github:edolstra/flake-compat";
       flake = false;
     };
   };
   outputs =
-    { self, nixpkgs, rust-overlay, flake-utils, devshell, flake-compat, ... }:
+    { self, nixpkgs, cargo2nix, rust-overlay, flake-utils, devshell, flake-compat, ... }:
     flake-utils.lib.eachDefaultSystem (system:
     let
       cwd = builtins.toString ./.;
-      overlays = [ devshell.overlay rust-overlay.overlays.default ];
+      overlays = map (x: x.overlays.default) [
+        devshell
+        cargo2nix
+        rust-overlay
+      ];
       pkgs = import nixpkgs { inherit system overlays; };
-      rust = pkgs.rust-bin.fromRustupToolchainFile "${cwd}/rust-toolchain";
+      toolchain = pkgs.rust-bin.fromRustupToolchainFile "${cwd}/rust-toolchain";
+      rustPkgs = pkgs.rustBuilder.makePackageSet {
+        packageFun = import ./Cargo.nix;
+        rustToolchain = toolchain;
+      };
     in
-    with pkgs; {
+    rec {
+
+      packages = {
+        # nix build .#packages.aarch64-darwin.libconfium
+        # nix build .#libconfium
+        libconfium = (rustPkgs.workspace.confium { }).out;
+        default = packages.libconfium;
+      };
+      defaultPackage = packages.default;
+
+      # nix develop
       devShell = pkgs.devshell.mkShell {
         env = [
           {
             name = "RUST_SRC_PATH";
-            value = "${rust}/lib/rustlib/src/rust/library";
+            value = "${toolchain}/lib/rustlib/src/rust/library";
           }
           {
             name = "LIBRARY_PATH";
-            value = "${libiconv}/lib";
+            value = "${pkgs.libiconv}/lib";
           }
         ];
-        packages = [
-          cargo-release
-          cargo-watch
+        packages = with pkgs; [
           clang
           cmake
           git-cliff # For generating changelog from git commit messages
-          rust
-          rust-analyzer
-        ];
+          # toolchain
+        ] ++ (with rustPkgs.pkgs; [
+          rustup
+        ]);
       };
     });
 }
