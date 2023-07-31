@@ -50,14 +50,19 @@
           }
           {
             name = "LIBRARY_PATH";
-            value = "${pkgs.libiconv}/lib";
+            value = "${pkgs.libiconv}/lib:${pkgs.libcxxabi}/lib";
+          }
+          {
+            name = "BOOST_INCLUDEDIR";
+            value = "${pkgs.boost.dev}/include";
           }
         ];
         packages = with pkgs; [
+          # toolchain
           clang
           cmake
           git-cliff # For generating changelog from git commit messages
-          # toolchain
+          rust-cbindgen
         ] ++ (with rustPkgs.pkgs; [
           rustup
         ]);
