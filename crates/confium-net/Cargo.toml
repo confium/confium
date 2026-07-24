@@ -11,3 +11,6 @@ description = "Confium Network: transport abstraction for multi-party protocols"
 
 [dependencies]
 confium-api = { workspace = true }
+inventory = { workspace = true }
+snafu = { workspace = true }
+url = { workspace = true }
