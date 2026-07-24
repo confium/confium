@@ -1,0 +1,28 @@
+# Configuration for typos spell checker
+# See: https://github.com/crate-ci/typos
+
+[files]
+extend-exclude = ["target/", ".git/", "cpp-tests/", "cmake/"]
+
+[default.extend-words]
+# Project-specific terms
+confium = "confium"
+Confium = "Confium"
+
+# Cryptography and FFI terms
+ffi = "ffi"
+cfm = "cfm"
+cfmp = "cfmp"
+hashif = "hashif"
+
+# Rust/code terms
+vtable = "vtable"
+vtables = "vtables"
+keystore = "keystore"
+keystores = "keystores"
+botan = "botan"
+
+# Documentation terms
+adoc = "adoc"
+asciidoc = "asciidoc"
+AsciiDoc = "AsciiDoc"
