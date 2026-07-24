@@ -490,12 +490,17 @@ mod tests {
     }
 
     #[test]
-    fn filesystem_open_returns_not_implemented() {
+    fn filesystem_open_succeeds() {
+        // The filesystem backend now opens against a real root directory.
+        // Without a configured root it falls back to the default under
+        // $HOME, so this asserts the FFI create path no longer surfaces
+        // NotImplemented.
         let mut ks: *mut FFIKeystore = ptr::null_mut();
         let name = CString::new("filesystem").unwrap().into_raw();
         let rc = cfm_keystore_create(&mut ks, name, ptr::null());
-        assert_eq!(rc, crate::error::ErrorCode::NOT_IMPLEMENTED as u32);
-        assert!(ks.is_null());
+        assert_eq!(rc, 0, "filesystem create should succeed");
+        assert!(!ks.is_null());
+        cfm_keystore_destroy(ks);
     }
 
     #[test]
