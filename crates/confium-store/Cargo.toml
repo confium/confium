@@ -9,5 +9,11 @@ homepage.workspace = true
 repository.workspace = true
 description = "Confium Store: compartmentalized key/secret persistence"
 
+[lib]
+name = "confium_store"
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 confium-api = { workspace = true }
+inventory = { workspace = true }
+snafu = { workspace = true }
