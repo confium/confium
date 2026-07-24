@@ -4,6 +4,7 @@
 
 #[macro_use]
 pub mod utils;
+pub mod cipher;
 pub mod error;
 #[macro_use]
 pub mod ffi;
