@@ -6,6 +6,7 @@
 
 #[macro_use]
 pub mod utils;
+pub mod aead;
 pub mod cipher;
 pub mod error;
 pub mod hash;
