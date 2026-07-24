@@ -6,13 +6,13 @@ use libloading::Library;
 use crate::Confium;
 use crate::Result;
 
+use crate::Provider;
 use crate::error;
 use crate::ffi::hash::FFIHash;
 use crate::ffi::hash::HashInterface;
 use crate::ffi::hash::HashInterfaceV0;
 use crate::ffi::plugin::PluginInterface;
 use crate::options::Options;
-use crate::Provider;
 
 pub struct Hash {
     obj: *mut FFIHash,

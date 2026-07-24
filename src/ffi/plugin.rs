@@ -6,8 +6,8 @@ use libloading::{Library, Symbol};
 use snafu::ResultExt;
 
 use crate::error::Error;
-use crate::ffi::hash::create_hash_interface;
 use crate::ffi::hash::HashInterface;
+use crate::ffi::hash::create_hash_interface;
 use crate::ffi::utils::cstring;
 use crate::options::Options;
 use crate::{Confium, Plugin, Provider, Result};
@@ -227,15 +227,14 @@ fn cfm_plugin_load_(
     };
     let mut plugin = plugin;
     plugin.interfaces =
-        load_plugin_interfaces(cfm, &plugin.library, &plugin.vtable).map_err(|e| {
+        load_plugin_interfaces(cfm, &plugin.library, &plugin.vtable).inspect_err(|_e| {
             finalize_plugin(cfm, &plugin);
-            e
         })?;
     cfm.providers.push(Provider { name, plugin });
     Ok(())
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn cfm_plugin_load(
     cfm: *mut Confium,
     c_name: *const c_char,
@@ -246,7 +245,7 @@ pub extern "C" fn cfm_plugin_load(
     cfm_plugin_load_(cfm, c_name, c_path, opts).map_or_else(|e| ffi_return_err!(e, errptr), |_| 0)
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn cfm_plugin_unload(_cfm: *mut Confium, _c_name: *const c_char) -> u32 {
     unimplemented!();
 }
