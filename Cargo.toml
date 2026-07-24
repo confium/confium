@@ -2,10 +2,11 @@
 name = "confium"
 version = "0.1.2"
 authors = ["Ribose Open <open.source@ribose.com>"]
-edition = "2018"
-description="Open-source distributed trust store framework"
-homepage="https://www.confium.org/"
-repository="https://github.com/confium/confium"
+edition = "2021"
+rust-version = "1.74"
+description = "Open-source distributed trust store framework"
+homepage = "https://www.confium.org/"
+repository = "https://github.com/confium/confium"
 categories = ["authentication", "cryptography"]
 license = "BSD-2-Clause"
 
@@ -13,12 +14,13 @@ license = "BSD-2-Clause"
 crate-type = ["cdylib"]
 
 [dependencies]
-libloading = "0.7"
-slog = "2.5"
-slog-stdlog = "4.1"
-slog-term = "2.6"
-slog-async = "2.5"
-snafu = "0.6"
+libloading = "0.8"
+snafu = "0.8"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
 
 [package.metadata.nix]
 # Toggle app flake output
