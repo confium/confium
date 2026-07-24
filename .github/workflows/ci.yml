@@ -227,17 +227,9 @@ jobs:
       - name: Install cmake
         uses: lukka/get-cmake@latest
 
-      - name: Install boost (non-Windows)
-        if: runner.os != 'Windows'
+      - name: Install boost
         uses: MarkusJx/install-boost@v2.4.1
         id: install-boost
-        with:
-          boost_version: 1.81.0
-
-      - name: Install boost (Windows)
-        if: runner.os == 'Windows'
-        uses: MarkusJx/install-boost@v2.4.1
-        id: install-boost-win
         with:
           boost_version: 1.81.0
 
@@ -248,17 +240,17 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DBUILD_TESTING=yes -DBUILD_C_BINDINGS=yes ..
+          cmake -DRust_TOOLCHAIN=stable -DBUILD_TESTING=yes -DBUILD_C_BINDINGS=yes ..
           cmake --build .
 
       - name: Configure and build (Windows)
         if: runner.os == 'Windows'
         env:
-          BOOST_ROOT: ${{ steps.install-boost-win.outputs.BOOST_ROOT }}
+          BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 17 2022" -DBUILD_TESTING=yes -DBUILD_C_BINDINGS=yes ..
+          cmake -G "Visual Studio 17 2022" -DRust_TOOLCHAIN=stable -DBUILD_TESTING=yes -DBUILD_C_BINDINGS=yes ..
           cmake --build . --config Debug
 
       - name: Run ctest

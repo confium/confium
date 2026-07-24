@@ -5,9 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Releases prior to 0.1.3 were tracked through git history.
+Releases prior to 0.2.0 were tracked through git history.
 
-## [Unreleased]
+## [0.2.0] — Unreleased
+
+### Breaking changes
+
+The Rust API surface changed (the crate is `cdylib`-only, so no external Rust
+consumers are affected; the C ABI is unchanged):
+
+- Removed `Confium::new_custom` (slog-backed; the `logger` field is gone).
+- Renamed `Hash::clone` → `Hash::try_clone` to avoid shadowing the `Clone` trait.
 
 ### Changed
 
