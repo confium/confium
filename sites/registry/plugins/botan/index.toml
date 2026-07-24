@@ -1,0 +1,17 @@
+# Per-plugin version index for the `botan` plugin.
+#
+# Lists every published version of botan. Once a version directory is
+# published its content hash is immutable — the directory is never edited,
+# only removed via a takedown PR. The `latest` field is the only mutable
+# value and is updated by takedown or new-release PRs.
+
+name = "botan"
+latest = "3.2.0"
+description = "Botan crypto provider plugin"
+
+# Each [[version]] entry records the version string and the path to its
+# manifest. The manifest carries the artifact hash, signatures, and
+# algorithm/interface metadata; this file just resolves versions to paths.
+[[version]]
+version = "3.2.0"
+manifest-url = "/plugins/botan/3.2.0/manifest.toml"

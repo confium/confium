@@ -1,0 +1,73 @@
+# Deploys the Confium plugin registry (sites/registry/) to GitHub Pages.
+#
+# This workflow lives inside sites/registry/.github/workflows/ so it can be
+# lifted verbatim when the registry content is split out into its own
+# github.com/confium/registry repository. Until then it is invoked from the
+# workspace-level .github/workflows/registry.yml via workflow_dispatch, and
+# also runs directly on push to main when the registry directory changes.
+#
+# GitHub Pages must be configured on the repository: Settings -> Pages ->
+# Source = "GitHub Actions".
+
+name: Deploy registry to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "sites/registry/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent Pages deployment.
+concurrency:
+  group: registry-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sites/registry
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Build with Jekyll (safe, no drafts)
+        run: |
+          bundle init >/dev/null 2>&1 || true
+          bundle add jekyll --version "~> 4" --skip-install
+          bundle install
+          # --safe disables plugins; --no-drafts keeps drafts out of the build.
+          bundle exec jekyll build \
+            --safe \
+            --no-drafts \
+            --destination "${RUNNER_TEMP}/_site"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "${{ runner.temp }}/_site"
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

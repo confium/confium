@@ -1,0 +1,35 @@
+# Minimal Jekyll config for the Confium plugin registry.
+#
+# GitHub Pages runs Jekyll by default on repos with this file. We keep the
+# config deliberately small: one default layout, markdown rendered to HTML,
+# no plugins (the `--safe` flag is enforced in CI), no drafts.
+#
+# The site root is this directory (sites/registry/). GitHub Pages serves
+# index.md as the landing page.
+
+title: Confium Plugin Registry
+description: >-
+  Static catalog of Confium plugins, their manifests, publisher keys, and
+  trust roots. Served via GitHub Pages.
+
+# Treat markdown files at the repo root and in docs/ as pages. We do not use
+# posts, so we do not set a timezone.
+markdown: kramdown
+
+# Plain markdown -> HTML. No custom layouts, no includes, no plugins.
+# GitHub Pages runs Jekyll in safe mode, which already disables plugins.
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+
+# Exclude developer-only paths from the Jekyll build so they are not copied
+# into the published site. They remain in git (and the published tarball of
+# the repo) but do not surface as URLs.
+exclude:
+  - README.md
+  - .github
+  - Gemfile
+  - Gemfile.lock
+  - node_modules

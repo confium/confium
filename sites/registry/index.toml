@@ -1,0 +1,40 @@
+# Confium master plugin catalog.
+#
+# One [[plugin]] entry per published plugin name. Each entry points at the
+# per-plugin index.toml, which in turn lists every published version of that
+# plugin.
+#
+# Schema:
+#   name         — plugin identifier (lowercase, hyphenated; matches the
+#                  directory name under plugins/)
+#   latest       — the version the `latest` pointer resolves to. This is the
+#                  only mutable field in the catalog; takedown PRs update it.
+#   description  — one-line human-readable summary
+#   publishers   — list of publisher identifiers whose keys may sign this
+#                  plugin. Must match filenames under publishers/ (without
+#                  the .asc extension).
+#   versions-url — absolute path to the per-plugin version index
+
+[[plugin]]
+name = "botan"
+latest = "3.2.0"
+description = "Botan crypto provider plugin"
+publishers = ["ribose", "ni4"]
+versions-url = "/plugins/botan/index.toml"
+
+# Additional plugins will be added here as publishers onboard. Examples of
+# future entries (commented, not yet published):
+#
+# [[plugin]]
+# name = "openssl"
+# latest = "3.2.1"
+# description = "OpenSSL crypto provider plugin"
+# publishers = ["ribose"]
+# versions-url = "/plugins/openssl/index.toml"
+#
+# [[plugin]]
+# name = "frost-ed25519"
+# latest = "0.4.1"
+# description = "FROST threshold signature for ed25519"
+# publishers = ["cfrg-frost-implementers"]
+# versions-url = "/plugins/frost-ed25519/index.toml"
