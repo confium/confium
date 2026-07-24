@@ -36,8 +36,17 @@ pub enum Error {
     #[snafu(display("Unknown backend: '{}'", name))]
     UnknownBackend { name: String },
 
+    #[snafu(display("Invalid path component: '{}'", component))]
+    InvalidPath { component: String },
+
     #[snafu(display("Identity signature invalid"))]
     IdentitySignatureInvalid,
+
+    #[snafu(display("I/O error: {}", source))]
+    Io {
+        source: std::io::Error,
+        backtrace: Backtrace,
+    },
 
     #[snafu(display("Wrapped error: {}", message))]
     Wrapped { message: String },
@@ -65,6 +74,9 @@ pub enum ErrorCode {
 
     UNKNOWN_BACKEND = 0x1020,
 
+    INVALID_PATH = 0x1031,
+    IO = 0x1032,
+
     IDENTITY_SIGNATURE_INVALID = 0x1030,
 
     WRAPPED = 0x1100,
@@ -80,6 +92,9 @@ fn error_code(error: &Error) -> u32 {
         Error::NotImplemented { .. } => ErrorCode::NOT_IMPLEMENTED.into(),
 
         Error::UnknownBackend { .. } => ErrorCode::UNKNOWN_BACKEND.into(),
+
+        Error::InvalidPath { .. } => ErrorCode::INVALID_PATH.into(),
+        Error::Io { .. } => ErrorCode::IO.into(),
 
         Error::IdentitySignatureInvalid => ErrorCode::IDENTITY_SIGNATURE_INVALID.into(),
 

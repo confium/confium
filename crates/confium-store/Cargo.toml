@@ -17,3 +17,6 @@ crate-type = ["cdylib", "rlib"]
 confium-api = { workspace = true }
 inventory = { workspace = true }
 snafu = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"
