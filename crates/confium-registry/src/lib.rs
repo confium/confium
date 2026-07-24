@@ -9,4 +9,40 @@
 //! including URL structure, manifest schema, trust model, and publishing
 //! flow.
 //!
-//! Today this is a placeholder skeleton.
+//! # Crate layout
+//!
+//! - [`client`] — the [`Client`] that resolves plugin metadata from the
+//!   static site. The transport is pluggable via the [`Fetcher`] trait so
+//!   tests (and offline mirrors) can inject content without a network.
+//! - [`manifest`] — typed mirrors of the TOML documents served by the
+//!   registry (`index.toml`, per-plugin `index.toml`, `manifest.toml`,
+//!   `trust-roots.toml`).
+//! - [`install`] — install an artifact to the local plugin directory,
+//!   resolving versions and (once signature verification ships) checking
+//!   the trust policy.
+//! - [`trust`] — the [`TrustStore`] that persists the user's trusted
+//!   publishers under `~/.config/confium/trust/`.
+
+pub mod client;
+pub mod error;
+pub mod install;
+pub mod manifest;
+pub mod paths;
+pub mod trust;
+
+pub use client::{Client, Fetcher, MemoryFetcher};
+pub use error::{Error, Result};
+pub use install::{InstalledRecord, install};
+pub use manifest::{
+    AlgorithmMap, Artifact, ConfiumMeta, IndexEntry, Manifest, PluginIndex, TrustRoot,
+    TrustRootsFile, VersionEntry,
+};
+pub use paths::{config_dir, plugin_install_dir, plugins_dir, trust_dir};
+pub use trust::{TrustStore, TrustStoreEntry};
+
+/// The default registry base URL.
+///
+/// Mirrors the canonical endpoint documented in
+/// `TODO.roadmap/06-module-registry.md`. Callers can override this when
+/// constructing a [`Client`] (e.g. for a mirror).
+pub const DEFAULT_REGISTRY_URL: &str = "https://registry.confium.org";
