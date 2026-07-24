@@ -18,7 +18,7 @@ macro_rules! err_check_not_null {
     }};
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn cfm_err_get_msg(err: *const Error, msg: *mut *mut c_char) -> u32 {
     err_check_not_null!(err);
     err_check_not_null!(msg);
@@ -37,7 +37,7 @@ pub extern "C" fn cfm_err_get_msg(err: *const Error, msg: *mut *mut c_char) -> u
     0
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn cfm_err_get_code(err: *const Error, code: *mut u32) -> u32 {
     unsafe {
         *code = (*err).code();
@@ -45,18 +45,18 @@ pub extern "C" fn cfm_err_get_code(err: *const Error, code: *mut u32) -> u32 {
     0
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn cfm_err_get_source(err: *const Error, _src: *mut *mut Error) -> u32 {
     err_check_not_null!(err);
     unimplemented!();
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn cfm_err_get_backtrace(err: *mut Error, backtrace: *mut *const c_char) -> u32 {
     err_check_not_null!(err);
     err_check_not_null!(backtrace);
     unsafe { *backtrace = std::ptr::null_mut() }
-    if let Some(ref bt) = unsafe { ErrorCompat::backtrace(&*err) } {
+    if let Some(bt) = unsafe { ErrorCompat::backtrace(&*err) } {
         match CString::new(bt.to_string()) {
             Ok(s) => unsafe { *backtrace = s.into_raw() },
             Err(e) => {
@@ -68,7 +68,7 @@ pub extern "C" fn cfm_err_get_backtrace(err: *mut Error, backtrace: *mut *const 
     0
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn cfm_err_destroy(err: *mut Error) {
     unsafe {
         std::mem::drop(Box::from_raw(err));

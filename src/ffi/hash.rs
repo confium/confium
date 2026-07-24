@@ -4,14 +4,14 @@ use std::os::raw::c_char;
 
 use libloading::Library;
 
+use crate::Confium;
+use crate::Result;
 use crate::error;
 use crate::error::Error;
 use crate::ffi::plugin::get_plugin_symbol;
 use crate::ffi::utils::cstring;
 use crate::hash::Hash;
 use crate::options::Options;
-use crate::Confium;
-use crate::Result;
 
 pub enum FFIHash {}
 
@@ -135,7 +135,7 @@ fn cfm_hash_create_(
     Ok(())
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn cfm_hash_create(
     cfm: *const Confium,
     hash: *mut *mut Hash,
@@ -155,7 +155,7 @@ fn cfm_hash_output_size_(hash: *mut Hash, size: *mut u32) -> Result<()> {
     Ok(())
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn cfm_hash_output_size(hash: *mut Hash, size: *mut u32) -> u32 {
     cfm_hash_output_size_(hash, size).map_or_else(|e| e.code(), |_| 0)
 }
@@ -167,7 +167,7 @@ fn cfm_hash_block_size_(hash: *mut Hash, size: *mut u32) -> Result<()> {
     Ok(())
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn cfm_hash_block_size(hash: *mut Hash, size: *mut u32) -> u32 {
     cfm_hash_block_size_(hash, size).map_or_else(|e| e.code(), |_| 0)
 }
@@ -179,7 +179,7 @@ fn cfm_hash_update_(hash: *mut Hash, data: *const u8, size: u32) -> Result<()> {
     Ok(())
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn cfm_hash_update(hash: *mut Hash, data: *const u8, size: u32) -> u32 {
     cfm_hash_update_(hash, data, size).map_or_else(|e| e.code(), |_| 0)
 }
@@ -188,7 +188,7 @@ fn cfm_hash_reset_(hash: *mut Hash) -> Result<()> {
     unsafe { (*hash).reset() }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn cfm_hash_reset(hash: *mut Hash) -> u32 {
     cfm_hash_reset_(hash).map_or_else(|e| e.code(), |_| 0)
 }
@@ -198,7 +198,7 @@ fn cfm_hash_clone_(src: *mut Hash, dst: *mut *mut Hash) -> Result<()> {
     Ok(())
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn cfm_hash_clone(src: *mut Hash, dst: *mut *mut Hash) -> u32 {
     cfm_hash_clone_(src, dst).map_or_else(|e| e.code(), |_| 0)
 }
@@ -214,12 +214,12 @@ fn cfm_hash_finalize_(hash: *mut Hash, result: *mut u8, size: u32) -> Result<()>
     Ok(())
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn cfm_hash_finalize(hash: *mut Hash, result: *mut u8, size: u32) -> u32 {
     cfm_hash_finalize_(hash, result, size).map_or_else(|e| e.code(), |_| 0)
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn cfm_hash_destroy(hash: *mut Hash) -> u32 {
     unsafe {
         if !hash.is_null() {
