@@ -6,6 +6,7 @@ members = [
     "crates/confium-core",
     "crates/confium-macros",
     "crates/confium-net",
+    "crates/confium-net-tcp",
     "crates/confium-publish",
     "crates/confium-registry",
     "crates/confium-store",
@@ -29,6 +30,7 @@ confium-api = { path = "crates/confium-api", version = "0.3.0" }
 confium-core = { path = "crates/confium-core", version = "0.2.0" }
 confium-macros = { path = "crates/confium-macros", version = "0.3.0" }
 confium-net = { path = "crates/confium-net", version = "0.3.0" }
+confium-net-tcp = { path = "crates/confium-net-tcp", version = "0.3.0" }
 confium-registry = { path = "crates/confium-registry", version = "0.3.0" }
 confium-store = { path = "crates/confium-store", version = "0.3.0" }
 confium-tc = { path = "crates/confium-tc", version = "0.3.0" }
