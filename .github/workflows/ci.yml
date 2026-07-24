@@ -240,7 +240,13 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DRust_TOOLCHAIN=stable -DRust_COMPILER="$(which rustc)" -DBUILD_TESTING=yes -DBUILD_C_BINDINGS=yes ..
+          cmake \
+            -DRust_TOOLCHAIN=stable \
+            -DRust_COMPILER="$(which rustc)" \
+            -DRust_CARGO="$(which cargo)" \
+            -DBUILD_TESTING=yes \
+            -DBUILD_C_BINDINGS=yes \
+            ..
           cmake --build .
 
       - name: Configure and build (Windows)
@@ -251,7 +257,14 @@ jobs:
           mkdir build
           cd build
           $rustc = (Get-Command rustc).Source
-          cmake -G "Visual Studio 17 2022" -DRust_TOOLCHAIN=stable -DRust_COMPILER="$rustc" -DBUILD_TESTING=yes -DBUILD_C_BINDINGS=yes ..
+          $cargo = (Get-Command cargo).Source
+          cmake -G "Visual Studio 17 2022" `
+            -DRust_TOOLCHAIN=stable `
+            -DRust_COMPILER="$rustc" `
+            -DRust_CARGO="$cargo" `
+            -DBUILD_TESTING=yes `
+            -DBUILD_C_BINDINGS=yes `
+            ..
           cmake --build . --config Debug
 
       - name: Run ctest
