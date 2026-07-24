@@ -12,6 +12,7 @@ pub mod error;
 pub mod hash;
 pub mod kdf;
 pub mod kem;
+pub mod keyfmt;
 pub mod lib;
 pub mod options;
 pub mod plugin;
