@@ -212,7 +212,9 @@ project.
 
 ==== General
 
-The Rust toolchain (nightly channel) and Ruby (3.0+) must be installed.
+A stable Rust toolchain (1.74+). The toolchain is pinned via
+`rust-toolchain.toml`. Optional: Nix for reproducible dev environments
+(`nix develop`).
 
 
 ==== Install build dependencies
@@ -247,60 +249,51 @@ cargo build
 ----
 
 
-==== Build Confium plugin for Botan
+==== Build the Botan hash plugin
 
-Windows:
-[source,sh]
-----
-export CMAKE_GENERATOR=MSYS Makefiles
-----
-
-Build plugin (all platforms):
-[source,sh]
-----
-mkdir plugins/hash-botan/build
-cd plugins/hash-botan/build
-cmake ..
-make
-----
+The Botan hash plugin has been extracted to its own repository at
+https://github.com/confium/confium[hash-botan]. See that repo for build
+instructions.
 
 
 ==== Install Confium Ruby bindings
 
-[source,sh]
-----
-cd confium-ruby
-bundle install
-----
+The Ruby bindings have been extracted to their own repository at
+https://github.com/confium/confium-ruby[confium-ruby]. See that repo for
+installation instructions.
 
 
 === Tests
 
-==== Run Confium tests
-
-Linux:
-[source,sh]
-----
-export CFM_HASH_BOTAN_PLUGIN_PATH=$PWD/plugins/hash-botan/build/libcfm-hash-botan.so
-----
-
-macOS:
-[source,sh]
-----
-export CFM_HASH_BOTAN_PLUGIN_PATH=$PWD/plugins/hash-botan/build/libcfm-hash-botan.dylib
-----
-
-Windows:
-[source,sh]
-----
-export CFM_HASH_BOTAN_PLUGIN_PATH=$(cygpath -w $PWD/plugins/hash-botan/build/libcfm-hash-botan.dll)
-export RUBY_DLL_PATH=$(cygpath -w $PWD/target/debug)
-----
+==== Run Confium Rust tests
 
 [source,sh]
 ----
-export LD_LIBRARY_PATH=$PWD/target/debug
-export CONFIUM_LIBRARY_PATH=$PWD/target/debug
-cd confium-ruby
-bundle exec rspec
+cargo test
 ----
+
+==== C++ binding tests
+
+Requires CMake, cbindgen, and Boost:
+
+[source,sh]
+----
+mkdir build
+cd build
+cmake -DBUILD_TESTING=yes -DBUILD_C_BINDINGS=yes ..
+cmake --build .
+ctest -C Debug -V
+----
+
+==== Quality gates
+
+[source,sh]
+----
+cargo fmt --all --check
+cargo clippy --all-targets -- -D warnings
+cargo deny check licenses advisories sources bans
+typos
+----
+
+A pre-commit hook is provided at `.githooks/pre-commit` that mirrors the
+CI checks. See `CONTRIBUTING.md` for installation.
