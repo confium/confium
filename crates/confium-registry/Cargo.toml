@@ -11,3 +11,14 @@ description = "Client for the Confium plugin registry (static-site catalog)"
 
 [dependencies]
 confium-api = { workspace = true }
+snafu = { workspace = true }
+url = { workspace = true }
+ureq = { workspace = true }
+toml = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+dirs = { workspace = true }
+
+[dev-dependencies]
+mockito = "1"
+tempfile = "3"
