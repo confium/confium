@@ -27,6 +27,36 @@ const FINALIZE_FN_V0_NAME: &[u8] = b"cfmp_finalize\0";
 type QueryInterfacesFnV0 = extern "C" fn(*mut Confium) -> *const u8;
 const QUERY_INTERFACES_FN_V0_NAME: &[u8] = b"cfmp_query_interfaces\0";
 
+// Optional v0 hook: a plugin may export `cfmp_metadata` to expose static
+// catalog metadata (name, version, vendor, license, urls, description) for
+// the registry scraper — see TODO.roadmap/03-plugin-contract.md and
+// TODO.roadmap/06-module-registry.md. The hook returns a pointer to a
+// plugin-owned `CFMPluginMetadata`, or NULL if the plugin has nothing to
+// report. Plugins that don't export this symbol are still loadable but
+// aren't eligible for registry publishing.
+pub type MetadataFn = extern "C" fn() -> *const CFMPluginMetadata;
+pub const METADATA_FN_NAME: &[u8] = b"cfmp_metadata\0";
+
+/// Plugin catalog metadata exposed via `cfmp_metadata`. All string fields
+/// are NUL-terminated UTF-8 owned by the plugin; the returned pointer is
+/// valid for the lifetime of the loaded plugin. Callers that need the
+/// data to outlive the plugin must copy the strings (e.g. via
+/// `crate::PluginMetadata::from_raw`).
+///
+/// Wire-stable: never reorder, repurpose, or remove existing fields. New
+/// fields may be appended at the end with a contract-version bump.
+#[repr(C)]
+pub struct CFMPluginMetadata {
+    pub name: *const c_char,
+    pub version: *const c_char,
+    pub vendor: *const c_char,
+    pub license: *const c_char,
+    pub homepage_url: *const c_char,
+    pub source_url: *const c_char,
+    pub issue_tracker_url: *const c_char,
+    pub description: *const c_char,
+}
+
 pub struct PluginV0 {
     finalize: Box<FinalizeFnV0>,
     query_interfaces: Box<QueryInterfacesFnV0>,
