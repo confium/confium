@@ -11,7 +11,7 @@
 use std::ffi::c_void;
 
 use crate::backend::{Compartment, Options, StoreInstance, find};
-use crate::error::{Result, UnknownBackendSnafu};
+use crate::error::Result;
 
 /// An open keystore connection.
 ///
@@ -26,13 +26,7 @@ impl Keystore {
     /// Open a keystore backed by `backend_name`. The caller may supply
     /// backend-specific options (path, slot, pin, …).
     pub fn new(backend_name: &str, opts: &Options) -> Result<Self> {
-        let backend = find(backend_name).map_err(|e| match e {
-            crate::error::Error::UnknownBackend { .. } => UnknownBackendSnafu {
-                name: backend_name.to_string(),
-            }
-            .build(),
-            other => other,
-        })?;
+        let backend = find(backend_name)?;
         let instance = backend.open(opts)?;
         Ok(Keystore { instance })
     }
@@ -54,9 +48,6 @@ impl Keystore {
     pub fn instance(&self) -> &dyn StoreInstance {
         self.instance.as_ref()
     }
-
-    // --- convenience pass-throughs for the Rust API (FFI uses the
-    //     instance accessors directly to keep the dispatch visible) ---
 
     pub fn put_secret(
         &mut self,

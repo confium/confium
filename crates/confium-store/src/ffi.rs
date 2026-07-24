@@ -12,14 +12,14 @@
 //! [`crate::error::ErrorCode`].
 
 use std::collections::HashMap;
-use std::ffi::c_void;
 use std::ffi::CStr;
+use std::ffi::c_void;
 use std::os::raw::c_char;
 
 use snafu::{ResultExt, ensure};
 
-use crate::backend::{Compartment, Options};
-use crate::error::{Error, InvalidUTF8Snafu, NullPointerSnafu, Result};
+use crate::backend::Options;
+use crate::error::{InvalidUTF8Snafu, NullPointerSnafu, Result};
 use crate::keystore::Keystore;
 
 /// Opaque handle returned to C callers. Never dereferenced by C; only
@@ -146,7 +146,7 @@ pub extern "C" fn cfm_keystore_put_secret(
         let app = cstring(app_id, "app_id")?;
         let key_id = cstring(key_id, "key_id")?;
         require(secret_key, "secret_key")?;
-        ks.put_secret(&module, &app, &key_id, secret_key as *mut c_void)
+        ks.put_secret(&module, &app, &key_id, secret_key)
     };
     inner().map_or_else(|e| e.code(), |_| 0)
 }
@@ -200,23 +200,14 @@ pub extern "C" fn cfm_keystore_put_public(
         // signature may legitimately be empty (sig_len == 0); a NULL
         // pointer with non-zero length is an error.
         let sig: &[u8] = if signature.is_null() {
-            ensure!(
-                sig_len == 0,
-                NullPointerSnafu { param: "signature" }
-            );
+            ensure!(sig_len == 0, NullPointerSnafu { param: "signature" });
             &[]
         } else {
             // SAFETY: the caller vouches for `sig_len` bytes being
             // readable from `signature`.
             unsafe { std::slice::from_raw_parts(signature, sig_len as usize) }
         };
-        ks.put_public(
-            &module,
-            &app,
-            &identity,
-            public_key as *mut c_void,
-            sig,
-        )
+        ks.put_public(&module, &app, &identity, public_key, sig)
     };
     inner().map_or_else(|e| e.code(), |_| 0)
 }
@@ -279,7 +270,7 @@ fn cfm_keystore_enumerate_(
     let module = cstring(module_id, "module_id")?;
     let app = cstring(app_id, "app_id")?;
     require(out, "out")?;
-    let comp = Compartment::from_wire(compartment)?;
+    let comp = crate::backend::Compartment::from_wire(compartment)?;
     let raw = ks.enumerate(&module, &app, comp)?;
     let entries: Vec<IterEntry> = raw
         .into_iter()
@@ -333,16 +324,7 @@ pub extern "C" fn cfm_keystore_iterator_next(
             None => Err(crate::error::ValueNotFoundSnafu.build()),
         }
     };
-    inner().map_or_else(
-        |e| match e {
-            // Exhaustion is a normal terminal condition for iterators;
-            // surface it as ValueNotFound so callers can distinguish
-            // "done" from a real error.
-            Error::ValueNotFound => Error::ValueNotFound.code(),
-            other => other.code(),
-        },
-        |_| 0,
-    )
+    inner().map_or_else(|e| e.code(), |_| 0)
 }
 
 /// Drop an iterator handle. Safe to call with `NULL`.
@@ -359,12 +341,9 @@ pub extern "C" fn cfm_keystore_iterator_destroy(it: *mut FFIKeyIterator) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::Error;
     use std::ffi::CString;
     use std::ptr;
-
-    fn cstr(s: &str) -> *const c_char {
-        CString::new(s).unwrap().into_raw()
-    }
 
     fn sentinel(n: usize) -> *mut FFIKey {
         n as *mut FFIKey
@@ -391,7 +370,10 @@ mod tests {
         let rc = cfm_keystore_create(&mut ks, name, ptr::null());
         assert_eq!(
             rc,
-            Error::UnknownBackend { name: String::new() }.code(),
+            Error::UnknownBackend {
+                name: String::new()
+            }
+            .code()
         );
         assert!(ks.is_null());
     }
@@ -444,17 +426,13 @@ mod tests {
         let sig = [0xDEu8, 0xAD, 0xBE, 0xEF];
         let m = CString::new("mod").unwrap().into_raw();
         let a = CString::new("app").unwrap().into_raw();
-        let id = CString::new("email:alice@example.com")
-            .unwrap()
-            .into_raw();
+        let id = CString::new("email:alice@example.com").unwrap().into_raw();
         let rc = cfm_keystore_put_public(ks, m, a, id, key, sig.as_ptr(), sig.len() as u32);
         assert_eq!(rc, 0, "put_public");
 
         let m = CString::new("mod").unwrap().into_raw();
         let a = CString::new("app").unwrap().into_raw();
-        let id = CString::new("email:alice@example.com")
-            .unwrap()
-            .into_raw();
+        let id = CString::new("email:alice@example.com").unwrap().into_raw();
         let mut out: *mut FFIKey = ptr::null_mut();
         let rc = cfm_keystore_get_public(ks, m, a, id, &mut out);
         assert_eq!(rc, 0, "get_public");
@@ -508,10 +486,7 @@ mod tests {
         let a = CString::new("app").unwrap().into_raw();
         let mut it: *mut FFIKeyIterator = ptr::null_mut();
         let rc = cfm_keystore_enumerate(ks, m, a, 99, &mut it);
-        assert_eq!(
-            rc,
-            crate::error::ErrorCode::INVALID_COMPARTMENT as u32
-        );
+        assert_eq!(rc, crate::error::ErrorCode::INVALID_COMPARTMENT as u32);
     }
 
     #[test]
@@ -519,10 +494,7 @@ mod tests {
         let mut ks: *mut FFIKeystore = ptr::null_mut();
         let name = CString::new("filesystem").unwrap().into_raw();
         let rc = cfm_keystore_create(&mut ks, name, ptr::null());
-        assert_eq!(
-            rc,
-            crate::error::ErrorCode::NOT_IMPLEMENTED as u32
-        );
+        assert_eq!(rc, crate::error::ErrorCode::NOT_IMPLEMENTED as u32);
         assert!(ks.is_null());
     }
 
@@ -532,10 +504,7 @@ mod tests {
         let a = CString::new("app").unwrap().into_raw();
         let k = CString::new("key-1").unwrap().into_raw();
         let rc = cfm_keystore_put_secret(ptr::null_mut(), m, a, k, sentinel(1));
-        assert_eq!(
-            rc,
-            crate::error::ErrorCode::NULL_POINTER as u32
-        );
+        assert_eq!(rc, crate::error::ErrorCode::NULL_POINTER as u32);
     }
 
     #[test]

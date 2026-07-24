@@ -87,7 +87,7 @@ mod tests {
     fn open_returns_not_implemented() {
         let result = FilesystemBackend.open(&Options::new());
         let err = match result {
-            Ok(_) => panic!("expected NotImplemented, got Ok"),
+            Ok(_) => panic!("filesystem open should fail"),
             Err(e) => e,
         };
         assert!(matches!(err, Error::NotImplemented { what: WHAT }));

@@ -117,11 +117,7 @@ impl StoreInstance for MemoryInstance {
             return Ok(Vec::new());
         };
         let entries: Vec<(*mut c_void, String)> = match compartment {
-            Compartment::Private => scope
-                .private
-                .iter()
-                .map(|(k, v)| (*v, k.clone()))
-                .collect(),
+            Compartment::Private => scope.private.iter().map(|(k, v)| (*v, k.clone())).collect(),
             Compartment::Public => scope
                 .public
                 .iter()
@@ -189,10 +185,7 @@ mod tests {
         ks.put_secret("mod", "app", "key-1", sentinel(0x10))
             .expect("put_secret");
         let err = ks.get_secret("other", "app", "key-1").unwrap_err();
-        assert!(matches!(
-            err,
-            crate::error::Error::ValueNotFound
-        ));
+        assert!(matches!(err, crate::error::Error::ValueNotFound));
     }
 
     #[test]
@@ -201,10 +194,7 @@ mod tests {
         ks.put_secret("mod", "app", "key-1", sentinel(0x10))
             .expect("put_secret");
         let err = ks.get_secret("mod", "other", "key-1").unwrap_err();
-        assert!(matches!(
-            err,
-            crate::error::Error::ValueNotFound
-        ));
+        assert!(matches!(err, crate::error::Error::ValueNotFound));
     }
 
     #[test]
@@ -213,10 +203,7 @@ mod tests {
         ks.put_secret("mod", "app", "key-1", sentinel(0x10))
             .expect("put_secret");
         let err = ks.get_secret("mod", "app", "missing").unwrap_err();
-        assert!(matches!(
-            err,
-            crate::error::Error::ValueNotFound
-        ));
+        assert!(matches!(err, crate::error::Error::ValueNotFound));
     }
 
     #[test]
@@ -233,10 +220,7 @@ mod tests {
         let err = ks
             .get_public("mod", "app", "email:bob@example.com")
             .unwrap_err();
-        assert!(matches!(
-            err,
-            crate::error::Error::ValueNotFound
-        ));
+        assert!(matches!(err, crate::error::Error::ValueNotFound));
     }
 
     #[test]
@@ -250,10 +234,7 @@ mod tests {
         // The private key must not be visible via the public lookup
         // path, even using the same index string.
         let err = ks.get_public("mod", "app", "key-1").unwrap_err();
-        assert!(matches!(
-            err,
-            crate::error::Error::ValueNotFound
-        ));
+        assert!(matches!(err, crate::error::Error::ValueNotFound));
 
         // And vice versa: a public entry is not visible via get_secret.
         let pub_key = sentinel(0x40);
@@ -262,10 +243,7 @@ mod tests {
         let err = ks
             .get_secret("mod", "app", "email:alice@example.com")
             .unwrap_err();
-        assert!(matches!(
-            err,
-            crate::error::Error::ValueNotFound
-        ));
+        assert!(matches!(err, crate::error::Error::ValueNotFound));
     }
 
     #[test]
@@ -309,10 +287,7 @@ mod tests {
         ks.put_secret("mod", "app-a", "key-1", sentinel(0x1))
             .expect("put_secret");
         let err = ks.get_secret("mod", "app-b", "key-1").unwrap_err();
-        assert!(matches!(
-            err,
-            crate::error::Error::ValueNotFound
-        ));
+        assert!(matches!(err, crate::error::Error::ValueNotFound));
     }
 
     #[test]

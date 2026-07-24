@@ -39,7 +39,7 @@ impl Compartment {
     }
 }
 
-/// Per-backend options. A thin alias over a `String → OptionValue` map so
+/// Per-backend options. A thin alias over a `String → String` map so
 /// backends can pull path/slot/pin-style configuration without depending
 /// on the Engine's richer options model.
 pub type Options = HashMap<String, String>;
@@ -71,13 +71,8 @@ pub trait StoreBackend: Send + Sync {
 pub trait StoreInstance: Send + Sync {
     /// Insert a secret key into the private compartment, indexed by
     /// `key_id`.
-    fn put_secret(
-        &mut self,
-        module: &str,
-        app: &str,
-        key_id: &str,
-        key: *mut c_void,
-    ) -> Result<()>;
+    fn put_secret(&mut self, module: &str, app: &str, key_id: &str, key: *mut c_void)
+    -> Result<()>;
 
     /// Fetch a secret key from the private compartment by `key_id`.
     /// Returns [`crate::error::Error::ValueNotFound`] if absent.
@@ -97,7 +92,7 @@ pub trait StoreInstance: Send + Sync {
     /// Fetch a public key from the public compartment by `identity`.
     /// Returns the key handle and the stored signature bytes.
     fn get_public(&self, module: &str, app: &str, identity: &str)
-        -> Result<(*mut c_void, Vec<u8>)>;
+    -> Result<(*mut c_void, Vec<u8>)>;
 
     /// Enumerate entries in one compartment of one `(module, app)`
     /// scope. Each entry is the opaque key handle paired with its index
