@@ -13,11 +13,13 @@ Releases prior to 0.1.3 were tracked through git history.
 
 - Migrated from Rust nightly to stable. The crate previously required nightly
   for `#![feature(let_chains)]`, but the feature was declared and never used.
-- Bumped Rust edition from 2018 to 2021.
+- Bumped Rust edition from 2018 to **2024** (requires rustc 1.85+).
 - Bumped `libloading` from 0.7 to 0.8.
 - Bumped `snafu` from 0.6 to 0.8. Context structs now require the `Snafu`
   suffix (e.g. `NullPointerSnafu`) and the `Error` suffix is stripped from
   variant names (e.g. `PluginInternalError` → `PluginInternalSnafu`).
+- All `#[no_mangle]` attributes converted to `#[unsafe(no_mangle)]` per
+  Rust 2024's unsafe-attribute requirement.
 
 ### Removed
 
