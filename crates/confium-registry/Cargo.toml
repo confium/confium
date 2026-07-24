@@ -9,16 +9,17 @@ homepage.workspace = true
 repository.workspace = true
 description = "Client for the Confium plugin registry (static-site catalog)"
 
+[lib]
+name = "confium_registry"
+crate-type = ["rlib"]
+
 [dependencies]
 confium-api = { workspace = true }
+serde = { workspace = true }
+toml = { workspace = true }
+toml_edit = { workspace = true }
 snafu = { workspace = true }
 url = { workspace = true }
-ureq = { workspace = true }
-toml = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-dirs = { workspace = true }
 
 [dev-dependencies]
-mockito = "1"
-tempfile = "3"
+tempfile = { workspace = true }

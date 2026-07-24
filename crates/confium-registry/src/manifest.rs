@@ -1,19 +1,85 @@
-//! TOML parsing for per-version plugin manifests
-//! (`plugins/<name>/<version>/manifest.toml`).
+//! Typed mirrors of the TOML documents served by the registry.
 //!
-//! The on-wire shape mirrors `sites/registry/plugins/botan/3.2.0/manifest.toml`
-//! one-for-one via serde. Optional tables (dependencies, interfaces,
-//! algorithms) default to empty so manifests that omit them still parse.
+//! These types correspond one-to-one with the schemas documented in
+//! `TODO.roadmap/06-module-registry.md`:
+//!
+//! - [`IndexEntry`] — one `[[plugin]]` row of the master `index.toml`.
+//! - [`PluginIndex`] — the per-plugin `index.toml` (a name, latest
+//!   pointer, and a list of [`VersionEntry`] rows).
+//! - [`Manifest`] — the per-version `manifest.toml`, with nested
+//!   [`ConfiumMeta`], [`AlgorithmMap`], and [`Artifact`] sections.
+//! - [`TrustRoot`] / [`TrustRootsFile`] — the default `trust-roots.toml`
+//!   served by the registry and the local override format.
+//!
+//! All types derive `serde::{Serialize, Deserialize}` so they can be
+//! round-tripped (registry reads use `Deserialize`; the local trust store
+//! and config use both). Field names match the wire (kebab-case) via
+//! `serde(rename_all = "kebab-case"`.
 
-use crate::error::{Error, Result};
-use serde::Deserialize;
 use std::collections::BTreeMap;
 
-/// The `[plugin]` block: identity, license, links.
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
-pub struct PluginBlock {
+use serde::{Deserialize, Serialize};
+
+/// One `[[plugin]]` entry in the master `index.toml`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct IndexEntry {
+    pub name: String,
+    pub latest: String,
+    #[serde(default)]
+    pub description: String,
+    #[serde(default, rename = "publishers")]
+    pub publishers: Vec<String>,
+    #[serde(rename = "versions-url")]
+    pub versions_url: String,
+}
+
+/// The parsed master `index.toml`.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct RegistryIndex {
+    #[serde(default, rename = "plugin")]
+    pub plugins: Vec<IndexEntry>,
+}
+
+/// The per-plugin `index.toml`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PluginIndex {
+    pub name: String,
+    pub latest: String,
+    #[serde(default)]
+    pub description: String,
+    #[serde(default, rename = "version")]
+    pub versions: Vec<VersionEntry>,
+}
+
+/// One `[[version]]` entry inside a per-plugin index.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct VersionEntry {
+    pub version: String,
+    #[serde(rename = "manifest-url")]
+    pub manifest_url: String,
+}
+
+/// A full per-version manifest.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Manifest {
+    pub plugin: ManifestPlugin,
+    #[serde(default)]
+    pub confium: ConfiumMeta,
+    #[serde(default)]
+    pub dependencies: BTreeMap<String, String>,
+    #[serde(default)]
+    pub interfaces: BTreeMap<String, u32>,
+    #[serde(default)]
+    pub algorithms: AlgorithmMap,
+    pub artifact: Artifact,
+}
+
+/// The `[plugin]` section of a manifest.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ManifestPlugin {
     pub name: String,
     pub version: String,
+    #[serde(default)]
     pub publisher: String,
     #[serde(default)]
     pub license: String,
@@ -23,18 +89,23 @@ pub struct PluginBlock {
     pub source: String,
 }
 
-/// The `[confium]` block: runtime compatibility.
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Default)]
-pub struct ConfiumBlock {
-    #[serde(rename = "contract-version")]
+/// The `[confium]` runtime contract section.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ConfiumMeta {
+    #[serde(rename = "contract-version", default)]
     pub contract_version: u32,
     #[serde(rename = "min-runtime", default)]
     pub min_runtime: String,
 }
 
-/// The `[artifact]` block: where to download and how to verify.
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
-pub struct ArtifactBlock {
+/// Algorithms grouped by interface name. TOML tables whose values are
+/// arrays of strings.
+pub type AlgorithmMap = BTreeMap<String, Vec<String>>;
+
+/// The `[artifact]` section of a manifest.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Artifact {
+    #[serde(default)]
     pub url: String,
     #[serde(default)]
     pub size: u64,
@@ -44,93 +115,103 @@ pub struct ArtifactBlock {
     pub mirrors: Vec<String>,
 }
 
-/// A complete per-version manifest.
-#[derive(Debug, Clone, Deserialize)]
-pub struct Manifest {
-    pub plugin: PluginBlock,
-    #[serde(default)]
-    pub confium: ConfiumBlock,
-    /// `[dependencies]` — a flat map of plugin-name → version-range string.
-    #[serde(default)]
-    pub dependencies: BTreeMap<String, String>,
-    /// `[interfaces]` — interface-name → interface-version.
-    #[serde(default)]
-    pub interfaces: BTreeMap<String, u32>,
-    /// `[algorithms]` — interface-name → list of algorithm identifiers.
-    #[serde(default)]
-    pub algorithms: BTreeMap<String, Vec<String>>,
-    #[serde(default)]
-    pub artifact: Option<ArtifactBlock>,
+/// One `[[publisher]]` entry in `trust-roots.toml`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct TrustRoot {
+    pub name: String,
+    #[serde(rename = "key-id")]
+    pub key_id: String,
+    pub fingerprint: String,
+    #[serde(rename = "key-url")]
+    pub key_url: String,
 }
 
-impl Manifest {
-    /// Parse a manifest from TOML text.
-    pub fn parse(text: &str) -> Result<Self> {
-        toml::from_str(text).map_err(|e| Error::TomlParse {
-            what: "manifest.toml".to_string(),
-            message: Error::stringify(e),
-        })
-    }
+/// The parsed `trust-roots.toml`.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct TrustRootsFile {
+    #[serde(rename = "min-signatures", default = "default_min_signatures")]
+    pub min_signatures: u32,
+    #[serde(default, rename = "publisher")]
+    pub publishers: Vec<TrustRoot>,
+}
 
-    /// The artifact block, or an error if the manifest omitted it.
-    pub fn require_artifact(&self) -> Result<&ArtifactBlock> {
-        self.artifact.as_ref().ok_or_else(|| Error::MissingField {
-            what: "manifest.toml".to_string(),
-            field: "artifact".to_string(),
-        })
-    }
+fn default_min_signatures() -> u32 {
+    1
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const MANIFEST: &str =
-        include_str!("../../../sites/registry/plugins/botan/3.2.0/manifest.toml");
+    const SAMPLE_MANIFEST: &str = r#"
+[plugin]
+name = "botan"
+version = "3.2.0"
+publisher = "ribose"
+license = "BSD-2-Clause"
+
+[confium]
+contract-version = 0
+min-runtime = "0.3.0"
+
+[interfaces]
+hash = 0
+aead = 0
+
+[algorithms]
+hash = ["SHA-256", "SHA-512"]
+aead = ["AES-256-GCM"]
+
+[artifact]
+url = "https://example.com/libcfm-botan.dylib"
+size = 1234
+sha256 = "abcd"
+mirrors = ["https://mirror.example.com/x"]
+"#;
 
     #[test]
-    fn parses_botan_manifest() {
-        let m = Manifest::parse(MANIFEST).expect("manifest parses");
-        assert_eq!(m.plugin.name, "botan");
-        assert_eq!(m.plugin.version, "3.2.0");
-        assert_eq!(m.plugin.publisher, "ribose");
-        assert_eq!(m.plugin.license, "BSD-2-Clause");
-        assert_eq!(m.confium.contract_version, 0);
-        assert_eq!(m.confium.min_runtime, "0.3.0");
-
-        // Interfaces and algorithms survive the round trip.
-        assert_eq!(m.interfaces.get("hash"), Some(&0));
-        assert_eq!(m.interfaces.get("aead"), Some(&0));
+    fn manifest_round_trips() {
+        let manifest: Manifest = toml::from_str(SAMPLE_MANIFEST).expect("parse");
+        assert_eq!(manifest.plugin.name, "botan");
+        assert_eq!(manifest.plugin.version, "3.2.0");
+        assert_eq!(manifest.confium.contract_version, 0);
+        assert_eq!(manifest.interfaces.get("hash"), Some(&0));
         assert_eq!(
-            m.algorithms.get("hash"),
-            Some(&vec![
-                "SHA-256".to_string(),
-                "SHA-384".to_string(),
-                "SHA-512".to_string(),
-                "SHA3-256".to_string(),
-                "SHA3-512".to_string(),
-            ])
+            manifest.algorithms.get("hash"),
+            Some(&vec!["SHA-256".to_string(), "SHA-512".to_string()])
         );
-
-        let art = m.require_artifact().expect("artifact present");
-        assert_eq!(art.size, 1_234_567);
-        assert!(!art.url.is_empty());
-        assert_eq!(art.mirrors.len(), 1);
+        assert_eq!(manifest.artifact.size, 1234);
+        assert_eq!(manifest.artifact.mirrors.len(), 1);
     }
 
     #[test]
-    fn defaults_optional_blocks() {
-        let minimal = r#"
-[plugin]
-name = "x"
-version = "0.1.0"
-publisher = "ribose"
+    fn registry_index_parses() {
+        let src = r#"
+[[plugin]]
+name = "botan"
+latest = "3.2.0"
+description = "Botan"
+publishers = ["ribose"]
+versions-url = "/plugins/botan/index.toml"
 "#;
-        let m = Manifest::parse(minimal).expect("minimal parses");
-        assert!(m.dependencies.is_empty());
-        assert!(m.interfaces.is_empty());
-        assert!(m.algorithms.is_empty());
-        assert!(m.artifact.is_none());
-        assert!(m.require_artifact().is_err());
+        let idx: RegistryIndex = toml::from_str(src).expect("parse");
+        assert_eq!(idx.plugins.len(), 1);
+        assert_eq!(idx.plugins[0].name, "botan");
+        assert_eq!(idx.plugins[0].publishers, vec!["ribose"]);
+    }
+
+    #[test]
+    fn trust_roots_parse_with_defaults() {
+        let src = r#"
+[[publisher]]
+name = "ribose"
+key-id = "0xABCD"
+fingerprint = "AAAA"
+key-url = "/publishers/ribose.asc"
+"#;
+        let roots: TrustRootsFile = toml::from_str(src).expect("parse");
+        assert_eq!(roots.min_signatures, 1);
+        assert_eq!(roots.publishers[0].name, "ribose");
+        assert_eq!(roots.publishers[0].key_id, "0xABCD");
     }
 }

@@ -1,232 +1,206 @@
-//! Local trust-root store.
+//! Local trust store.
 //!
-//! The trust store persists user-accepted publisher trust roots under
-//! `~/.config/confium/trust/<publisher>.json`. Each record carries the
-//! publisher name, its key fingerprint, and the key material URL.
+//! The user's trusted publishers live under
+//! `~/.config/confium/trust/<publisher>.toml`, one file per publisher.
+//! Each file mirrors the `[[publisher]]` row from the registry's
+//! `trust-roots.toml` so the same [`TrustRoot`] type round-trips through
+//! both. This makes "trust a publisher" a simple file write — auditable,
+//! mergeable, and trivially backed up.
 //!
-//! All writes are confined to the configured trust directory. Publisher
-//! names are validated to reject path-traversal (`..`, absolute paths,
-//! separators) before any filesystem operation.
+//! [`TrustStore`] owns the file-layout knowledge so the CLI's `trust`
+//! sub-commands stay thin.
 
-use crate::error::{Error, InvalidPublisherNameSnafu, Result};
-use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-/// One accepted trust root.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct TrustRoot {
-    pub name: String,
-    #[serde(default)]
-    pub key_id: String,
-    pub fingerprint: String,
-    #[serde(default)]
-    pub key_url: String,
-}
+use crate::error::{Error, Result};
+use crate::manifest::TrustRoot;
+use crate::paths::trust_dir;
 
-/// A local on-disk trust store. Cheap to clone (just a path).
-#[derive(Clone)]
+/// One row in the local trust store.
+pub type TrustStoreEntry = TrustRoot;
+
+/// A handle on the local trust directory.
+///
+/// Construct with [`TrustStore::new`] (real home) or
+/// [`TrustStore::for_home`] (tests). All operations are file-backed; the
+/// type holds no in-memory cache so concurrent edits by external tools
+/// are picked up on the next read.
 pub struct TrustStore {
-    dir: PathBuf,
+    override_home: Option<PathBuf>,
 }
 
 impl TrustStore {
-    /// Open the trust store rooted at `dir`, creating the directory if
-    /// missing.
-    pub fn open(dir: impl Into<PathBuf>) -> Result<Self> {
-        let dir = dir.into();
-        if !dir.exists() {
-            map_io(std::fs::create_dir_all(&dir), &dir)?;
+    /// Bind to the user's real trust directory.
+    pub fn new() -> Self {
+        TrustStore {
+            override_home: None,
         }
-        Ok(Self { dir })
     }
 
-    /// Open the default user trust store at
-    /// `~/.config/confium/trust/`.
-    pub fn user_default() -> Result<Self> {
-        let base = dirs::config_dir().ok_or_else(|| Error::Io {
-            path: "<config dir>".to_string(),
-            message: "no user config directory available on this platform".to_string(),
-        })?;
-        Self::open(base.join("confium").join("trust"))
+    /// Bind to `<override_home>/.config/confium/trust`.
+    pub fn for_home(override_home: PathBuf) -> Self {
+        TrustStore {
+            override_home: Some(override_home),
+        }
     }
 
-    /// Path to the record file for `name`. Validates `name` first to
-    /// reject path traversal.
-    fn path_for(&self, name: &str) -> Result<PathBuf> {
-        validate_publisher_name(name)?;
-        Ok(self.dir.join(format!("{}.json", name)))
+    /// The trust directory backing this store.
+    pub fn dir(&self) -> Result<PathBuf> {
+        trust_dir(self.override_home.as_ref())
     }
 
-    /// Insert or replace the trust root for `root.name`.
-    pub fn put(&self, root: &TrustRoot) -> Result<()> {
-        let path = self.path_for(&root.name)?;
-        let json = serde_json::to_string_pretty(root).map_err(|e| Error::Io {
-            path: path.display().to_string(),
-            message: format!("serialize trust root: {}", e),
-        })?;
-        std::fs::write(&path, json).map_err(|e| Error::Io {
-            path: path.display().to_string(),
-            message: Error::stringify(e),
-        })?;
+    /// List trusted publishers, sorted by name.
+    pub fn list(&self) -> Result<Vec<TrustStoreEntry>> {
+        let dir = self.dir()?;
+        if !dir.exists() {
+            return Ok(Vec::new());
+        }
+        let mut entries = Vec::new();
+        let read = std::fs::read_dir(&dir)
+            .map_err(|e| Error::io(e, format!("failed to read {}", dir.display())))?;
+        for entry in read {
+            let entry = entry.map_err(|e| Error::io(e, "directory iteration error"))?;
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("toml") {
+                continue;
+            }
+            if let Ok(root) = self.read_file(&path) {
+                entries.push(root);
+            }
+        }
+        entries.sort_by(|a, b| a.name.cmp(&b.name));
+        Ok(entries)
+    }
+
+    /// Add (or replace) a trusted publisher.
+    pub fn add(&self, root: TrustStoreEntry) -> Result<()> {
+        let dir = self.dir()?;
+        std::fs::create_dir_all(&dir)
+            .map_err(|e| Error::io(e, format!("failed to create {}", dir.display())))?;
+        let path = self.path_for(&root.name);
+        // Single-publisher file: write just the [[publisher]] row to keep
+        // the format minimal and human-editable.
+        let body = toml::to_string(&root).map_err(|e| Error::TomlSerialize { source: e })?;
+        std::fs::write(&path, body)
+            .map_err(|e| Error::io(e, format!("failed to write {}", path.display())))?;
         Ok(())
     }
 
-    /// Read the trust root for `name`, if present.
-    pub fn get(&self, name: &str) -> Result<Option<TrustRoot>> {
-        let path = self.path_for(name)?;
-        if !path.exists() {
-            return Ok(None);
-        }
-        let text = map_io(std::fs::read_to_string(&path), &path)?;
-        let root: TrustRoot = serde_json::from_str(&text).map_err(|e| Error::Io {
-            path: path.display().to_string(),
-            message: format!("deserialize trust root: {}", e),
-        })?;
-        Ok(Some(root))
-    }
-
-    /// Remove the trust root for `name`. Returns `false` if no record
-    /// existed.
+    /// Remove a trusted publisher. Succeeds (no-op) if not present.
     pub fn remove(&self, name: &str) -> Result<bool> {
-        let path = self.path_for(name)?;
+        let path = self.path_for(name);
         if !path.exists() {
             return Ok(false);
         }
-        std::fs::remove_file(&path).map_err(|e| Error::Io {
-            path: path.display().to_string(),
-            message: Error::stringify(e),
-        })?;
+        std::fs::remove_file(&path)
+            .map_err(|e| Error::io(e, format!("failed to remove {}", path.display())))?;
         Ok(true)
     }
 
-    /// List every trusted publisher name present in the store.
-    pub fn list(&self) -> Result<Vec<String>> {
-        let mut names = Vec::new();
-        let entries = map_io(std::fs::read_dir(&self.dir), &self.dir)?;
-        for entry in entries {
-            let entry = map_io(entry, &self.dir)?;
-            let path = entry.path();
-            if path.extension().and_then(|s| s.to_str()) == Some("json") {
-                if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-                    names.push(stem.to_string());
+    /// True if `name` is trusted.
+    pub fn contains(&self, name: &str) -> Result<bool> {
+        Ok(self.path_for(name).exists())
+    }
+
+    fn path_for(&self, name: &str) -> PathBuf {
+        // Sanitize the publisher name so it can't escape the trust dir.
+        let safe: String = name
+            .chars()
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                    c
+                } else {
+                    '_'
                 }
-            }
-        }
-        names.sort();
-        Ok(names)
+            })
+            .collect();
+        self.dir()
+            .unwrap_or_else(|_| PathBuf::from("."))
+            .join(format!("{safe}.toml"))
     }
 
-    /// True iff `publisher` is present in the store.
-    pub fn is_trusted(&self, publisher: &str) -> Result<bool> {
-        Ok(self.get(publisher)?.is_some())
-    }
-}
-
-/// Reject publisher/plugin names that could escape the store directory.
-///
-/// Names must be non-empty, ASCII lowercase letters/digits/hyphens, and
-/// must not contain path separators, `..`, or a leading hyphen.
-pub(crate) fn validate_publisher_name(name: &str) -> Result<()> {
-    validate_identifier(name, "publisher")
-}
-
-/// Reject plugin names with the same rules as publisher names.
-pub(crate) fn validate_plugin_name(name: &str) -> Result<()> {
-    validate_identifier(name, "plugin")
-}
-
-fn validate_identifier(name: &str, kind: &str) -> Result<()> {
-    let ok = |c: char| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-';
-    let valid = !name.is_empty()
-        && !name.starts_with('-')
-        && name != ".."
-        && name != "."
-        && name.chars().all(ok);
-    if valid {
-        Ok(())
-    } else {
-        InvalidPublisherNameSnafu {
-            name,
-            reason: format!(
-                "invalid {} name: must be lowercase ASCII letters, digits, or hyphens",
-                kind
-            ),
-        }
-        .fail()
+    fn read_file(&self, path: &Path) -> Result<TrustStoreEntry> {
+        let body = std::fs::read_to_string(path)
+            .map_err(|e| Error::io(e, format!("failed to read {}", path.display())))?;
+        toml::from_str(&body).map_err(|e| Error::TomlParse {
+            path: path.display().to_string(),
+            source: e,
+        })
     }
 }
 
-/// Map a `std::io::Result` into [`Result`] with an [`Error::Io`]
-/// carrying the path for context.
-fn map_io<T>(res: std::io::Result<T>, path: &Path) -> Result<T> {
-    res.map_err(|e| Error::Io {
-        path: path.display().to_string(),
-        message: Error::stringify(e),
-    })
+impl Default for TrustStore {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
 
-    fn sample(name: &str) -> TrustRoot {
+    fn root(name: &str) -> TrustStoreEntry {
         TrustRoot {
             name: name.to_string(),
-            key_id: "0x0001".to_string(),
-            fingerprint: "AAAA".to_string(),
-            key_url: format!("/publishers/{}.asc", name),
+            key_id: "0xABCD".to_string(),
+            fingerprint: "AAAA BBBB".to_string(),
+            key_url: format!("/publishers/{name}.asc"),
         }
     }
 
     #[test]
-    fn round_trips_trust_root() {
-        let dir = tempdir().expect("tempdir");
-        let store = TrustStore::open(dir.path()).expect("open");
+    fn list_on_missing_dir_is_empty() {
+        let tmp = tempfile::tempdir().unwrap();
+        let store = TrustStore::for_home(PathBuf::from(tmp.path()));
         assert!(store.list().unwrap().is_empty());
+    }
 
-        store.put(&sample("ribose")).expect("put");
-        let got = store.get("ribose").expect("get").expect("present");
-        assert_eq!(got, sample("ribose"));
-        assert!(store.is_trusted("ribose").unwrap());
+    #[test]
+    fn add_then_list() {
+        let tmp = tempfile::tempdir().unwrap();
+        let store = TrustStore::for_home(PathBuf::from(tmp.path()));
+        store.add(root("ribose")).unwrap();
+        let entries = store.list().unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].name, "ribose");
+    }
 
-        let names = store.list().unwrap();
-        assert_eq!(names, vec!["ribose"]);
+    #[test]
+    fn add_overwrites() {
+        let tmp = tempfile::tempdir().unwrap();
+        let store = TrustStore::for_home(PathBuf::from(tmp.path()));
+        store.add(root("ribose")).unwrap();
+        let mut updated = root("ribose");
+        updated.fingerprint = "CCCC".to_string();
+        store.add(updated).unwrap();
+        let entries = store.list().unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].fingerprint, "CCCC");
+    }
 
+    #[test]
+    fn remove_returns_true_when_present() {
+        let tmp = tempfile::tempdir().unwrap();
+        let store = TrustStore::for_home(PathBuf::from(tmp.path()));
+        store.add(root("ribose")).unwrap();
         assert!(store.remove("ribose").unwrap());
-        assert!(!store.is_trusted("ribose").unwrap());
-        assert!(store.list().unwrap().is_empty());
+        assert!(!store.contains("ribose").unwrap());
     }
 
     #[test]
-    fn put_rejects_path_traversal() {
-        let dir = tempdir().expect("tempdir");
-        let store = TrustStore::open(dir.path()).expect("open");
-        let bad = TrustRoot {
-            name: "../escape".to_string(),
-            ..sample("x")
-        };
-        let err = store.put(&bad).unwrap_err();
-        assert!(matches!(err, Error::InvalidPublisherName { .. }));
+    fn remove_returns_false_when_absent() {
+        let tmp = tempfile::tempdir().unwrap();
+        let store = TrustStore::for_home(PathBuf::from(tmp.path()));
+        assert!(!store.remove("ghost").unwrap());
     }
 
     #[test]
-    fn get_rejects_absolute_path() {
-        let dir = tempdir().expect("tempdir");
-        let store = TrustStore::open(dir.path()).expect("open");
-        let err = store.get("/etc/passwd").unwrap_err();
-        assert!(matches!(err, Error::InvalidPublisherName { .. }));
-    }
-
-    #[test]
-    fn rejects_dotdot_name() {
-        let err = validate_publisher_name("..").unwrap_err();
-        assert!(matches!(err, Error::InvalidPublisherName { .. }));
-    }
-
-    #[test]
-    fn rejects_uppercase_name() {
-        let err = validate_publisher_name("Ribose").unwrap_err();
-        assert!(matches!(err, Error::InvalidPublisherName { .. }));
+    fn path_for_sanitizes_dangerous_names() {
+        let tmp = tempfile::tempdir().unwrap();
+        let store = TrustStore::for_home(PathBuf::from(tmp.path()));
+        let path = store.path_for("../etc/passwd");
+        let name = path.file_name().unwrap().to_str().unwrap();
+        assert!(!name.contains('/'));
+        assert!(!name.contains(".."));
     }
 }
