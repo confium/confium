@@ -1,31 +1,49 @@
-[package]
-name = "confium"
-version = "0.2.0"
-authors = ["Ribose Open <open.source@ribose.com>"]
+[workspace]
+resolver = "2"
+members = [
+    "crates/confium-api",
+    "crates/confium-cli",
+    "crates/confium-core",
+    "crates/confium-macros",
+    "crates/confium-net",
+    "crates/confium-publish",
+    "crates/confium-registry",
+    "crates/confium-store",
+    "crates/confium-tc",
+    "crates/confium-test-harness",
+]
+
+[workspace.package]
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.85"
-description = "Open-source distributed trust store framework"
+authors = ["Ribose Open <open.source@ribose.com>"]
+license = "BSD-2-Clause"
 homepage = "https://www.confium.org/"
 repository = "https://github.com/confium/confium"
 categories = ["authentication", "cryptography"]
-license = "BSD-2-Clause"
 
-[lib]
-crate-type = ["cdylib"]
+[workspace.dependencies]
+# Workspace crates — pinned to the current workspace version.
+confium-api = { path = "crates/confium-api", version = "0.3.0" }
+confium-core = { path = "crates/confium-core", version = "0.2.0" }
+confium-macros = { path = "crates/confium-macros", version = "0.3.0" }
+confium-net = { path = "crates/confium-net", version = "0.3.0" }
+confium-registry = { path = "crates/confium-registry", version = "0.3.0" }
+confium-store = { path = "crates/confium-store", version = "0.3.0" }
+confium-tc = { path = "crates/confium-tc", version = "0.3.0" }
 
-[dependencies]
+# Third-party crates shared across the workspace.
 libloading = "0.8"
 snafu = "0.8"
 inventory = "0.3"
 zeroize = "1.8"
+clap = { version = "4.5", features = ["derive"] }
 
 [profile.release]
 opt-level = 3
 lto = true
 codegen-units = 1
 
-[package.metadata.nix]
-# Toggle app flake output
-app = true
-# Toggle flake outputs that build (checks, package and app)
-build = true
+[profile.release.package."*"]
+opt-level = "s"

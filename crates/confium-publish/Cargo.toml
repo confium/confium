@@ -1,0 +1,19 @@
+[package]
+name = "confium-publish"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Confium plugin publishing tool"
+
+[[bin]]
+name = "confium-publish"
+path = "src/main.rs"
+
+[dependencies]
+confium-api = { workspace = true }
+confium-core = { workspace = true }
+clap = { workspace = true }

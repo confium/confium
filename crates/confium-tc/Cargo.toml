@@ -1,0 +1,15 @@
+[package]
+name = "confium-tc"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Confium threshold-cryptography primitives"
+
+[dependencies]
+confium-api = { workspace = true }
+confium-net = { workspace = true }
+confium-store = { workspace = true }

@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases prior to 0.2.0 were tracked through git history.
 
+## [Unreleased]
+
+### Added
+
+- **Workspace restructure.** The single `confium` crate is now
+  `crates/confium-core/` inside a 10-crate workspace. The shared
+  library is still called `libconfium.{so,dylib,dll}` for ABI
+  compatibility; the package name is `confium-core`. Nine additional
+  crates created as skeletons for the architecture described in
+  `TODO.roadmap/02-workspace-layout.md`:
+  `confium-api`, `confium-store`, `confium-registry`, `confium-net`,
+  `confium-tc`, `confium-cli`, `confium-publish`, `confium-macros`,
+  `confium-test-harness`.
+
+- **Strategic roadmap** (`TODO.roadmap/`) — 13 documents covering the
+  multi-year arc from "plugin loader shipped" to "NIST MPTS evaluation
+  harness". Anchored on the NIST MPTS 2020 deck.
+
+- **Tactical TODO list** (`TODO.finalize/`) — 15 specific one-PR tasks.
+
+### Changed
+
+- CMake picks up the new crate location via
+  `corrosion_import_crate(MANIFEST_PATH ./crates/confium-core/Cargo.toml)`.
+- CI invokes cargo with `--workspace` for build/test/clippy/doc to
+  cover all members.
+- `cargo publish --dry-run -p confium-core` (publish is per-package in
+  a workspace).
+
 ## [0.2.0] — Unreleased
 
 ### Breaking changes

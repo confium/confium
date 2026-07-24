@@ -464,3 +464,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/osx,vim,linux,emacs,windows,eclipse,webstorm,textmate,sublimetext,intellij+all,visualstudiocode,rust,direnv
+
+# Claude Code worktrees
+.claude/worktrees/

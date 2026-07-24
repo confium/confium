@@ -1,0 +1,16 @@
+[package]
+name = "confium-test-harness"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Test harness for Confium (mock plugins, NIST eval vectors)"
+
+[dependencies]
+confium-api = { workspace = true }
+confium-core = { workspace = true }
+confium-net = { workspace = true }
+confium-tc = { workspace = true }

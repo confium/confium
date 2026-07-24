@@ -1,0 +1,21 @@
+[package]
+name = "confium-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Confium command-line tool"
+
+[[bin]]
+name = "confium"
+path = "src/main.rs"
+
+[dependencies]
+confium-api = { workspace = true }
+confium-core = { workspace = true }
+confium-registry = { workspace = true }
+confium-store = { workspace = true }
+clap = { workspace = true }

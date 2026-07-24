@@ -59,7 +59,8 @@ impl fmt::Debug for dyn PluginInterfaceKind {
 /// Submit an interface kind to the link-time registry.
 ///
 /// ```no_run
-/// use confium::ffi::registry::{PluginInterfaceKind, register_interface};
+/// use confium::ffi::registry::PluginInterfaceKind;
+/// use confium::register_interface;
 /// # use confium::Result;
 /// # use std::any::Any;
 /// # use std::rc::Rc;

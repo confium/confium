@@ -19,7 +19,7 @@ add_test(
     COMMAND cpp-tests
 )
 
-set(_env "CONFIUM_CARGO_TOML=${CMAKE_SOURCE_DIR}/Cargo.toml")
+set(_env "CONFIUM_CARGO_TOML=${CMAKE_SOURCE_DIR}/crates/confium-core/Cargo.toml")
 if(WIN32)
     LIST(APPEND _env "PATH=${CMAKE_BINARY_DIR}\;$ENV{PATH}")
 else()
