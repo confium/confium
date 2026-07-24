@@ -1,0 +1,107 @@
+# Pre-commit hooks for Confium
+# Mirrors the CI checks in .github/workflows/ci.yml
+#
+# Usage:
+#   1. Install pre-commit: pip install pre-commit
+#   2. Install hooks: pre-commit install
+#   3. (Optional) Run on all files: pre-commit run --all-files
+#
+# Or use the shell hook directly:
+#   cp .githooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+repos:
+  # ============================================================================
+  # Rust Format Check
+  # ============================================================================
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt --all -- --check
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+  # ============================================================================
+  # Clippy Lint
+  # ============================================================================
+  - repo: local
+    hooks:
+      - id: cargo-clippy
+        name: cargo clippy
+        entry: cargo clippy --all-targets -- -D warnings
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+  # ============================================================================
+  # Documentation Build
+  # ============================================================================
+  - repo: local
+    hooks:
+      - id: cargo-doc
+        name: cargo doc
+        entry: bash -c 'RUSTDOCFLAGS="-D warnings" cargo doc --no-deps'
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+  # ============================================================================
+  # Check Unused Dependencies
+  # ============================================================================
+  - repo: local
+    hooks:
+      - id: cargo-machete
+        name: cargo machete
+        entry: cargo machete
+        language: system
+        pass_filenames: false
+        files: 'Cargo\.toml$'
+
+  # ============================================================================
+  # License/Advisory Check
+  # ============================================================================
+  - repo: local
+    hooks:
+      - id: cargo-deny
+        name: cargo deny
+        entry: cargo deny check licenses advisories sources bans
+        language: system
+        pass_filenames: false
+        files: '(Cargo\.toml|Cargo\.lock|deny\.toml)$'
+
+  # ============================================================================
+  # Spell Check (typos)
+  # ============================================================================
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.45.0
+    hooks:
+      - id: typos
+
+  # ============================================================================
+  # Semver Compatibility Check
+  # ============================================================================
+  - repo: local
+    hooks:
+      - id: cargo-semver-checks
+        name: cargo semver-checks
+        entry: bash -c 'if git rev-parse --verify origin/main >/dev/null 2>&1; then cargo semver-checks --baseline-rev origin/main; else echo "Error: No origin/main branch found. Run git fetch origin"; exit 1; fi'
+        language: system
+        pass_filenames: false
+        files: 'Cargo\.toml$'
+
+  # ============================================================================
+  # Standard Git Checks
+  # ============================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+        args: [--unsafe]
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        exclude: '\.md$'
