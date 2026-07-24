@@ -11,6 +11,7 @@ pub mod error;
 pub mod ffi;
 pub mod hash;
 pub mod kdf;
+pub mod keyfmt;
 pub mod options;
 pub mod rng;
 pub mod sensitive;
