@@ -1,6 +1,8 @@
+use std::any::Any;
 use std::ffi::c_void;
 use std::fmt;
 use std::os::raw::c_char;
+use std::rc::Rc;
 
 use libloading::Library;
 
@@ -9,9 +11,11 @@ use crate::Result;
 use crate::error;
 use crate::error::Error;
 use crate::ffi::plugin::get_plugin_symbol;
+use crate::ffi::registry::PluginInterfaceKind;
 use crate::ffi::utils::cstring;
 use crate::hash::Hash;
 use crate::options::Options;
+use crate::register_interface;
 
 pub enum FFIHash {}
 
@@ -71,40 +75,60 @@ pub enum HashInterface {
     V0(HashInterfaceV0),
 }
 
-pub(crate) fn create_hash_interface(
-    lib: &Library,
-    name: &str,
-    version: u8,
-) -> Result<Option<HashInterface>> {
-    match version {
-        0 => {
-            let iface = HashInterfaceV0 {
-                create: get_plugin_symbol::<HashCreateFnV0>(lib, name, HASH_CREATE_FN_V0_NAME)?,
-                output_size: get_plugin_symbol::<HashOutputSizeFnV0>(
-                    lib,
-                    name,
-                    HASH_OUTPUT_SIZE_FN_V0_NAME,
-                )?,
-                block_size: get_plugin_symbol::<HashBlockSizeFnV0>(
-                    lib,
-                    name,
-                    HASH_BLOCK_SIZE_FN_V0_NAME,
-                )?,
-                update: get_plugin_symbol::<HashUpdateFnV0>(lib, name, HASH_UPDATE_FN_V0_NAME)?,
-                reset: get_plugin_symbol::<HashResetFnV0>(lib, name, HASH_RESET_FN_V0_NAME)?,
-                clone: get_plugin_symbol::<HashCloneFnV0>(lib, name, HASH_CLONE_FN_V0_NAME)?,
-                finalize: get_plugin_symbol::<HashFinalizeFnV0>(
-                    lib,
-                    name,
-                    HASH_FINALIZE_FN_V0_NAME,
-                )?,
-                destroy: get_plugin_symbol::<HashDestroyFnV0>(lib, name, HASH_DESTROY_FN_V0_NAME)?,
-            };
-            Ok(Some(HashInterface::V0(iface)))
-        }
-        // unsupported version (TODO: issue warning?)
-        _ => Ok(None),
+/// Registry kind for the hash interface. Lives next to the interface
+/// it describes so the registration stays co-located with the
+/// implementation (open/closed-compliant).
+pub struct HashKind;
+
+impl PluginInterfaceKind for HashKind {
+    fn name(&self) -> &'static str {
+        "hash"
     }
+
+    fn max_version(&self) -> u8 {
+        0
+    }
+
+    fn build(&self, lib: &Library, version: u8) -> Result<Option<Rc<dyn Any>>> {
+        match version {
+            0 => Ok(create_hash_interface_v0(lib)?.map(|iface| Rc::new(iface) as Rc<dyn Any>)),
+            _ => Ok(None),
+        }
+    }
+}
+
+register_interface!(HashKind);
+
+fn create_hash_interface_v0(lib: &Library) -> Result<Option<HashInterface>> {
+    let iface = HashInterfaceV0 {
+        create: get_plugin_symbol::<HashCreateFnV0>(lib, "hash", HASH_CREATE_FN_V0_NAME)?,
+        output_size: get_plugin_symbol::<HashOutputSizeFnV0>(
+            lib,
+            "hash",
+            HASH_OUTPUT_SIZE_FN_V0_NAME,
+        )?,
+        block_size: get_plugin_symbol::<HashBlockSizeFnV0>(
+            lib,
+            "hash",
+            HASH_BLOCK_SIZE_FN_V0_NAME,
+        )?,
+        update: get_plugin_symbol::<HashUpdateFnV0>(lib, "hash", HASH_UPDATE_FN_V0_NAME)?,
+        reset: get_plugin_symbol::<HashResetFnV0>(lib, "hash", HASH_RESET_FN_V0_NAME)?,
+        clone: get_plugin_symbol::<HashCloneFnV0>(lib, "hash", HASH_CLONE_FN_V0_NAME)?,
+        finalize: get_plugin_symbol::<HashFinalizeFnV0>(lib, "hash", HASH_FINALIZE_FN_V0_NAME)?,
+        destroy: get_plugin_symbol::<HashDestroyFnV0>(lib, "hash", HASH_DESTROY_FN_V0_NAME)?,
+    };
+    Ok(Some(HashInterface::V0(iface)))
+}
+
+/// Downcast a plugin's type-erased interface back to a shared
+/// [`HashInterface`]. Owned by this module so consumers of the hash
+/// interface don't need to know about the registry.
+pub fn interface_of(plugin: &crate::Plugin) -> Option<Rc<HashInterface>> {
+    plugin
+        .interfaces
+        .iter()
+        .find_map(|i| i.clone_inner::<HashInterface>())
 }
 
 fn cfm_hash_create_(

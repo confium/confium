@@ -50,6 +50,13 @@ pub enum Error {
 
     #[snafu(display("Unsupported algorithm '{}'", name))]
     UnsupportedAlgorithm { name: String },
+
+    /// Wraps the underlying `std::error::Error::source()` of another
+    /// Confium error so it can be returned through the FFI as the next
+    /// step in the error chain. The source's Display string is preserved
+    /// — typed recovery requires inspecting the parent error's variant.
+    #[snafu(display("Underlying error: {}", message))]
+    Wrapped { message: String },
 }
 
 impl Error {
@@ -80,6 +87,10 @@ pub enum ErrorCode {
     PLUGIN_INTERNAL_ERROR = 26,
 
     UNSUPPORTED_ALGORITHM = 50,
+
+    /// Returned when the error is a `Wrapped` variant — i.e. an FFI-exposed
+    /// step in a source chain rather than a first-class Confium error.
+    WRAPPED = 100,
 }
 
 fn error_code(error: &Error) -> u32 {
@@ -103,6 +114,8 @@ fn error_code(error: &Error) -> u32 {
         Error::PluginInternalError { .. } => ErrorCode::PLUGIN_INTERNAL_ERROR.into(),
 
         Error::UnsupportedAlgorithm { .. } => ErrorCode::UNSUPPORTED_ALGORITHM.into(),
+
+        Error::Wrapped { .. } => ErrorCode::WRAPPED.into(),
     }
 }
 
@@ -117,5 +130,44 @@ impl From<Error> for u32 {
     #[inline]
     fn from(err: Error) -> u32 {
         error_code(&err)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use snafu::GenerateImplicitData;
+
+    #[test]
+    fn wrapped_displays_inner_message() {
+        let err = Error::Wrapped {
+            message: "boom".to_string(),
+        };
+        assert_eq!(format!("{err}"), "Underlying error: boom");
+        assert_eq!(err.code(), ErrorCode::WRAPPED as u32);
+    }
+
+    #[test]
+    fn invalid_utf8_source_walks_to_utf8error() {
+        // Build the bad bytes from a non-byte-literal source so
+        // clippy's invalid-UTF-8 literal lint doesn't fire.
+        let n: u8 = 0xFF;
+        let bad = [n, n];
+        let utf8_err = std::str::from_utf8(&bad).unwrap_err();
+        let err = Error::InvalidUTF8 {
+            backtrace: Backtrace::generate(),
+            source: utf8_err,
+        };
+        let source = std::error::Error::source(&err);
+        assert!(source.is_some(), "InvalidUTF8 must expose a source");
+    }
+
+    #[test]
+    fn null_pointer_has_no_source() {
+        let err = Error::NullPointer {
+            param: "x",
+            backtrace: Backtrace::generate(),
+        };
+        assert!(std::error::Error::source(&err).is_none());
     }
 }

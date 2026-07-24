@@ -9,7 +9,10 @@ pub mod error;
 pub mod ffi;
 pub mod hash;
 pub mod options;
+pub mod rng;
+pub mod sensitive;
 
+use std::any::Any;
 use std::collections::HashMap;
 use std::path::Path;
 use std::rc::Rc;
@@ -18,7 +21,6 @@ use libloading::Library;
 
 use error::Error;
 
-use ffi::plugin::PluginInterface;
 use ffi::plugin::PluginVTable;
 
 type StringOptions = HashMap<String, String>;
@@ -35,7 +37,34 @@ pub struct Provider {
 pub struct Plugin {
     pub library: Rc<Library>,
     pub vtable: PluginVTable,
-    pub interfaces: Vec<Rc<PluginInterface>>,
+    /// Each interface advertised by the plugin, type-erased so the core
+    /// doesn't need a closed enum of interface variants. Concrete
+    /// interface types live in their respective modules (`ffi::hash`,
+    /// `ffi::cipher`, etc.).
+    pub interfaces: Vec<PluginInterface>,
+}
+
+/// A type-erased plugin interface with its negotiated name and version.
+///
+/// Concrete interface types are recovered via downcast by the consumer
+/// module that owns the type (e.g. `hash::interface_for(plugin)`).
+pub struct PluginInterface {
+    pub name: &'static str,
+    pub version: u8,
+    pub inner: Rc<dyn Any>,
+}
+
+impl PluginInterface {
+    /// Borrow the underlying concrete interface if it matches `T`.
+    pub fn downcast<T: Any>(&self) -> Option<&T> {
+        self.inner.downcast_ref::<T>()
+    }
+
+    /// Clone a shared handle to the underlying concrete interface if it
+    /// matches `T`.
+    pub fn clone_inner<T: Any>(&self) -> Option<Rc<T>> {
+        Rc::clone(&self.inner).downcast::<T>().ok()
+    }
 }
 
 pub struct Confium {

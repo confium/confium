@@ -11,3 +11,5 @@ pub mod hash;
 pub mod lib;
 pub mod options;
 pub mod plugin;
+pub mod registry;
+pub mod rng;

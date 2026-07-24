@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::os::raw::c_char;
 use std::rc::Rc;
 
@@ -6,19 +5,13 @@ use libloading::{Library, Symbol};
 use snafu::ResultExt;
 
 use crate::error::Error;
-use crate::ffi::hash::HashInterface;
-use crate::ffi::hash::create_hash_interface;
+use crate::ffi::registry;
 use crate::ffi::utils::cstring;
 use crate::options::Options;
-use crate::{Confium, Plugin, Provider, Result};
+use crate::{Confium, Plugin, PluginInterface, Provider, Result};
 
 use std::env::consts::DLL_EXTENSION;
 use std::path::PathBuf;
-
-#[derive(Debug)]
-pub enum PluginInterface {
-    Hash(HashInterface),
-}
 
 // plugin interface version
 type InterfaceVersionFn = extern "C" fn(*mut Confium) -> u32;
@@ -92,34 +85,31 @@ fn load_plugin_v0(
     })
 }
 
-type InterfaceList = HashMap<String, Vec<u8>>;
-fn enumerate_plugin_interfaces(cfm: &mut Confium, vtable: &PluginVTable) -> Result<InterfaceList> {
-    let mut list = InterfaceList::new();
-    match vtable {
-        PluginVTable::V0(v0) => {
-            let ifs = (*v0.query_interfaces)(cfm);
-            let mut idx: usize = 0;
-            loop {
-                let start = idx;
-                let mut end = start;
-                while unsafe { *(ifs.add(end)) } != 0 {
-                    end += 1;
-                }
-                let name = unsafe { std::slice::from_raw_parts(ifs.add(start), end - start) };
-                let name = std::str::from_utf8(name).context(crate::error::InvalidUTF8Snafu {})?;
-                if name.is_empty() {
-                    break;
-                }
-                let version = unsafe { *ifs.add(end + 1) };
-                // add to the list of this plugin's advertised interfaces
-                if !list.contains_key(name) {
-                    list.insert(name.to_string(), Vec::<u8>::new());
-                }
-                let iflist = list.get_mut(name).unwrap();
-                iflist.push(version);
-                idx = end + 2;
-            }
+/// Parse the plugin's `cfmp_query_interfaces` payload (packed
+/// `name\0version\0` byte stream) into a name → versions map.
+fn enumerate_plugin_interfaces(
+    cfm: &mut Confium,
+    vtable: &PluginVTable,
+) -> Result<std::collections::HashMap<String, Vec<u8>>> {
+    let mut list: std::collections::HashMap<String, Vec<u8>> = std::collections::HashMap::new();
+    let ifs = match vtable {
+        PluginVTable::V0(v0) => (*v0.query_interfaces)(cfm),
+    };
+    let mut idx: usize = 0;
+    loop {
+        let start = idx;
+        let mut end = start;
+        while unsafe { *(ifs.add(end)) } != 0 {
+            end += 1;
         }
+        let name = unsafe { std::slice::from_raw_parts(ifs.add(start), end - start) };
+        let name = std::str::from_utf8(name).context(crate::error::InvalidUTF8Snafu {})?;
+        if name.is_empty() {
+            break;
+        }
+        let version = unsafe { *ifs.add(end + 1) };
+        list.entry(name.to_string()).or_default().push(version);
+        idx = end + 2;
     }
     for versions in list.values_mut() {
         versions.sort();
@@ -127,35 +117,52 @@ fn enumerate_plugin_interfaces(cfm: &mut Confium, vtable: &PluginVTable) -> Resu
     Ok(list)
 }
 
+/// Negotiate the highest mutually supported version of an interface
+/// between this build of Confium and the plugin, then build the
+/// concrete interface object via the registered kind. Returns a triple
+/// of (kind name, negotiated version, type-erased interface).
 fn create_plugin_interface(
-    _cfm: &mut Confium,
     lib: &Library,
     name: &str,
     versions: &[u8],
-) -> Result<Option<PluginInterface>> {
-    for version in versions.iter().rev() {
-        match name {
-            "hash" => {
-                if let Some(iface) = create_hash_interface(lib, name, *version)? {
-                    return Ok(Some(PluginInterface::Hash(iface)));
-                }
+) -> Result<Option<BuiltInterface>> {
+    for kind in registry::iter() {
+        if kind.name() != name {
+            continue;
+        }
+        for &candidate in versions.iter().rev().filter(|v| **v <= kind.max_version()) {
+            if let Some(inner) = kind.build(lib, candidate)? {
+                return Ok(Some(BuiltInterface {
+                    name: kind.name(),
+                    version: candidate,
+                    inner,
+                }));
             }
-            _ => continue,
         }
     }
     Ok(None)
+}
+
+struct BuiltInterface {
+    name: &'static str,
+    version: u8,
+    inner: std::rc::Rc<dyn std::any::Any>,
 }
 
 fn load_plugin_interfaces(
     cfm: &mut Confium,
     lib: &Library,
     vtable: &PluginVTable,
-) -> Result<Vec<Rc<PluginInterface>>> {
+) -> Result<Vec<PluginInterface>> {
     let mut interfaces = Vec::new();
-    let advertised_ifs = enumerate_plugin_interfaces(cfm, vtable)?;
-    for (name, versions) in advertised_ifs {
-        if let Some(iface) = create_plugin_interface(cfm, lib, &name, &versions)? {
-            interfaces.push(Rc::new(iface));
+    let advertised = enumerate_plugin_interfaces(cfm, vtable)?;
+    for (name, versions) in advertised {
+        if let Some(built) = create_plugin_interface(lib, &name, &versions)? {
+            interfaces.push(PluginInterface {
+                name: built.name,
+                version: built.version,
+                inner: built.inner,
+            });
         }
     }
     Ok(interfaces)

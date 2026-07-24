@@ -16,6 +16,8 @@ crate-type = ["cdylib"]
 [dependencies]
 libloading = "0.8"
 snafu = "0.8"
+inventory = "0.3"
+zeroize = "1.8"
 
 [profile.release]
 opt-level = 3
