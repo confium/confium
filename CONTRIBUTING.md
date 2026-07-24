@@ -5,8 +5,9 @@ the basics. For design context, see `README.adoc`.
 
 ## Development Setup
 
-Confium requires a stable Rust toolchain (1.74+). The toolchain is pinned via
-`rust-toolchain.toml`. To enter a Nix-based dev shell with all dependencies:
+Confium requires a stable Rust toolchain (1.85+ for edition 2024). The
+toolchain is pinned via `rust-toolchain.toml`. To enter a Nix-based dev
+shell with all dependencies:
 
 ```sh
 nix develop
