@@ -17,28 +17,28 @@ pub enum FFIHash {}
 
 pub type HashCreateFnV0 =
     extern "C" fn(*const Confium, *mut *mut FFIHash, *const c_char, Option<&Options>) -> u32;
-const HASH_CREATE_FN_V0_NAME: &'static [u8] = b"cfmp_hash_create\0";
+const HASH_CREATE_FN_V0_NAME: &[u8] = b"cfmp_hash_create\0";
 
 pub type HashOutputSizeFnV0 = extern "C" fn(*const FFIHash, *mut u32) -> u32;
-const HASH_OUTPUT_SIZE_FN_V0_NAME: &'static [u8] = b"cfmp_hash_output_size\0";
+const HASH_OUTPUT_SIZE_FN_V0_NAME: &[u8] = b"cfmp_hash_output_size\0";
 
 pub type HashBlockSizeFnV0 = extern "C" fn(*const FFIHash, *mut u32) -> u32;
-const HASH_BLOCK_SIZE_FN_V0_NAME: &'static [u8] = b"cfmp_hash_block_size\0";
+const HASH_BLOCK_SIZE_FN_V0_NAME: &[u8] = b"cfmp_hash_block_size\0";
 
 pub type HashUpdateFnV0 = extern "C" fn(*mut FFIHash, *const u8, u32) -> u32;
-const HASH_UPDATE_FN_V0_NAME: &'static [u8] = b"cfmp_hash_update\0";
+const HASH_UPDATE_FN_V0_NAME: &[u8] = b"cfmp_hash_update\0";
 
 pub type HashResetFnV0 = extern "C" fn(*mut FFIHash) -> u32;
-const HASH_RESET_FN_V0_NAME: &'static [u8] = b"cfmp_hash_reset\0";
+const HASH_RESET_FN_V0_NAME: &[u8] = b"cfmp_hash_reset\0";
 
 pub type HashCloneFnV0 = extern "C" fn(*mut FFIHash, *mut *mut FFIHash) -> u32;
-const HASH_CLONE_FN_V0_NAME: &'static [u8] = b"cfmp_hash_clone\0";
+const HASH_CLONE_FN_V0_NAME: &[u8] = b"cfmp_hash_clone\0";
 
 pub type HashFinalizeFnV0 = extern "C" fn(*mut FFIHash, *mut u8, u32) -> u32;
-const HASH_FINALIZE_FN_V0_NAME: &'static [u8] = b"cfmp_hash_finalize\0";
+const HASH_FINALIZE_FN_V0_NAME: &[u8] = b"cfmp_hash_finalize\0";
 
 pub type HashDestroyFnV0 = extern "C" fn(*mut FFIHash) -> c_void;
-const HASH_DESTROY_FN_V0_NAME: &'static [u8] = b"cfmp_hash_destroy\0";
+const HASH_DESTROY_FN_V0_NAME: &[u8] = b"cfmp_hash_destroy\0";
 
 pub struct HashInterfaceV0 {
     pub create: Box<HashCreateFnV0>,
@@ -113,7 +113,7 @@ fn cfm_hash_create_(
     name: *const c_char,
     provider: *const c_char,
     opts: *const Options,
-    errptr: *mut *mut Error,
+    _errptr: *mut *mut Error,
 ) -> Result<()> {
     check_not_null!(cfm);
     check_not_null!(hash);
@@ -124,7 +124,7 @@ fn cfm_hash_create_(
         true => None,
         false => Some(cstring(provider)?),
     };
-    let provider = provider.as_ref().map(|provider| provider.as_str());
+    let provider = provider.as_deref();
     let opts = match opts.is_null() {
         true => None,
         false => Some(unsafe { &*opts }),
@@ -194,7 +194,7 @@ pub extern "C" fn cfm_hash_reset(hash: *mut Hash) -> u32 {
 }
 
 fn cfm_hash_clone_(src: *mut Hash, dst: *mut *mut Hash) -> Result<()> {
-    unsafe { *dst = Box::into_raw(Box::new(Hash::clone(&*src)?)) }
+    unsafe { *dst = Box::into_raw(Box::new((*src).try_clone()?)) }
     Ok(())
 }
 
@@ -207,7 +207,7 @@ fn cfm_hash_finalize_(hash: *mut Hash, result: *mut u8, size: u32) -> Result<()>
     unsafe {
         let vec = (*hash).finalize()?;
         if (size as usize) < vec.len() {
-            return error::InsufficientBuffer {}.fail();
+            return error::InsufficientBufferSnafu {}.fail();
         }
         std::ptr::copy(vec.as_ptr(), result, vec.len());
     }

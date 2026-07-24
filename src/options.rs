@@ -33,11 +33,9 @@ mod tests {
         let mut inner = Options::new();
         inner.insert("num".to_string(), OptionValue::U32(3535));
         opts.insert("opts".to_string(), OptionValue::Options(Box::new(inner)));
-        // TODO: probably a better way
-        if let OptionValue::Options(value) = &opts[&"opts".to_string()] {
-            assert!(value[&"num".to_string()] == OptionValue::U32(3535));
-        } else {
-            assert!(false);
-        }
+        let OptionValue::Options(value) = &opts[&"opts".to_string()] else {
+            panic!("expected Options variant");
+        };
+        assert!(value[&"num".to_string()] == OptionValue::U32(3535));
     }
 }

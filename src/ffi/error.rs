@@ -8,7 +8,7 @@ use crate::error::{Error, ErrorCode};
 macro_rules! err_check_not_null {
     ($param:ident) => {{
         if $param.is_null() {
-            let err = $crate::error::NullPointer {
+            let err = $crate::error::NullPointerSnafu {
                 param: stringify!($param),
             }
             .build();
@@ -46,7 +46,7 @@ pub extern "C" fn cfm_err_get_code(err: *const Error, code: *mut u32) -> u32 {
 }
 
 #[no_mangle]
-pub extern "C" fn cfm_err_get_source(err: *const Error, src: *mut *mut Error) -> u32 {
+pub extern "C" fn cfm_err_get_source(err: *const Error, _src: *mut *mut Error) -> u32 {
     err_check_not_null!(err);
     unimplemented!();
 }

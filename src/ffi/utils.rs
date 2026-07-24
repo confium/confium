@@ -2,6 +2,10 @@ use crate::Result;
 use snafu::ResultExt;
 use std::os::raw::c_char;
 
+// The inner `unsafe` block is required when the macro is invoked from a
+// non-unsafe context, but generates an `unused_unsafe` warning when invoked
+// from inside an existing `unsafe` block.
+#[allow(unused_unsafe)]
 macro_rules! ffi_return_err {
     ($error:ident, $errptr:ident) => {{
         let code = $error.code();
@@ -14,10 +18,11 @@ macro_rules! ffi_return_err {
     }};
 }
 
+#[allow(unused_unsafe)]
 macro_rules! ffi_check_not_null {
     ($param:ident, $errptr:ident) => {{
         if $param.is_null() {
-            let err = $crate::error::NullPointer {
+            let err = $crate::error::NullPointerSnafu {
                 param: stringify!($param),
             }
             .build();
@@ -31,7 +36,7 @@ pub(crate) fn cstring(cstr: *const c_char) -> Result<String> {
     unsafe {
         Ok(std::ffi::CStr::from_ptr(cstr)
             .to_str()
-            .context(crate::error::InvalidUTF8 {})?
+            .context(crate::error::InvalidUTF8Snafu {})?
             .to_string())
     }
 }

@@ -67,11 +67,11 @@ pub extern "C" fn cfm_opts_get_u32(
             if let OptionValue::U32(v) = v {
                 *value = *v;
             } else {
-                let e = error::WrongType { expected: "u32" }.build();
+                let e = error::WrongTypeSnafu { expected: "u32" }.build();
                 ffi_return_err!(e, err);
             }
         } else {
-            let e = error::ValueNotFound.build();
+            let e = error::ValueNotFoundSnafu.build();
             ffi_return_err!(e, err);
         }
     }
@@ -127,11 +127,11 @@ pub extern "C" fn cfm_opts_get_string(
             if let OptionValue::String(ref s) = v {
                 *value = CString::new(s.clone()).unwrap().into_raw();
             } else {
-                let e = error::WrongType { expected: "string" }.build();
+                let e = error::WrongTypeSnafu { expected: "string" }.build();
                 ffi_return_err!(e, err);
             }
         } else {
-            let e = error::ValueNotFound.build();
+            let e = error::ValueNotFoundSnafu.build();
             ffi_return_err!(e, err);
         }
     }

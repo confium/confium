@@ -6,18 +6,13 @@ use libloading::{Library, Symbol};
 use snafu::ResultExt;
 
 use crate::error::Error;
-use crate::error::*;
 use crate::ffi::hash::create_hash_interface;
 use crate::ffi::hash::HashInterface;
 use crate::ffi::utils::cstring;
 use crate::options::Options;
-use crate::Confium;
-use crate::Plugin;
-use crate::Provider;
-use crate::Result;
+use crate::{Confium, Plugin, Provider, Result};
 
 use std::env::consts::DLL_EXTENSION;
-use std::env::consts::DLL_PREFIX;
 use std::path::PathBuf;
 
 #[derive(Debug)]
@@ -27,20 +22,19 @@ pub enum PluginInterface {
 
 // plugin interface version
 type InterfaceVersionFn = extern "C" fn(*mut Confium) -> u32;
-const INTERFACE_VERSION_FN_NAME: &'static [u8] = b"cfmp_interface_version\0";
+const INTERFACE_VERSION_FN_NAME: &[u8] = b"cfmp_interface_version\0";
 
 // plugin v0 interface
 type InitializeFnV0 = extern "C" fn(*mut Confium, opts: *const Options) -> u32;
-const INITIALIZE_FN_V0_NAME: &'static [u8] = b"cfmp_initialize\0";
+const INITIALIZE_FN_V0_NAME: &[u8] = b"cfmp_initialize\0";
 
 type FinalizeFnV0 = extern "C" fn(*mut Confium) -> u32;
-const FINALIZE_FN_V0_NAME: &'static [u8] = b"cfmp_finalize\0";
+const FINALIZE_FN_V0_NAME: &[u8] = b"cfmp_finalize\0";
 
 type QueryInterfacesFnV0 = extern "C" fn(*mut Confium) -> *const u8;
-const QUERY_INTERFACES_FN_V0_NAME: &'static [u8] = b"cfmp_query_interfaces\0";
+const QUERY_INTERFACES_FN_V0_NAME: &[u8] = b"cfmp_query_interfaces\0";
 
 pub struct PluginV0 {
-    initialize: Box<InitializeFnV0>,
     finalize: Box<FinalizeFnV0>,
     query_interfaces: Box<QueryInterfacesFnV0>,
 }
@@ -52,7 +46,7 @@ pub enum PluginVTable {
 macro_rules! check_not_null {
     ($param:ident) => {{
         if $param.is_null() {
-            return $crate::error::NullPointer {
+            return $crate::error::NullPointerSnafu {
                 param: stringify!($param),
             }
             .fail();
@@ -68,10 +62,8 @@ pub(crate) fn get_plugin_symbol<T>(
 where
     T: Copy,
 {
-    let func: Symbol<T> = unsafe { lib.get::<T>(symbol) }.context(PluginSymbolError {
-        name,
-        symbol: symbol,
-    })?;
+    let func: Symbol<T> = unsafe { lib.get::<T>(symbol) }
+        .context(crate::error::PluginSymbolSnafu { name, symbol })?;
     Ok(Box::new(*func))
 }
 
@@ -87,16 +79,15 @@ fn load_plugin_v0(
         get_plugin_symbol::<QueryInterfacesFnV0>(&lib, name, QUERY_INTERFACES_FN_V0_NAME)?;
     let code = initialize(cfm, opts);
     if code != 0 {
-        return PluginInternalError { name, code }.fail();
+        return crate::error::PluginInternalSnafu { name, code }.fail();
     }
     let vtable = PluginVTable::V0(PluginV0 {
-        initialize: initialize,
-        finalize: finalize,
-        query_interfaces: query_interfaces,
+        finalize,
+        query_interfaces,
     });
     Ok(Plugin {
         library: Rc::new(lib),
-        vtable: vtable,
+        vtable,
         interfaces: Vec::new(),
     })
 }
@@ -111,16 +102,15 @@ fn enumerate_plugin_interfaces(cfm: &mut Confium, vtable: &PluginVTable) -> Resu
             loop {
                 let start = idx;
                 let mut end = start;
-                while unsafe { *(ifs.offset(end as isize)) } != 0 {
+                while unsafe { *(ifs.add(end)) } != 0 {
                     end += 1;
                 }
-                let name =
-                    unsafe { std::slice::from_raw_parts(ifs.offset(start as isize), end - start) };
-                let name = std::str::from_utf8(name).context(InvalidUTF8 {})?;
-                if name == "" {
+                let name = unsafe { std::slice::from_raw_parts(ifs.add(start), end - start) };
+                let name = std::str::from_utf8(name).context(crate::error::InvalidUTF8Snafu {})?;
+                if name.is_empty() {
                     break;
                 }
-                let version = unsafe { *ifs.offset(end as isize + 1) };
+                let version = unsafe { *ifs.add(end + 1) };
                 // add to the list of this plugin's advertised interfaces
                 if !list.contains_key(name) {
                     list.insert(name.to_string(), Vec::<u8>::new());
@@ -131,7 +121,7 @@ fn enumerate_plugin_interfaces(cfm: &mut Confium, vtable: &PluginVTable) -> Resu
             }
         }
     }
-    for (_, versions) in list.iter_mut() {
+    for versions in list.values_mut() {
         versions.sort();
     }
     Ok(list)
@@ -141,7 +131,7 @@ fn create_plugin_interface(
     _cfm: &mut Confium,
     lib: &Library,
     name: &str,
-    versions: &Vec<u8>,
+    versions: &[u8],
 ) -> Result<Option<PluginInterface>> {
     for version in versions.iter().rev() {
         match name {
@@ -179,18 +169,20 @@ fn finalize_plugin(cfm: &mut Confium, plugin: &Plugin) {
     }
 }
 
-fn plugin_load_lib(name: &str, paths: &Vec<PathBuf>) -> Result<libloading::Library> {
-    let mut err = None;
+fn plugin_load_lib(name: &str, paths: &[PathBuf]) -> Result<libloading::Library> {
+    let mut last_err: Option<libloading::Error> = None;
     for path in paths {
-        let lib = unsafe { Library::new(&path) }.context(PluginLoadFailed { name: name });
-        if lib.is_ok() {
-            return Ok(lib?);
-        } else {
-            err = Some(lib.unwrap_err());
+        match unsafe { Library::new(path) } {
+            Ok(lib) => return Ok(lib),
+            Err(e) => last_err = Some(e),
         }
     }
     // paths vec must contain at least one element or we panic
-    Err(err.unwrap())
+    let source = last_err.expect("paths must contain at least one element");
+    Err(crate::error::Error::PluginLoadFailed {
+        name: name.to_string(),
+        source,
+    })
 }
 
 fn cfm_plugin_load_(
@@ -206,7 +198,7 @@ fn cfm_plugin_load_(
     let name = cstring(c_name)?;
     for provider in &cfm.providers {
         if provider.name == name {
-            return PluginNameCollision { name }.fail();
+            return crate::error::PluginNameCollisionSnafu { name }.fail();
         }
     }
     let path = PathBuf::from(cstring(c_path)?);
@@ -215,7 +207,7 @@ fn cfm_plugin_load_(
     // be platform-aware, and we will not try alternate paths. Otherwise,
     // we will try to helpfully prepend the platform's shared library prefix,
     // and/or extension.
-    if (&path).extension().and_then(std::ffi::OsStr::to_str) != Some(&DLL_EXTENSION) {
+    if path.extension().and_then(std::ffi::OsStr::to_str) != Some(DLL_EXTENSION) {
         let path_with_ext = path.with_extension(DLL_EXTENSION);
         paths.push(path_with_ext.clone());
         if let Some(filename) = path_with_ext.file_name() {
@@ -229,17 +221,15 @@ fn cfm_plugin_load_(
     let lib = plugin_load_lib(&name, &paths)?;
     let plugin_iface_ver =
         get_plugin_symbol::<InterfaceVersionFn>(&lib, &name, INTERFACE_VERSION_FN_NAME)?;
-    let mut plugin;
-    match plugin_iface_ver(cfm) {
-        0 => {
-            plugin = load_plugin_v0(cfm, &name, lib, unsafe { &mut *opts })?;
-        }
-        _ => return PluginInterfaceVersionUnsupported { name }.fail(),
-    }
+    let plugin = match plugin_iface_ver(cfm) {
+        0 => load_plugin_v0(cfm, &name, lib, unsafe { &mut *opts })?,
+        _ => return crate::error::PluginInterfaceVersionUnsupportedSnafu { name }.fail(),
+    };
+    let mut plugin = plugin;
     plugin.interfaces =
-        load_plugin_interfaces(cfm, &plugin.library, &plugin.vtable).or_else(|e| {
+        load_plugin_interfaces(cfm, &plugin.library, &plugin.vtable).map_err(|e| {
             finalize_plugin(cfm, &plugin);
-            Err(e)
+            e
         })?;
     cfm.providers.push(Provider { name, plugin });
     Ok(())
