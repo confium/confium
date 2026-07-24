@@ -15,6 +15,7 @@ pub mod kem;
 pub mod options;
 pub mod rng;
 pub mod sensitive;
+pub mod signature;
 
 use std::any::Any;
 use std::collections::HashMap;

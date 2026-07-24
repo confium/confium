@@ -17,3 +17,4 @@ pub mod options;
 pub mod plugin;
 pub mod registry;
 pub mod rng;
+pub mod signature;
