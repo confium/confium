@@ -1,0 +1,34 @@
+# Release-plz configuration for confium
+#
+# Automated versioning and changelog generation driven by conventional commits.
+# See: https://release-plz.dev/docs/config
+
+[workspace]
+# Disable auto GitHub releases; the release.yml workflow handles publishing
+# to crates.io only. Tag/release creation can be enabled later if desired.
+git_release_enable = false
+
+# Update dependencies with `cargo update` as part of release PRs
+dependencies_update = true
+
+# Allow PRs to be created from the release-plz bot
+allow_dirty = false
+
+[changelog]
+# Group commits by conventional-commit type
+body = """
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | upper_first }}
+{% for commit in commits %}
+- {{ commit.message | upper_first }}\
+{% if commit.breaking %} (BREAKING){% endif %}\
+{% if commit.author != "github-actions[bot]" %} by @{{ commit.author }}{% endif %}\
+{% endfor %}
+{% endfor %}
+"""
+
+# Conventional commits configuration
+# - feat: minor version bump
+# - fix: patch version bump
+# - feat! or fix!: major version bump (breaking change)
+# - docs, chore, refactor, test, ci: no version bump (changelog only)
