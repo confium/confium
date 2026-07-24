@@ -1,0 +1,311 @@
+# Continuous Integration for Confium
+#
+# Jobs:
+# - Spell check (typos)
+# - Security audit (cargo-audit + cargo-deny)
+# - Format and lint (fmt + clippy + doc)
+# - Unused dependency check (cargo-machete)
+# - Multi-platform Rust tests (Linux, macOS, Windows)
+# - C++ binding tests (cmake + ctest)
+# - Semver compatibility check
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  RUST_BACKTRACE: short
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  # ============================================================================
+  # Typos Check
+  # ============================================================================
+  typos:
+    name: Spell Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: crate-ci/typos@v1.45.0
+
+  # ============================================================================
+  # Pre-flight: skip CI when only docs/markdown changed
+  # ============================================================================
+  preflight:
+    name: Pre-flight Checks
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if code changed
+        id: check
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          elif git diff --name-only HEAD^ HEAD | grep -qE '\.(rs|cpp|h|hpp|toml|cmake)$|CMakeLists\.txt'; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ============================================================================
+  # Security Audit
+  # ============================================================================
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    needs: preflight
+    if: needs.preflight.outputs.should_run == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate Cargo.lock
+        run: cargo generate-lockfile
+
+      - name: Run cargo-audit
+        uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install cargo-deny
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny
+
+      - name: Check licenses and advisories
+        run: cargo deny check licenses advisories sources bans
+
+  # ============================================================================
+  # Format and Lint
+  # ============================================================================
+  lint:
+    name: Format and Lint
+    runs-on: ubuntu-latest
+    needs: preflight
+    if: needs.preflight.outputs.should_run == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo tools
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Check documentation
+        run: cargo doc --no-deps
+        env:
+          RUSTDOCFLAGS: "-D warnings"
+
+  # ============================================================================
+  # Unused Dependencies
+  # ============================================================================
+  machete:
+    name: Check Unused Dependencies
+    runs-on: ubuntu-latest
+    needs: preflight
+    if: needs.preflight.outputs.should_run == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cargo-machete
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-machete
+
+      - name: Check for unused dependencies
+        run: cargo machete
+
+  # ============================================================================
+  # Publish Check (Dry Run)
+  # ============================================================================
+  publish-check:
+    name: Publish Check
+    runs-on: ubuntu-latest
+    needs: preflight
+    if: needs.preflight.outputs.should_run == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Publish check
+        run: cargo publish --dry-run
+
+  # ============================================================================
+  # Rust Tests (Multi-platform)
+  # ============================================================================
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: [preflight]
+    if: needs.preflight.outputs.should_run == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}
+          cache-on-failure: true
+
+      - name: Build
+        run: cargo build --verbose
+
+      - name: Run tests
+        run: cargo test --verbose
+
+  # ============================================================================
+  # C++ Binding Tests
+  # ============================================================================
+  cpp-tests:
+    name: C++ Binding Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: [preflight]
+    if: needs.preflight.outputs.should_run == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cbindgen
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cbindgen
+
+      - name: Install cmake
+        uses: lukka/get-cmake@latest
+
+      - name: Install boost (non-Windows)
+        if: runner.os != 'Windows'
+        uses: MarkusJx/install-boost@v2.4.1
+        id: install-boost
+        with:
+          boost_version: 1.81.0
+
+      - name: Install boost (Windows)
+        if: runner.os == 'Windows'
+        uses: MarkusJx/install-boost@v2.4.1
+        id: install-boost-win
+        with:
+          boost_version: 1.81.0
+
+      - name: Configure and build (non-Windows)
+        if: runner.os != 'Windows'
+        env:
+          BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
+        run: |
+          mkdir build
+          cd build
+          cmake -DBUILD_TESTING=yes -DBUILD_C_BINDINGS=yes ..
+          cmake --build .
+
+      - name: Configure and build (Windows)
+        if: runner.os == 'Windows'
+        env:
+          BOOST_ROOT: ${{ steps.install-boost-win.outputs.BOOST_ROOT }}
+        run: |
+          mkdir build
+          cd build
+          cmake -G "Visual Studio 17 2022" -DBUILD_TESTING=yes -DBUILD_C_BINDINGS=yes ..
+          cmake --build . --config Debug
+
+      - name: Run ctest
+        run: |
+          cd build
+          ctest -C Debug -V
+
+  # ============================================================================
+  # Semver Compatibility Check
+  # ============================================================================
+  semver:
+    name: Semver Compatibility
+    runs-on: ubuntu-latest
+    needs: [preflight]
+    if: github.event_name == 'pull_request' && needs.preflight.outputs.should_run == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Install cargo-semver-checks
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-semver-checks
+
+      - name: Check semver compatibility
+        run: cargo semver-checks --baseline-rev origin/${{ github.base_ref }}
+
+  # ============================================================================
+  # Summary
+  # ============================================================================
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [typos, security, lint, machete, publish-check, test, cpp-tests]
+    if: always()
+    steps:
+      - name: Report status
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - name: All checks passed
+        run: echo "All CI checks passed!"
