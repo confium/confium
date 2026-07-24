@@ -2,7 +2,7 @@ use snafu::Backtrace;
 use snafu::Snafu;
 
 #[derive(Snafu, Debug)]
-#[snafu(visibility = "pub(crate)")]
+#[snafu(visibility(pub(crate)))]
 pub enum Error {
     #[snafu(display("NULL pointer on parameter '{}'", param))]
     NullPointer {
@@ -54,7 +54,7 @@ pub enum Error {
 
 impl Error {
     pub fn code(&self) -> u32 {
-        error_code(&self)
+        error_code(self)
     }
 }
 

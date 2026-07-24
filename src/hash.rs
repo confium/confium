@@ -26,35 +26,31 @@ fn find_provider<'a>(cfm: &'a Confium, name: &str) -> Option<&'a Provider> {
 }
 
 fn get_provider<'a>(cfm: &'a Confium, name: &str) -> Result<&'a Provider> {
-    Ok(find_provider(cfm, name).ok_or(error::UnknownProvider { name }.build())?)
+    find_provider(cfm, name).ok_or(error::UnknownProviderSnafu { name }.build())
 }
 
 fn find_interface(provider: &Provider, ifname: &str) -> Option<Rc<PluginInterface>> {
     match ifname {
         "hash" => {
-            let Some(iface) = provider
+            let iface = provider
                 .plugin
                 .interfaces
                 .iter()
-                .find(|&iface| match **iface {
-                    PluginInterface::Hash(..) => true,
-                }) else {
-                    return None;
-                };
-            return Some(Rc::clone(iface));
+                .find(|iface| matches!(***iface, PluginInterface::Hash(..)))?;
+            Some(Rc::clone(iface))
         }
         _ => None,
     }
 }
 
 fn get_interface(provider: &Provider, ifname: &str) -> Result<Rc<PluginInterface>> {
-    Ok(find_interface(provider, ifname).ok_or(
-        error::PluginMissingInterface {
+    find_interface(provider, ifname).ok_or(
+        error::PluginMissingInterfaceSnafu {
             name: provider.name.clone(),
             ifname,
         }
         .build(),
-    )?)
+    )
 }
 
 fn create_v0(
@@ -68,7 +64,7 @@ fn create_v0(
     let cname = CString::new(name).unwrap();
     let code = (*v0.create)(cfm, &mut obj, cname.as_ptr(), opts);
     if code != 0 {
-        return error::PluginInternalError {
+        return error::PluginInternalSnafu {
             name: plugin_name,
             code,
         }
@@ -102,17 +98,17 @@ impl Hash {
         for provider in providers {
             let iface = get_interface(provider, "hash")?;
             let PluginInterface::Hash(hashif) = iface.as_ref();
-            let obj = create(cfm, &provider.name, &hashif, name, opts)?;
+            let obj = create(cfm, &provider.name, hashif, name, opts)?;
             if let Some(obj) = obj {
                 return Ok(Hash {
-                    obj: obj,
+                    obj,
                     name: name.to_string(),
                     lib: Rc::clone(&provider.plugin.library),
                     interface: Rc::clone(&iface),
                 });
             }
         }
-        error::UnsupportedAlgorithm { name }.fail()
+        error::UnsupportedAlgorithmSnafu { name }.fail()
     }
 
     pub fn new(
@@ -127,7 +123,7 @@ impl Hash {
             // error if provider does not exist
             // error if provider is missing the interface
             let provider = get_provider(cfm, provider_name)?;
-            providers.push(&provider);
+            providers.push(provider);
         } else if let Some(preferred) = cfm.preferred_providers.get("hash") {
             // try all in the preferred provider list
             for provider in preferred {
@@ -136,9 +132,9 @@ impl Hash {
         } else {
             // try all providers, in the order they were loaded
             for provider in &cfm.providers {
-                let hashif = find_interface(&provider, "hash");
-                if let Some(_) = hashif {
-                    providers.push(&provider);
+                let hashif = find_interface(provider, "hash");
+                if hashif.is_some() {
+                    providers.push(provider);
                 }
             }
         }
@@ -153,7 +149,7 @@ impl Hash {
                 let code = (*hashif.update)(self.obj, data.as_ptr(), data.len() as u32);
                 if code != 0 {
                     // TODO: name...
-                    return error::PluginInternalError { name: "", code }.fail();
+                    return error::PluginInternalSnafu { name: "", code }.fail();
                 }
                 Ok(())
             }
@@ -167,14 +163,14 @@ impl Hash {
                 let code = (*hashif.reset)(self.obj);
                 if code != 0 {
                     // TODO: name...
-                    return error::PluginInternalError { name: "", code }.fail();
+                    return error::PluginInternalSnafu { name: "", code }.fail();
                 }
                 Ok(())
             }
         }
     }
 
-    pub fn clone(&self) -> Result<Hash> {
+    pub fn try_clone(&self) -> Result<Hash> {
         let PluginInterface::Hash(hashif) = &*self.interface;
         match hashif {
             HashInterface::V0(hashif) => {
@@ -182,7 +178,7 @@ impl Hash {
                 let code = (*hashif.clone)(self.obj, &mut dst);
                 if code != 0 || dst.is_null() {
                     // TODO: name...
-                    return error::PluginInternalError { name: "", code }.fail();
+                    return error::PluginInternalSnafu { name: "", code }.fail();
                 }
                 Ok(Hash {
                     obj: dst,
@@ -196,15 +192,14 @@ impl Hash {
 
     pub fn finalize(&mut self) -> Result<Vec<u8>> {
         let size = self.output_size()?;
-        let mut result: Vec<u8> = Vec::with_capacity(size as usize);
-        result.resize(size as usize, 0);
+        let mut result: Vec<u8> = vec![0; size as usize];
         let PluginInterface::Hash(hashif) = &*self.interface;
         match hashif {
             HashInterface::V0(hashif) => {
                 let code = (*hashif.finalize)(self.obj, result.as_mut_ptr(), size);
                 if code != 0 {
                     // TODO: name...
-                    return error::PluginInternalError { name: "", code }.fail();
+                    return error::PluginInternalSnafu { name: "", code }.fail();
                 }
                 Ok(result)
             }
@@ -219,7 +214,7 @@ impl Hash {
                 let code = (*hashif.block_size)(self.obj, &mut size);
                 if code != 0 {
                     // TODO: name...
-                    return error::PluginInternalError { name: "", code }.fail();
+                    return error::PluginInternalSnafu { name: "", code }.fail();
                 }
                 Ok(size)
             }
@@ -234,7 +229,7 @@ impl Hash {
                 let code = (*hashif.output_size)(self.obj, &mut size);
                 if code != 0 {
                     // TODO: name...
-                    return error::PluginInternalError { name: "", code }.fail();
+                    return error::PluginInternalSnafu { name: "", code }.fail();
                 }
                 Ok(size)
             }
