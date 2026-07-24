@@ -8,6 +8,7 @@ pub mod error;
 #[macro_use]
 pub mod ffi;
 pub mod hash;
+pub mod kdf;
 pub mod options;
 pub mod rng;
 pub mod sensitive;
