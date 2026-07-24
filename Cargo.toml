@@ -40,6 +40,9 @@ inventory = "0.3"
 zeroize = "1.8"
 url = "2.5"
 clap = { version = "4.5", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+criterion = { version = "0.5", default-features = false, features = ["plotters", "cargo_bench_support"] }
 
 [profile.release]
 opt-level = 3
