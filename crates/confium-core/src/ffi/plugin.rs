@@ -237,7 +237,22 @@ fn cfm_plugin_load_(
         load_plugin_interfaces(cfm, &plugin.library, &plugin.vtable).inspect_err(|_e| {
             finalize_plugin(cfm, &plugin);
         })?;
-    cfm.providers.push(Provider { name, plugin });
+    cfm.providers.push(Provider {
+        name: name.clone(),
+        plugin,
+    });
+    // Audit the successful load. Version and publisher metadata come
+    // from the plugin manifest, which is not yet parsed at this layer;
+    // they are recorded as empty strings until manifest loading lands
+    // (tracked alongside the registry install flow in
+    // TODO.roadmap/06-module-registry.md). The plugin name and the
+    // event itself are still valuable for audit — they establish that
+    // a third-party crypto provider entered the process.
+    cfm.audit.log(&crate::audit::event::AuditEvent::PluginLoad {
+        name: &name,
+        version: "",
+        publisher: "",
+    });
     Ok(())
 }
 
