@@ -9,7 +9,12 @@ homepage.workspace = true
 repository.workspace = true
 description = "Confium threshold-cryptography primitives"
 
+[lib]
+crate-type = ["rlib"]
+
 [dependencies]
 confium-api = { workspace = true }
 confium-net = { workspace = true }
 confium-store = { workspace = true }
+inventory = { workspace = true }
+snafu = { workspace = true }
