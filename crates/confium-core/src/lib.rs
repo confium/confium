@@ -5,6 +5,7 @@
 #[macro_use]
 pub mod utils;
 pub mod aead;
+pub mod audit;
 pub mod cipher;
 pub mod error;
 #[macro_use]
@@ -25,6 +26,7 @@ use std::rc::Rc;
 
 use libloading::Library;
 
+use audit::AuditLogger;
 use error::Error;
 use snafu::ResultExt;
 
@@ -163,13 +165,27 @@ impl PluginInterface {
 pub struct Confium {
     providers: Vec<Provider>,
     preferred_providers: HashMap<String, Vec<String>>,
+    /// Structured audit log sink. Logs plugin loads, key accesses, and
+    /// TC session boundaries as JSON Lines. See [`audit::AuditLogger`].
+    pub audit: AuditLogger,
 }
 
 impl Confium {
+    /// Construct a `Confium` whose audit logger resolves its sink from
+    /// the environment (`CONFIUM_AUDIT_LOG` or the default path under
+    /// `~/.local/share/confium/log/`, falling back to stderr).
     pub fn new() -> Self {
+        Self::new_with_audit(AuditLogger::default_logger())
+    }
+
+    /// Construct a `Confium` with a caller-supplied audit logger. Use
+    /// this to pass [`audit::AuditLogger::disabled`] for tests or
+    /// opt-out, or a logger configured for a specific file.
+    pub fn new_with_audit(logger: AuditLogger) -> Self {
         Confium {
             providers: Vec::new(),
             preferred_providers: HashMap::new(),
+            audit: logger,
         }
     }
 
