@@ -25,7 +25,6 @@ repository = "https://github.com/confium/confium"
 categories = ["authentication", "cryptography"]
 
 [workspace.dependencies]
-# Workspace crates — pinned to the current workspace version.
 confium-api = { path = "crates/confium-api", version = "0.3.0" }
 confium-core = { path = "crates/confium-core", version = "0.2.0" }
 confium-macros = { path = "crates/confium-macros", version = "0.3.0" }
@@ -35,7 +34,6 @@ confium-registry = { path = "crates/confium-registry", version = "0.3.0" }
 confium-store = { path = "crates/confium-store", version = "0.3.0" }
 confium-tc = { path = "crates/confium-tc", version = "0.3.0" }
 
-# Third-party crates shared across the workspace.
 libloading = "0.8"
 snafu = "0.8"
 inventory = "0.3"

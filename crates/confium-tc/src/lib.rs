@@ -25,6 +25,7 @@ pub mod ffi;
 pub mod message;
 pub mod party;
 pub mod registry;
+pub mod schemes;
 pub mod session;
 pub mod share;
 
