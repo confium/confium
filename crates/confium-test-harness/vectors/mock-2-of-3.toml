@@ -1,0 +1,36 @@
+# NIST MPTS conformance vector: mock-tc-sig, 2-of-3 threshold signing.
+#
+# A smaller-coalition companion to mock-3-of-5.toml. Same scheme,
+# tighter threshold (T=2 of N=3) so the threshold-enforcement path in
+# mock-tc-sig::round2 is exercised with the minimum viable honest
+# coalition.
+#
+# Schema: crates/confium-test-harness/src/vector.rs
+# Design: TODO.roadmap/09-nist-evaluation-harness.md
+
+conformance_level = "must_pass"
+reference = "https://confium.org/schemes/mock-tc-sig.html"
+expected_round_count = 3
+share_material = "default"
+
+[scheme]
+name = "mock-tc-sig"
+version = "in-repo"
+
+[test]
+parties = 3
+threshold = 2
+message = "nist-vector-2-of-3"
+seed = "0xcafebabe"
+
+[[peer_behavior]]
+party_id = "alice"
+type = "honest"
+
+[[peer_behavior]]
+party_id = "bob"
+type = "honest"
+
+[[peer_behavior]]
+party_id = "carol"
+type = "honest"

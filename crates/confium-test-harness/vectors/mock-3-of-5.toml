@@ -1,0 +1,61 @@
+# NIST MPTS conformance vector: mock-tc-sig, 3-of-5 threshold signing.
+#
+# Exercises the in-repo `mock-tc-sig` scheme end-to-end through the
+# VectorRunner. The mock is cryptographically meaningless but reproduces
+# the full Session lifecycle (3 rounds, broadcast nonces, HMAC tag
+# aggregation, threshold enforcement), so this vector proves the
+# harness wiring is correct: the registry resolves the scheme, every
+# party completes, and the canonical signature is produced.
+#
+# Schema: crates/confium-test-harness/src/vector.rs
+# Design: TODO.roadmap/09-nist-evaluation-harness.md
+
+# Top-level vector metadata (lives on TestVector, outside [test]).
+
+# Conformance: a correct mock-tc-sig implementation MUST complete this
+# vector. Used as the baseline correctness gate.
+conformance_level = "must_pass"
+
+# Normative reference: the mock protocol is specified in
+# crates/confium-tc/src/schemes/mock.rs (no external spec).
+reference = "https://confium.org/schemes/mock-tc-sig.html"
+
+# The mock protocol is exactly 3 rounds.
+expected_round_count = 3
+
+# Named pre-shared key material. "default" selects the scheme's
+# compiled-in DEFAULT_SHARED_KEY (no DKG output to distribute).
+share_material = "default"
+
+[scheme]
+name = "mock-tc-sig"
+version = "in-repo"
+
+[test]
+parties = 5
+threshold = 3
+message = "nist-vector-3-of-5"
+seed = "0xdeadbeef"
+# No expected_signature_hex: the mock's signature depends on the
+# compiled-in shared key and is not a published reference value. The
+# harness treats protocol completion as a pass.
+
+[[peer_behavior]]
+party_id = "alice"
+type = "honest"
+
+[[peer_behavior]]
+party_id = "bob"
+type = "honest"
+
+[[peer_behavior]]
+party_id = "carol"
+type = "honest"
+
+[[peer_behavior]]
+party_id = "dave"
+type = "honest"
+
+[[peer_behavior]]
+party_id = "eve"
+type = "honest"

@@ -95,6 +95,10 @@ fn bench_sim_session(c: &mut Criterion) {
                         expected_signature_hex: String::new(),
                     },
                     peer_behavior: Vec::new(),
+                    conformance_level: Default::default(),
+                    reference: None,
+                    expected_round_count: None,
+                    share_material: None,
                 };
                 VectorRunner::run(&vector).expect("bench run must succeed")
             });

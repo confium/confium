@@ -19,6 +19,11 @@
 //! seed = "0xdeadbeef..."                # hex seed for deterministic RNG
 //! expected_signature_hex = "..."        # optional
 //!
+//! conformance_level = "must_pass"       # must_pass | should_pass | informational
+//! reference = "https://..."             # normative spec URL
+//! expected_round_count = 3              # warn if observed differs
+//! share_material = "nist-dkg-set-A"     # named pre-shared share label
+//!
 //! [[peer_behavior]]
 //! party_id = "alice"
 //! type = "honest"
@@ -31,6 +36,55 @@ use crate::byzantine::{BehaviorSpec, PeerBehavior};
 use crate::error;
 use crate::error::VectorSnafu;
 
+/// Conformance level declared by a vector. Mirrors NIST's
+/// MUST/SHOULD/INFORMATIONAL classification: a `MustPass` failure is a
+/// hard error; a `ShouldPass` failure is a warning (the scheme is
+/// expected to comply but the failure is not disqualifying on its
+/// own); `Informational` failures never count against the candidate.
+///
+/// Wire form is the lowercased tag in the vector's `[test]` block:
+/// `must_pass`, `should_pass`, `informational`. Defaults to
+/// `MustPass` when omitted so existing vectors keep their strict
+/// semantics.
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq, Default)]
+pub enum ConformanceLevel {
+    /// The candidate MUST pass this vector. A failure is a hard error
+    /// and disqualifies the submission for this profile.
+    #[default]
+    #[serde(rename = "must_pass")]
+    MustPass,
+    /// The candidate SHOULD pass this vector. A failure is recorded as
+    /// a warning; NIST may tolerate a bounded number of warnings.
+    #[serde(rename = "should_pass")]
+    ShouldPass,
+    /// Informational only. The result is reported but never gates the
+    /// candidate.
+    #[serde(rename = "informational")]
+    Informational,
+}
+
+impl ConformanceLevel {
+    /// Map a tag string to a conformance level. Returns `None` for an
+    /// unknown tag so the parser can surface a clear error.
+    pub fn from_tag(tag: &str) -> Option<Self> {
+        match tag {
+            "must_pass" => Some(ConformanceLevel::MustPass),
+            "should_pass" => Some(ConformanceLevel::ShouldPass),
+            "informational" => Some(ConformanceLevel::Informational),
+            _ => None,
+        }
+    }
+
+    /// Canonical wire tag for this level.
+    pub fn as_tag(self) -> &'static str {
+        match self {
+            ConformanceLevel::MustPass => "must_pass",
+            ConformanceLevel::ShouldPass => "should_pass",
+            ConformanceLevel::Informational => "informational",
+        }
+    }
+}
+
 /// Top-level TOML document.
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct TestVector {
@@ -38,6 +92,27 @@ pub struct TestVector {
     pub test: TestVectorTest,
     #[serde(default)]
     pub peer_behavior: Vec<PeerBehaviorEntry>,
+    /// NIST-style conformance classification for this vector. Defaults
+    /// to `MustPass` when absent so the schema remains strict-by-default.
+    #[serde(default)]
+    pub conformance_level: ConformanceLevel,
+    /// Optional URL pointing at the normative reference (spec section,
+    /// RFC, NIST publication) this vector exercises. Carried through to
+    /// the report so NIST can attribute every measurement to its source.
+    #[serde(default)]
+    pub reference: Option<String>,
+    /// Optional: the number of rounds a compliant implementation is
+    /// expected to take. When set, the runner warns if the observed
+    /// round count differs (but never fails on it alone).
+    #[serde(default)]
+    pub expected_round_count: Option<u8>,
+    /// Optional: the label of the pre-shared key material to feed into
+    /// each party's `local_share`. NIST publishes named DKG outputs;
+    /// this field lets a vector reference them by name rather than
+    /// inlining bytes. The harness resolves the label to bytes via the
+    /// environment (test fixture or registry lookup).
+    #[serde(default)]
+    pub share_material: Option<String>,
 }
 
 /// `[scheme]` block: identity of the candidate under test.
@@ -132,6 +207,14 @@ impl TestVector {
                         "unknown peer_behavior type '{}' for party '{}'",
                         entry.behavior_tag, entry.party_id
                     ),
+                }
+                .build());
+            }
+        }
+        if let Some(rc) = self.expected_round_count {
+            if rc == 0 {
+                return Err(VectorSnafu {
+                    message: "expected_round_count must be at least 1".to_string(),
                 }
                 .build());
             }
@@ -348,5 +431,151 @@ threshold = 1
         )
         .unwrap();
         assert!(v.test.expected_bytes().is_none());
+    }
+
+    #[test]
+    fn conformance_level_defaults_to_must_pass() {
+        let v = TestVector::parse(
+            r#"
+[scheme]
+name = "x"
+[test]
+parties = 2
+threshold = 1
+"#,
+        )
+        .unwrap();
+        assert_eq!(v.conformance_level, ConformanceLevel::MustPass);
+    }
+
+    #[test]
+    fn conformance_level_parses_should_pass() {
+        let v = TestVector::parse(
+            r#"
+conformance_level = "should_pass"
+[scheme]
+name = "x"
+[test]
+parties = 2
+threshold = 1
+"#,
+        )
+        .unwrap();
+        assert_eq!(v.conformance_level, ConformanceLevel::ShouldPass);
+    }
+
+    #[test]
+    fn conformance_level_parses_informational() {
+        let v = TestVector::parse(
+            r#"
+conformance_level = "informational"
+[scheme]
+name = "x"
+[test]
+parties = 2
+threshold = 1
+"#,
+        )
+        .unwrap();
+        assert_eq!(v.conformance_level, ConformanceLevel::Informational);
+    }
+
+    #[test]
+    fn conformance_level_rejects_unknown_tag_with_useful_error() {
+        let bad = r#"
+conformance_level = "maybe_pass"
+[scheme]
+name = "x"
+[test]
+parties = 2
+threshold = 1
+"#;
+        let err = TestVector::parse(bad).unwrap_err();
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("conformance_level") || msg.contains("maybe_pass"),
+            "error must point at the bad conformance_level tag: {msg}"
+        );
+    }
+
+    #[test]
+    fn reference_and_share_material_parse() {
+        let v = TestVector::parse(
+            r#"
+reference = "https://example.org/spec"
+share_material = "nist-dkg-A"
+expected_round_count = 4
+[scheme]
+name = "x"
+[test]
+parties = 2
+threshold = 1
+"#,
+        )
+        .unwrap();
+        assert_eq!(v.reference.as_deref(), Some("https://example.org/spec"));
+        assert_eq!(v.share_material.as_deref(), Some("nist-dkg-A"));
+        assert_eq!(v.expected_round_count, Some(4));
+    }
+
+    #[test]
+    fn rejects_zero_expected_round_count() {
+        let bad = r#"
+expected_round_count = 0
+[scheme]
+name = "x"
+[test]
+parties = 2
+threshold = 1
+"#;
+        let err = TestVector::parse(bad).unwrap_err();
+        assert!(
+            format!("{err}").contains("expected_round_count"),
+            "error must name the offending field"
+        );
+    }
+
+    #[test]
+    fn malformed_toml_surfaces_useful_error() {
+        // Missing the [scheme] table entirely — toml::from_str rejects
+        // this, and the parser must relay that as a Vector error
+        // (not a panic, not a raw toml::de::Error).
+        let bad = "this is not toml at all {{{";
+        let err = TestVector::parse(bad).unwrap_err();
+        let msg = format!("{err}");
+        assert!(
+            msg.to_lowercase().contains("malformed") || msg.contains("expected"),
+            "error must describe the malformation: {msg}"
+        );
+    }
+
+    #[test]
+    fn missing_scheme_name_surfaces_useful_error() {
+        // A structurally-valid TOML document that is missing a required
+        // field. The error must name what is missing.
+        let bad = r#"
+[scheme]
+[test]
+parties = 2
+threshold = 1
+"#;
+        let err = TestVector::parse(bad).unwrap_err();
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("name") || msg.contains("scheme"),
+            "error must point at the missing scheme.name: {msg}"
+        );
+    }
+
+    #[test]
+    fn conformance_level_round_trips_through_tags() {
+        for level in [
+            ConformanceLevel::MustPass,
+            ConformanceLevel::ShouldPass,
+            ConformanceLevel::Informational,
+        ] {
+            let tag = level.as_tag();
+            assert_eq!(ConformanceLevel::from_tag(tag), Some(level));
+        }
     }
 }
