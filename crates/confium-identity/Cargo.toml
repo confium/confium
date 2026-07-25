@@ -8,12 +8,16 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "Actor identity: signing and encryption keypairs per Confium actor"
-keywords = ["crypto", "threshold", "confium"]
+description = "Actor identity management for Confium deployments"
+keywords = ["crypto", "identity", "threshold", "confium"]
 
 [dependencies]
 serde = { workspace = true }
+serde_json = { workspace = true }
 snafu = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+data-encoding = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]
