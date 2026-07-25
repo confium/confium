@@ -1,0 +1,46 @@
+# Published copy of the mock-tc-sig 3-of-5 conformance vector.
+#
+# This is the registry-side mirror of
+# crates/confium-test-harness/vectors/mock-3-of-5.toml. It is the
+# canonical, immutably-published form that `confium install`-ed
+# candidates are evaluated against. The in-tree copy exists for the
+# workspace's own test suite; this copy is what NIST points the
+# harness at during a formal evaluation.
+#
+# Schema: crates/confium-test-harness/src/vector.rs
+# Catalog: ../index.toml
+
+conformance_level = "must_pass"
+reference = "https://confium.org/schemes/mock-tc-sig.html"
+expected_round_count = 3
+share_material = "default"
+
+[scheme]
+name = "mock-tc-sig"
+version = "in-repo"
+
+[test]
+parties = 5
+threshold = 3
+message = "nist-vector-3-of-5"
+seed = "0xdeadbeef"
+
+[[peer_behavior]]
+party_id = "alice"
+type = "honest"
+
+[[peer_behavior]]
+party_id = "bob"
+type = "honest"
+
+[[peer_behavior]]
+party_id = "carol"
+type = "honest"
+
+[[peer_behavior]]
+party_id = "dave"
+type = "honest"
+
+[[peer_behavior]]
+party_id = "eve"
+type = "honest"

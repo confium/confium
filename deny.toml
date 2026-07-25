@@ -23,6 +23,13 @@ allow = [
     "Unicode-DFS-2016",
     "Unicode-3.0",
     "CC0-1.0",
+    # MPL-2.0 is a weak copyleft, file-level license; compatible with
+    # BSD-2-Clause distribution. Pulled in by `dirs` → `option-ext`.
+    "MPL-2.0",
+    # CDLA-Permissive-2.0 is a permissive data-license; compatible with
+    # BSD-2-Clause. Pulled in by `ureq` → `webpki-roots` (Mozilla's CA
+    # root bundle).
+    "CDLA-Permissive-2.0",
 ]
 
 # Confidence threshold for license detection

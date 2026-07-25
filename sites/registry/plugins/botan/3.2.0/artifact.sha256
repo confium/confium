@@ -1,0 +1,13 @@
+# SHA-256 of the plugin artifact for botan 3.2.0.
+#
+# This file mirrors the sha256 field in manifest.toml. It is kept as a
+# standalone file so that install tooling and mirrors can fetch just the
+# hash without downloading the manifest, and so that `sha256sum -c` style
+# verification has a canonical input.
+#
+# Format: <hex digest>  <basename of artifact>
+#
+# PLACEHOLDER — the digest below is the SHA-256 of the empty string and is
+# illustrative only. It will be replaced with the real artifact digest
+# before this version is signed and published.
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  libcfm-botan-3.2.0.dylib

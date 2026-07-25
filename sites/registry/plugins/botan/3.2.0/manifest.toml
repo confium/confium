@@ -1,0 +1,54 @@
+# Plugin manifest: botan 3.2.0
+#
+# This file is published once and then IMMUTABLE. The directory
+# plugins/botan/3.2.0/ is never edited; if a vulnerability is found, the
+# version is removed via a takedown PR and the `latest` pointer in
+# plugins/botan/index.toml is updated.
+#
+# Schema per TODO.roadmap/06-module-registry.md.
+
+[plugin]
+name = "botan"
+version = "3.2.0"
+publisher = "ribose"
+license = "BSD-2-Clause"
+homepage = "https://botan.randombit.net"
+source = "https://github.com/confium/confium-botan/tree/v3.2.0"
+
+[confium]
+contract-version = 0                   # cfmp_interface_version
+min-runtime = "0.3.0"                  # minimum Confium runtime version
+
+# Other plugins that must be loaded alongside this one. Format is the same
+# SemVer-range syntax cargo uses. botan does not actually depend on openssl;
+# this entry is illustrative only and should be removed (or replaced with a
+# real dependency) before the version is signed.
+[dependencies]
+openssl = ">=1.1,<2.0"
+
+# Which Confium interfaces this plugin implements, and at which interface
+# version. Interface names match the keys in the global interface registry
+# (see TODO.finalize/02-plugin-interface-registry.md).
+[interfaces]
+hash = 0
+rng = 0
+cipher = 0
+aead = 0
+
+# Algorithms supported per interface. Names follow the registry's canonical
+# algorithm identifiers (uppercase, hyphenated).
+[algorithms]
+hash = ["SHA-256", "SHA-384", "SHA-512", "SHA3-256", "SHA3-512"]
+cipher = ["AES-128", "AES-256", "ChaCha20"]
+aead = ["AES-256-GCM", "ChaCha20-Poly1305"]
+
+[artifact]
+# PLACEHOLDER — the URL, size, and hash below are illustrative. The real
+# artifact will be uploaded to the confium-botan GitHub Release for v3.2.0
+# and these fields updated before signing.
+url = "https://github.com/confium/confium-botan/releases/download/v3.2.0/libcfm-botan-3.2.0.dylib"
+size = 1234567
+sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+mirrors = [
+    "https://mirror.example.com/confium/botan/3.2.0/libcfm-botan-3.2.0.dylib",
+]

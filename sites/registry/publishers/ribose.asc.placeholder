@@ -1,0 +1,18 @@
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Comment: PLACEHOLDER publisher public key for "ribose".
+Comment:
+Comment: This is NOT a real key. It illustrates the structure of the file
+Comment: that should replace it during publisher onboarding. The armored
+Comment: block below is an empty/placeholder OpenPGP packet and will NOT
+Comment: verify any signature.
+Comment:
+Comment: To onboard, a publisher runs:
+Comment:   gpg --armor --export <key-id> > ribose.asc
+Comment: and opens a PR replacing this file. See docs/publisher-onboarding.md.
+
+x quoCgr______________________________________________________________
+______________________________________________________________________
+______________________________________________________________________
+______________________________________________________________________
+_________________________=qUqJ
+-----END PGP PUBLIC KEY BLOCK-----

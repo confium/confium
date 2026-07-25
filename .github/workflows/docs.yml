@@ -1,0 +1,99 @@
+# Build and publish the Confium documentation site to GitHub Pages.
+#
+# Renders the AsciiDoc sources under docs/*.adoc to HTML with asciidoctor,
+# then publishes the result via the actions/deploy-pages action. The site
+# is rebuilt on every push to main that touches docs/, README.adoc,
+# CONTRIBUTING.md, or this workflow, and on manual dispatch.
+#
+# Source layout:
+#   docs/index.adoc              landing page
+#   docs/develop.adoc            developer guide
+#   docs/plugin-author-guide.adoc plugin authoring tutorial
+#
+# Output: a static HTML site deployed to the GitHub Pages environment
+# configured under the repository Settings > Pages (source: GitHub Actions).
+
+name: Docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+      - "README.adoc"
+      - "CONTRIBUTING.md"
+      - "SECURITY.md"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref so a rapid series of doc pushes
+# does not queue redundant builds.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: false
+
+      - name: Install asciidoctor
+        run: gem install asciidoctor --version 2.0.23 --no-document
+
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Build AsciiDoc to HTML
+        run: |
+          mkdir -p _site
+          # Render each AsciiDoc source to a standalone HTML page.
+          # `--destination-dir` places output at the site root so relative
+          # xref/link targets resolve correctly.
+          asciidoctor \
+            --attribute=docinfodocs= \
+            --attribute=linkcss \
+            --attribute=copycss \
+            --attribute=source-highlighter=rouge \
+            --attribute=icons=font \
+            --attribute=toc=left \
+            --attribute=sectanchors \
+            --attribute=sectlinks \
+            --destination-dir=_site \
+            docs/*.adoc
+          # Copy referenced top-level markdown so relative links resolve.
+          cp README.adoc CONTRIBUTING.md SECURITY.md CHANGELOG.md _site/ 2>/dev/null || true
+          cp -r TODO.roadmap _site/TODO.roadmap 2>/dev/null || true
+          cp -r TODO.finalize _site/TODO.finalize 2>/dev/null || true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

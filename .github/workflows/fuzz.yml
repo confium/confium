@@ -1,0 +1,76 @@
+# Weekly fuzz run for Confium.
+#
+# Runs each cargo-fuzz target for 60 seconds on a schedule (every Monday
+# 09:00 UTC) and on manual dispatch. Findings (corpus + crash artifacts)
+# are uploaded as workflow artifacts for triage. This workflow is
+# intentionally separate from CI: fuzzing is best-effort, not a gate.
+
+name: Fuzz
+
+on:
+  schedule:
+    # Every Monday at 09:00 UTC.
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: short
+
+jobs:
+  fuzz:
+    name: Fuzz (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - plugin_loader
+          - hash_interface
+          - error_chain
+          - keyfmt_parse
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src
+
+      - name: Install cargo-fuzz
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-fuzz
+
+      - name: Cache cargo-fuzz corpus
+        uses: actions/cache@v4
+        with:
+          path: |
+            fuzz/target
+            fuzz/corpus
+          key: fuzz-${{ matrix.target }}-${{ github.run_id }}
+          restore-keys: |
+            fuzz-${{ matrix.target }}-
+
+      - name: Run fuzz target
+        working-directory: fuzz
+        run: cargo fuzz run ${{ matrix.target }} -- -max_total_time=60
+
+      - name: Collect artifacts
+        if: failure()
+        run: |
+          set -eux
+          mkdir -p fuzz-artifacts/${{ matrix.target }}
+          # Crash files and corpus are written under fuzz/ by cargo-fuzz.
+          find fuzz -name 'crash-*' -o -name 'oom-*' -o -name 'timeout-*' \
+            | xargs -r cp -t fuzz-artifacts/${{ matrix.target }}/ || true
+          cp -r fuzz/corpus/${{ matrix.target }} \
+            fuzz-artifacts/${{ matrix.target }}/corpus 2>/dev/null || true
+
+      - name: Upload artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-${{ matrix.target }}
+          path: fuzz-artifacts/
+          retention-days: 30

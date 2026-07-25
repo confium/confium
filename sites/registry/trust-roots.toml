@@ -1,0 +1,34 @@
+# Default trust roots.
+#
+# Lists publisher identities the official Confium registry vouches for. End
+# users can override this list in their local Confium configuration
+# (~/.config/confium/trust.toml); the file here is only the default shipped
+# with fresh installs.
+#
+# Install policy: an artifact is trusted only if at least one detached
+# signature in its sigs/ directory verifies against a publisher listed
+# here. See TODO.roadmap/06-module-registry.md and docs/trust-model.md.
+
+# Minimum number of trusted-publisher signatures required for an artifact
+# to install without prompting. 1 means any single trusted publisher
+# endorsement suffices. Raising this enforces multi-sig.
+min-signatures = 1
+
+# Each [[publisher]] entry anchors a publisher name to the fingerprint of
+# the key in publishers/<name>.asc. The fingerprint is the canonical
+# identifier; the .asc file is the key material.
+#
+# PLACEHOLDER fingerprints below. Real fingerprints will be filled in
+# during publisher onboarding after out-of-band verification.
+
+[[publisher]]
+name = "ribose"
+key-id = "0x0000000000000000"
+fingerprint = "0000 0000 0000 0000 0000  0000 0000 0000 0000 0000"
+key-url = "/publishers/ribose.asc"
+
+[[publisher]]
+name = "ni4"
+key-id = "0x0000000000000000"
+fingerprint = "0000 0000 0000 0000 0000  0000 0000 0000 0000 0000"
+key-url = "/publishers/ni4.asc"

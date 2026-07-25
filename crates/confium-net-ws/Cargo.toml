@@ -1,0 +1,25 @@
+[package]
+name = "confium-net-ws"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "WebSocket transport for Confium (ws://, wss://)"
+
+[dependencies]
+confium-net = { workspace = true }
+inventory = { workspace = true }
+snafu = { workspace = true }
+url = { workspace = true }
+
+# WebSocket framing + handshake. MIT OR Apache-2.0. The `url` feature
+# lets `IntoClientRequest` accept a `&str` URL directly; the
+# `rustls-tls-native-roots` feature enables `wss://` via rustls using
+# the platform's native CA store.
+tungstenite = { workspace = true }
+
+[dev-dependencies]
+confium-net = { workspace = true }

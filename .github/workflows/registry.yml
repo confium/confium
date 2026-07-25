@@ -1,0 +1,106 @@
+# Lints and builds the static plugin registry (sites/registry/).
+#
+# This job runs on every push and pull request. It:
+#   1. Validates that every TOML file under sites/registry/ parses.
+#   2. Validates the expected directory structure exists.
+#   3. Builds the Jekyll site in --safe mode with drafts disabled.
+#
+# The actual GitHub Pages deployment is handled by
+# sites/registry/.github/workflows/deploy.yml (which runs only on push to
+# main and on manual dispatch). This workflow is the "does it still parse?"
+# gate that runs on every change.
+
+name: Registry
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "sites/registry/**"
+      - ".github/workflows/registry.yml"
+  pull_request:
+    paths:
+      - "sites/registry/**"
+      - ".github/workflows/registry.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-build:
+    name: Lint TOML, validate structure, build site
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sites/registry
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install tomli (TOML parser)
+        run: pip install --user tomli
+
+      - name: Validate directory structure
+        run: |
+          set -euo pipefail
+          for required in \
+              publishers \
+              plugins \
+              docs \
+              index.toml \
+              index.md \
+              trust-roots.toml \
+              _config.yml; do
+            if [ ! -e "$required" ]; then
+              echo "ERROR: missing required path: $required" >&2
+              exit 1
+            fi
+          done
+          echo "Directory structure OK."
+
+      - name: Lint TOML files
+        run: |
+          set -euo pipefail
+          # tomli.load reads bytes; we use a small shim so tomllib (3.11+)
+          # and tomli (older) both work.
+          python3 - <<'PY'
+          import glob, sys
+          try:
+              import tomllib  # Python 3.11+
+          except ModuleNotFoundError:
+              import tomli as tomllib
+          failures = 0
+          for path in sorted(glob.glob("**/*.toml", recursive=True)):
+              with open(path, "rb") as fh:
+                  try:
+                      tomllib.load(fh)
+                  except Exception as exc:
+                      print(f"FAIL: {path}: {exc}", file=sys.stderr)
+                      failures += 1
+                  else:
+                      print(f"ok:   {path}")
+          if failures:
+              sys.exit(f"{failures} TOML file(s) failed to parse")
+          PY
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Build with Jekyll (safe, no drafts)
+        run: |
+          bundle init >/dev/null 2>&1 || true
+          bundle add jekyll --version "~> 4" --skip-install
+          bundle install
+          bundle exec jekyll build \
+            --safe \
+            --no-drafts \
+            --destination "${RUNNER_TEMP}/_site"
+          echo "Jekyll build OK."

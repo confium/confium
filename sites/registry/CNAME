@@ -1,0 +1,11 @@
+# registry.confium.org
+#
+# This file configures the custom domain for the GitHub Pages site. The line
+# below is the apex/CNAME value GitHub expects. It is left UNCOMMENTED so that
+# once DNS is configured (an A/ALIAS record pointing at GitHub Pages IPs) the
+# site will resolve. Until DNS is set up, the site is reachable at the default
+# *.github.io URL.
+#
+# To switch the site back to the default github.io URL temporarily, comment
+# this line out (or delete the file) and republish.
+registry.confium.org

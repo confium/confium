@@ -1,0 +1,29 @@
+[package]
+name = "confium-tc-cmp20"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "CMP20 threshold ECDSA over P-256 (Canetti, Makriyannis, Peled 2020)"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+confium-tc = { workspace = true }
+crypto-bigint = "0.5"
+elliptic-curve = { version = "0.13", features = ["digest", "sec1"] }
+hex = { version = "0.4" }
+inventory = { workspace = true }
+p256 = { version = "0.13", features = ["arithmetic", "ecdsa", "expose-field", "pkcs8", "serde"] }
+sha2 = { workspace = true }
+snafu = { workspace = true }
+zeroize = { workspace = true }
+
+[dev-dependencies]
+p256 = { version = "0.13", features = ["arithmetic", "ecdsa", "expose-field", "pem", "pkcs8"] }
+rand = { version = "0.8", default-features = false, features = ["std"] }
+rand_core = { version = "0.6", default-features = false }

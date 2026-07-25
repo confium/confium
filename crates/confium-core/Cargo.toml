@@ -1,0 +1,30 @@
+[package]
+name = "confium-core"
+version = "0.2.0"
+authors = ["Ribose Open <open.source@ribose.com>"]
+edition = "2024"
+rust-version = "1.85"
+description = "Confium Engine: plugin loader, registry, and crypto dispatch"
+homepage = "https://www.confium.org/"
+repository = "https://github.com/confium/confium"
+categories = ["authentication", "cryptography"]
+license = "BSD-2-Clause"
+
+# The shared library is still called `libconfium.{so,dylib,dll}` for ABI
+# compatibility with existing consumers (Ruby bindings, Botan plugin, etc.).
+# The crate name is `confium-core` to disambiguate inside the workspace.
+[lib]
+name = "confium"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+libloading = { workspace = true }
+snafu = { workspace = true }
+inventory = { workspace = true }
+zeroize = { workspace = true }
+aes-gcm = { workspace = true }
+rand = { workspace = true }
+
+[package.metadata.nix]
+app = true
+build = true

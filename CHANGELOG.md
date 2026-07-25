@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases prior to 0.2.0 were tracked through git history.
 
+## [Unreleased]
+
+### Added
+
+- **Plugin SDK proc-macros** (`crates/confium-macros/`,
+  `crates/confium-api/`). Two attribute macros that reduce the
+  per-plugin FFI boilerplate:
+  - `#[plugin_interface(name = "hash", version = 0)]` on an
+    `impl HashPlugin for T` block emits the eight canonical
+    `cfmp_hash_*` extern "C" entry points from the trait methods.
+    Currently supports the hash v0 wire protocol as a proof of concept.
+  - `#[export(interfaces(hash = 0), metadata(...))]` emits the plugin
+    lifecycle symbols (`cfmp_interface_version`, `cfmp_initialize`,
+    `cfmp_finalize`, `cfmp_query_interfaces`) plus the optional
+    `cfmp_metadata` symbol when the `metadata(...)` sub-argument is
+    supplied.
+
+  `crates/confium-api/` now carries the shared types plugin authors
+  need: `OpaqueHandle<T>` (opaque boxing for instance state),
+  `OptionMap`/`OptionView` (typed option map access),
+  `PluginMetadata`/`PluginMetadataBuilder` (registry metadata), and
+  `PluginError`/`ErrorCode` (wire error codes). The `HashPlugin`
+  trait lives at `confium_api::plugin::hash::HashPlugin`.
+
+  A mock plugin (`crates/confium-mock-plugin/`) built entirely with the
+  macros loads through the standard Confium loader and produces correct
+  XOR-fold digests end-to-end. Verified by the integration test in
+  `crates/confium-test-harness/tests/mock_plugin_loader.rs`.
+
+- **Workspace restructure.** The single `confium` crate is now
+  `crates/confium-core/` inside a 10-crate workspace. The shared
+  library is still called `libconfium.{so,dylib,dll}` for ABI
+  compatibility; the package name is `confium-core`. Nine additional
+  crates created as skeletons for the architecture described in
+  `TODO.roadmap/02-workspace-layout.md`:
+  `confium-api`, `confium-store`, `confium-registry`, `confium-net`,
+  `confium-tc`, `confium-cli`, `confium-publish`, `confium-macros`,
+  `confium-test-harness`.
+
+- **Strategic roadmap** (`TODO.roadmap/`) — 13 documents covering the
+  multi-year arc from "plugin loader shipped" to "NIST MPTS evaluation
+  harness". Anchored on the NIST MPTS 2020 deck.
+
+- **Tactical TODO list** (`TODO.finalize/`) — 15 specific one-PR tasks.
+
+### Changed
+
+- CMake picks up the new crate location via
+  `corrosion_import_crate(MANIFEST_PATH ./crates/confium-core/Cargo.toml)`.
+- CI invokes cargo with `--workspace` for build/test/clippy/doc to
+  cover all members.
+- `cargo publish --dry-run -p confium-core` (publish is per-package in
+  a workspace).
+
 ## [0.2.0] — Unreleased
 
 ### Breaking changes

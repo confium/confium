@@ -1,0 +1,69 @@
+= Confium Documentation
+:doctype: book
+:toc: left
+:toclevels: 3
+:sectanchors:
+:sectlinks:
+:icons: font
+:linkattrs:
+:source-highlighter: rouge
+:experimental:
+:docinfo: shared
+
+Confium is an open-source distributed trust store framework — a pluggable,
+language-agnostic engine for cryptographic providers, key stores, and
+threshold-cryptography coordination. This is the project documentation site.
+
+== Get started
+
+* xref:develop.adoc[Developer guide] — building, testing, and contributing.
+* xref:plugin-author-guide.adoc[Plugin author guide] — write and ship a
+  Confium plugin.
+* link:../README.adoc[Project README] — high-level overview and goals.
+* link:../CONTRIBUTING.md[Contributing guide] — pull-request process and
+  conventions.
+* link:../SECURITY.md[Security policy] — reporting vulnerabilities.
+
+== What Confium is
+
+Confium provides a generalized API and an extensible architecture for the
+usage of trust stores and future cryptographic families. It is a component
+of https://github.com/rnpgp/rnp[RNP], an openly-licensed high-performance
+OpenPGP toolkit, and has received funding support from the Mozilla Open
+Source Support fund and NLNet.
+
+Typically, using new cryptographic families with existing technologies is an
+immense challenge, requiring code change in the application and in the
+cryptographic library. Confium bridges cryptographers with the practical
+usage of cryptography by exposing a stable C ABI that plugins implement.
+
+== Architecture at a glance
+
+* *Host library* (`libconfium`) — the engine: plugin loader, registry,
+  crypto dispatch. Exports the `cfm_*` C ABI (see `target/confium.h`).
+* *Plugins* — dynamic libraries (`.so` / `.dylib` / `.dll`) that implement
+  the `cfmp_*` plugin contract for one or more interfaces (hash, cipher,
+  AEAD, KDF, RNG, signature, KEM, key serialization, keystore).
+* *Bindings* — Ruby (and future) language bindings wrap the host ABI.
+* *Registry* — a static catalog of plugins, publishers, and trust roots,
+  served from `sites/registry/`.
+
+For the full design, see the link:../TODO.roadmap/[roadmap] and
+link:../TODO.roadmap/01-architecture-overview.md[architecture overview].
+
+== Interfaces
+
+Each cryptographic primitive is a versioned interface that plugins
+advertise:
+
+* `hash` — cryptographic hash functions
+* `cipher` — symmetric block and stream ciphers
+* `aead` — authenticated encryption with associated data
+* `kdf` — key derivation functions
+* `rng` — random number generation
+* `signature` — digital signature sign/verify
+* `kem` — key encapsulation mechanisms (post-quantum friendly)
+* `keyfmt` — key serialization formats (OpenPGP, PKCS#8, JWK, OpenSSH, ...)
+
+Versioning is per-interface and negotiated independently, so a plugin can
+implement `hash` v0 and `cipher` v1 simultaneously.

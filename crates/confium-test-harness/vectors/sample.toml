@@ -1,0 +1,32 @@
+# Sample NIST MPTS test vector for the Confium evaluation harness.
+#
+# Schema documented in TODO.roadmap/09-nist-evaluation-harness.md.
+# The runner (confium-test-harness::VectorRunner) parses this file,
+# stands up `parties` in-process sessions for the named scheme, drives
+# rounds through the Byzantine transport, and compares the output to
+# `expected_signature_hex` when set.
+
+[scheme]
+name = "FROST-ed25519"
+version = "draft-irtf-cfrg-frost-13"
+
+[test]
+parties = 5
+threshold = 3
+message = "hello world"
+seed = "0xdeadbeef"
+# Omit expected_signature_hex for schemes without a pinned reference
+# signature; the harness then treats completion as a pass.
+
+[[peer_behavior]]
+party_id = "alice"
+type = "honest"
+
+[[peer_behavior]]
+party_id = "bob"
+type = "honest"
+
+[[peer_behavior]]
+party_id = "eve"
+type = "byzantine-drop"
+drop_round = 2
