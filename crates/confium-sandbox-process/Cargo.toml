@@ -1,0 +1,25 @@
+[package]
+name = "confium-sandbox-process"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Out-of-process plugin sandbox backed by length-prefixed JSON-RPC over stdin/stdout pipes"
+
+[lib]
+crate-type = ["rlib"]
+
+# Test-only binary that speaks the subprocess JSON-RPC protocol. The
+# integration tests spawn it via `CARGO_BIN_EXE_cfm-echo-plugin`. Not
+# part of the library surface; kept small and self-contained.
+[[bin]]
+name = "cfm-echo-plugin"
+path = "src/bin/echo_plugin.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+snafu = { workspace = true }
