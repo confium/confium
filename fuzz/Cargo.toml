@@ -1,0 +1,55 @@
+[package]
+name = "confium-fuzz"
+version = "0.0.0"
+authors = ["Ribose Open <open.source@ribose.com>"]
+edition = "2024"
+rust-version = "1.85"
+license = "BSD-2-Clause"
+description = "cargo-fuzz targets for Confium"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+snafu = "0.8"
+# `confium-core` is the package name; its library target is named
+# `confium` (see crates/confium-core/Cargo.toml). Aliasing the dep as
+# `confium_core` lets the targets import it as `confium_core::*` for
+# consistency with the rest of the workspace.
+confium_core = { package = "confium-core", path = "../crates/confium-core" }
+
+[[bin]]
+name = "plugin_loader"
+path = "fuzz_targets/plugin_loader.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "hash_interface"
+path = "fuzz_targets/hash_interface.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "error_chain"
+path = "fuzz_targets/error_chain.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "keyfmt_parse"
+path = "fuzz_targets/keyfmt_parse.rs"
+test = false
+doc = false
+
+[profile.release]
+opt-level = 3
+debug = true
+
+# Standalone manifest: cargo-fuzz targets live outside the main workspace
+# (they pull in libfuzzer-sys, which requires a nightly/sanitizer build).
+# The empty `[workspace]` table prevents cargo from treating this package
+# as a member of the parent workspace.
+[workspace]

@@ -1,0 +1,6 @@
+# cargo-fuzz artifacts: corpus, crash reproductions, and coverage data
+# are generated at runtime and should not be committed. The target binaries
+# land under `target/` (already ignored by the workspace root .gitignore).
+corpus/
+artifacts/
+coverage/
