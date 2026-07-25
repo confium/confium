@@ -10,6 +10,7 @@ members = [
     "crates/confium-publish",
     "crates/confium-registry",
     "crates/confium-store",
+    "crates/confium-store-cloud",
     "crates/confium-tc",
     "crates/confium-test-harness",
 ]
@@ -32,6 +33,7 @@ confium-net = { path = "crates/confium-net", version = "0.3.0" }
 confium-net-tcp = { path = "crates/confium-net-tcp", version = "0.3.0" }
 confium-registry = { path = "crates/confium-registry", version = "0.3.0" }
 confium-store = { path = "crates/confium-store", version = "0.3.0" }
+confium-store-cloud = { path = "crates/confium-store-cloud", version = "0.3.0" }
 confium-tc = { path = "crates/confium-tc", version = "0.3.0" }
 
 libloading = "0.8"
