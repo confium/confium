@@ -9,6 +9,7 @@ members = [
     "crates/confium-net-tcp",
     "crates/confium-publish",
     "crates/confium-registry",
+    "crates/confium-sandbox-wasm",
     "crates/confium-store",
     "crates/confium-tc",
     "crates/confium-test-harness",
@@ -31,6 +32,7 @@ confium-macros = { path = "crates/confium-macros", version = "0.3.0" }
 confium-net = { path = "crates/confium-net", version = "0.3.0" }
 confium-net-tcp = { path = "crates/confium-net-tcp", version = "0.3.0" }
 confium-registry = { path = "crates/confium-registry", version = "0.3.0" }
+confium-sandbox-wasm = { path = "crates/confium-sandbox-wasm", version = "0.3.0" }
 confium-store = { path = "crates/confium-store", version = "0.3.0" }
 confium-tc = { path = "crates/confium-tc", version = "0.3.0" }
 
@@ -49,6 +51,7 @@ dirs = "5"
 sha2 = "0.10"
 hmac = "0.12"
 tempfile = "3"
+wasmtime = "27"
 criterion = { version = "0.5", default-features = false, features = ["plotters", "cargo_bench_support"] }
 
 [profile.release]
