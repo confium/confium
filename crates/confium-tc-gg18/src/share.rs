@@ -67,11 +67,19 @@ impl Gg18Share {
         let pk_bytes = &data[37..70];
         let public_key = decode_affine(pk_bytes)?;
         let party_idx = data[70] as u32;
-        Ok(Gg18Share { x_i, public_key, party_idx })
+        Ok(Gg18Share {
+            x_i,
+            public_key,
+            party_idx,
+        })
     }
 
     pub fn from_parts(x_i: NonZeroScalar, public_key: AffinePoint, party_idx: u32) -> Self {
-        Gg18Share { x_i, public_key, party_idx }
+        Gg18Share {
+            x_i,
+            public_key,
+            party_idx,
+        }
     }
 
     pub fn scalar(&self) -> Scalar {

@@ -132,12 +132,16 @@ impl HostImports {
 
     fn has_any_network(caps: &CapabilitySet) -> bool {
         let guard = caps.caps.lock().expect("capability mutex poisoned");
-        guard.iter().any(|c| matches!(c, Capability::NetworkEndpoint { .. }))
+        guard
+            .iter()
+            .any(|c| matches!(c, Capability::NetworkEndpoint { .. }))
     }
 
     fn has_any_key(caps: &CapabilitySet) -> bool {
         let guard = caps.caps.lock().expect("capability mutex poisoned");
-        guard.iter().any(|c| matches!(c, Capability::KeyAccess { .. }))
+        guard
+            .iter()
+            .any(|c| matches!(c, Capability::KeyAccess { .. }))
     }
 }
 
@@ -158,7 +162,9 @@ mod tests {
     #[test]
     fn cfm_hash_update_permitted_with_capability() {
         let caps = CapabilitySet::new();
-        caps.grant(Capability::InterfaceAccess { name: "hash".into() });
+        caps.grant(Capability::InterfaceAccess {
+            name: "hash".into(),
+        });
         let out = HostImports::cfm_hash_update(&caps, 7);
         assert!(matches!(out, ImportOutcome::Done(7)));
     }
@@ -173,7 +179,9 @@ mod tests {
     #[test]
     fn cfm_key_get_secret_permitted_with_key_capability() {
         let caps = CapabilitySet::new();
-        caps.grant(Capability::KeyAccess { key_id: "k1".into() });
+        caps.grant(Capability::KeyAccess {
+            key_id: "k1".into(),
+        });
         let out = HostImports::cfm_key_get_secret(&caps, 0);
         assert!(matches!(out, ImportOutcome::Done(32)));
     }
@@ -181,12 +189,16 @@ mod tests {
     #[test]
     fn revoke_takes_effect() {
         let caps = CapabilitySet::new();
-        caps.grant(Capability::InterfaceAccess { name: "hash".into() });
+        caps.grant(Capability::InterfaceAccess {
+            name: "hash".into(),
+        });
         assert!(matches!(
             HostImports::cfm_hash_update(&caps, 1),
             ImportOutcome::Done(1)
         ));
-        caps.revoke(&Capability::InterfaceAccess { name: "hash".into() });
+        caps.revoke(&Capability::InterfaceAccess {
+            name: "hash".into(),
+        });
         assert!(matches!(
             HostImports::cfm_hash_update(&caps, 1),
             ImportOutcome::Denied

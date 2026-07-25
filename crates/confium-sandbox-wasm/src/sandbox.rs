@@ -28,10 +28,7 @@ pub enum Capability {
     /// Plugin may reference this key (read/use, never reveal bytes).
     KeyAccess { key_id: String },
     /// Plugin may read/write this filesystem path.
-    FilesystemPath {
-        path: PathBuf,
-        mode: FilesystemMode,
-    },
+    FilesystemPath { path: PathBuf, mode: FilesystemMode },
 }
 
 /// Access mode for a [`Capability::FilesystemPath`].
@@ -91,11 +88,17 @@ mod tests {
 
     #[test]
     fn capability_equality() {
-        let a = Capability::InterfaceAccess { name: "hash".into() };
-        let b = Capability::InterfaceAccess { name: "hash".into() };
+        let a = Capability::InterfaceAccess {
+            name: "hash".into(),
+        };
+        let b = Capability::InterfaceAccess {
+            name: "hash".into(),
+        };
         assert_eq!(a, b);
 
-        let c = Capability::InterfaceAccess { name: "sign".into() };
+        let c = Capability::InterfaceAccess {
+            name: "sign".into(),
+        };
         assert_ne!(a, c);
     }
 

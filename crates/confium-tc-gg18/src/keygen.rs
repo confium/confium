@@ -14,8 +14,8 @@
 //!   against the broadcast commitments, sum per-dealer shares into
 //!   `x_i`, compute the joint public key. Complete.
 
-use elliptic_curve::rand_core::OsRng;
 use elliptic_curve::PrimeField;
+use elliptic_curve::rand_core::OsRng;
 use p256::{AffinePoint, ProjectivePoint, Scalar};
 
 use confium_tc::Result;
@@ -36,8 +36,12 @@ impl Gg18DkgP256 {
         let n = params.parties.len();
         let t = params.threshold as usize;
         let party_idx_1based = (params.this_party_idx + 1) as u32;
-        let party_ids: Vec<String> =
-            params.parties.parties().iter().map(|p| p.id.clone()).collect();
+        let party_ids: Vec<String> = params
+            .parties
+            .parties()
+            .iter()
+            .map(|p| p.id.clone())
+            .collect();
 
         let vss = FeldmanVss::deal(&mut OsRng, n, t);
 
@@ -174,8 +178,9 @@ impl Gg18DkgSession {
             return Err(scheme_error(Gg18ErrorCode::BELOW_THRESHOLD));
         }
 
-        let combined: Scalar =
-            verified_shares.iter().fold(Scalar::ZERO, |acc, &(_, ev)| acc + ev);
+        let combined: Scalar = verified_shares
+            .iter()
+            .fold(Scalar::ZERO, |acc, &(_, ev)| acc + ev);
         self.received_shares = verified_shares;
         self.our_combined_share = Some(combined);
 
@@ -194,7 +199,10 @@ impl Gg18DkgSession {
 impl SessionImpl for Gg18DkgSession {
     fn round(&mut self, incoming: &[Message]) -> Result<RoundResult> {
         self.round_done = self.round_done.checked_add(1).ok_or_else(|| {
-            confium_tc::error::RoundOverflowSnafu { round: self.round_done }.build()
+            confium_tc::error::RoundOverflowSnafu {
+                round: self.round_done,
+            }
+            .build()
         })?;
         match self.round_done {
             1 => self.round1_deal(),
@@ -207,9 +215,12 @@ impl SessionImpl for Gg18DkgSession {
         if self.round_done < 2 {
             return Err(confium_tc::error::SessionNotCompleteSnafu {}.build());
         }
-        let combined =
-            self.our_combined_share.ok_or_else(|| scheme_error(Gg18ErrorCode::INTERNAL))?;
-        let pk = self.joint_public_key.ok_or_else(|| scheme_error(Gg18ErrorCode::INTERNAL))?;
+        let combined = self
+            .our_combined_share
+            .ok_or_else(|| scheme_error(Gg18ErrorCode::INTERNAL))?;
+        let pk = self
+            .joint_public_key
+            .ok_or_else(|| scheme_error(Gg18ErrorCode::INTERNAL))?;
         let x_i: p256::NonZeroScalar = Option::from(p256::NonZeroScalar::new(combined))
             .ok_or_else(|| scheme_error(Gg18ErrorCode::INTERNAL))?;
         let share = Gg18Share::from_parts(x_i, pk, self.party_idx_1based);
@@ -250,9 +261,9 @@ pub(crate) fn reconstruct_secret_for_test(shares: &[Gg18Share]) -> Scalar {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use elliptic_curve::sec1::ToEncodedPoint;
     use confium_tc::party::{Party, PartyList};
     use confium_tc::share::Share;
+    use elliptic_curve::sec1::ToEncodedPoint;
 
     fn params(n: usize, t: u32, idx: usize) -> SessionParams {
         let roster: Vec<Party> = (0..n).map(|i| Party::inproc(format!("p{}", i))).collect();

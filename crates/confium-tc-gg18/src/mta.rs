@@ -74,7 +74,11 @@ mod tests {
     fn mta_products_sum_to_ki_xj() {
         let ks = vec![Scalar::from(2u64), Scalar::from(3u64), Scalar::from(5u64)];
         let xs = vec![Scalar::from(7u64), Scalar::from(11u64), Scalar::from(13u64)];
-        let inputs = MtaInputs { ks: ks.clone(), xs: xs.clone(), indices: vec![1, 2, 3] };
+        let inputs = MtaInputs {
+            ks: ks.clone(),
+            xs: xs.clone(),
+            indices: vec![1, 2, 3],
+        };
         let (alphas, betas) = inputs.products();
         for i in 0..3 {
             for j in 0..3 {
@@ -91,7 +95,11 @@ mod tests {
     fn party_mta_sum_matches_xi_sum_kj() {
         let ks = vec![Scalar::from(2u64), Scalar::from(3u64), Scalar::from(5u64)];
         let xs = vec![Scalar::from(7u64), Scalar::from(11u64), Scalar::from(13u64)];
-        let inputs = MtaInputs { ks: ks.clone(), xs: xs.clone(), indices: vec![1, 2, 3] };
+        let inputs = MtaInputs {
+            ks: ks.clone(),
+            xs: xs.clone(),
+            indices: vec![1, 2, 3],
+        };
         let (alphas, betas) = inputs.products();
         let k_sum: Scalar = ks.iter().copied().fold(Scalar::ZERO, |a, b| a + b);
         for i in 0..3 {

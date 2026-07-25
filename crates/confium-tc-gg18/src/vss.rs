@@ -7,8 +7,8 @@
 //! `g^{y_i} == \prod_j C_j^{i^j}` without learning the coefficients.
 //! `C_0 = g^{secret}` is the public key for the shared secret.
 
-use elliptic_curve::rand_core::CryptoRngCore;
 use elliptic_curve::Field;
+use elliptic_curve::rand_core::CryptoRngCore;
 use elliptic_curve::sec1::ToEncodedPoint;
 use p256::{AffinePoint, ProjectivePoint, Scalar};
 
@@ -23,13 +23,10 @@ pub struct FeldmanVss {
 impl FeldmanVss {
     pub fn deal(rng: &mut impl CryptoRngCore, n: usize, t: usize) -> Self {
         debug_assert!(t >= 1 && t <= n);
-        let mut coeffs: Vec<Scalar> = (0..t)
-            .map(|_| Scalar::random(&mut *rng))
-            .collect();
+        let mut coeffs: Vec<Scalar> = (0..t).map(|_| Scalar::random(&mut *rng)).collect();
         let secret = coeffs[0];
         let g = ProjectivePoint::GENERATOR;
-        let commitments: Vec<AffinePoint> =
-            coeffs.iter().map(|a| (g * a).to_affine()).collect();
+        let commitments: Vec<AffinePoint> = coeffs.iter().map(|a| (g * a).to_affine()).collect();
         let shares: Vec<Scalar> = (1..=n as u64)
             .map(|i| {
                 let x = Scalar::from(i);
@@ -41,7 +38,11 @@ impl FeldmanVss {
             })
             .collect();
         coeffs.fill(Scalar::ZERO);
-        FeldmanVss { commitments, shares, secret }
+        FeldmanVss {
+            commitments,
+            shares,
+            secret,
+        }
     }
 
     pub fn verify_share(commitments: &[AffinePoint], party_idx_1based: u64, share: Scalar) -> bool {

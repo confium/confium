@@ -10,11 +10,13 @@
 //! - `cfmp_metadata` → present only when the `metadata(...)` sub-arg
 //!   is supplied on the `#[export]` attribute.
 //!
-//! The macro does not yet auto-discover interfaces declared via
-//! `#[plugin_interface]` — for the proof-of-concept the plugin author
-//! declares the interfaces list explicitly via the `interfaces(...)`
-//! sub-arg. Future work will use a link-time list collected by
-//! `#[plugin_interface]`.
+//! Interface auto-discovery: the macro iterates the link-time registry
+//! (`confium_api::registry::iter`) populated by every
+//! `#[plugin_interface]` in the crate, so plugin authors no longer need
+//! to repeat the interface list in `#[export]`. An explicit
+//! `interfaces(...)` argument is still accepted and is appended to the
+//! auto-discovered set — it exists for plugins that hand-roll FFI
+//! symbols without `#[plugin_interface]`.
 
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -29,27 +31,20 @@ pub fn export_impl(
     let args = parse_export_attr(attr)?;
     let item_ast: syn::Item = syn::parse2(item)?;
 
-    // ---- cfmp_query_interfaces payload ----
+    // ---- explicitly-declared interfaces (augment the auto-discovered set) ----
     //
-    // Pack the declared interfaces into a single `&'static [u8]` of
-    // `name + NUL + version_byte + NUL` entries, terminated by an
-    // empty name (a leading NUL). The loader's
-    // `enumerate_plugin_interfaces` parses this exact shape.
-    let mut payload: Vec<u8> = Vec::new();
-    for iface in &args.interfaces {
-        payload.extend_from_slice(iface.name.as_bytes());
-        payload.push(0); // NUL terminator for name
-        payload.push(iface.version);
-        payload.push(0); // NUL terminator for version byte
-    }
-    payload.push(0); // empty name terminator
-
-    let payload_len = payload.len();
-    let payload_literals: Vec<proc_macro2::TokenStream> = payload
+    // Pack the user-supplied `(name, version)` pairs (if any) into
+    // token-stream literals for the static the generated
+    // `cfmp_query_interfaces` appends at runtime. The auto-discovered
+    // interfaces come from the link-time registry populated by
+    // `#[plugin_interface]`.
+    let explicit_iface_tokens: Vec<TokenStream> = args
+        .interfaces
         .iter()
-        .map(|b| {
-            let lit = *b;
-            quote! { #lit }
+        .map(|e| {
+            let name = &e.name;
+            let version = e.version;
+            quote! { (#name, #version) }
         })
         .collect();
 
@@ -138,18 +133,62 @@ pub fn export_impl(
 
         // ---- cfmp_query_interfaces ----
         //
-        // Return the packed `name + NUL + version_byte + NUL ... + NUL`
-        // byte stream the loader parses. The static is `&'static` so
-        // the returned pointer is valid for the plugin's lifetime.
-        #[doc(hidden)]
-        static __CONFIUM_QUERY_INTERFACES_PAYLOAD: [u8; #payload_len] =
-            [#(#payload_literals),*];
-
+        // Builds the packed `name + NUL + version_byte + NUL ... + NUL`
+        // byte stream the loader parses. The payload is constructed at
+        // call time from two sources:
+        //
+        // 1. Every `#[plugin_interface]` in this crate, collected at
+        //    link time via `confium_api::registry` (auto-discovery).
+        // 2. Any explicitly-declared `interfaces(...)` entries from the
+        //    `#[export]` attribute (for hand-rolled FFI symbols).
+        //
+        // Constructing at call time (rather than macro-expansion time)
+        // is required because `inventory` submissions are not visible
+        // until runtime — they live in linker sections that the
+        // `#[plugin_interface]` macro populates after `#[export]`
+        // expands.
         #[unsafe(no_mangle)]
         pub extern "C" fn cfmp_query_interfaces(
             _cfm: *const std::ffi::c_void,
         ) -> *const u8 {
-            __CONFIUM_QUERY_INTERFACES_PAYLOAD.as_ptr()
+            // Explicit entries declared in `#[export(interfaces(...))]`.
+            // Compiled into the plugin as a static so the runtime loop
+            // can append them without allocating on every call.
+            #[doc(hidden)]
+            static __CONFIUM_EXPLICIT_IFACES: &[(&str, u8)] = &[
+                #(#explicit_iface_tokens),*
+            ];
+
+            // Build the payload once and cache it for the plugin's
+            // lifetime. `LazyLock` guarantees a single allocation even
+            // under concurrent loads.
+            //
+            // Format: `name\0version` repeated, terminated by a lone
+            // `\0` (empty name). The loader's parser advances past the
+            // name's NUL and the version byte with `idx = end + 2`, so
+            // there is NO trailing NUL after the version byte — the
+            // next entry's name begins immediately.
+            #[doc(hidden)]
+            static __CONFIUM_QUERY_INTERFACES_BUF: std::sync::LazyLock<Vec<u8>> =
+                std::sync::LazyLock::new(|| {
+                    let mut buf: Vec<u8> = Vec::new();
+                    // Auto-discovered interfaces (from #[plugin_interface]).
+                    for entry in ::confium_api::registry::iter() {
+                        buf.extend_from_slice(entry.name.as_bytes());
+                        buf.push(0); // name terminator
+                        buf.push(entry.version);
+                    }
+                    // Explicitly-declared interfaces (from #[export]).
+                    for (name, version) in __CONFIUM_EXPLICIT_IFACES {
+                        buf.extend_from_slice(name.as_bytes());
+                        buf.push(0); // name terminator
+                        buf.push(*version);
+                    }
+                    buf.push(0); // empty name terminator
+                    buf
+                });
+
+            __CONFIUM_QUERY_INTERFACES_BUF.as_ptr()
         }
 
         #metadata_symbol
@@ -159,6 +198,8 @@ pub fn export_impl(
 /// Parsed arguments to the `#[export]` attribute.
 struct ExportArgs {
     /// `(name, version)` pairs declared via `interfaces(hash = 0, ...)`.
+    /// Optional now that `#[plugin_interface]` auto-registers; kept for
+    /// plugins that hand-roll FFI symbols.
     interfaces: Vec<InterfaceEntry>,
     /// `(key, value)` pairs declared via `metadata(name = "...", ...)`.
     metadata: Vec<(String, String)>,

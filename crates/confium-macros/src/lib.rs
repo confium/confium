@@ -10,14 +10,24 @@
 //!   `cfmp_query_interfaces`) plus the optional `cfmp_metadata` symbol
 //!   when paired with [`macro@plugin_metadata`].
 //!
-//! ## Status
+//! ## Supported interfaces
 //!
-//! This is a **minimal viable SDK** that proves the concept for the hash
-//! interface (v0). The `#[plugin_interface]` macro recognizes the wire
-//! protocol for `name = "hash"` and emits the eight canonical hash v0
-//! symbols (`cfmp_hash_create`, `_update`, `_finalize`, etc.). Other
-//! interface names will currently produce a helpful compile error
-//! directing the plugin author to the macro extension point.
+//! The `#[plugin_interface]` macro recognizes the wire protocol for all
+//! Confium crypto interfaces at version 0: `hash`, `cipher`, `aead`,
+//! `kdf`, `rng`, `signature`, `kem`, and `keyfmt`. Each interface emits
+//! its canonical `cfmp_<iface>_*` symbol set, dispatching through the
+//! corresponding trait in `confium_api::plugin`.
+//!
+//! Interfaces with complex parameter lists (`signature`, `kem`,
+//! `keyfmt`) automatically get `#[allow(clippy::too_many_arguments)]`
+//! on the affected symbols, since the parameter count is fixed by the
+//! C ABI.
+//!
+//! Interface auto-discovery: every `#[plugin_interface]` attribute
+//! registers its `(name, version)` pair at link time via `inventory`.
+//! The `#[export]` macro iterates these registrations at runtime to
+//! populate `cfmp_query_interfaces`, so plugin authors do not need to
+//! repeat the interface list in `#[export]`.
 //!
 //! See `TODO.roadmap/03-plugin-contract.md` for the wire contract and
 //! `crates/confium-api/src/` for the shared types the macros consume.
@@ -32,31 +42,26 @@ use proc_macro::TokenStream;
 /// Attribute macro that emits the `cfmp_<iface>_*` FFI entry-point
 /// symbols for the wire protocol named by `name = "..."`.
 ///
-/// Place this attribute on an `impl HashPlugin for MyHash` block to emit
-/// the `cfmp_hash_*` FFI entry-point symbols. The trait `HashPlugin` is
-/// declared in `confium_api::plugin::hash::HashPlugin` and matches the
-/// hash v0 wire protocol one method per symbol.
+/// Supported interfaces (all at version 0): `hash`, `cipher`, `aead`,
+/// `kdf`, `rng`, `signature`, `kem`, `keyfmt`. Each dispatches through
+/// the corresponding trait in `confium_api::plugin`.
 ///
-/// Example:
+/// Place this attribute on an `impl Trait for Type` block. Example for
+/// the hash interface:
 ///
 /// ```ignore
 /// # use confium_api::plugin_interface;
-/// # use confium_api::OpaqueHandle;
+/// # use confium_api::HashPlugin;
 /// # struct MyHash;
-/// #
-/// # trait HashPlugin {
-/// #     fn output_size(&self) -> u32 { 0 }
-/// #     fn block_size(&self) -> u32 { 0 }
-/// #     fn update(&mut self, _data: &[u8]) {}
-/// #     fn reset(&mut self) {}
-/// #     fn try_clone(&self) -> Self where Self: Sized { MyHash }
-/// #     fn finalize(&mut self, _out: &mut [u8]) {}
-/// # }
 /// #[plugin_interface(name = "hash", version = 0)]
 /// impl HashPlugin for MyHash {
 ///     // ... methods ...
 /// }
 /// ```
+///
+/// The cipher interface advertises under the wire name `symmetric`
+/// (matching the loader-side `CipherKind`); all other interfaces use
+/// the same name for both the attribute and the wire protocol.
 #[proc_macro_attribute]
 pub fn plugin_interface(attr: TokenStream, item: TokenStream) -> TokenStream {
     interface::plugin_interface_impl(attr.into(), item.into())

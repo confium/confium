@@ -15,8 +15,8 @@ use confium_tc::SessionParams;
 use confium_tc::message::Message;
 use confium_tc::party::{Party, PartyList};
 use confium_tc::share::Share;
-use confium_tc_gg18::Gg18Share;
 use confium_tc_gg18::DKG_SCHEME_NAME;
+use confium_tc_gg18::Gg18Share;
 use confium_tc_gg18::SIGN_SCHEME_NAME;
 
 /// Build a DKG session for one party.
@@ -144,15 +144,7 @@ fn run_signing(
     run_protocol(
         roster,
         participating.clone(),
-        |idx| {
-            sign_params(
-                roster,
-                idx,
-                threshold,
-                shares[idx].clone(),
-                msg,
-            )
-        },
+        |idx| sign_params(roster, idx, threshold, shares[idx].clone(), msg),
         4,
     )
 }
@@ -183,7 +175,10 @@ fn dkg_then_2_of_3_signing_produces_valid_signature() {
         };
         assert_eq!(sigs.len(), 2);
         assert_eq!(sigs[0].len(), 64, "signature must be 64 bytes");
-        assert_eq!(sigs[0], sigs[1], "both parties must produce identical signatures");
+        assert_eq!(
+            sigs[0], sigs[1],
+            "both parties must produce identical signatures"
+        );
         assert!(
             verify_sig(&shares[subset[0]], msg, &sigs[0]),
             "signature must verify under the joint public key (subset {:?})",
