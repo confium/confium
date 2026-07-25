@@ -19,6 +19,7 @@ members = [
     "crates/confium-store-pkcs11",
     "crates/confium-store-tpm",
     "crates/confium-tc",
+    "crates/confium-tc-cmp20",
     "crates/confium-tc-frost-ed25519",
     "crates/confium-tc-gg18",
     "crates/confium-test-harness",
@@ -51,6 +52,7 @@ confium-store-cloud = { path = "crates/confium-store-cloud", version = "0.3.0" }
 confium-store-pkcs11 = { path = "crates/confium-store-pkcs11", version = "0.3.0" }
 confium-store-tpm = { path = "crates/confium-store-tpm", version = "0.3.0" }
 confium-tc = { path = "crates/confium-tc", version = "0.3.0" }
+confium-tc-cmp20 = { path = "crates/confium-tc-cmp20", version = "0.3.0" }
 confium-tc-frost-ed25519 = { path = "crates/confium-tc-frost-ed25519", version = "0.3.0" }
 confium-tc-gg18 = { path = "crates/confium-tc-gg18", version = "0.3.0" }
 confium-test-harness = { path = "crates/confium-test-harness", version = "0.3.0" }
