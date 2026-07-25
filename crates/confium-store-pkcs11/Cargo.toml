@@ -1,0 +1,22 @@
+[package]
+name = "confium-store-pkcs11"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Confium Store PKCS#11 backend: hardware-backed key storage via PKCS#11"
+
+[lib]
+name = "confium_store_pkcs11"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+confium-store = { workspace = true }
+cryptoki = "0.12"
+inventory = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"
