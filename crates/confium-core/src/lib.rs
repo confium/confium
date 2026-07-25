@@ -219,6 +219,46 @@ impl Default for Confium {
     }
 }
 
+impl Confium {
+    /// Find a loaded provider by name. Shared by all interface modules
+    /// (DRY — eliminates 16 copies of this function across 8 files).
+    pub(crate) fn find_provider(&self, name: &str) -> Option<&Provider> {
+        self.providers.iter().find(|p| p.name == name)
+    }
+
+    /// Get a loaded provider by name, or return `UnknownProvider`.
+    pub(crate) fn get_provider(&self, name: &str) -> Result<&Provider> {
+        self.find_provider(name)
+            .ok_or_else(|| error::UnknownProviderSnafu { name }.build())
+    }
+
+    /// Resolve the candidate provider list for a given interface name.
+    /// Precedence: explicit provider → preferred_providers → all loaded
+    /// providers offering the interface (in load order).
+    pub(crate) fn resolve_providers(
+        &self,
+        interface_name: &str,
+        preferred: Option<&str>,
+        has_interface: impl Fn(&Plugin) -> bool,
+    ) -> Result<Vec<&Provider>> {
+        let mut providers: Vec<&Provider> = Vec::new();
+        if let Some(name) = preferred {
+            providers.push(self.get_provider(name)?);
+        } else if let Some(list) = self.preferred_providers.get(interface_name) {
+            for name in list {
+                providers.push(self.get_provider(name)?);
+            }
+        } else {
+            for provider in &self.providers {
+                if has_interface(&provider.plugin) {
+                    providers.push(provider);
+                }
+            }
+        }
+        Ok(providers)
+    }
+}
+
 #[cfg(test)]
 mod metadata_tests {
     use super::*;
