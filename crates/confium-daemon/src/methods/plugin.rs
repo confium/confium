@@ -39,7 +39,7 @@ pub async fn plugin_load(
             detail: e.to_string(),
         })?;
 
-    let cfm = cfm.borrow();
+    let mut cfm = cfm.borrow_mut();
     cfm.load_plugin(&PathBuf::from(&p.path), &p.options)
         .map_err(|e| RpcError::Engine {
             message: e.to_string(),

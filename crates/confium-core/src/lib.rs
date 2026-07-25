@@ -189,9 +189,25 @@ impl Confium {
         }
     }
 
-    // TODO: Support Rust plugins
-    pub fn load_plugin(&self, _path: &Path, _options: &StringOptions) -> Result<()> {
-        unimplemented!();
+    pub fn load_plugin(&mut self, path: &Path, options: &StringOptions) -> Result<()> {
+        use std::ffi::CString;
+        let path_str = path.to_string_lossy();
+        let c_path = CString::new(path_str.as_ref()).unwrap();
+        let name = path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("plugin");
+        let c_name = CString::new(name).unwrap();
+        let mut opts = options::Options::new();
+        for (k, v) in options {
+            opts.insert(k.clone(), options::OptionValue::String(v.clone()));
+        }
+        crate::ffi::plugin::cfm_plugin_load_(
+            self as *mut Confium,
+            c_name.as_ptr(),
+            c_path.as_ptr(),
+            &mut opts,
+        )
     }
 }
 

@@ -222,7 +222,7 @@ fn plugin_load_lib(name: &str, paths: &[PathBuf]) -> Result<libloading::Library>
     })
 }
 
-fn cfm_plugin_load_(
+pub(crate) fn cfm_plugin_load_(
     cfm: *mut Confium,
     c_name: *const c_char,
     c_path: *const c_char,
@@ -298,6 +298,20 @@ pub extern "C" fn cfm_plugin_load(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn cfm_plugin_unload(_cfm: *mut Confium, _c_name: *const c_char) -> u32 {
-    unimplemented!();
+pub extern "C" fn cfm_plugin_unload(cfm: *mut Confium, c_name: *const c_char) -> u32 {
+    if cfm.is_null() || c_name.is_null() {
+        return crate::error::ErrorCode::NULL_POINTER as u32;
+    }
+    let cfm = unsafe { &mut *cfm };
+    let name = match crate::ffi::utils::cstring(c_name) {
+        Ok(s) => s,
+        Err(e) => return e.code(),
+    };
+    let pos = cfm.providers.iter().position(|p| p.name == name);
+    let Some(pos) = pos else {
+        return crate::error::ErrorCode::UNKNOWN_PROVIDER as u32;
+    };
+    let provider = cfm.providers.remove(pos);
+    finalize_plugin(cfm, &provider.plugin);
+    0
 }
