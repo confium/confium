@@ -12,6 +12,7 @@ members = [
     "crates/confium-core",
     "crates/confium-daemon",
     "crates/confium-ers",
+    "crates/confium-escrow",
     "crates/confium-examples",
     "crates/confium-identity",
     "crates/confium-jce-provider",
@@ -26,6 +27,7 @@ members = [
     "crates/confium-pkcs11-server",
     "crates/confium-publish",
     "crates/confium-registry",
+    "crates/confium-revocation-service",
     "crates/confium-ring",
     "crates/confium-sandbox-process",
     "crates/confium-sandbox-wasm",
@@ -74,6 +76,7 @@ confium-composite = { path = "crates/confium-composite", version = "0.3.0" }
 confium-config = { path = "crates/confium-config", version = "0.3.0" }
 confium-daemon = { path = "crates/confium-daemon", version = "0.3.0" }
 confium-ers = { path = "crates/confium-ers", version = "0.3.0" }
+confium-escrow = { path = "crates/confium-escrow", version = "0.3.0" }
 confium-identity = { path = "crates/confium-identity", version = "0.3.0" }
 confium-jce-provider = { path = "crates/confium-jce-provider", version = "0.3.0" }
 confium-macros = { path = "crates/confium-macros", version = "0.3.0" }
@@ -86,6 +89,7 @@ confium-openssl-provider = { path = "crates/confium-openssl-provider", version =
 confium-ots = { path = "crates/confium-ots", version = "0.3.0" }
 confium-pkcs11-server = { path = "crates/confium-pkcs11-server", version = "0.3.0" }
 confium-registry = { path = "crates/confium-registry", version = "0.3.0" }
+confium-revocation-service = { path = "crates/confium-revocation-service", version = "0.3.0" }
 confium-ring = { path = "crates/confium-ring", version = "0.3.0" }
 confium-sandbox-process = { path = "crates/confium-sandbox-process", version = "0.3.0" }
 confium-sandbox-wasm = { path = "crates/confium-sandbox-wasm", version = "0.3.0" }
