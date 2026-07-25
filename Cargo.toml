@@ -4,6 +4,7 @@ members = [
     "crates/confium-api",
     "crates/confium-cli",
     "crates/confium-core",
+    "crates/confium-daemon",
     "crates/confium-macros",
     "crates/confium-net",
     "crates/confium-net-tcp",
@@ -27,6 +28,7 @@ categories = ["authentication", "cryptography"]
 [workspace.dependencies]
 confium-api = { path = "crates/confium-api", version = "0.3.0" }
 confium-core = { path = "crates/confium-core", version = "0.2.0" }
+confium-daemon = { path = "crates/confium-daemon", version = "0.3.0" }
 confium-macros = { path = "crates/confium-macros", version = "0.3.0" }
 confium-net = { path = "crates/confium-net", version = "0.3.0" }
 confium-net-tcp = { path = "crates/confium-net-tcp", version = "0.3.0" }

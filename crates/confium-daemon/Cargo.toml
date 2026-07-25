@@ -1,0 +1,30 @@
+[package]
+name = "confium-daemon"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Long-running Confium daemon exposing the full API over JSON-RPC"
+
+[[bin]]
+name = "confiumd"
+path = "src/main.rs"
+
+[dependencies]
+# The confium-core crate exposes its lib under the name `confium`
+# (matching the C ABI lib name `libconfium.so`). Rename it so Rust code
+# imports as `confium_core::*` for clarity.
+confium_core = { package = "confium-core", path = "../../crates/confium-core" }
+clap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { version = "1", features = ["net", "rt", "rt-multi-thread", "macros", "io-util", "sync", "time"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+snafu = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+tokio = { version = "1", features = ["net", "rt", "rt-multi-thread", "macros", "io-util", "sync", "time", "test-util"] }
