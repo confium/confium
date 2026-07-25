@@ -1,0 +1,118 @@
+# Build static CLI binaries for `confium` on Linux, macOS, Windows.
+#
+# Triggered on release tags (v*.*.*) and via workflow_dispatch.
+# Uploads binaries to the corresponding GitHub Release.
+#
+# Uses a fully-static musl build on Linux for maximum portability.
+
+name: Release Binaries
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl, aarch64-unknown-linux-musl
+
+      - name: Build x86_64 (musl, static)
+        run: cargo build --release --target x86_64-unknown-linux-musl -p confium-cli
+
+      - name: Build aarch64 (musl, static)
+        run: cargo build --release --target aarch64-unknown-linux-musl -p confium-cli
+
+      - name: Package binaries
+        run: |
+          mkdir -p dist
+          tar -czf dist/confium-linux-x86_64.tar.gz -C target/x86_64-unknown-linux-musl/release confium
+          tar -czf dist/confium-linux-aarch64.tar.gz -C target/aarch64-unknown-linux-musl/release confium
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: confium-linux
+          path: dist/
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin, aarch64-apple-darwin
+
+      - name: Build x86_64
+        run: cargo build --release --target x86_64-apple-darwin -p confium-cli
+
+      - name: Build aarch64 (Apple Silicon)
+        run: cargo build --release --target aarch64-apple-darwin -p confium-cli
+
+      - name: Package binaries
+        run: |
+          mkdir -p dist
+          tar -czf dist/confium-macos-x86_64.tar.gz -C target/x86_64-apple-darwin/release confium
+          tar -czf dist/confium-macos-aarch64.tar.gz -C target/aarch64-apple-darwin/release confium
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: confium-macos
+          path: dist/
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-gnu
+
+      - name: Build x86_64 (GNU)
+        run: cargo build --release --target x86_64-pc-windows-gnu -p confium-cli
+
+      - name: Package binaries
+        shell: bash
+        run: |
+          mkdir -p dist
+          7z a dist/confium-windows-x86_64.zip ./target/x86_64-pc-windows-gnu/release/confium.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: confium-windows
+          path: dist/
+
+  release:
+    needs: [build-linux, build-macos, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/confium-linux/*.tar.gz
+            dist/confium-macos/*.tar.gz
+            dist/confium-windows/*.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: true
