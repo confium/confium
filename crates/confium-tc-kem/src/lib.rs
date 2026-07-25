@@ -1,9 +1,19 @@
-//! Threshold KEM session interface parallel to confium-tc.
+//! Threshold KEM session interface, parallel to `confium-tc` (signing).
 //!
-//! Part of the Confium framework. See TODO.roadmap/31 for the
-//! full specification.
+//! Anyone can encrypt to a threshold KEM public key; T-of-N parties
+//! collaborate to decrypt. This crate provides the session interface;
+//! concrete algorithm implementations live in separate crates
+//! (`confium-tc-elgamal-p256`, `confium-tc-ml-kem`, etc.).
+//!
+//! See `TODO.roadmap/31-threshold-encryption.md` for the full spec.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-// TODO: implement per TODO.roadmap/31.md
+mod encapsulate;
+mod session;
+mod share;
+
+pub use encapsulate::*;
+pub use session::*;
+pub use share::*;

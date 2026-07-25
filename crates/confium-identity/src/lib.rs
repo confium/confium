@@ -1,9 +1,24 @@
-//! Actor identity: signing and encryption keypairs per Confium actor.
+//! Actor identity management for Confium deployments.
 //!
-//! Part of the Confium framework. See TODO.roadmap/34 for the
-//! full specification.
+//! Each actor in a Confium deployment (manufacturer, lab, IA officer,
+//! BIML director) has cryptographic identity. This crate provides:
+//!
+//! - Actor identity types (signing + encryption keypairs, certificate chain)
+//! - Identity store abstraction (memory, persistent, hardware-backed)
+//! - Hardware token descriptors (YubiKey PIV, OpenPGP card, TPM)
+//! - Attribute bindings (region, expertise, role) for predicate-based signing
+//!
+//! See `TODO.roadmap/34-identity-and-hardware.md` for the full specification.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-// TODO: implement per TODO.roadmap/34.md
+mod actor;
+mod attributes;
+mod store;
+mod token;
+
+pub use actor::*;
+pub use attributes::*;
+pub use store::*;
+pub use token::*;
