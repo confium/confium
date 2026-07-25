@@ -8,6 +8,7 @@ members = [
     "crates/confium-net",
     "crates/confium-net-quic",
     "crates/confium-net-tcp",
+    "crates/confium-net-ws",
     "crates/confium-publish",
     "crates/confium-registry",
     "crates/confium-store",
@@ -33,6 +34,7 @@ confium-macros = { path = "crates/confium-macros", version = "0.3.0" }
 confium-net = { path = "crates/confium-net", version = "0.3.0" }
 confium-net-quic = { path = "crates/confium-net-quic", version = "0.3.0" }
 confium-net-tcp = { path = "crates/confium-net-tcp", version = "0.3.0" }
+confium-net-ws = { path = "crates/confium-net-ws", version = "0.3.0" }
 confium-registry = { path = "crates/confium-registry", version = "0.3.0" }
 confium-store = { path = "crates/confium-store", version = "0.3.0" }
 confium-store-pkcs11 = { path = "crates/confium-store-pkcs11", version = "0.3.0" }
@@ -58,6 +60,11 @@ rustls = { version = "0.23", default-features = false, features = ["ring", "std"
 rcgen = "0.13"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "net", "sync", "macros", "time", "io-util"] }
 criterion = { version = "0.5", default-features = false, features = ["plotters", "cargo_bench_support"] }
+
+# WebSocket framing + handshake for confium-net-ws. MIT OR Apache-2.0.
+# `rustls-tls-native-roots` enables `wss://` via rustls using the
+# platform's native CA store.
+tungstenite = { version = "0.30", default-features = false, features = ["handshake", "url", "rustls-tls-native-roots"] }
 
 [profile.release]
 opt-level = 3
