@@ -1,0 +1,40 @@
+[package]
+name = "confium-tc-frost-ed25519"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "FROST threshold signature scheme over ed25519 (draft-irtf-cfrg-frost)"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+confium-tc = { workspace = true }
+curve25519-dalek = { workspace = true }
+# `inventory` is referenced via the `register_tc_scheme!` macro's
+# `::inventory::submit!` expansion, not by a textual `use` in this crate.
+# cargo-machete's source scan therefore can't see the dependency even
+# though the crate fails to link without it.
+inventory = { workspace = true }
+rand_core = { workspace = true }
+sha2 = { workspace = true }
+snafu = { workspace = true }
+
+[dev-dependencies]
+curve25519-dalek = { workspace = true }
+ed25519-dalek = { workspace = true }
+hex = { workspace = true }
+rand_core = { workspace = true }
+sha2 = { workspace = true }
+
+# `inventory` is referenced via the `register_tc_scheme!` macro's
+# `::inventory::submit!` expansion, not by a textual `use` in this crate.
+# cargo-machete's source scan therefore can't see the dependency even
+# though the crate fails to link without it.
+[package.metadata.cargo-machete]
+ignored = ["inventory"]
+
