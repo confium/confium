@@ -1,0 +1,21 @@
+[package]
+name = "confium-sandbox-wasm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "WASM plugin sandbox backed by wasmtime"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+snafu = { workspace = true }
+wasmtime = { workspace = true }
+
+[dev-dependencies]
+wasmtime = { workspace = true, features = ["wat"] }
+wat = "1"
