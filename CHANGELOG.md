@@ -11,18 +11,30 @@ Releases prior to 0.2.0 were tracked through git history.
 
 ### Added
 
-- **`confium-store-cloud` crate** — cloud KMS keystore backends for
-  AWS KMS, Google Cloud KMS, and Azure Key Vault. Each backend is
-  gated behind its own Cargo feature (`aws-kms`, `gcp-kms`,
-  `azure-keyvault`) so consumers pull only the SDK they need; with no
-  features enabled the crate compiles to nothing. Backends implement
-  `confium_store::backend::StoreBackend` and register via
-  `confium_store::register_backend!`, so they are drop-in for the
-  filesystem backend. The SDK wiring (config parsing, client types,
-  credential option keys) is in place; the actual KMS REST/gRPC calls
-  are stubbed to return `Error::NotImplemented` pending the
-  `cfmp_sign_with_handle` plugin contract (TODO #03). See
-  `TODO.roadmap/18-hardware-keystore-backends.md`.
+- **Plugin SDK proc-macros** (`crates/confium-macros/`,
+  `crates/confium-api/`). Two attribute macros that reduce the
+  per-plugin FFI boilerplate:
+  - `#[plugin_interface(name = "hash", version = 0)]` on an
+    `impl HashPlugin for T` block emits the eight canonical
+    `cfmp_hash_*` extern "C" entry points from the trait methods.
+    Currently supports the hash v0 wire protocol as a proof of concept.
+  - `#[export(interfaces(hash = 0), metadata(...))]` emits the plugin
+    lifecycle symbols (`cfmp_interface_version`, `cfmp_initialize`,
+    `cfmp_finalize`, `cfmp_query_interfaces`) plus the optional
+    `cfmp_metadata` symbol when the `metadata(...)` sub-argument is
+    supplied.
+
+  `crates/confium-api/` now carries the shared types plugin authors
+  need: `OpaqueHandle<T>` (opaque boxing for instance state),
+  `OptionMap`/`OptionView` (typed option map access),
+  `PluginMetadata`/`PluginMetadataBuilder` (registry metadata), and
+  `PluginError`/`ErrorCode` (wire error codes). The `HashPlugin`
+  trait lives at `confium_api::plugin::hash::HashPlugin`.
+
+  A mock plugin (`crates/confium-mock-plugin/`) built entirely with the
+  macros loads through the standard Confium loader and produces correct
+  XOR-fold digests end-to-end. Verified by the integration test in
+  `crates/confium-test-harness/tests/mock_plugin_loader.rs`.
 
 - **Workspace restructure.** The single `confium` crate is now
   `crates/confium-core/` inside a 10-crate workspace. The shared

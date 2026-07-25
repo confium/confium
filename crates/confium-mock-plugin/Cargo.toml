@@ -1,0 +1,22 @@
+[package]
+name = "confium-mock-plugin"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Mock hash plugin built with the confium-api SDK (proof of concept)"
+
+[lib]
+# The plugin is a cdylib so the loader can dlopen it and look up
+# `cfmp_*` symbols. The rlib target exists so downstream crates (in
+# particular the integration test in `confium-test-harness`) can depend
+# on it via dev-dependencies and locate the cdylib artifact at runtime
+# via `env!("CARGO_CDYLIB_FILE_confium_mock_plugin")`.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+confium-api = { workspace = true }
+confium-macros = { workspace = true }

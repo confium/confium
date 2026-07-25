@@ -4,22 +4,23 @@ members = [
     "crates/confium-api",
     "crates/confium-cli",
     "crates/confium-core",
+    "crates/confium-daemon",
     "crates/confium-macros",
+    "crates/confium-mock-plugin",
     "crates/confium-net",
     "crates/confium-net-quic",
     "crates/confium-net-tcp",
     "crates/confium-net-ws",
     "crates/confium-publish",
     "crates/confium-registry",
+    "crates/confium-sandbox-wasm",
     "crates/confium-store",
-<<<<<<< HEAD
-    "crates/confium-store-pkcs11",
-=======
-    "crates/confium-store-tpm",
->>>>>>> worktree-agent-acc160bb8a633d4da
     "crates/confium-store-cloud",
->>>>>>> worktree-agent-adf4bf0f18c062044
+    "crates/confium-store-pkcs11",
+    "crates/confium-store-tpm",
     "crates/confium-tc",
+    "crates/confium-tc-frost-ed25519",
+    "crates/confium-tc-gg18",
     "crates/confium-test-harness",
 ]
 
@@ -32,20 +33,28 @@ license = "BSD-2-Clause"
 homepage = "https://www.confium.org/"
 repository = "https://github.com/confium/confium"
 categories = ["authentication", "cryptography"]
+
 [workspace.dependencies]
 confium-api = { path = "crates/confium-api", version = "0.3.0" }
 confium-core = { path = "crates/confium-core", version = "0.2.0" }
+confium-daemon = { path = "crates/confium-daemon", version = "0.3.0" }
 confium-macros = { path = "crates/confium-macros", version = "0.3.0" }
+confium-mock-plugin = { path = "crates/confium-mock-plugin", version = "0.3.0" }
 confium-net = { path = "crates/confium-net", version = "0.3.0" }
 confium-net-quic = { path = "crates/confium-net-quic", version = "0.3.0" }
 confium-net-tcp = { path = "crates/confium-net-tcp", version = "0.3.0" }
 confium-net-ws = { path = "crates/confium-net-ws", version = "0.3.0" }
 confium-registry = { path = "crates/confium-registry", version = "0.3.0" }
+confium-sandbox-wasm = { path = "crates/confium-sandbox-wasm", version = "0.3.0" }
 confium-store = { path = "crates/confium-store", version = "0.3.0" }
+confium-store-cloud = { path = "crates/confium-store-cloud", version = "0.3.0" }
 confium-store-pkcs11 = { path = "crates/confium-store-pkcs11", version = "0.3.0" }
 confium-store-tpm = { path = "crates/confium-store-tpm", version = "0.3.0" }
-confium-store-cloud = { path = "crates/confium-store-cloud", version = "0.3.0" }
 confium-tc = { path = "crates/confium-tc", version = "0.3.0" }
+confium-tc-frost-ed25519 = { path = "crates/confium-tc-frost-ed25519", version = "0.3.0" }
+confium-tc-gg18 = { path = "crates/confium-tc-gg18", version = "0.3.0" }
+confium-test-harness = { path = "crates/confium-test-harness", version = "0.3.0" }
+
 libloading = "0.8"
 snafu = "0.8"
 inventory = "0.3"
@@ -66,13 +75,14 @@ rustls = { version = "0.23", default-features = false, features = ["ring", "std"
 rcgen = "0.13"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "net", "sync", "macros", "time", "io-util"] }
 criterion = { version = "0.5", default-features = false, features = ["plotters", "cargo_bench_support"] }
-# WebSocket framing + handshake for confium-net-ws. MIT OR Apache-2.0.
-# `rustls-tls-native-roots` enables `wss://` via rustls using the
-# platform's native CA store.
 tungstenite = { version = "0.30", default-features = false, features = ["handshake", "url", "rustls-tls-native-roots"] }
+wasmtime = "27"
+cryptoki = "0.12"
+
 [profile.release]
 opt-level = 3
 lto = true
 codegen-units = 1
+
 [profile.release.package."*"]
 opt-level = "s"

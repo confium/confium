@@ -12,6 +12,9 @@ description = "Test harness for Confium (mock plugins, NIST eval vectors)"
 [lib]
 crate-type = ["rlib"]
 
+[build-dependencies]
+# (no extra deps; build.rs is std-only)
+
 [dependencies]
 confium-api = { workspace = true }
 confium-core = { workspace = true }
@@ -24,7 +27,11 @@ snafu = { workspace = true }
 toml = { workspace = true }
 
 [dev-dependencies]
+confium-api = { workspace = true }
+confium-core = { workspace = true }
+confium-mock-plugin = { path = "../confium-mock-plugin" }
 criterion = { workspace = true }
+libloading = { workspace = true }
 
 [[bench]]
 name = "sim"
