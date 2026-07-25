@@ -13,6 +13,7 @@ members = [
     "crates/confium-net-ws",
     "crates/confium-publish",
     "crates/confium-registry",
+    "crates/confium-sandbox-process",
     "crates/confium-sandbox-wasm",
     "crates/confium-store",
     "crates/confium-store-cloud",
@@ -45,6 +46,7 @@ confium-net-quic = { path = "crates/confium-net-quic", version = "0.3.0" }
 confium-net-tcp = { path = "crates/confium-net-tcp", version = "0.3.0" }
 confium-net-ws = { path = "crates/confium-net-ws", version = "0.3.0" }
 confium-registry = { path = "crates/confium-registry", version = "0.3.0" }
+confium-sandbox-process = { path = "crates/confium-sandbox-process", version = "0.3.0" }
 confium-sandbox-wasm = { path = "crates/confium-sandbox-wasm", version = "0.3.0" }
 confium-store = { path = "crates/confium-store", version = "0.3.0" }
 confium-store-cloud = { path = "crates/confium-store-cloud", version = "0.3.0" }
