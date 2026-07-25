@@ -5,6 +5,7 @@ members = [
     "crates/confium-cli",
     "crates/confium-core",
     "crates/confium-daemon",
+    "crates/confium-examples",
     "crates/confium-macros",
     "crates/confium-mock-plugin",
     "crates/confium-net",
