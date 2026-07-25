@@ -11,6 +11,19 @@ Releases prior to 0.2.0 were tracked through git history.
 
 ### Added
 
+- **`confium-store-cloud` crate** — cloud KMS keystore backends for
+  AWS KMS, Google Cloud KMS, and Azure Key Vault. Each backend is
+  gated behind its own Cargo feature (`aws-kms`, `gcp-kms`,
+  `azure-keyvault`) so consumers pull only the SDK they need; with no
+  features enabled the crate compiles to nothing. Backends implement
+  `confium_store::backend::StoreBackend` and register via
+  `confium_store::register_backend!`, so they are drop-in for the
+  filesystem backend. The SDK wiring (config parsing, client types,
+  credential option keys) is in place; the actual KMS REST/gRPC calls
+  are stubbed to return `Error::NotImplemented` pending the
+  `cfmp_sign_with_handle` plugin contract (TODO #03). See
+  `TODO.roadmap/18-hardware-keystore-backends.md`.
+
 - **Workspace restructure.** The single `confium` crate is now
   `crates/confium-core/` inside a 10-crate workspace. The shared
   library is still called `libconfium.{so,dylib,dll}` for ABI

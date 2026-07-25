@@ -17,6 +17,8 @@ members = [
 =======
     "crates/confium-store-tpm",
 >>>>>>> worktree-agent-acc160bb8a633d4da
+    "crates/confium-store-cloud",
+>>>>>>> worktree-agent-adf4bf0f18c062044
     "crates/confium-tc",
     "crates/confium-test-harness",
 ]
@@ -42,6 +44,7 @@ confium-registry = { path = "crates/confium-registry", version = "0.3.0" }
 confium-store = { path = "crates/confium-store", version = "0.3.0" }
 confium-store-pkcs11 = { path = "crates/confium-store-pkcs11", version = "0.3.0" }
 confium-store-tpm = { path = "crates/confium-store-tpm", version = "0.3.0" }
+confium-store-cloud = { path = "crates/confium-store-cloud", version = "0.3.0" }
 confium-tc = { path = "crates/confium-tc", version = "0.3.0" }
 libloading = "0.8"
 snafu = "0.8"

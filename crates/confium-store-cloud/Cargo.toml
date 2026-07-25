@@ -1,0 +1,55 @@
+[package]
+name = "confium-store-cloud"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Confium Store backends for cloud KMS providers (AWS KMS, Google Cloud KMS, Azure Key Vault)"
+
+[lib]
+name = "confium_store_cloud"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+
+# AWS Key Management Service. Pulls `aws-config` (credentials, region,
+# retry policy) and `aws-sdk-kms` (the KMS client). `default-features =
+# false` on both keeps the tree lean; consumers enable `rustls` /
+# `behavior-version-latest` via the SDK's own features if they need them.
+aws-kms = ["dep:aws-config", "dep:aws-sdk-kms"]
+
+# Google Cloud Key Management Service. Pulls `google-cloud-kms`, the
+# high-level async KMS client. The `google-cloud-gax` transport comes
+# transitively.
+gcp-kms = ["dep:google-cloud-kms"]
+
+# Azure Key Vault. Pulls `azure_security_keyvault`; the shared
+# `azure_core` types it depends on come in transitively at the matching
+# 0.21.x version (the Azure SDK for Rust keeps the major version
+# aligned across its crates).
+azure-keyvault = ["dep:azure-security-keyvault"]
+
+[dependencies]
+confium-store = { workspace = true }
+inventory = { workspace = true }
+snafu = { workspace = true }
+
+# --- AWS KMS -------------------------------------------------------------
+aws-config = { version = "1.10", default-features = false, optional = true }
+aws-sdk-kms = { version = "1.114", default-features = false, optional = true }
+
+# --- Google Cloud KMS ----------------------------------------------------
+google-cloud-kms = { version = "0.6", default-features = false, optional = true }
+
+# --- Azure Key Vault -----------------------------------------------------
+# Renamed to `azure_security_keyvault` on crates.io; the local alias
+# avoids Rust's snake_case lints tripping on the underscore-heavy
+# upstream crate name when consumers reference it from feature flags.
+azure-security-keyvault = { version = "0.21", default-features = false, optional = true, package = "azure_security_keyvault" }
+
+[dev-dependencies]
+tempfile = { workspace = true }
