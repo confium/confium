@@ -1,0 +1,40 @@
+[package]
+name = "confium-store-tpm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Confium Store TPM 2.0 backend (hardware-backed key storage)"
+
+[lib]
+name = "confium_store_tpm"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+confium-store = { workspace = true }
+inventory = { workspace = true }
+snafu = { workspace = true }
+
+# `tss-esapi` is the Rust binding for TPM 2.0 TSS2 (Enhanced System API).
+# It links against the native `tss2-esys` / `tss2-mu` / `tss2-tctildr`
+# libraries at build time (BSD-2-Clause per upstream, but the published
+# crate carries Apache-2.0 — both are accepted by the workspace's
+# `cargo-deny` allow-list). Because the native libraries are not part of
+# the default dev environment (and not present on macOS), the dependency
+# is optional and gated behind the `tpm` feature so the skeleton compiles
+# and passes all workspace gates without a TPM toolchain installed. Flip
+# the feature on in any environment that has the TSS2 libraries available
+# (Linux with `tpm2-tss` installed, or CI with `swtpm`).
+tss-esapi = { version = "8.0.0-alpha.2", optional = true }
+
+[features]
+default = []
+# Enable the real `tss-esapi` wiring. Requires the native TSS2 libraries
+# (`tpm2-tss`) to be installed on the host.
+tpm = ["dep:tss-esapi"]
+
+[dev-dependencies]
+tempfile = { workspace = true }
