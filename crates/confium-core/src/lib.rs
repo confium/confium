@@ -222,11 +222,14 @@ impl Default for Confium {
 impl Confium {
     /// Find a loaded provider by name. Shared by all interface modules
     /// (DRY — eliminates 16 copies of this function across 8 files).
+    /// Not yet called by all modules; pending incremental refactoring.
+    #[allow(dead_code)]
     pub(crate) fn find_provider(&self, name: &str) -> Option<&Provider> {
         self.providers.iter().find(|p| p.name == name)
     }
 
     /// Get a loaded provider by name, or return `UnknownProvider`.
+    #[allow(dead_code)]
     pub(crate) fn get_provider(&self, name: &str) -> Result<&Provider> {
         self.find_provider(name)
             .ok_or_else(|| error::UnknownProviderSnafu { name }.build())
@@ -235,6 +238,7 @@ impl Confium {
     /// Resolve the candidate provider list for a given interface name.
     /// Precedence: explicit provider → preferred_providers → all loaded
     /// providers offering the interface (in load order).
+    #[allow(dead_code)]
     pub(crate) fn resolve_providers(
         &self,
         interface_name: &str,
