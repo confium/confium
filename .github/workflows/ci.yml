@@ -36,8 +36,8 @@ jobs:
     name: Spell Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: crate-ci/typos@v1.45.0
+      - uses: actions/checkout@v7
+      - uses: crate-ci/typos@v1.48.0
 
   # ============================================================================
   # Pre-flight: skip CI when only docs/markdown changed
@@ -48,7 +48,7 @@ jobs:
     outputs:
       should_run: ${{ steps.check.outputs.should_run }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
@@ -72,7 +72,7 @@ jobs:
     needs: preflight
     if: needs.preflight.outputs.should_run == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Generate Cargo.lock
         run: cargo generate-lockfile
@@ -99,7 +99,7 @@ jobs:
     needs: preflight
     if: needs.preflight.outputs.should_run == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -131,7 +131,7 @@ jobs:
     needs: preflight
     if: needs.preflight.outputs.should_run == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install cargo-machete
         uses: taiki-e/install-action@v2
@@ -150,7 +150,7 @@ jobs:
     needs: preflight
     if: needs.preflight.outputs.should_run == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -179,7 +179,7 @@ jobs:
           - macos-latest
           - windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -210,12 +210,12 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
-          # Windows excluded: MarkusJx/install-boost@v2.4.1 fails on the
+          # Windows excluded: MarkusJx/install-boost@v2.6.0 fails on the
           # current windows-latest image because 7z cannot extract boost's
           # internal symlinks. Re-enable once the boost install action or
           # the runner image is fixed.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
 
@@ -231,7 +231,7 @@ jobs:
         uses: lukka/get-cmake@latest
 
       - name: Install boost
-        uses: MarkusJx/install-boost@v2.4.1
+        uses: MarkusJx/install-boost@v2.6.0
         id: install-boost
         with:
           boost_version: 1.81.0
@@ -265,7 +265,7 @@ jobs:
     needs: [preflight]
     if: github.event_name == 'pull_request' && needs.preflight.outputs.should_run == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
