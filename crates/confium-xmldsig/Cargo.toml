@@ -9,11 +9,13 @@ homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
 description = "XMLDSig and Exclusive C14N for XML document signing"
-keywords = ["crypto", "threshold", "confium"]
+keywords = ["crypto", "xmldsig", "c14n", "xml", "confium"]
 
 [dependencies]
 serde = { workspace = true }
-snafu = { workspace = true }
+thiserror = { workspace = true }
+sha2 = { workspace = true }
+data-encoding = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]

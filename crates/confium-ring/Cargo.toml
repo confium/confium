@@ -8,12 +8,12 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "Threshold ring signatures - research prototype"
+description = "confium-ring — part of the Confium framework"
 keywords = ["crypto", "threshold", "confium"]
 
 [dependencies]
 serde = { workspace = true }
-snafu = { workspace = true }
+thiserror = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]
