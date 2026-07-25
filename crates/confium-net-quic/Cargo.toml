@@ -1,0 +1,22 @@
+[package]
+name = "confium-net-quic"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "QUIC transport for Confium (quic://, quic4://, quic6://)"
+
+[dependencies]
+confium-net = { workspace = true }
+inventory = { workspace = true }
+url = { workspace = true }
+quinn = { workspace = true }
+rustls = { workspace = true }
+rcgen = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+confium-net = { workspace = true }
