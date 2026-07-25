@@ -12,7 +12,11 @@ members = [
     "crates/confium-publish",
     "crates/confium-registry",
     "crates/confium-store",
+<<<<<<< HEAD
     "crates/confium-store-pkcs11",
+=======
+    "crates/confium-store-tpm",
+>>>>>>> worktree-agent-acc160bb8a633d4da
     "crates/confium-tc",
     "crates/confium-test-harness",
 ]
@@ -26,7 +30,6 @@ license = "BSD-2-Clause"
 homepage = "https://www.confium.org/"
 repository = "https://github.com/confium/confium"
 categories = ["authentication", "cryptography"]
-
 [workspace.dependencies]
 confium-api = { path = "crates/confium-api", version = "0.3.0" }
 confium-core = { path = "crates/confium-core", version = "0.2.0" }
@@ -38,8 +41,8 @@ confium-net-ws = { path = "crates/confium-net-ws", version = "0.3.0" }
 confium-registry = { path = "crates/confium-registry", version = "0.3.0" }
 confium-store = { path = "crates/confium-store", version = "0.3.0" }
 confium-store-pkcs11 = { path = "crates/confium-store-pkcs11", version = "0.3.0" }
+confium-store-tpm = { path = "crates/confium-store-tpm", version = "0.3.0" }
 confium-tc = { path = "crates/confium-tc", version = "0.3.0" }
-
 libloading = "0.8"
 snafu = "0.8"
 inventory = "0.3"
@@ -60,16 +63,13 @@ rustls = { version = "0.23", default-features = false, features = ["ring", "std"
 rcgen = "0.13"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "net", "sync", "macros", "time", "io-util"] }
 criterion = { version = "0.5", default-features = false, features = ["plotters", "cargo_bench_support"] }
-
 # WebSocket framing + handshake for confium-net-ws. MIT OR Apache-2.0.
 # `rustls-tls-native-roots` enables `wss://` via rustls using the
 # platform's native CA store.
 tungstenite = { version = "0.30", default-features = false, features = ["handshake", "url", "rustls-tls-native-roots"] }
-
 [profile.release]
 opt-level = 3
 lto = true
 codegen-units = 1
-
 [profile.release.package."*"]
 opt-level = "s"
