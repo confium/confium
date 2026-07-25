@@ -8,6 +8,8 @@
 //! - `tcp://<host>:<port>` — future `confium-net-tcp` crate
 //! - `tcp+tls://<host>:<port>` — future TLS-wrapped TCP
 //! - `quic://<host>:<port>` — future `confium-net-quic` crate
+//! - `quic4://<host>:<port>` — IPv4-only QUIC
+//! - `quic6://<host>:<port>` — IPv6-only QUIC
 //! - `ws://<host>:<port>/<path>` — future `confium-net-ws` crate
 //! - `wss://<host>:<port>/<path>` — future TLS-wrapped WebSocket
 //!
@@ -33,7 +35,9 @@ use crate::error::UnknownSchemeSnafu;
 /// Adding a new transport crate that introduces a new scheme means
 /// appending to this list — a single-line edit, not a structural
 /// change to the parser.
-pub const KNOWN_SCHEMES: &[&str] = &["inproc", "mock", "tcp", "tcp+tls", "quic", "ws", "wss"];
+pub const KNOWN_SCHEMES: &[&str] = &[
+    "inproc", "mock", "tcp", "tcp+tls", "quic", "quic4", "quic6", "ws", "wss",
+];
 
 /// A parsed transport URL.
 ///
