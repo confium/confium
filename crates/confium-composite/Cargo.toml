@@ -9,11 +9,12 @@ homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
 description = "Composite multi-algorithm signature aggregation"
-keywords = ["crypto", "threshold", "confium"]
+keywords = ["crypto", "composite", "pqc", "signature", "confium"]
 
 [dependencies]
 serde = { workspace = true }
-snafu = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]

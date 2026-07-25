@@ -9,11 +9,16 @@ homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
 description = "Append-only Merkle tree transparency log with OTS anchoring"
-keywords = ["crypto", "threshold", "confium"]
+keywords = ["crypto", "merkle", "transparency", "ots", "confium"]
 
 [dependencies]
 serde = { workspace = true }
+serde_json = { workspace = true }
 snafu = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+sha2 = { workspace = true }
+data-encoding = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]
