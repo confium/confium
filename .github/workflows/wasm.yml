@@ -1,0 +1,79 @@
+# Build and publish the `confium-wasm` package to npm.
+#
+# Triggered on release tags (v*.*.*) and via workflow_dispatch.
+# Produces a single npm package containing:
+#
+#   - the WASM binary blob (confium_wasm_bg.wasm)
+#   - the generated JS bindings (confium_wasm.js)
+#   - TypeScript definitions (confium_wasm.d.ts)
+#
+# The package is published under `@confium/confium-wasm` on the public npm
+# registry. The npm token is configured as the `NPM_TOKEN` repository
+# secret.
+
+name: Release WASM
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+
+      - name: Build WASM package
+        run: |
+          wasm-pack build crates/confium-sandbox-wasm \
+            --target web \
+            --release \
+            --scope confium
+
+      - name: Inspect package
+        run: ls -la crates/confium-sandbox-wasm/pkg/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: confium-wasm-pkg
+          path: crates/confium-sandbox-wasm/pkg/
+
+  publish-npm:
+    needs: build-wasm
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: confium-wasm-pkg
+          path: pkg/
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Publish
+        run: npm publish --access public
+        working-directory: pkg/
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,0 +1,86 @@
+# Build and publish RustDoc API documentation for all published Confium crates.
+#
+# Deploys to GitHub Pages at the `rustdoc` environment, alongside the
+# AsciiDoc project documentation deployed by docs.yml.
+#
+# Output: rendered RustDoc for every workspace member crate, plus a
+# top-level index linking to each crate's documentation.
+
+name: RustDoc
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "crates/**/*.rs"
+      - "crates/**/Cargo.toml"
+      - "Cargo.toml"
+      - ".github/workflows/rustdoc.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: rustdoc-pages
+  cancel-in_progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Configure cargo cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build RustDoc
+        run: |
+          cargo doc --workspace --no-deps --all-features
+          # Generate top-level index page
+          cat > target/doc/index.html <<'HTMLEOF'
+          <!DOCTYPE html>
+          <html>
+          <head><title>Confium RustDoc</title></head>
+          <body>
+          <h1>Confium RustDoc</h1>
+          <p>API documentation for all published Confium crates.</p>
+          <ul>
+          HTMLEOF
+          for crate_dir in crates/*/; do
+            crate_name=$(basename "$crate_dir")
+            if [ -d "target/doc/${crate_name//-/_}" ]; then
+              echo "<li><a href=\"${crate_name//-/_}/index.html\">${crate_name}</a></li>" >> target/doc/index.html
+            fi
+          done
+          cat >> target/doc/index.html <<'HTMLEOF'
+          </ul>
+          <p>Project documentation: <a href="https://confium.org">confium.org</a></p>
+          </body>
+          </html>
+          HTMLEOF
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/doc
+          name: rustdoc-pages
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: rustdoc
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
