@@ -83,6 +83,8 @@ cryptoki = "0.12"
 curve25519-dalek = { version = "4", features = ["rand_core"] }
 ed25519-dalek = "2"
 rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
+aes-gcm = "0.10"
+rand = { version = "0.8", default-features = false, features = ["std", "getrandom"] }
 hex = "0.4"
 tokio-util = { version = "0.7", features = ["codec"] }
 
