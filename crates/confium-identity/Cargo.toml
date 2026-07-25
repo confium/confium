@@ -1,0 +1,19 @@
+[package]
+name = "confium-identity"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories.workspace = true
+description = "Actor identity: signing and encryption keypairs per Confium actor"
+keywords = ["crypto", "threshold", "confium"]
+
+[dependencies]
+serde = { workspace = true }
+snafu = { workspace = true }
+
+[lib]
+crate-type = ["rlib"]

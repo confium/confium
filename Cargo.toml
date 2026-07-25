@@ -2,29 +2,55 @@
 resolver = "2"
 members = [
     "crates/confium-api",
+    "crates/confium-attributes",
+    "crates/confium-cert",
+    "crates/confium-cert-delegation",
     "crates/confium-cli",
+    "crates/confium-cms",
+    "crates/confium-composite",
+    "crates/confium-config",
     "crates/confium-core",
     "crates/confium-daemon",
+    "crates/confium-ers",
     "crates/confium-examples",
+    "crates/confium-identity",
+    "crates/confium-jce-provider",
     "crates/confium-macros",
     "crates/confium-mock-plugin",
     "crates/confium-net",
     "crates/confium-net-quic",
     "crates/confium-net-tcp",
     "crates/confium-net-ws",
+    "crates/confium-openssl-provider",
+    "crates/confium-ots",
+    "crates/confium-pkcs11-server",
     "crates/confium-publish",
     "crates/confium-registry",
+    "crates/confium-ring",
     "crates/confium-sandbox-process",
     "crates/confium-sandbox-wasm",
     "crates/confium-store",
     "crates/confium-store-cloud",
+    "crates/confium-store-openpgp-card",
     "crates/confium-store-pkcs11",
     "crates/confium-store-tpm",
     "crates/confium-tc",
+    "crates/confium-tc-bls",
     "crates/confium-tc-cmp20",
+    "crates/confium-tc-coordinator",
+    "crates/confium-tc-ecies-p256",
+    "crates/confium-tc-fhe-bfv",
     "crates/confium-tc-frost-ed25519",
+    "crates/confium-tc-frost-ml-dsa-65",
+    "crates/confium-tc-frost-p256",
     "crates/confium-tc-gg18",
+    "crates/confium-tc-kem",
+    "crates/confium-tc-ml-kem",
+    "crates/confium-tc-reshare",
     "crates/confium-test-harness",
+    "crates/confium-tls-signer",
+    "crates/confium-transparency",
+    "crates/confium-xmldsig",
 ]
 
 [workspace.package]
@@ -39,26 +65,52 @@ categories = ["authentication", "cryptography"]
 
 [workspace.dependencies]
 confium-api = { path = "crates/confium-api", version = "0.3.0" }
+confium-attributes = { path = "crates/confium-attributes", version = "0.3.0" }
+confium-cert = { path = "crates/confium-cert", version = "0.3.0" }
+confium-cert-delegation = { path = "crates/confium-cert-delegation", version = "0.3.0" }
 confium-core = { path = "crates/confium-core", version = "0.2.0" }
+confium-cms = { path = "crates/confium-cms", version = "0.3.0" }
+confium-composite = { path = "crates/confium-composite", version = "0.3.0" }
+confium-config = { path = "crates/confium-config", version = "0.3.0" }
 confium-daemon = { path = "crates/confium-daemon", version = "0.3.0" }
+confium-ers = { path = "crates/confium-ers", version = "0.3.0" }
+confium-identity = { path = "crates/confium-identity", version = "0.3.0" }
+confium-jce-provider = { path = "crates/confium-jce-provider", version = "0.3.0" }
 confium-macros = { path = "crates/confium-macros", version = "0.3.0" }
 confium-mock-plugin = { path = "crates/confium-mock-plugin", version = "0.3.0" }
 confium-net = { path = "crates/confium-net", version = "0.3.0" }
 confium-net-quic = { path = "crates/confium-net-quic", version = "0.3.0" }
 confium-net-tcp = { path = "crates/confium-net-tcp", version = "0.3.0" }
 confium-net-ws = { path = "crates/confium-net-ws", version = "0.3.0" }
+confium-openssl-provider = { path = "crates/confium-openssl-provider", version = "0.3.0" }
+confium-ots = { path = "crates/confium-ots", version = "0.3.0" }
+confium-pkcs11-server = { path = "crates/confium-pkcs11-server", version = "0.3.0" }
 confium-registry = { path = "crates/confium-registry", version = "0.3.0" }
+confium-ring = { path = "crates/confium-ring", version = "0.3.0" }
 confium-sandbox-process = { path = "crates/confium-sandbox-process", version = "0.3.0" }
 confium-sandbox-wasm = { path = "crates/confium-sandbox-wasm", version = "0.3.0" }
 confium-store = { path = "crates/confium-store", version = "0.3.0" }
 confium-store-cloud = { path = "crates/confium-store-cloud", version = "0.3.0" }
+confium-store-openpgp-card = { path = "crates/confium-store-openpgp-card", version = "0.3.0" }
 confium-store-pkcs11 = { path = "crates/confium-store-pkcs11", version = "0.3.0" }
 confium-store-tpm = { path = "crates/confium-store-tpm", version = "0.3.0" }
 confium-tc = { path = "crates/confium-tc", version = "0.3.0" }
+confium-tc-bls = { path = "crates/confium-tc-bls", version = "0.3.0" }
 confium-tc-cmp20 = { path = "crates/confium-tc-cmp20", version = "0.3.0" }
+confium-tc-coordinator = { path = "crates/confium-tc-coordinator", version = "0.3.0" }
+confium-tc-ecies-p256 = { path = "crates/confium-tc-ecies-p256", version = "0.3.0" }
+confium-tc-fhe-bfv = { path = "crates/confium-tc-fhe-bfv", version = "0.3.0" }
 confium-tc-frost-ed25519 = { path = "crates/confium-tc-frost-ed25519", version = "0.3.0" }
+confium-tc-frost-ml-dsa-65 = { path = "crates/confium-tc-frost-ml-dsa-65", version = "0.3.0" }
+confium-tc-frost-p256 = { path = "crates/confium-tc-frost-p256", version = "0.3.0" }
 confium-tc-gg18 = { path = "crates/confium-tc-gg18", version = "0.3.0" }
+confium-tc-kem = { path = "crates/confium-tc-kem", version = "0.3.0" }
+confium-tc-ml-kem = { path = "crates/confium-tc-ml-kem", version = "0.3.0" }
+confium-tc-reshare = { path = "crates/confium-tc-reshare", version = "0.3.0" }
 confium-test-harness = { path = "crates/confium-test-harness", version = "0.3.0" }
+confium-tls-signer = { path = "crates/confium-tls-signer", version = "0.3.0" }
+confium-transparency = { path = "crates/confium-transparency", version = "0.3.0" }
+confium-xmldsig = { path = "crates/confium-xmldsig", version = "0.3.0" }
 
 libloading = "0.8"
 snafu = "0.8"
@@ -90,6 +142,26 @@ aes-gcm = "0.10"
 rand = { version = "0.8", default-features = false, features = ["std", "getrandom"] }
 hex = "0.4"
 tokio-util = { version = "0.7", features = ["codec"] }
+x509-cert = { version = "0.2", features = ["builder"] }
+der = "0.7"
+spki = "0.7"
+p256 = { version = "0.13", features = ["ecdsa", "pem"] }
+p384 = "0.13"
+ecdsa = "0.16"
+signature = "2"
+elliptic-curve = "0.13"
+openpgp-card = "0.5"
+card-backend-pcsc = "0.5"
+chrono = { version = "0.4", features = ["serde"] }
+axum = "0.7"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["trace"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+async-trait = "0.1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+data-encoding = "2"
+thiserror = "1"
 
 [profile.release]
 opt-level = 3
