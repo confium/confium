@@ -166,6 +166,10 @@ mod tests {
         // docstring if any input changes.
         let pinned = "e099cbd6aa693ad425eaa910e8346501caa0ed6fed30ad3a3dc378da61c0dc0c";
         assert_eq!(hex_actual, pinned);
-        assert_eq!(hex_actual.len(), 64, "scalar encodes to 32 bytes / 64 hex chars");
+        assert_eq!(
+            hex_actual.len(),
+            64,
+            "scalar encodes to 32 bytes / 64 hex chars"
+        );
     }
 }

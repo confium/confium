@@ -26,12 +26,16 @@ pub mod handle;
 pub mod metadata;
 pub mod options;
 pub mod plugin;
+pub mod registry;
 
 pub use error::{ErrorCode, PluginError, PluginResult};
 pub use handle::OpaqueHandle;
 pub use metadata::{PluginMetadata, PluginMetadataBuilder};
 pub use options::{OptionMap, OptionValue, OptionView};
-pub use plugin::HashPlugin;
+pub use plugin::{
+    AeadPlugin, CipherPlugin, HashPlugin, KdfPlugin, KemPlugin, KeyfmtPlugin, RngPlugin,
+    SignaturePlugin,
+};
 
 /// Re-export of the proc-macros so plugin authors can write
 /// `use confium_api::plugin_interface` without depending on

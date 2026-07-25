@@ -16,6 +16,8 @@ use wasmtime::Linker;
 use wasmtime::Module;
 use wasmtime::Store;
 
+use crate::Error;
+use crate::Result;
 use crate::error::WasmtimeError;
 use crate::imports::CapabilitySet;
 use crate::imports::HostImports;
@@ -24,8 +26,6 @@ use crate::sandbox::Capability;
 use crate::sandbox::Sandbox;
 use crate::sandbox::SandboxInstance;
 use crate::sandbox::Value;
-use crate::Error;
-use crate::Result;
 
 /// Host-side state threaded through every guest call. Lives in the
 /// wasmtime `Store` so the host-import trampolines can reach it via
@@ -101,12 +101,12 @@ impl Sandbox for WasmSandbox {
         // Pre-link against the host imports so instantiation can
         // only fail on missing exports, not on a host-import mismatch.
         let linker = (*self.linker_template).clone();
-        let instance_pre = linker.instantiate_pre(&module).map_err(|e| {
-            Error::Instantiation {
+        let instance_pre = linker
+            .instantiate_pre(&module)
+            .map_err(|e| Error::Instantiation {
                 source: WasmtimeError::from_display(e),
                 backtrace: Backtrace::generate(),
-            }
-        })?;
+            })?;
 
         let state = HostState {
             caps: CapabilitySet::new(),
@@ -167,12 +167,13 @@ impl SandboxInstance for WasmInstance {
             .instantiate(&mut *store)
             .map_err(|e| Self::invocation_error(function, e))?;
 
-        let export = instance.get_export(&mut *store, function).ok_or_else(|| {
-            Error::FunctionNotFound {
-                function: function.to_string(),
-                backtrace: Backtrace::generate(),
-            }
-        })?;
+        let export =
+            instance
+                .get_export(&mut *store, function)
+                .ok_or_else(|| Error::FunctionNotFound {
+                    function: function.to_string(),
+                    backtrace: Backtrace::generate(),
+                })?;
 
         let func = export.into_func().ok_or_else(|| Error::ExportNotFound {
             export: function.to_string(),

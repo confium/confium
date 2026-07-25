@@ -6,6 +6,10 @@
 //! `#[plugin_interface]` and `#[export]` are wire-compatible with what
 //! `cfm_plugin_load` expects.
 //!
+//! The mock plugin advertises two interfaces — `hash` and `symmetric`
+//! (cipher) — both auto-discovered from `#[plugin_interface]`
+//! attributes. These tests confirm both load through the real loader.
+//!
 //! The mock plugin is built as a cdylib in the same workspace. Cargo
 //! exposes its path via the `CARGO_CDYLIB_FILE_confium_mock_plugin`
 //! environment variable, which is set when this crate is listed as a
@@ -22,6 +26,7 @@
 // crossing a real ABI boundary. The lint is conservative.
 #![allow(improper_ctypes)]
 
+use std::collections::HashMap;
 use std::ffi::CString;
 use std::os::raw::c_char;
 use std::ptr;
@@ -44,6 +49,33 @@ unsafe extern "C" {
         opts: *mut Options,
         errptr: *mut *mut Error,
     ) -> u32;
+}
+
+/// Parse the packed `name + NUL + version_byte + NUL + ... + NUL`
+/// byte stream returned by `cfmp_query_interfaces` into a
+/// `(name → [versions])` map.
+///
+/// Shared by the per-interface advertisement tests so the parsing
+/// logic isn't duplicated.
+fn parse_query_interfaces(ptr: *const u8) -> HashMap<String, Vec<u8>> {
+    let mut out: HashMap<String, Vec<u8>> = HashMap::new();
+    let mut idx = 0;
+    loop {
+        let start = idx;
+        let mut end = start;
+        while unsafe { *ptr.add(end) } != 0 {
+            end += 1;
+        }
+        if end == start {
+            break; // empty name terminates
+        }
+        let name_bytes = unsafe { std::slice::from_raw_parts(ptr.add(start), end - start) };
+        let name = std::str::from_utf8(name_bytes).unwrap().to_string();
+        let version = unsafe { *ptr.add(end + 1) };
+        out.entry(name).or_default().push(version);
+        idx = end + 2;
+    }
+    out
 }
 
 #[test]
@@ -85,36 +117,151 @@ fn mock_plugin_loads_and_hashes() {
 }
 
 #[test]
-fn mock_plugin_advertises_hash_interface() {
-    // The `cfmp_query_interfaces` symbol should report `hash\0\x00\0`
-    // (hash interface, version 0).
+fn mock_plugin_advertises_hash_and_cipher_interfaces() {
+    // The `cfmp_query_interfaces` symbol should report both `hash\0\x00\0`
+    // and `symmetric\0\x00\0` (cipher's wire name), both version 0.
+    // Both are auto-discovered from the `#[plugin_interface]` attributes
+    // in the mock plugin — no explicit `interfaces(...)` in `#[export]`.
     let lib = unsafe { libloading::Library::new(MOCK_PLUGIN_PATH) }.expect("plugin dlopens");
     let query: libloading::Symbol<extern "C" fn(*const std::ffi::c_void) -> *const u8> =
         unsafe { lib.get(b"cfmp_query_interfaces\0") }.expect("symbol resolves");
     let ptr = query(std::ptr::null());
     assert!(!ptr.is_null(), "query_interfaces returned non-NULL");
 
-    // Parse the packed `name + NUL + version_byte + NUL + ... + NUL` stream.
-    let mut idx = 0;
-    let mut found = false;
-    loop {
-        let start = idx;
-        let mut end = start;
-        while unsafe { *ptr.add(end) } != 0 {
-            end += 1;
-        }
-        if end == start {
-            break; // empty name terminates
-        }
-        let name_bytes = unsafe { std::slice::from_raw_parts(ptr.add(start), end - start) };
-        let name = std::str::from_utf8(name_bytes).unwrap();
-        let version = unsafe { *ptr.add(end + 1) };
-        if name == "hash" && version == 0 {
-            found = true;
-        }
-        idx = end + 2;
-    }
-    assert!(found, "plugin advertises hash v0");
+    let advertised = parse_query_interfaces(ptr);
+
+    let hash_versions = advertised.get("hash").expect("plugin advertises hash");
+    assert!(
+        hash_versions.contains(&0),
+        "hash interface is version 0, got {hash_versions:?}"
+    );
+
+    let cipher_versions = advertised
+        .get("symmetric")
+        .expect("plugin advertises symmetric (cipher) under its wire name");
+    assert!(
+        cipher_versions.contains(&0),
+        "symmetric interface is version 0, got {cipher_versions:?}"
+    );
+}
+
+#[test]
+fn mock_plugin_cipher_symbols_resolve() {
+    // Confirm the macro-emitted `cfmp_cipher_*` symbols are present and
+    // callable. This validates that the cipher interface generator
+    // produced the right symbol set with the right signatures — the
+    // loader looks these up by name when negotiating the `symmetric`
+    // interface.
+    let lib = unsafe { libloading::Library::new(MOCK_PLUGIN_PATH) }.expect("plugin dlopens");
+
+    // The eight canonical cipher symbols.
+    let _create: libloading::Symbol<
+        unsafe extern "C" fn(
+            *const std::ffi::c_void,
+            *mut *mut std::ffi::c_void,
+            *const c_char,
+            *const std::ffi::c_void,
+            u32,
+            *const std::ffi::c_void,
+            u32,
+            *const std::ffi::c_void,
+        ) -> u32,
+    > = unsafe { lib.get(b"cfmp_cipher_create\0") }.expect("cfmp_cipher_create resolves");
+    let _block_size: libloading::Symbol<
+        unsafe extern "C" fn(*const std::ffi::c_void, *mut u32) -> u32,
+    > = unsafe { lib.get(b"cfmp_cipher_block_size\0") }.expect("cfmp_cipher_block_size resolves");
+    let _key_size: libloading::Symbol<
+        unsafe extern "C" fn(*const std::ffi::c_void, *mut u32) -> u32,
+    > = unsafe { lib.get(b"cfmp_cipher_key_size\0") }.expect("cfmp_cipher_key_size resolves");
+    let _iv_size: libloading::Symbol<
+        unsafe extern "C" fn(*const std::ffi::c_void, *mut u32) -> u32,
+    > = unsafe { lib.get(b"cfmp_cipher_iv_size\0") }.expect("cfmp_cipher_iv_size resolves");
+    let _update: libloading::Symbol<
+        unsafe extern "C" fn(*mut std::ffi::c_void, *const u8, u32, *mut u8, *mut u32) -> u32,
+    > = unsafe { lib.get(b"cfmp_cipher_update\0") }.expect("cfmp_cipher_update resolves");
+    let _finalize: libloading::Symbol<
+        unsafe extern "C" fn(*mut std::ffi::c_void, *mut u8, u32, *mut u32) -> u32,
+    > = unsafe { lib.get(b"cfmp_cipher_finalize\0") }.expect("cfmp_cipher_finalize resolves");
+    let _reset: libloading::Symbol<unsafe extern "C" fn(*mut std::ffi::c_void) -> u32> =
+        unsafe { lib.get(b"cfmp_cipher_reset\0") }.expect("cfmp_cipher_reset resolves");
+    let _destroy: libloading::Symbol<unsafe extern "C" fn(*mut std::ffi::c_void)> =
+        unsafe { lib.get(b"cfmp_cipher_destroy\0") }.expect("cfmp_cipher_destroy resolves");
+}
+
+#[test]
+fn mock_plugin_cipher_round_trips_through_ffi() {
+    // Drive the cipher through its raw FFI symbols end to end: create,
+    // encrypt, destroy. This is the cipher analogue of the hash
+    // round-trip in `mock_plugin_loads_and_hashes`.
+    //
+    // The mock cipher XORs every input byte with a keystream byte
+    // derived by XOR-folding the key (and IV). With key = [0xAA] and
+    // IV = [0x00], the keystream is 0xAA, so encrypting [0x01, 0x02]
+    // yields [0xAB, 0xA8] and decrypting yields the original.
+    let lib = unsafe { libloading::Library::new(MOCK_PLUGIN_PATH) }.expect("plugin dlopens");
+
+    let create: libloading::Symbol<
+        unsafe extern "C" fn(
+            *const std::ffi::c_void,
+            *mut *mut std::ffi::c_void,
+            *const c_char,
+            *const std::ffi::c_void,
+            u32,
+            *const std::ffi::c_void,
+            u32,
+            *const std::ffi::c_void,
+        ) -> u32,
+    > = unsafe { lib.get(b"cfmp_cipher_create\0") }.expect("cfmp_cipher_create resolves");
+    let update: libloading::Symbol<
+        unsafe extern "C" fn(*mut std::ffi::c_void, *const u8, u32, *mut u8, *mut u32) -> u32,
+    > = unsafe { lib.get(b"cfmp_cipher_update\0") }.expect("cfmp_cipher_update resolves");
+    let destroy: libloading::Symbol<unsafe extern "C" fn(*mut std::ffi::c_void)> =
+        unsafe { lib.get(b"cfmp_cipher_destroy\0") }.expect("cfmp_cipher_destroy resolves");
+
+    let algorithm = CString::new("xor").unwrap();
+    let key: [u8; 1] = [0xAA];
+    let iv: [u8; 1] = [0x00];
+    let mut handle: *mut std::ffi::c_void = std::ptr::null_mut();
+    let code = unsafe {
+        create(
+            std::ptr::null(),
+            &mut handle,
+            algorithm.as_ptr(),
+            key.as_ptr() as *const std::ffi::c_void,
+            key.len() as u32,
+            iv.as_ptr() as *const std::ffi::c_void,
+            iv.len() as u32,
+            std::ptr::null(),
+        )
+    };
+    assert_eq!(code, 0, "cfmp_cipher_create succeeded");
+    assert!(!handle.is_null(), "cipher handle is non-NULL after create");
+
+    let input: [u8; 2] = [0x01, 0x02];
+    let mut output: [u8; 2] = [0; 2];
+    let mut out_len: u32 = output.len() as u32;
+    let code = unsafe {
+        update(
+            handle,
+            input.as_ptr(),
+            input.len() as u32,
+            output.as_mut_ptr(),
+            &mut out_len,
+        )
+    };
+    assert_eq!(code, 0, "cfmp_cipher_update succeeded");
+    assert_eq!(
+        out_len as usize,
+        input.len(),
+        "update wrote all input bytes"
+    );
+    assert_eq!(
+        output,
+        [0x01 ^ 0xAA, 0x02 ^ 0xAA],
+        "XOR cipher output matches"
+    );
+
+    unsafe { destroy(handle) };
 }
 
 #[test]

@@ -73,8 +73,10 @@ fn host_import_is_permitted_with_capability() {
     let bytes = compile();
     let mut inst = sb.load_module(&bytes).expect("module loads");
 
-    inst.grant_capability(Capability::InterfaceAccess { name: "hash".into() })
-        .expect("grant ok");
+    inst.grant_capability(Capability::InterfaceAccess {
+        name: "hash".into(),
+    })
+    .expect("grant ok");
 
     let out = inst
         .call("call_hash", &[Value::I32(64)])
@@ -89,7 +91,9 @@ fn revoking_capability_re_denies_import() {
     let bytes = compile();
     let mut inst = sb.load_module(&bytes).expect("module loads");
 
-    let cap = Capability::InterfaceAccess { name: "hash".into() };
+    let cap = Capability::InterfaceAccess {
+        name: "hash".into(),
+    };
     inst.grant_capability(cap.clone()).expect("grant ok");
 
     let permitted = inst
@@ -112,8 +116,10 @@ fn unrelated_capability_does_not_grant_hash_access() {
     let mut inst = sb.load_module(&bytes).expect("module loads");
 
     // Granting key access must NOT open the hash import.
-    inst.grant_capability(Capability::KeyAccess { key_id: "k1".into() })
-        .expect("grant ok");
+    inst.grant_capability(Capability::KeyAccess {
+        key_id: "k1".into(),
+    })
+    .expect("grant ok");
 
     let out = inst
         .call("call_hash", &[Value::I32(64)])

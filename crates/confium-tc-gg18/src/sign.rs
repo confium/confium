@@ -175,8 +175,10 @@ impl Gg18SignSession {
         }
         parts.sort_by_key(|(idx, _, _, _)| *idx);
 
-        let k_sum: Scalar =
-            parts.iter().map(|(_, _, k, _)| *k).fold(Scalar::ZERO, |a, b| a + b);
+        let k_sum: Scalar = parts
+            .iter()
+            .map(|(_, _, k, _)| *k)
+            .fold(Scalar::ZERO, |a, b| a + b);
         let k_nz: NonZeroScalar = Option::from(NonZeroScalar::new(k_sum))
             .ok_or_else(|| scheme_error(Gg18ErrorCode::INTERNAL))?;
         let k_inv: Scalar = *k_nz.invert();
@@ -193,8 +195,10 @@ impl Gg18SignSession {
 
         let z = hash_to_scalar(&self.message);
 
-        let xs_scalar: Vec<Scalar> =
-            parts.iter().map(|(idx, _, _, _)| Scalar::from(*idx)).collect();
+        let xs_scalar: Vec<Scalar> = parts
+            .iter()
+            .map(|(idx, _, _, _)| Scalar::from(*idx))
+            .collect();
         let our_idx_scalar = Scalar::from(self.share.party_idx as u64);
         let lambda_i = lagrange::lagrange_basis_scalar(our_idx_scalar, &xs_scalar);
         let our_partial = k_inv * r_scalar * lambda_i * self.share.scalar();
@@ -243,11 +247,15 @@ impl Gg18SignSession {
             .ok_or_else(|| scheme_error(Gg18ErrorCode::INTERNAL))?;
         partials.push((self.share.party_idx as u64, our_partial));
 
-        let k_inv = self.k_inv.ok_or_else(|| scheme_error(Gg18ErrorCode::INTERNAL))?;
+        let k_inv = self
+            .k_inv
+            .ok_or_else(|| scheme_error(Gg18ErrorCode::INTERNAL))?;
         let r_scalar = self
             .r_scalar
             .ok_or_else(|| scheme_error(Gg18ErrorCode::INTERNAL))?;
-        let z = self.z.ok_or_else(|| scheme_error(Gg18ErrorCode::INTERNAL))?;
+        let z = self
+            .z
+            .ok_or_else(|| scheme_error(Gg18ErrorCode::INTERNAL))?;
 
         let mut s = k_inv * z;
         for (_, si) in &partials {
@@ -279,7 +287,10 @@ impl Gg18SignSession {
 impl SessionImpl for Gg18SignSession {
     fn round(&mut self, incoming: &[Message]) -> Result<RoundResult> {
         self.round_done = self.round_done.checked_add(1).ok_or_else(|| {
-            confium_tc::error::RoundOverflowSnafu { round: self.round_done }.build()
+            confium_tc::error::RoundOverflowSnafu {
+                round: self.round_done,
+            }
+            .build()
         })?;
         match self.round_done {
             1 => self.round1_commit(),
@@ -329,9 +340,9 @@ fn hash_to_scalar(message: &[u8]) -> Scalar {
 }
 
 fn normalize_s_low(s: Scalar) -> Scalar {
-    use elliptic_curve::Curve;
     use crypto_bigint::Encoding as _;
     use crypto_bigint::Limb;
+    use elliptic_curve::Curve;
     use p256::NistP256;
     let n = <NistP256 as Curve>::ORDER;
     let half = n >> 1usize;

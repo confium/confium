@@ -23,7 +23,10 @@ impl From<Gg18ErrorCode> for u32 {
 
 /// Build a framework [`TcError`] carrying a GG18 sub-code.
 pub fn scheme_error(code: Gg18ErrorCode) -> TcError {
-    confium_tc::error::SchemeInternalSnafu { code: u32::from(code) }.build()
+    confium_tc::error::SchemeInternalSnafu {
+        code: u32::from(code),
+    }
+    .build()
 }
 
 pub type Result<T> = std::result::Result<T, TcError>;
