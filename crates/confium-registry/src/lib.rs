@@ -22,6 +22,10 @@
 //!   the trust policy.
 //! - [`trust`] — the [`TrustStore`] that persists the user's trusted
 //!   publishers under `~/.config/confium/trust/`.
+//! - [`verify`] — cryptographic ([`verify::verify_signature`]) and
+//!   policy ([`verify::check`]) layers for PGP signature verification.
+//!   The crypto layer prefers in-process RNP via `libloading` and falls
+//!   back to `gpg --verify` when `librnp` isn't available.
 
 pub mod client;
 pub mod error;
@@ -29,6 +33,7 @@ pub mod install;
 pub mod manifest;
 pub mod paths;
 pub mod trust;
+pub mod verify;
 
 pub use client::{Client, Fetcher, MemoryFetcher};
 pub use error::{Error, Result};
@@ -39,6 +44,7 @@ pub use manifest::{
 };
 pub use paths::{config_dir, plugin_install_dir, plugins_dir, trust_dir};
 pub use trust::{TrustStore, TrustStoreEntry};
+pub use verify::{Verification, verify_signature};
 
 /// The default registry base URL.
 ///
