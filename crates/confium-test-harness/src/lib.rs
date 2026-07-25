@@ -37,4 +37,4 @@ pub use error::Result;
 pub use report::{Report, ReportEntry};
 pub use result::{Outcome, TestResult};
 pub use runner::VectorRunner;
-pub use vector::{PeerBehaviorEntry, TestVector, TestVectorTest};
+pub use vector::{ConformanceLevel, PeerBehaviorEntry, TestVector, TestVectorTest};

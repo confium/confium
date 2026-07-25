@@ -19,6 +19,11 @@ pub enum Outcome {
     /// Protocol completed but the output didn't match the expected
     /// bytes (only possible when `expected_signature_hex` was set).
     Fail,
+    /// Protocol completed but a non-conformance was observed that the
+    /// vector's conformance level downgrades from an error to a warning
+    /// (e.g. a `should_pass` vector whose output mismatched). Recorded
+    /// in the report; does not gate the candidate.
+    Warn,
     /// Protocol aborted cleanly — the scheme detected the configured
     /// Byzantine behavior and signaled misbehavior. Counts as a pass
     /// for Byzantine-detection vectors.
@@ -30,6 +35,7 @@ impl Outcome {
         match self {
             Outcome::Pass => "pass",
             Outcome::Fail => "fail",
+            Outcome::Warn => "warn",
             Outcome::Aborted => "aborted",
         }
     }
@@ -60,9 +66,21 @@ pub struct TestResult {
 
 impl TestResult {
     /// Build a result from a vector + the runtime observations. The
-    /// caller supplies the produced output; this constructor decides
-    /// `Pass` vs `Fail` by comparing against the vector's expected
-    /// bytes (when present).
+    /// caller supplies the produced output and the observed round
+    /// count; this constructor decides `Pass` / `Fail` / `Warn` by
+    /// comparing against the vector's expected bytes and conformance
+    /// level:
+    ///
+    /// - Output matches (or no expected bytes) and round count matches
+    ///   (or no `expected_round_count` set) → `Pass`.
+    /// - Output mismatches on a `must_pass` vector → `Fail`.
+    /// - Output mismatches on a `should_pass` vector → `Warn`.
+    /// - Output mismatches on an `informational` vector → `Pass` (the
+    ///   mismatch is recorded in `note` but never gates the candidate).
+    /// - Round count differs from `expected_round_count` → `Warn` even
+    ///   on a `must_pass` vector (the implementation produced a valid
+    ///   signature; it just took a different number of rounds). The
+    ///   mismatch is appended to the note.
     pub fn from_run(
         vector: &TestVector,
         output: Vec<u8>,
@@ -71,19 +89,54 @@ impl TestResult {
         rounds: u8,
         elapsed: Duration,
     ) -> Self {
-        let (outcome, note) = match vector.test.expected_bytes() {
-            Some(expected) if expected == output => (Outcome::Pass, None),
-            Some(expected) => (
-                Outcome::Fail,
-                Some(format!(
-                    "output mismatch: expected {} bytes, got {} bytes",
-                    expected.len(),
-                    output.len()
-                )),
-            ),
-            // No expected bytes declared — completing is a pass.
-            None => (Outcome::Pass, None),
+        let output_matches = match vector.test.expected_bytes() {
+            Some(expected) => expected == output,
+            None => true,
         };
+        let mismatch_note = if output_matches {
+            None
+        } else {
+            Some(format!(
+                "output mismatch: expected {} bytes, got {} bytes",
+                vector.test.expected_bytes().map(|e| e.len()).unwrap_or(0),
+                output.len()
+            ))
+        };
+
+        let round_note = match vector.expected_round_count {
+            Some(expected) if expected != rounds => Some(format!(
+                "round count differs: expected {}, observed {}",
+                expected, rounds
+            )),
+            _ => None,
+        };
+
+        use crate::vector::ConformanceLevel;
+        let outcome = if output_matches {
+            // Output is correct. A round-count divergence on an
+            // otherwise-passing vector is still only a warning — the
+            // signature was produced, the implementation just took a
+            // different number of rounds than the vector expected.
+            match round_note {
+                Some(_) => Outcome::Warn,
+                None => Outcome::Pass,
+            }
+        } else {
+            match vector.conformance_level {
+                ConformanceLevel::MustPass => Outcome::Fail,
+                ConformanceLevel::ShouldPass => Outcome::Warn,
+                // Informational failures never gate the candidate.
+                ConformanceLevel::Informational => Outcome::Pass,
+            }
+        };
+
+        let note = match (mismatch_note, round_note) {
+            (Some(a), Some(b)) => Some(format!("{}; {}", a, b)),
+            (Some(a), None) => Some(a),
+            (None, Some(b)) => Some(b),
+            (None, None) => None,
+        };
+
         TestResult {
             scheme_name: vector.scheme.name.clone(),
             scheme_version: vector.scheme.version.clone(),
@@ -127,6 +180,7 @@ impl TestResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::vector::ConformanceLevel;
     use crate::vector::SchemeSpec;
 
     fn vector(expected: Option<&str>) -> TestVector {
@@ -143,7 +197,17 @@ mod tests {
                 expected_signature_hex: expected.unwrap_or("").to_string(),
             },
             peer_behavior: Vec::new(),
+            conformance_level: Default::default(),
+            reference: None,
+            expected_round_count: None,
+            share_material: None,
         }
+    }
+
+    fn vector_with_level(level: ConformanceLevel, expected: Option<&str>) -> TestVector {
+        let mut v = vector(expected);
+        v.conformance_level = level;
+        v
     }
 
     #[test]
@@ -167,6 +231,45 @@ mod tests {
         let r = TestResult::from_run(&v, vec![9, 9, 9], 4, 12, 2, Duration::from_micros(50));
         assert_eq!(r.outcome, Outcome::Fail);
         assert!(r.note.as_ref().unwrap().contains("mismatch"));
+    }
+
+    #[test]
+    fn should_pass_mismatch_is_a_warning_not_a_failure() {
+        let v = vector_with_level(ConformanceLevel::ShouldPass, Some("0x010203"));
+        let r = TestResult::from_run(&v, vec![9, 9, 9], 4, 12, 2, Duration::from_micros(50));
+        assert_eq!(
+            r.outcome,
+            Outcome::Warn,
+            "should_pass mismatch must downgrade to a warning"
+        );
+        assert!(r.note.as_ref().unwrap().contains("mismatch"));
+    }
+
+    #[test]
+    fn informational_mismatch_is_a_pass() {
+        let v = vector_with_level(ConformanceLevel::Informational, Some("0x010203"));
+        let r = TestResult::from_run(&v, vec![9, 9, 9], 4, 12, 2, Duration::from_micros(50));
+        assert_eq!(
+            r.outcome,
+            Outcome::Pass,
+            "informational mismatch must never gate the candidate"
+        );
+        // The mismatch is still recorded in the note for the report.
+        assert!(r.note.as_ref().unwrap().contains("mismatch"));
+    }
+
+    #[test]
+    fn round_count_mismatch_on_passing_vector_is_a_warning() {
+        let mut v = vector(None);
+        v.expected_round_count = Some(3);
+        let r = TestResult::from_run(&v, vec![1, 2, 3], 4, 12, 5, Duration::from_micros(50));
+        assert_eq!(r.outcome, Outcome::Warn);
+        assert!(r.note.as_ref().unwrap().contains("round count"));
+    }
+
+    #[test]
+    fn outcome_warn_serializes_as_warn_string() {
+        assert_eq!(Outcome::Warn.as_str(), "warn");
     }
 
     #[test]

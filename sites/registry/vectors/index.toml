@@ -1,0 +1,39 @@
+# Confium NIST MPTS test-vector catalog.
+#
+# One [[vector_set]] entry per published vector set. Each entry points
+# at the vector TOML under vectors/<name>/ that the evaluation harness
+# (confium-test-harness::VectorRunner) consumes.
+#
+# Vector sets are immutable once published: a takedown replaces the
+# `latest` pointer, never the published bytes. This mirrors the
+# plugin catalog discipline in ../index.toml.
+#
+# Schema:
+#   name         — vector-set identifier (lowercase, hyphenated; matches
+#                  the directory name under vectors/)
+#   latest       — the version the `latest` pointer resolves to. The
+#                  only mutable field; takedown PRs update it.
+#   scheme       — the tc-signature / tc-kem scheme name this set exercises
+#   description  — one-line human-readable summary
+#   conformance  — the highest conformance level any vector in the set
+#                  carries (must_pass / should_pass / informational)
+#   vector-url   — absolute path to the vector TOML
+
+[[vector_set]]
+name = "mock-3-of-5"
+latest = "1.0.0"
+scheme = "mock-tc-sig"
+description = "Baseline 3-of-5 correctness vector for the in-repo mock-tc-sig scheme"
+conformance = "must_pass"
+vector-url = "/vectors/mock-3-of-5/mock-3-of-5.toml"
+
+# Additional vector sets will be added here as schemes onboard. A real
+# candidate publication looks like:
+#
+# [[vector_set]]
+# name = "frost-ed25519-v1"
+# latest = "1.2.0"
+# scheme = "tc-signature-ed25519"
+# description = "FROST ed25519 draft-irtf-cfrg-frost-13 conformance vectors"
+# conformance = "must_pass"
+# vector-url = "/vectors/frost-ed25519-v1/v1.toml"

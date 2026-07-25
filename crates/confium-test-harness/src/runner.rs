@@ -107,7 +107,28 @@ impl VectorRunner {
                     .filter(|m| m.is_for(&my_id) && m.from_party_id != my_id)
                     .cloned()
                     .collect::<Vec<_>>();
-                let rr = session.round_step(&incoming_for_me)?;
+                let rr = match session.round_step(&incoming_for_me) {
+                    Ok(rr) => rr,
+                    Err(scheme_err) => {
+                        // The scheme signaled an error mid-protocol —
+                        // typically a threshold-violation or
+                        // misbehavior-detection abort. From the harness's
+                        // point of view this is a clean abort, not a
+                        // harness fault: the candidate detected the
+                        // configured Byzantine behavior and refused to
+                        // produce a (potentially invalid) signature.
+                        let elapsed = started.elapsed();
+                        return Ok(TestResult::aborted(
+                            vector,
+                            format!(
+                                "scheme '{}' aborted at round {}: {}",
+                                vector.scheme.name, round, scheme_err
+                            ),
+                            round,
+                            elapsed,
+                        ));
+                    }
+                };
                 for msg in &rr.outgoing {
                     total_messages += 1;
                     total_bytes += msg.payload.len() as u64;
@@ -275,6 +296,10 @@ mod tests {
                 expected_signature_hex: expected.unwrap_or("").to_string(),
             },
             peer_behavior: vec![],
+            conformance_level: Default::default(),
+            reference: None,
+            expected_round_count: None,
+            share_material: None,
         }
     }
 
