@@ -52,6 +52,24 @@ pub enum Error {
     #[snafu(display("no trusted publisher signed plugin '{name}'"))]
     UntrustedPlugin { name: String },
 
+    #[snafu(display("failed to load RNP library: {message}"))]
+    RnpLoad { message: String },
+
+    #[snafu(display("RNP signature verification failed: {message}"))]
+    RnpVerify { message: String },
+
+    #[snafu(display("signature file '{path}' is not ASCII-armored or binary PGP"))]
+    SignatureFormat { path: String },
+
+    #[snafu(display("public key file '{path}' is not a valid OpenPGP public key"))]
+    PublicKeyFormat { path: String },
+
+    #[snafu(display("invalid PGP signature: {message}"))]
+    SignatureInvalid { message: String },
+
+    #[snafu(display("PGP verification subprocess failed: {message}"))]
+    VerificationSubprocess { message: String },
+
     #[snafu(display("invalid registry path: {path}"))]
     InvalidPath { path: String },
 
