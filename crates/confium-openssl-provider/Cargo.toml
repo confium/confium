@@ -8,12 +8,12 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "OpenSSL 3.0 provider using Confium for signing"
+description = "confium-openssl-provider — part of the Confium framework"
 keywords = ["crypto", "threshold", "confium"]
 
 [dependencies]
 serde = { workspace = true }
-snafu = { workspace = true }
+thiserror = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]

@@ -8,12 +8,12 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "Threshold ML-KEM (FIPS 203) - research prototype"
+description = "confium-tc-ml-kem — part of the Confium framework"
 keywords = ["crypto", "threshold", "confium"]
 
 [dependencies]
 serde = { workspace = true }
-snafu = { workspace = true }
+thiserror = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]

@@ -8,12 +8,13 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "PKCS#11 v3.0 server dispatching to Confium threshold protocol"
+description = "confium-pkcs11-server — part of the Confium framework"
 keywords = ["crypto", "threshold", "confium"]
 
 [dependencies]
 serde = { workspace = true }
-snafu = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]

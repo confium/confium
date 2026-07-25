@@ -8,12 +8,12 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "Threshold BFV fully homomorphic encryption - research prototype"
+description = "confium-tc-fhe-bfv — part of the Confium framework"
 keywords = ["crypto", "threshold", "confium"]
 
 [dependencies]
 serde = { workspace = true }
-snafu = { workspace = true }
+thiserror = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]
