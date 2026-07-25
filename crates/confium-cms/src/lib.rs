@@ -1,9 +1,17 @@
-//! CMS (PKCS#7) SignedData envelope construction and verification.
+//! CMS (PKCS#7 / RFC 5652) SignedData envelope construction and verification.
 //!
-//! Part of the Confium framework. See TODO.roadmap/32 for the
-//! full specification.
+//! Produces standard CMS SignedData verifiable by OpenSSL, Thunderbird/RNP,
+//! Adobe, and other standards-compliant tools.
+//!
+//! See `TODO.roadmap/32-cert-delegation-cms-xmldsig.md` for full spec.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-// TODO: implement per TODO.roadmap/32.md
+mod envelope;
+mod signed_data;
+mod verify;
+
+pub use envelope::*;
+pub use signed_data::*;
+pub use verify::*;

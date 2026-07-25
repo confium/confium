@@ -9,11 +9,18 @@ homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
 description = "OpenTimestamps client and verifier"
-keywords = ["crypto", "threshold", "confium"]
+keywords = ["crypto", "ots", "timestamp", "bitcoin", "confium"]
 
 [dependencies]
 serde = { workspace = true }
-snafu = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+sha2 = { workspace = true }
+data-encoding = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }
 
 [lib]
 crate-type = ["rlib"]

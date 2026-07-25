@@ -9,11 +9,15 @@ homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
 description = "Threshold key escrow and recovery orchestration"
-keywords = ["crypto", "threshold", "confium"]
+keywords = ["crypto", "threshold", "escrow", "recovery", "confium"]
 
 [dependencies]
 serde = { workspace = true }
-snafu = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+data-encoding = { workspace = true }
+sha2 = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]

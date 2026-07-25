@@ -1,12 +1,18 @@
 //! Threshold-backed revocation service.
 //!
-//! Inspired by Thunderbird's revocation escrow and key backup designs,
-//! generalized to T-of-N threshold cryptography.
+//! Inspired by Thunderbird's IMAP-based revocation escrow, generalized
+//! to T-of-N threshold authorization. Eliminates the compelled-revocation
+//! risk inherent in single-party services.
 //!
-//! See TODO.roadmap/41-thunderbird-patterns-integration.md for
-//! the full specification.
+//! See TODO.roadmap/41-thunderbird-patterns-integration.md for full spec.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-// TODO: implement per TODO.roadmap/41-thunderbird-patterns-integration.md
+mod blob;
+mod service;
+mod submission;
+
+pub use blob::*;
+pub use service::*;
+pub use submission::*;

@@ -9,11 +9,15 @@ homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
 description = "CMS (PKCS#7) SignedData envelope construction and verification"
-keywords = ["crypto", "threshold", "confium"]
+keywords = ["crypto", "cms", "pkcs7", "signature", "confium"]
 
 [dependencies]
 serde = { workspace = true }
+serde_json = { workspace = true }
 snafu = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+data-encoding = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]

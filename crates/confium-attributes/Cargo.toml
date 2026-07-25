@@ -9,11 +9,12 @@ homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
 description = "Attribute-based threshold party selection"
-keywords = ["crypto", "threshold", "confium"]
+keywords = ["crypto", "threshold", "attributes", "predicates", "confium"]
 
 [dependencies]
 serde = { workspace = true }
-snafu = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]
