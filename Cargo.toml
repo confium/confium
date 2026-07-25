@@ -5,6 +5,7 @@ members = [
     "crates/confium-cli",
     "crates/confium-core",
     "crates/confium-macros",
+    "crates/confium-mock-plugin",
     "crates/confium-net",
     "crates/confium-net-tcp",
     "crates/confium-publish",
@@ -28,6 +29,7 @@ categories = ["authentication", "cryptography"]
 confium-api = { path = "crates/confium-api", version = "0.3.0" }
 confium-core = { path = "crates/confium-core", version = "0.2.0" }
 confium-macros = { path = "crates/confium-macros", version = "0.3.0" }
+confium-mock-plugin = { path = "crates/confium-mock-plugin", version = "0.3.0" }
 confium-net = { path = "crates/confium-net", version = "0.3.0" }
 confium-net-tcp = { path = "crates/confium-net-tcp", version = "0.3.0" }
 confium-registry = { path = "crates/confium-registry", version = "0.3.0" }

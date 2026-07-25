@@ -10,3 +10,7 @@ repository.workspace = true
 description = "Public Rust API and plugin SDK for Confium"
 
 [dependencies]
+confium-macros = { workspace = true }
+
+[dev-dependencies]
+# Used by doctests that exercise the opaque handle / option map helpers.
