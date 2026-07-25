@@ -14,8 +14,10 @@ pub mod hash;
 pub mod kdf;
 pub mod kem;
 pub mod keyfmt;
+pub mod mlock;
 pub mod options;
 pub mod rng;
+pub mod secret;
 pub mod sensitive;
 pub mod signature;
 
