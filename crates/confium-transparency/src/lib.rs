@@ -10,9 +10,9 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-mod entry;
-mod merkle;
-mod proof;
+pub mod entry;
+pub mod merkle;
+pub mod proof;
 
 pub use entry::*;
 pub use merkle::*;
