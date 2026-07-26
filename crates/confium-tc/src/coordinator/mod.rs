@@ -4,8 +4,8 @@
 //! signers to participate when convenient — no simultaneity required.
 //!
 //! This crate provides the session state machine, commitment/share
-//! buffering, and audit logging. Transport (HTTP/WS) is layered on top
-//! in `confium-cli` and `confium-daemon`.
+//! buffering, audit logging, and a real TCP server + client for
+//! network communication.
 //!
 //! See `TODO.roadmap/29-tc-coordinator-design.md` for the full spec.
 
@@ -13,7 +13,10 @@
 #![warn(missing_docs)]
 
 pub mod audit;
+pub mod client;
 pub mod coordinator;
+pub mod net;
+pub mod net_server;
 pub mod session;
 
 pub use audit::*;

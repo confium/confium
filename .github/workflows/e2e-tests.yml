@@ -37,9 +37,21 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # Tier 5: Real network e2e (TCP coordinator + TCP signers, separate threads)
+  e2e-network-signing:
+    name: Tier 5: Real TCP network e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run real network e2e tests (TCP coordinator + signers)
+        run: cargo test -p confium-tc --test e2e_network -- --nocapture --test-threads=1
+
   # Tier 4: E2E protocol tests (async simulated multi-node)
   e2e-threshold-signing:
-    name: E2E threshold signing ceremony
+    name: Tier 4: E2E protocol tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
