@@ -23,7 +23,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-unknown-linux-musl, aarch64-unknown-linux-musl
@@ -41,7 +41,7 @@ jobs:
           tar -czf dist/confium-linux-aarch64.tar.gz -C target/aarch64-unknown-linux-musl/release confium
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: confium-linux
           path: dist/
@@ -49,7 +49,7 @@ jobs:
   build-macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-apple-darwin, aarch64-apple-darwin
@@ -67,7 +67,7 @@ jobs:
           tar -czf dist/confium-macos-aarch64.tar.gz -C target/aarch64-apple-darwin/release confium
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: confium-macos
           path: dist/
@@ -75,7 +75,7 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-gnu
@@ -90,7 +90,7 @@ jobs:
           7z a dist/confium-windows-x86_64.zip ./target/x86_64-pc-windows-gnu/release/confium.exe
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: confium-windows
           path: dist/
@@ -100,15 +100,15 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: dist/
 
       - name: Upload to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             dist/confium-linux/*.tar.gz
