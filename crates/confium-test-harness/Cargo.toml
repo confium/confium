@@ -38,7 +38,7 @@ toml = { workspace = true }
 [dev-dependencies]
 confium-api = { workspace = true }
 confium-core = { workspace = true }
-confium-mock-plugin = { path = "../confium-mock-plugin" }
+confium-mock-plugin = { workspace = true }
 criterion = { workspace = true }
 libloading = { workspace = true }
 
