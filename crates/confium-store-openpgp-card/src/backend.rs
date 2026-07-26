@@ -34,20 +34,23 @@ pub enum CardError {
 }
 
 /// Backend trait for talking to OpenPGP cards.
-pub trait OpenpgpCardBackend: Send + Sync {
+///
+/// Not `Send + Sync` because some backends (e.g. `rnp`) hold raw FFI handles
+/// that librnp does not mark thread-safe.
+pub trait OpenpgpCardBackend {
     /// Get the card identifier.
     fn card_id(&self) -> Result<CardId, CardError>;
 
     /// Generate a new keypair in the given slot. Returns the public key bytes.
     fn generate_keypair(
-        &self,
+        &mut self,
         slot: OpenpgpSlot,
         algorithm: &str,
     ) -> Result<Vec<u8>, CardError>;
 
     /// Import a keypair into the given slot (rare; usually generated in-card).
     fn import_keypair(
-        &self,
+        &mut self,
         slot: OpenpgpSlot,
         private_key: &[u8],
     ) -> Result<(), CardError>;
@@ -68,7 +71,7 @@ pub trait OpenpgpCardBackend: Send + Sync {
     fn verify_admin_pin(&self, admin_pin: &str) -> Result<(), CardError>;
 
     /// Reset the card (wipes all keys; requires admin or special procedure).
-    fn factory_reset(&self) -> Result<(), CardError>;
+    fn factory_reset(&mut self) -> Result<(), CardError>;
 }
 
 /// In-memory mock backend (no hardware). Testing only.
@@ -97,7 +100,7 @@ impl OpenpgpCardBackend for MockOpenpgpCardBackend {
     }
 
     fn generate_keypair(
-        &self,
+        &mut self,
         slot: OpenpgpSlot,
         algorithm: &str,
     ) -> Result<Vec<u8>, CardError> {
@@ -110,7 +113,7 @@ impl OpenpgpCardBackend for MockOpenpgpCardBackend {
     }
 
     fn import_keypair(
-        &self,
+        &mut self,
         _slot: OpenpgpSlot,
         _private_key: &[u8],
     ) -> Result<(), CardError> {
@@ -151,7 +154,7 @@ impl OpenpgpCardBackend for MockOpenpgpCardBackend {
         Ok(())
     }
 
-    fn factory_reset(&self) -> Result<(), CardError> {
+    fn factory_reset(&mut self) -> Result<(), CardError> {
         Ok(())
     }
 }

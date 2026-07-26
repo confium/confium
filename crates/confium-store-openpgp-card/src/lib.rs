@@ -18,7 +18,9 @@
 #![warn(missing_docs)]
 
 mod backend;
+mod rnp_backend;
 mod slot;
 
 pub use backend::*;
+pub use rnp_backend::*;
 pub use slot::*;
