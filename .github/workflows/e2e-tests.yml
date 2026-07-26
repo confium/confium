@@ -1,0 +1,134 @@
+# End-to-end threshold system tests.
+#
+# This workflow runs:
+#   1. Full workspace test suite (including e2e_threshold_signing tests)
+#   2. Example binaries as smoke tests (real crypto, real signatures)
+#   3. Multi-process network simulation (future: real TCP coordinator + signers)
+#
+# The e2e tests verify:
+#   - Real P-256 Shamir + Lagrange + ECDSA threshold signing
+#   - Coordinator session lifecycle (Pending → CommitmentsCollected → Completed)
+#   - Async participation pattern (signers in different "time zones")
+#   - Threshold enforcement (3-of-5 succeeds, 2-of-5 fails)
+#   - Duplicate submission rejection
+#   - Audit log JSONL serialization
+#   - Share recovery from different subsets (threshold property)
+
+name: E2E Tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "crates/**/*.rs"
+      - "crates/**/Cargo.toml"
+      - "Cargo.toml"
+      - ".github/workflows/e2e-tests.yml"
+  pull_request:
+    paths:
+      - "crates/**/*.rs"
+      - "crates/**/Cargo.toml"
+      - "Cargo.toml"
+      - ".github/workflows/e2e-tests.yml"
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Tier 4: E2E protocol tests (async simulated multi-node)
+  e2e-threshold-signing:
+    name: E2E threshold signing ceremony
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run e2e threshold signing tests
+        run: cargo test -p confium-tc --test e2e_threshold_signing -- --nocapture
+
+      - name: Run e2e frost-p256 integration tests
+        run: cargo test -p confium-tc-frost-p256 --test integration -- --nocapture
+
+      - name: Run e2e transparency integration tests
+        run: cargo test -p confium-transparency --test integration -- --nocapture
+
+      - name: Run e2e pki integration tests
+        run: cargo test -p confium-pki --test integration -- --nocapture
+
+  # Tier 5: Example binary smoke tests (real crypto end-to-end)
+  example-smoke-tests:
+    name: Example binary smoke tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build examples
+        run: cargo build --examples --release
+
+      - name: Smoke test: P-256 threshold signing
+        run: |
+          output=$(cargo run --release --example p256_threshold_signing 2>&1)
+          echo "$output"
+          echo "$output" | grep -q "Signature VALID" || {
+            echo "FAIL: P-256 threshold signing example did not produce valid signature"
+            exit 1
+          }
+          echo "PASS: P-256 threshold signing example produced valid real signature"
+
+      - name: Smoke test: Transparency log
+        run: |
+          output=$(cargo run --release --example transparency_log_demo 2>&1)
+          echo "$output"
+          echo "$output" | grep -q "PROOF VALID" || {
+            echo "FAIL: Transparency log example did not produce valid inclusion proofs"
+            exit 1
+          }
+          echo "PASS: Transparency log example produced valid RFC 6962 inclusion proofs"
+
+      - name: Smoke test: PKCS#11 server dispatch
+        run: |
+          output=$(cargo run --release --example pkcs11_server_demo 2>&1)
+          echo "$output"
+          echo "$output" | grep -q "dispatch layer operational" || {
+            echo "FAIL: PKCS#11 server example did not complete successfully"
+            exit 1
+          }
+          echo "PASS: PKCS#11 server dispatch example operational"
+
+      - name: Smoke test: Mini CNML deployment
+        run: |
+          output=$(cargo run --release --example mini_cnml_demo 2>&1)
+          echo "$output"
+          echo "$output" | grep -q "3-tier hierarchy operational" || {
+            echo "FAIL: Mini CNML example did not complete successfully"
+            exit 1
+          }
+          echo "PASS: Mini CNML 3-tier hierarchy example operational"
+
+  # Full workspace test suite (catches regressions across all crates)
+  full-workspace-tests:
+    name: Full workspace test suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run all tests
+        run: cargo test --workspace
+
+      - name: Verify test count
+        run: |
+          # Extract total test count from cargo test output
+          total=$(cargo test --workspace 2>&1 | grep "test result" | awk '{s+=$4} END {print s}')
+          echo "Total tests: $total"
+          if [ "$total" -lt 700 ]; then
+            echo "FAIL: Expected at least 700 tests, got $total"
+            exit 1
+          fi
+          echo "PASS: $total tests passing (≥ 700 threshold)"
