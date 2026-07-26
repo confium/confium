@@ -12,9 +12,9 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-mod audit;
-mod coordinator;
-mod session;
+pub mod audit;
+pub mod coordinator;
+pub mod session;
 
 pub use audit::*;
 pub use coordinator::*;

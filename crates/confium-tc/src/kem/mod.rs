@@ -10,9 +10,9 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-mod encapsulate;
-mod session;
-mod share;
+pub mod encapsulate;
+pub mod session;
+pub mod share;
 
 pub use encapsulate::*;
 pub use session::*;
