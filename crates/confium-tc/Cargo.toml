@@ -28,3 +28,7 @@ thiserror = { workspace = true }
 chrono = { workspace = true }
 data-encoding = { workspace = true }
 zeroize = { workspace = true, features = ["zeroize_derive"] }
+
+[dev-dependencies]
+confium-tc-frost-p256 = { workspace = true }
+p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
