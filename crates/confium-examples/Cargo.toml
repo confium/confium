@@ -15,6 +15,7 @@ confium_core = { package = "confium-core", path = "../confium-core" }
 confium-tc = { workspace = true }
 confium-tc-frost-p256 = { workspace = true }
 confium-transparency = { workspace = true }
+confium-pkcs11-server = { workspace = true }
 confium-store = { workspace = true }
 confium-deployment = { workspace = true }
 hex = { workspace = true }
@@ -34,3 +35,11 @@ path = "src/bin/p256_threshold_signing.rs"
 [[example]]
 name = "transparency_log_demo"
 path = "src/bin/transparency_log_demo.rs"
+
+[[example]]
+name = "pkcs11_server_demo"
+path = "src/bin/pkcs11_server_demo.rs"
+
+[[example]]
+name = "mini_cnml_demo"
+path = "src/bin/mini_cnml_demo.rs"

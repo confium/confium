@@ -14,9 +14,9 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-mod dispatch;
-mod slot;
-mod token;
+pub mod dispatch;
+pub mod slot;
+pub mod token;
 
 pub use dispatch::*;
 pub use slot::*;
