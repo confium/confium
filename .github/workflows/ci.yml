@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: crate-ci/typos@v1.45.0
+      - uses: crate-ci/typos@v1.47.1
 
   # ============================================================================
   # Pre-flight: skip CI when only docs/markdown changed
@@ -78,7 +78,7 @@ jobs:
         run: cargo generate-lockfile
 
       - name: Run cargo-audit
-        uses: rustsec/audit-check@v2
+        uses: rustsec/audit-check@v2.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -228,7 +228,7 @@ jobs:
           tool: cbindgen
 
       - name: Install cmake
-        uses: lukka/get-cmake@latest
+        uses: lukka/get-cmake@v3.31.0
 
       - name: Install boost
         uses: MarkusJx/install-boost@v2.4.1
