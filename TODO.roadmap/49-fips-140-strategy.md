@@ -106,7 +106,7 @@ if !result.all_passed() {
 
 ## Status
 
-- [ ] FIPS mode manifest option (`crates/confium-config`)
+- [ ] FIPS mode manifest option (`crates/confium-deployment`)
 - [ ] Algorithm allowlist enforcement (`crates/confium-core`)
 - [ ] Self-test framework (`crates/confium-core`)
 - [ ] AWS-LC backend integration (`crates/confium-tc-frost-p256`, others)

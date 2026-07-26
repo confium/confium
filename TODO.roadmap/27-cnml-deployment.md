@@ -511,13 +511,13 @@ artifact evaluation pointing at the OIML deployment.
 
 | Quarter | Milestone |
 |---|---|
-| Q3 2026 | Publish framework core crates to crates.io. Ship `confium-cert` (with scoped delegation), `confium-cms`, `confium-identity`, `confium-store-pkcs11` + `confium-store-openpgp-card` wrapping backends. |
-| Q4 2026 | `confium-xmldsig`, `confium-tc-frost-p256`, `confium-tc-kem` interface, `confium-tc-coordinator` v0, `confium-tc-reshare` v0. First end-to-end CNML signature via Confium. |
+| Q3 2026 | Publish framework core crates to crates.io. Ship `confium-cert` (with scoped delegation), `confium-pki` (cms feature), `confium-deployment`, `confium-store-pkcs11` + `confium-store-openpgp-card` wrapping backends. |
+| Q4 2026 | `confium-pki` (xmldsig feature), `confium-tc-frost-p256`, `confium-tc` (kem) interface, `confium-tc` (coordinator) v0, `confium-tc` (reshare) v0. First end-to-end CNML signature via Confium. |
 | Q1 2027 | Async signing flow deployed: director app, coordinator, session lifecycle. Composite signatures. Byzantine-proof FFI. Manufacturer Model Cert + Instance Cert flow. |
-| Q2 2027 | `confium-ots`, `confium-transparency` v0, threshold ElGamal. NIST MPTS submission: 5-tier architecture with signing + encryption + async + re-sharing. |
+| Q2 2027 | `confium-transparency` (ots), `confium-transparency` v0, threshold ElGamal. NIST MPTS submission: 5-tier architecture with signing + encryption + async + re-sharing. |
 | Q3 2027 | Approach academic collaborator with complete classical system. `confium-tc-ml-kem` research prototype begins. |
 | Q4 2027 | `confium-tc-frost-ml-dsa-65` (research). Composite PQ signing ceremony in CNML. |
-| Q1 2028 | `confium-ers` archival, periodic re-quorum demo. |
+| Q1 2028 | `confium-transparency` (ers) archival, periodic re-quorum demo. |
 | Q2 2028 | `confium-attributes` ABT, paper #1 submission. |
 | Q3 2028 | `confium-ring` (research), paper #2 submission. |
 | Q4 2028 | Paper #3 submission, full case study writeup. |

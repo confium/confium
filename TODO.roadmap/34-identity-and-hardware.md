@@ -159,7 +159,7 @@ via secure courier.
 
 ## Crate scope
 
-### `confium-identity` (P0)
+### `confium-deployment` (P0)
 
 ```rust
 pub struct IdentityStore {

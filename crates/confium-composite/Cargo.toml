@@ -8,13 +8,16 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "Composite multi-algorithm signature aggregation"
+description = "Composite multi-algorithm signature aggregation (PQ migration)"
 keywords = ["crypto", "composite", "pqc", "signature", "confium"]
 
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+sha2 = { workspace = true }
+ed25519-dalek = { workspace = true, features = ["rand_core"] }
+rand_core = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]

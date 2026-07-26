@@ -67,13 +67,13 @@ let key = rnp::KeyBuilder::new(rnp::Algorithm::EcP256)
 ### 5. Revocation certificate generation
 
 `rnp::generate_revocation_certificate()` (BUGREPORT 54 fix) is used by
-Confium's `confium-revocation-service` for OpenPGP key revocation flows
+Confium's `confium-patterns` (revocation) for OpenPGP key revocation flows
 inspired by Thunderbird's IMAP-based revocation escrow.
 
 ## Dependency tracking
 
 `rnp-rs` is a workspace-level dependency of `confium-registry` and
-planned for `confium-revocation-service`. Path dependency:
+planned for `confium-patterns` (revocation). Path dependency:
 
 ```toml
 # In confium/ workspace Cargo.toml

@@ -11,9 +11,9 @@ native XMLDSig) without knowing Confium was involved.
 Four concerns, MECE-separated:
 
 1. **X.509 cert + CSR types** — `confium-cert`
-2. **Scoped delegation templates** — `confium-cert-delegation`
-3. **CMS (PKCS#7) envelopes** — `confium-cms`
-4. **XMLDSig + Exclusive C14N** — `confium-xmldsig`
+2. **Scoped delegation templates** — `confium-pki` (delegation feature)
+3. **CMS (PKCS#7) envelopes** — `confium-pki` (cms feature)
+4. **XMLDSig + Exclusive C14N** — `confium-pki` (xmldsig feature)
 
 ## Crate scope
 
@@ -55,7 +55,7 @@ pub enum PathFailure {
 }
 ```
 
-### `confium-cert-delegation` (P0)
+### `confium-pki` (delegation feature) (P0)
 
 Scoped delegation templates. Parent cert delegates bounded authority
 to child cert. Used for OIML Manufacturer Model Cert → Instance Cert
@@ -98,7 +98,7 @@ pub fn validate_delegation(
 
 OIML-specific template included; users can define their own.
 
-### `confium-cms` (P0)
+### `confium-pki` (cms feature) (P0)
 
 CMS (PKCS#7 / RFC 5652) SignedData envelope. Takes (payload, cert
 chain, signature) → CMS SignedData bytes. Standard format verifiable
@@ -126,7 +126,7 @@ pub fn verify_signed_data(signed_data: &SignedData, trusted_roots: &[Certificate
 This is the bridge to **email signing** (S/MIME), **document
 signing** (PAdES), and **code signing** (Authenticode).
 
-### `confium-xmldsig` (P0)
+### `confium-pki` (xmldsig feature) (P0)
 
 XMLDSig + Exclusive C14N for CNML-style XML documents. Direct
 integration point with OIML CNML project.
