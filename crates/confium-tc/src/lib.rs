@@ -4,6 +4,10 @@
 //! - the `cfm_tc_*` FFI surface for threshold sessions
 //! - session state machine (round orchestration, message routing)
 //! - link-time scheme registry (in-process Rust schemes)
+//! - async session coordinator (for globally distributed signers)
+//! - share re-sharing + proactive refresh (committee evolution without
+//!   changing public key)
+//! - threshold KEM session interface (parallel to signing session)
 //!
 //! Built on top of: `confium-net` (transport, separate concern),
 //! `confium-store` (share persistence), `confium-api` (shared types).
@@ -13,12 +17,6 @@
 //!
 //! See `TODO.roadmap/04-threshold-cryptography.md` — this is the entire
 //! reason Confium exists.
-//!
-//! ## Status
-//!
-//! Framework skeleton only. No TC scheme is implemented in this crate;
-//! the registry + session machinery is exercised end-to-end via no-op
-//! mock schemes registered in the test modules.
 
 pub mod error;
 pub mod ffi;
@@ -28,6 +26,10 @@ pub mod registry;
 pub mod schemes;
 pub mod session;
 pub mod share;
+
+pub mod coordinator;
+pub mod reshare;
+pub mod kem;
 
 pub use error::Error;
 pub use error::Result;

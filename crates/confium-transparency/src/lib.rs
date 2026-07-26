@@ -1,17 +1,26 @@
-//! Append-only Merkle tree transparency log with OTS anchoring.
+//! Transparency log + OpenTimestamps + Evidence Records for Confium.
 //!
-//! Every artifact (cert, signature, revocation, re-share event) is
-//! appended to a Merkle tree. Tree roots are periodically anchored to
-//! Bitcoin via OpenTimestamps. Verifiers can prove any artifact was in
-//! the publicly-visible tree as of a given Bitcoin block.
+//! Three layers of artifact provenance over time:
 //!
-//! See `TODO.roadmap/36-transparency-and-ots.md` for full spec.
+//! - **Merkle tree transparency log**: every artifact (cert, signature,
+//!   revocation, re-share event) is appended. Tree roots periodically
+//!   anchored to Bitcoin via OpenTimestamps. Verifiers can prove any
+//!   artifact was in the publicly-visible tree as of a given Bitcoin block.
+//! - **OpenTimestamps (OTS)**: anchors hashes to Bitcoin blockchain via
+//!   public calendar servers.
+//! - **Evidence Records (RFC 4998 ERS)**: long-term archival protection
+//!   via periodic re-timestamping as hash algorithms age.
+//!
+//! See `TODO.roadmap/36-transparency-and-ots.md` and
+//! `TODO.roadmap/37-long-term-archival.md` for full specs.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
 pub mod entry;
 pub mod merkle;
+pub mod ots;
+pub mod ers;
 pub mod proof;
 
 pub use entry::*;
