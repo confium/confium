@@ -8,14 +8,15 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "confium-tc-elgamal-p256 — part of the Confium framework"
-keywords = ["crypto", "threshold", "p256", "confium"]
+description = "Threshold ElGamal over P-256 — real implementation"
+keywords = ["crypto", "threshold", "p256", "elgamal", "confium"]
 
 [dependencies]
 serde = { workspace = true }
 thiserror = { workspace = true }
-p256 = { workspace = true }
+p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
 sha2 = { workspace = true }
+elliptic-curve = { workspace = true, features = ["pkcs8", "sec1"] }
 
 [lib]
 crate-type = ["rlib"]
