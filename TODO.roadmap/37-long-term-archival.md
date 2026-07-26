@@ -116,12 +116,12 @@ by the then-current BIML quorum.
 
 ## Crate scope
 
-### `confium-ers` (P1)
+### `confium-transparency` (ers) (P1)
 
 - RFC 4998 Evidence Record implementation
 - RFC 3161 timestamp client
 - Re-quorum ceremony orchestration
-- Re-encryption coordination (uses `confium-tc-kem`)
+- Re-encryption coordination (uses `confium-tc` (kem))
 - Storage: Evidence Records stored alongside artifacts
 
 ## References

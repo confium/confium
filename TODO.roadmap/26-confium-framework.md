@@ -74,8 +74,8 @@ developers, MPC application builders, applied researchers.
 - One algorithm crate (`confium-tc-frost-ed25519`, etc.)
 - `confium-store` for share persistence
 - Mutual TLS or Noise Protocol for transport auth
-- Optional: `confium-tc-reshare` for committee evolution
-- Optional: `confium-tc-kem` + threshold enc crate for confidential output
+- Optional: `confium-tc` (reshare) for committee evolution
+- Optional: `confium-tc` (kem) + threshold enc crate for confidential output
 
 ### Time to value
 
@@ -135,7 +135,7 @@ HSM-using enterprises, government PKI operators.
   code changes.**
 - **`confium-openssl-provider`** — OpenSSL 3.0 provider that uses
   Confium for signing
-- `confium-cms` for PKCS#7 / CMS envelope compatibility
+- `confium-pki` (cms feature) for PKCS#7 / CMS envelope compatibility
 - `confium-tls-signer` for TLS handshakes that satisfy via threshold
 - HSM-backed share storage (PKCS#11, TPM)
 - Optional: `confium-composite` for PQ hybrid signatures
@@ -414,7 +414,7 @@ Each contribution is a paper with Confium as reference implementation.
 
 | Crate | Purpose | Priority |
 |---|---|---|
-| `confium-tc-kem` | Threshold KEM session interface | P0 |
+| `confium-tc` (kem) | Threshold KEM session interface | P0 |
 | `confium-tc-elgamal-p256` | Threshold ElGamal | P1 |
 | `confium-tc-ml-kem` | **Threshold ML-KEM (FIPS 203) — research** | P1 |
 | `confium-tc-ecies-p256` | Threshold ECIES | P2 |
@@ -433,10 +433,10 @@ Each contribution is a paper with Confium as reference implementation.
 
 | Crate | Purpose | Priority |
 |---|---|---|
-| `confium-config` | Deployment manifest schema + validation | P0 |
-| `confium-cert-delegation` | Scoped delegation templates | P0 |
-| `confium-xmldsig` | XMLDSig + Exclusive C14N (CNML uses) | P0 |
-| `confium-ers` | RFC 4998 Evidence Record Syntax | P1 |
+| `confium-deployment` | Deployment manifest schema + validation | P0 |
+| `confium-pki` (delegation feature) | Scoped delegation templates | P0 |
+| `confium-pki` (xmldsig feature) | XMLDSig + Exclusive C14N (CNML uses) | P0 |
+| `confium-transparency` (ers) | RFC 4998 Evidence Record Syntax | P1 |
 | `confium-attributes` | Attribute-based threshold party selection | P2 |
 | `confium-ring` | Threshold ring signatures (research) | P3 |
 
@@ -445,11 +445,11 @@ Each contribution is a paper with Confium as reference implementation.
 | Crate | Purpose | Priority |
 |---|---|---|
 | `confium-cert` | X.509 v3 cert + CSR types, path validation | P0 |
-| `confium-cms` | CMS/PKCS#7 SignedData envelope | P0 |
-| `confium-identity` | Actor identity: signing + encryption keypairs | P0 |
-| `confium-tc-coordinator` | Async session coordinator (multi-quorum, multi-tenant) | P0 |
-| `confium-tc-reshare` | Share refresh + dynamic committee re-sharing | P0 |
-| `confium-ots` | OpenTimestamps client + verifier | P1 |
+| `confium-pki` (cms feature) | CMS/PKCS#7 SignedData envelope | P0 |
+| `confium-deployment` | Actor identity: signing + encryption keypairs | P0 |
+| `confium-tc` (coordinator) | Async session coordinator (multi-quorum, multi-tenant) | P0 |
+| `confium-tc` (reshare) | Share refresh + dynamic committee re-sharing | P0 |
+| `confium-transparency` (ots) | OpenTimestamps client + verifier | P1 |
 | `confium-transparency` | Append-only Merkle tree with OTS-anchored roots | P1 |
 | `confium-composite` | Composite (multi-alg) signature aggregation | P1 |
 

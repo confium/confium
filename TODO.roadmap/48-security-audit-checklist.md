@@ -80,10 +80,10 @@ A Confium security audit typically covers:
 ### Tier 1: Core (always audited)
 
 - `confium-core` (plugin loader, FFI)
-- `confium-tc-coordinator` (async session state machine)
-- `confium-tc-reshare` (share re-sharing protocol)
+- `confium-tc` (coordinator) (async session state machine)
+- `confium-tc` (reshare) (share re-sharing protocol)
 - `confium-cert` (X.509 parsing)
-- `confium-escrow` (threshold key escrow)
+- `confium-patterns` (escrow) (threshold key escrow)
 
 ### Tier 2: Algorithms (audited per algorithm)
 

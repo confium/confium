@@ -117,7 +117,7 @@ coordinator to succeed. Reduces DoS surface.
 
 ## Crate scope
 
-### `confium-tc-coordinator` (P0)
+### `confium-tc` (coordinator) (P0)
 
 - `Coordinator` struct owning quorum configs and active sessions
 - `CoordinatorSession` state machine

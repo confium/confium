@@ -69,27 +69,19 @@ misbehavior.
 
 | Crate | Tests | Coverage |
 |---|---|---|
-| confium-cert | 8 | basic types |
-| confium-cert-delegation | 7 | scope + constraints |
-| confium-cms | 6 | builder + verify |
-| confium-identity | 8 | actor + store |
-| confium-tc-coordinator | 6 | full session lifecycle |
-| confium-tc-kem | 6 | session + encapsulate |
-| confium-tc-reshare | 7 | Lagrange + refresh |
-| confium-tc-frost-p256 | 18 | **real P256 Shamir + ECDSA** |
-| confium-transparency | 7 | Merkle tree + proofs |
+| confium-pki | 43 | cert + delegation + cms + xmldsig (consolidated) |
+| confium-deployment | 14 | manifest + identity (consolidated) |
+| confium-tc | 74 | session + coordinator + reshare + kem (consolidated) |
+| confium-tc-frost-p256 | 25 | **real P256 Shamir + ECDSA + integration** |
+| confium-transparency | 19 | Merkle + ots + ers (consolidated) |
 | confium-attributes | 9 | predicate AST + DSL |
-| confium-escrow | 2 | full lifecycle |
-| confium-revocation-service | 5 | 2-phase commit |
+| confium-patterns | 7 | escrow + revocation (consolidated) |
 | confium-composite | 3 | multi-alg aggregation |
-| confium-ots | 3 | calendar servers |
-| confium-xmldsig | 3 | algorithm IDs |
 | confium-store-openpgp-card | 2 | mock backend |
-| confium-tc-elgamal-p256 | 2 | encapsulate |
+| confium-tc-elgamal-p256 | 3 | **real threshold ElGamal** |
 | confium-pkcs11-server | 2 | dispatch |
 | confium-tls-signer | 1 | threshold callback |
-| confium-ers | 2 | evidence record |
-| confium-tc-ecies-p256 | 1 | round-trip |
+| confium-tc-ecies-p256 | 4 | **real ECDH + AES-256-GCM** |
 | confium-tc-bls | 2 | aggregate |
 | confium-tc-ml-kem | 2 | param sizes |
 | confium-tc-frost-ml-dsa-65 | 3 | sizes |

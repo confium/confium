@@ -118,7 +118,7 @@ target_2029 = "ML-DSA-65"
 
 ## Crate scope
 
-### `confium-config` (P0)
+### `confium-deployment` (P0)
 
 ```rust
 pub struct Manifest {

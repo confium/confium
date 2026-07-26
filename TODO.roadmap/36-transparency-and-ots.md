@@ -60,7 +60,7 @@ impl MerkleTree {
 RFC 6962-style inclusion and consistency proofs. Standard,
 well-analyzed.
 
-### 2. OTS anchoring (`confium-ots`)
+### 2. OTS anchoring (`confium-transparency` (ots))
 
 ```rust
 pub struct OtsClient {
@@ -125,7 +125,7 @@ required for core deployment.
 - Inclusion and consistency proofs (RFC 6962)
 - Periodic root anchoring hook
 
-### `confium-ots` (P1)
+### `confium-transparency` (ots) (P1)
 
 - OpenTimestamps client using public calendar servers
 - Local calendar server for offline / private deployments

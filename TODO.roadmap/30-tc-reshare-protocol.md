@@ -129,7 +129,7 @@ handles re-sharing sessions like signing sessions:
 
 ## Crate scope
 
-### `confium-tc-reshare` (P0)
+### `confium-tc` (reshare) (P0)
 
 - `ReshareSession` struct managing the protocol state
 - Implements both re-sharing and proactive refresh

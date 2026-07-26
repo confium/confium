@@ -42,7 +42,7 @@ This mirrors threshold signing's session lifecycle.
 
 ## Crate scope
 
-### `confium-tc-kem` (P0 — interface)
+### `confium-tc` (kem) (P0 — interface)
 
 Threshold KEM session interface, parallel to `confium-tc` for
 signing.

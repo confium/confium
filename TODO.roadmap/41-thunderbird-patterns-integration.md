@@ -80,9 +80,9 @@ Concrete for Thunderbird:
 
 ## New crates inspired by these patterns
 
-### `confium-escrow` (P0)
+### `confium-patterns` (escrow) (P0)
 
-Threshold key backup / escrow orchestration. Wraps `confium-tc-kem`.
+Threshold key backup / escrow orchestration. Wraps `confium-tc` (kem).
 
 ```rust
 pub struct EscrowService {
@@ -126,7 +126,7 @@ pub struct EscrowMetadata {
 }
 ```
 
-### `confium-revocation-service` (P1)
+### `confium-patterns` (revocation) (P1)
 
 Threshold-backed revocation service. Wraps `confium-tc`.
 
@@ -209,8 +209,8 @@ research contribution:
 
 ## Status
 
-- `confium-escrow`: scaffold created, real implementation P0
-- `confium-revocation-service`: scaffold created, real implementation P1
+- `confium-patterns` (escrow): scaffold created, real implementation P0
+- `confium-patterns` (revocation): scaffold created, real implementation P1
 - BUGREPORTs filed at rnp-rs for related API gaps:
   - `BUGREPORT.threshold-share-key-import.md`
   - `BUGREPORT.pqc-keypair-with-signing-and-encryption-subkeys.md`
@@ -221,5 +221,5 @@ research contribution:
 - [Thunderbird revocation service proposal](https://github.com/kaie/tb-misc/blob/main/revocation-service.md)
 - [Thunderbird key backup and recovery strategy](https://github.com/kaie/tb-misc/blob/main/key-backup-recovery-strategy.md)
 - `TODO.roadmap/26-confium-framework.md`
-- `TODO.roadmap/31-threshold-encryption.md` — `confium-tc-kem` interface
+- `TODO.roadmap/31-threshold-encryption.md` — `confium-tc` (kem) interface
 - `TODO.roadmap/29-tc-coordinator-design.md` — async ceremony
