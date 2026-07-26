@@ -46,7 +46,7 @@ jobs:
 
       - name: Install Rust ${{ inputs.rust }}
         if: ${{ inputs.rust != '' }}
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ inputs.rust }}
           components: rustfmt, clippy
