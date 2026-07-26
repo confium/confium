@@ -224,6 +224,26 @@ impl Coordinator {
     pub fn session_count(&self) -> usize {
         self.sessions.len()
     }
+
+    /// Get the threshold for a session.
+    pub fn session_threshold(&self, session_id: &str) -> Option<u32> {
+        self.sessions.get(session_id).map(|s| s.threshold())
+    }
+
+    /// Get the number of shares submitted for a session.
+    pub fn session_share_count(&self, session_id: &str) -> Option<usize> {
+        self.sessions.get(session_id).map(|s| s.shares.len())
+    }
+
+    /// Get the number of commitments submitted for a session.
+    pub fn session_commitment_count(&self, session_id: &str) -> Option<usize> {
+        self.sessions.get(session_id).map(|s| s.commitments.len())
+    }
+
+    /// Get the message for a session.
+    pub fn session_message(&self, session_id: &str) -> Option<&[u8]> {
+        self.sessions.get(session_id).map(|s| s.request.message.as_slice())
+    }
 }
 
 impl Default for Coordinator {
