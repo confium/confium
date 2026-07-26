@@ -7,7 +7,9 @@ authors.workspace = true
 license.workspace = true
 homepage.workspace = true
 repository.workspace = true
-description = "Confium threshold-cryptography primitives"
+categories.workspace = true
+description = "Threshold cryptography primitives: session, coordinator, reshare, KEM"
+keywords = ["crypto", "threshold", "tc", "frost", "confium"]
 
 [lib]
 crate-type = ["rlib"]
@@ -20,3 +22,9 @@ hmac = { workspace = true }
 inventory = { workspace = true }
 sha2 = { workspace = true }
 snafu = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+data-encoding = { workspace = true }
+zeroize = { workspace = true, features = ["zeroize_derive"] }

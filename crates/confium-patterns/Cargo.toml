@@ -1,5 +1,5 @@
 [package]
-name = "confium-transparency"
+name = "confium-patterns"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -8,18 +8,16 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "Transparency log + OpenTimestamps + Evidence Records for Confium"
-keywords = ["crypto", "merkle", "transparency", "ots", "confium"]
+description = "Threshold crypto deployment patterns: key escrow and revocation service"
+keywords = ["crypto", "threshold", "escrow", "revocation", "confium"]
 
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
-snafu = { workspace = true }
 thiserror = { workspace = true }
 chrono = { workspace = true }
-sha2 = { workspace = true }
 data-encoding = { workspace = true }
-tokio = { workspace = true }
+sha2 = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]

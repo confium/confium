@@ -1,5 +1,5 @@
 [package]
-name = "confium-transparency"
+name = "confium-pki"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -8,18 +8,27 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "Transparency log + OpenTimestamps + Evidence Records for Confium"
-keywords = ["crypto", "merkle", "transparency", "ots", "confium"]
+description = "X.509 cert + scoped delegation + CMS + XMLDSig for Confium"
+keywords = ["crypto", "x509", "cms", "xmldsig", "confium"]
+
+[features]
+default = ["parsing", "delegation", "cms", "xmldsig"]
+parsing = []
+delegation = []
+cms = []
+xmldsig = []
 
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
 snafu = { workspace = true }
 thiserror = { workspace = true }
+x509-cert = { workspace = true }
+der = { workspace = true }
+spki = { workspace = true }
 chrono = { workspace = true }
-sha2 = { workspace = true }
 data-encoding = { workspace = true }
-tokio = { workspace = true }
+sha2 = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]
