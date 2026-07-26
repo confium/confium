@@ -7,10 +7,30 @@ authors.workspace = true
 license.workspace = true
 homepage.workspace = true
 repository.workspace = true
+categories.workspace = true
 description = "Runnable demos for the Confium ecosystem"
 
 [dependencies]
 confium_core = { package = "confium-core", path = "../confium-core" }
 confium-tc = { workspace = true }
+confium-tc-frost-p256 = { workspace = true }
+confium-transparency = { workspace = true }
 confium-store = { workspace = true }
+confium-deployment = { workspace = true }
 hex = { workspace = true }
+sha2 = { workspace = true }
+p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
+chrono = { workspace = true }
+elliptic-curve = { workspace = true }
+
+[[example]]
+name = "threshold_signing"
+path = "src/bin/threshold_signing.rs"
+
+[[example]]
+name = "p256_threshold_signing"
+path = "src/bin/p256_threshold_signing.rs"
+
+[[example]]
+name = "transparency_log_demo"
+path = "src/bin/transparency_log_demo.rs"
