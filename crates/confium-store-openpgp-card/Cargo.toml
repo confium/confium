@@ -21,6 +21,10 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 serde = { workspace = true }
 thiserror = { workspace = true }
+rnp = { workspace = true }
+
+[dev-dependencies]
+rnp = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]
