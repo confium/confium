@@ -8,8 +8,15 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "confium-pkcs11-server — part of the Confium framework"
-keywords = ["crypto", "threshold", "confium"]
+readme = "README.md"
+description = "PKCS#11 v3.0 server dispatching to Confium threshold protocol"
+documentation = "https://docs.rs/confium-pkcs11-server"
+keywords = ["crypto", "pkcs11", "hsm", "threshold", "confium"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { workspace = true }

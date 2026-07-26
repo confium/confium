@@ -6,11 +6,20 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "FROST threshold signature scheme over ed25519 (draft-irtf-cfrg-frost)"
+keywords = ["crypto", "frost", "ed25519", "threshold", "signature"]
+description = "FROST threshold signature over Ed25519 for Confium"
+documentation = "https://docs.rs/confium-tc-frost-ed25519"
 
 [lib]
 crate-type = ["rlib"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-tc = { workspace = true }

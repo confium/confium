@@ -8,8 +8,15 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "Composite multi-algorithm signature aggregation (PQ migration)"
+readme = "README.md"
+description = "Composite multi-algorithm signature aggregation for PQ migration in Confium"
+documentation = "https://docs.rs/confium-composite"
 keywords = ["crypto", "composite", "pqc", "signature", "confium"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { workspace = true }

@@ -6,11 +6,20 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "CMP20 threshold ECDSA over P-256 (Canetti, Makriyannis, Peled 2020)"
+keywords = ["crypto", "ecdsa", "threshold", "cmp20", "p256"]
+description = "CMP20 threshold ECDSA over P-256 for Confium"
+documentation = "https://docs.rs/confium-tc-cmp20"
 
 [lib]
 crate-type = ["rlib"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-tc = { workspace = true }

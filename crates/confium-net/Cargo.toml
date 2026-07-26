@@ -6,8 +6,17 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "Confium Network: transport abstraction for multi-party protocols"
+keywords = ["crypto", "network", "transport", "threshold", "confium"]
+description = "Network transport abstraction for Confium multi-party protocols"
+documentation = "https://docs.rs/confium-net"
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-api = { workspace = true }

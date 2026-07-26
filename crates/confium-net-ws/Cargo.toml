@@ -6,8 +6,17 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "WebSocket transport for Confium (ws://, wss://)"
+keywords = ["crypto", "websocket", "transport", "threshold", "confium"]
+description = "WebSocket transport for Confium multi-party threshold protocols"
+documentation = "https://docs.rs/confium-net-ws"
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-net = { workspace = true }

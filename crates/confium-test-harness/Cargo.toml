@@ -6,14 +6,23 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "Test harness for Confium (mock plugins, NIST eval vectors)"
+keywords = ["crypto", "nist", "mpts", "test", "benchmark"]
+description = "NIST MPTS evaluation harness for Confium threshold schemes"
+documentation = "https://docs.rs/confium-test-harness"
 
 [lib]
 crate-type = ["rlib"]
 
 [build-dependencies]
 # (no extra deps; build.rs is std-only)
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-api = { workspace = true }

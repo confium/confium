@@ -6,12 +6,21 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "Long-running Confium daemon exposing the full API over JSON-RPC"
+keywords = ["crypto", "daemon", "rpc", "threshold", "confium"]
+description = "JSON-RPC daemon for the Confium threshold cryptography framework"
+documentation = "https://docs.rs/confium-daemon"
 
 [[bin]]
 name = "confiumd"
 path = "src/main.rs"
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 # The confium-core crate exposes its lib under the name `confium`

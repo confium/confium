@@ -6,8 +6,17 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "QUIC transport for Confium (quic://, quic4://, quic6://)"
+keywords = ["crypto", "quic", "transport", "threshold", "confium"]
+description = "QUIC transport for Confium multi-party threshold protocols"
+documentation = "https://docs.rs/confium-net-quic"
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-net = { workspace = true }

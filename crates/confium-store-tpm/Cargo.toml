@@ -6,12 +6,21 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "Confium Store TPM 2.0 backend (hardware-backed key storage)"
+keywords = ["crypto", "tpm", "sealed", "storage", "confium"]
+description = "TPM 2.0 sealed storage backend for Confium"
+documentation = "https://docs.rs/confium-store-tpm"
 
 [lib]
 name = "confium_store_tpm"
 crate-type = ["cdylib", "rlib"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-store = { workspace = true }

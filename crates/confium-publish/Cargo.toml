@@ -6,8 +6,12 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "Confium plugin publishing tool"
+keywords = ["crypto", "publish", "registry", "plugin", "confium"]
+description = "Author tool for publishing Confium plugins to the registry"
+documentation = "https://docs.rs/confium-publish"
 
 [lib]
 name = "confium_publish"
@@ -16,6 +20,11 @@ path = "src/lib.rs"
 [[bin]]
 name = "confium-publish"
 path = "src/main.rs"
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-api = { workspace = true }

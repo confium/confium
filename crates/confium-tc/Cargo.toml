@@ -8,11 +8,18 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "Threshold cryptography primitives: session, coordinator, reshare, KEM"
-keywords = ["crypto", "threshold", "tc", "frost", "confium"]
+readme = "README.md"
+description = "Threshold cryptography primitives: session, coordinator, reshare, KEM, TCP server"
+documentation = "https://docs.rs/confium-tc"
+keywords = ["crypto", "threshold", "frost", "coordinator", "confium"]
 
 [lib]
 crate-type = ["rlib"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-api = { workspace = true }

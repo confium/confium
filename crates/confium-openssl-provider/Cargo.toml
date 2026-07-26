@@ -8,8 +8,15 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "confium-openssl-provider — part of the Confium framework"
-keywords = ["crypto", "threshold", "confium"]
+readme = "README.md"
+description = "OpenSSL 3.0 provider using Confium for threshold signing"
+documentation = "https://docs.rs/confium-openssl-provider"
+keywords = ["crypto", "openssl", "provider", "threshold", "confium"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { workspace = true }

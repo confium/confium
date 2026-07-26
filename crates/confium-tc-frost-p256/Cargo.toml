@@ -8,8 +8,15 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "FROST threshold signature over ECDSA P-256"
-keywords = ["crypto", "frost", "threshold", "ecdsa", "p256"]
+readme = "README.md"
+description = "FROST threshold signature with real Shamir and ECDSA over P-256"
+documentation = "https://docs.rs/confium-tc-frost-p256"
+keywords = ["crypto", "frost", "ecdsa", "shamir", "p256"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { workspace = true }

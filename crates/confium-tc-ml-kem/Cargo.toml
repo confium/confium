@@ -8,8 +8,15 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "confium-tc-ml-kem — part of the Confium framework"
-keywords = ["crypto", "threshold", "confium"]
+readme = "README.md"
+description = "Threshold ML-KEM (FIPS 203) for post-quantum encryption in Confium"
+documentation = "https://docs.rs/confium-tc-ml-kem"
+keywords = ["crypto", "ml-kem", "kyber", "pqc", "threshold"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { workspace = true }

@@ -6,8 +6,17 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "Public Rust API and plugin SDK for Confium"
+keywords = ["crypto", "api", "sdk", "threshold", "confium"]
+description = "Public Rust API and plugin SDK for the Confium threshold cryptography framework"
+documentation = "https://docs.rs/confium-api"
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-macros = { workspace = true }

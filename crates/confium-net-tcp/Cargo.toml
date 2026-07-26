@@ -6,8 +6,17 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "TCP transport for Confium (tcp://, tcp+tls://)"
+keywords = ["crypto", "tcp", "transport", "threshold", "confium"]
+description = "TCP transport for Confium multi-party threshold protocols"
+documentation = "https://docs.rs/confium-net-tcp"
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-net = { workspace = true }

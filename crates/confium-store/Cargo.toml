@@ -6,12 +6,21 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "Confium Store: compartmentalized key/secret persistence"
+keywords = ["crypto", "store", "key", "persistence", "confium"]
+description = "Compartmentalized key and secret persistence for Confium"
+documentation = "https://docs.rs/confium-store"
 
 [lib]
 name = "confium_store"
 crate-type = ["cdylib", "rlib"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-api = { workspace = true }

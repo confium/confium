@@ -6,12 +6,21 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "Confium Store PKCS#11 backend: hardware-backed key storage via PKCS#11"
+keywords = ["crypto", "pkcs11", "hsm", "storage", "confium"]
+description = "PKCS#11 v3.0 wrapping backend for Confium key storage"
+documentation = "https://docs.rs/confium-store-pkcs11"
 
 [lib]
 name = "confium_store_pkcs11"
 crate-type = ["cdylib", "rlib"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-store = { workspace = true }

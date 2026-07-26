@@ -8,8 +8,15 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "Deployment manifest + actor identity management for Confium"
-keywords = ["crypto", "threshold", "deployment", "identity", "confium"]
+readme = "README.md"
+description = "Deployment manifest schema and actor identity management for Confium"
+documentation = "https://docs.rs/confium-deployment"
+keywords = ["crypto", "deployment", "manifest", "identity", "confium"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { workspace = true }

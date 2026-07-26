@@ -8,8 +8,15 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "confium-tc-frost-ml-dsa-65 — part of the Confium framework"
-keywords = ["crypto", "threshold", "confium"]
+readme = "README.md"
+description = "Threshold FROST over ML-DSA-65 (FIPS 204) for Confium"
+documentation = "https://docs.rs/confium-tc-frost-ml-dsa-65"
+keywords = ["crypto", "frost", "ml-dsa", "pqc", "threshold"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { workspace = true }

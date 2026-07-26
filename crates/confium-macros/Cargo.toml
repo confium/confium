@@ -6,11 +6,20 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
+keywords = ["crypto", "macros", "plugin", "proc-macro", "confium"]
 description = "Proc-macros for Confium plugin authors"
+documentation = "https://docs.rs/confium-macros"
 
 [lib]
 proc-macro = true
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 proc-macro2 = "1"

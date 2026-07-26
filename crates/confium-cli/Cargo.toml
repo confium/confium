@@ -6,12 +6,21 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "Confium command-line tool"
+keywords = ["crypto", "cli", "threshold", "confium"]
+description = "Command-line interface for the Confium threshold cryptography framework"
+documentation = "https://docs.rs/confium-cli"
 
 [[bin]]
 name = "confium"
 path = "src/main.rs"
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-api = { workspace = true }
