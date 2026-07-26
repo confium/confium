@@ -9,9 +9,9 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-mod lagrange;
-mod refresh;
-mod session;
+pub mod lagrange;
+pub mod refresh;
+pub mod session;
 
 pub use lagrange::*;
 pub use refresh::*;

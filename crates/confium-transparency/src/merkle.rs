@@ -2,12 +2,43 @@
 //!
 //! Uses SHA-256 with byte `0x01` prefix for leaf hashing and `0x02`
 //! prefix for internal node hashing (RFC 6962-style domain separation).
+//!
+//! Inclusion proofs include direction bits per RFC 6962 §2.1.1.
 
 use crate::entry::MerkleEntry;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 /// 32-byte SHA-256 hash.
 pub type Hash = [u8; 32];
+
+/// Which side the proof sibling sits on relative to the current hash.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Side {
+    /// Sibling is to the LEFT of the current hash; combined as `H(sibling || current)`.
+    Left,
+    /// Sibling is to the RIGHT of the current hash; combined as `H(current || sibling)`.
+    Right,
+}
+
+/// A single step in an inclusion proof.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct ProofStep {
+    /// Sibling hash.
+    pub sibling: Hash,
+    /// Side of the sibling.
+    pub side: Side,
+}
+
+/// A complete inclusion proof: list of (sibling_hash, side) pairs.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InclusionProof {
+    /// Sequence number of the leaf being proven.
+    pub sequence: u64,
+    /// Steps from leaf level up to (but not including) the root.
+    pub steps: Vec<ProofStep>,
+}
 
 /// The Merkle tree.
 #[derive(Debug, Default)]
@@ -116,46 +147,64 @@ impl MerkleTree {
             .ok_or_else(|| MerkleError::OutOfRange(sequence, self.entries.len()))
     }
 
-    /// Construct an inclusion proof for `sequence`.
-    pub fn inclusion_proof(&self, sequence: u64) -> Result<Vec<Hash>, MerkleError> {
+    /// Construct an inclusion proof for `sequence`. Returns direction-aware
+    /// proof per RFC 6962 §2.1.1.
+    pub fn inclusion_proof(&self, sequence: u64) -> Result<InclusionProof, MerkleError> {
         if sequence as usize >= self.leaf_hashes.len() {
             return Err(MerkleError::OutOfRange(sequence, self.entries.len()));
         }
-        let mut proof = Vec::new();
+        let mut steps = Vec::new();
         let mut idx = sequence as usize;
         let mut level = self.leaf_hashes.clone();
         while level.len() > 1 {
-            let sibling = if idx % 2 == 0 { idx + 1 } else { idx - 1 };
-            if sibling < level.len() {
-                proof.push(level[sibling]);
+            if idx % 2 == 0 {
+                // Current is left child; sibling (if exists) is right
+                let sibling_idx = idx + 1;
+                if sibling_idx < level.len() {
+                    steps.push(ProofStep {
+                        sibling: level[sibling_idx],
+                        side: Side::Right,
+                    });
+                }
+            } else {
+                // Current is right child; sibling is left
+                let sibling_idx = idx - 1;
+                steps.push(ProofStep {
+                    sibling: level[sibling_idx],
+                    side: Side::Left,
+                });
             }
             // Build next level
             let mut next = Vec::with_capacity(level.len() / 2 + 1);
             let mut iter = level.iter().enumerate();
-            while let Some((i, l)) = iter.next() {
+            while let Some((_, l)) = iter.next() {
                 if let Some((_, r)) = iter.next() {
                     next.push(hash_internal(*l, *r));
                 } else {
                     next.push(*l);
-                    let _ = i; // suppress unused warning
                 }
             }
             level = next;
             idx /= 2;
         }
-        Ok(proof)
+        Ok(InclusionProof {
+            sequence,
+            steps,
+        })
     }
 
-    /// Verify an inclusion proof.
+    /// Verify an inclusion proof (RFC 6962 §2.1.1).
     pub fn verify_inclusion(
         entry: &MerkleEntry,
-        proof: &[Hash],
+        proof: &InclusionProof,
         root: Hash,
     ) -> Result<(), MerkleError> {
         let mut current = hash_leaf(entry.entry_hash());
-        // Note: this simplified verifier assumes right-sibling ordering.
-        for sibling in proof {
-            current = hash_internal(current, *sibling);
+        for step in &proof.steps {
+            current = match step.side {
+                Side::Left => hash_internal(step.sibling, current),
+                Side::Right => hash_internal(current, step.sibling),
+            };
         }
         if current == root {
             Ok(())
@@ -209,11 +258,46 @@ mod tests {
             tree.append(e);
         }
         let root = tree.root();
-        let proof = tree.inclusion_proof(2).unwrap();
-        let result = MerkleTree::verify_inclusion(&entries[2], &proof, root);
-        // Note: this simplified verifier may fail on odd-size trees;
-        // the test verifies the API surface compiles and runs.
-        let _ = result;
+        // Verify every leaf has a valid inclusion proof
+        for i in 0..5 {
+            let proof = tree.inclusion_proof(i).unwrap();
+            MerkleTree::verify_inclusion(&entries[i as usize], &proof, root)
+                .expect("inclusion proof must verify");
+        }
+    }
+
+    #[test]
+    fn inclusion_proof_negative_case() {
+        let mut tree = MerkleTree::new();
+        let entries: Vec<MerkleEntry> = (0..5u64)
+            .map(|i| MerkleEntry::new(i, ArtifactType::CertificateIssuance, [i as u8; 32]))
+            .collect();
+        for e in &entries {
+            tree.append(e.clone());
+        }
+        let root = tree.root();
+        // Use proof for entry 2 but try to verify entry 3
+        let wrong_proof = tree.inclusion_proof(2).unwrap();
+        let result = MerkleTree::verify_inclusion(&entries[3], &wrong_proof, root);
+        assert!(matches!(result, Err(MerkleError::InclusionFailed(_))));
+    }
+
+    #[test]
+    fn inclusion_proof_power_of_two_tree() {
+        // 8 entries (power of 2) — clean binary tree
+        let mut tree = MerkleTree::new();
+        let entries: Vec<MerkleEntry> = (0..8u64)
+            .map(|i| MerkleEntry::new(i, ArtifactType::CertificateIssuance, [i as u8; 32]))
+            .collect();
+        for e in &entries {
+            tree.append(e.clone());
+        }
+        let root = tree.root();
+        for i in 0..8 {
+            let proof = tree.inclusion_proof(i).unwrap();
+            MerkleTree::verify_inclusion(&entries[i as usize], &proof, root)
+                .expect("must verify");
+        }
     }
 
     #[test]

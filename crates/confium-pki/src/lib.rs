@@ -23,10 +23,10 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-mod cert;
-mod csr;
-mod path;
-mod result;
+pub mod cert;
+pub mod csr;
+pub mod path;
+pub mod result;
 
 #[cfg(feature = "delegation")]
 pub mod delegation;
