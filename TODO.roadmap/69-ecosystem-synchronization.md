@@ -15,8 +15,8 @@ which repos need attention when the framework changes.
 | `confium` | https://github.com/confium/confium | Rust workspace (main product) | ✅ 43 crates, 744+ tests, 68 TODO docs |
 | `confium-ruby` | https://github.com/confium/confium-ruby | Ruby FFI bindings gem | ✅ Synced 2026-07-26 (PR #8) |
 | `confium.github.io` | https://github.com/confium/confium.github.io | Jekyll site for www.confium.org | ✅ Synced 2026-07-26 (PR #11) |
-| `confium-report` | https://github.com/confium/confium-report | Multi-spec technical repository | ✅ Synced 2026-07-26 (PR #1) |
-| `infrastructure` | https://github.com/confium/infrastructure | Terraform for AWS (CONFIDENTIAL) | 🔒 Operator-managed (Ribose ops only — DO NOT TOUCH per CLAUDE.md) |
+| `specs` | https://github.com/confium/specs | Multi-spec technical repository (deployed to https://www.confium.org/specs/) | ✅ Synced 2026-07-26 (PRs #1 + #2; repo renamed from `confium-report`) |
+| ~~`infrastructure`~~ | ~~https://github.com/confium/infrastructure~~ | ~~Terraform for AWS~~ | ❌ Deprecated, ignored. |
 
 ### Consumed dependencies
 
@@ -54,8 +54,8 @@ Triggered by framework reaching 43 crates + 744 tests + Mode 1/2/3 framing.
 - ✅ `confium`: All framework work complete (43 crates, real crypto, 68 TODO docs)
 - ✅ `confium.github.io`: PR #11 merged — landing page now describes three modes
 - ✅ `confium-ruby`: PR #8 merged — README rewritten, module-level specs added, ecosystem TODO doc created
-- ✅ `confium-report`: PR #1 merged — generalized into multi-spec repository with 3 initial spec documents + 6 new SVG diagrams
-- ⏭️ `infrastructure`: not affected (operator-managed)
+- ✅ `specs` (renamed from `confium-report`): PR #1 merged — generalized into multi-spec repository with 3 initial spec documents + 6 new SVG diagrams
+- ⏭️ `infrastructure`: deprecated, ignored
 
 ### 2026-07-26: Crate consolidation (53 → 43)
 
@@ -64,7 +64,7 @@ Triggered by 5 logical merges (PRs #42, #43 in main repo).
 - ✅ `confium`: tests preserved (744), CLAUDE.md updated
 - ✅ `confium-ruby`: not affected (no Ruby bindings to deleted crates)
 - ✅ `confium.github.io`: not affected (no per-crate pages yet)
-- ✅ `confium-report`: spec 02 (`02-workspace-organization.adoc`) covers the consolidation
+- ✅ `specs` (formerly `confium-report`): spec 02 (`02-workspace-organization.adoc`) covers the consolidation
 
 ## Per-repo status and TODO
 
@@ -121,7 +121,7 @@ Triggered by 5 logical merges (PRs #42, #43 in main repo).
 - [ ] CNML case study page (summary of `TODO.roadmap/27-cnml-deployment.md`)
 - [ ] NIST MPTS page (summary of `TODO.roadmap/25-nist-threshold-call.md`)
 
-### confium-report
+### specs (formerly confium-report)
 
 ✅ **Synced 2026-07-26 (PR #1)** — generalized into multi-spec repository:
 
@@ -161,14 +161,11 @@ Each spec follows the template: conceptual overview, architectural diagram, type
 
 ### infrastructure
 
-🔒 **Operator-managed** — DO NOT TOUCH without Ribose operator approval per `CLAUDE.md`.
-
-Future operator-initiated work (when CNML deploys):
-
-- DNS for `learn.confium.org`, `docs.confium.org`, `log.confium.org`
-- Coordinator hosting (BIML-operated)
-- Transparency log infrastructure
-- S3 buckets for transparency log data
+❌ **Deprecated** — per Ribose direction (2026-07-26), the `infrastructure/`
+repository is no longer part of the Confium open-source workspace. Any
+future infrastructure needs (DNS, coordinator hosting, transparency log
+hosting, S3 buckets) will be handled via internal Ribose processes
+outside the open-source project. This repository is ignored.
 
 ### rnp-rs
 
@@ -191,15 +188,15 @@ Each concern has exactly one canonical home:
 - **Engineering roadmap**: `confium/TODO.roadmap/` (this repo, 68 docs)
 - **API reference**: docs.rs (auto-generated from source)
 - **User-facing docs**: `confium.github.io` (Jekyll site)
-- **Technical specifications**: `confium-report/specs/` (multi-spec repo)
+- **Technical specifications**: `specs/specs/` (multi-spec repo)
 - **Ruby bindings**: `confium-ruby/lib/confium/`
-- **Infrastructure**: `infrastructure/` (operator-managed)
+- ~~**Infrastructure**: `infrastructure/`~~ Deprecated, ignored
 - **Engineering guide**: `confium/CLAUDE.md` (workspace-level)
 
 ### Anti-duplication
 
 - Don't copy API reference into the website — link to docs.rs
-- Don't copy specs into TODO.roadmap — link to `confium-report/specs/`
+- Don't copy specs into TODO.roadmap — link to `specs/specs/`
 - Don't copy operational runbooks into specs — link to `TODO.roadmap/59-deployment-runbook.md`
 - Don't copy code examples into the report repo — link to `confium-examples/src/bin/`
 
@@ -229,4 +226,4 @@ Routine internal refactors (test additions, doc clarifications, performance opti
 - `TODO.roadmap/66-branding-and-trademark.md` (naming conventions across repos)
 - `TODO.roadmap/68-roadmap-timeline.md` (multi-year phases)
 - `confium-ruby/TODO.roadmap/00-ecosystem-sync.md` (Ruby gem's mirror of this doc)
-- `confium-report/README.adoc` (multi-spec repo index)
+- `specs/README.adoc` (multi-spec repo index)
