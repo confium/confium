@@ -6,8 +6,12 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "Out-of-process plugin sandbox backed by length-prefixed JSON-RPC over stdin/stdout pipes"
+keywords = ["crypto", "sandbox", "process", "isolation", "confium"]
+description = "Out-of-process sandbox for isolating Confium plugin execution"
+documentation = "https://docs.rs/confium-sandbox-process"
 
 [lib]
 crate-type = ["rlib"]
@@ -18,6 +22,11 @@ crate-type = ["rlib"]
 [[bin]]
 name = "cfm-echo-plugin"
 path = "src/bin/echo_plugin.rs"
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { workspace = true }

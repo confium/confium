@@ -8,8 +8,15 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "confium-tls-signer — part of the Confium framework"
-keywords = ["crypto", "threshold", "confium"]
+readme = "README.md"
+description = "TLS 1.3 signature callback satisfying via Confium threshold"
+documentation = "https://docs.rs/confium-tls-signer"
+keywords = ["crypto", "tls", "signature", "threshold", "confium"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { workspace = true }

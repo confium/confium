@@ -8,8 +8,15 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "confium-jce-provider — part of the Confium framework"
-keywords = ["crypto", "threshold", "confium"]
+readme = "README.md"
+description = "Java Cryptography Extension provider for Confium threshold signing"
+documentation = "https://docs.rs/confium-jce-provider"
+keywords = ["crypto", "jce", "java", "threshold", "confium"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { workspace = true }

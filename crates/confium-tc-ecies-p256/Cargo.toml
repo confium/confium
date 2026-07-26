@@ -8,8 +8,15 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "Threshold ECIES over P-256 — real implementation"
-keywords = ["crypto", "ecies", "ecdh", "p256", "confium"]
+readme = "README.md"
+description = "Threshold ECIES with ECDH and AES-256-GCM over P-256 for Confium"
+documentation = "https://docs.rs/confium-tc-ecies-p256"
+keywords = ["crypto", "ecies", "ecdh", "aes-gcm", "threshold"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { workspace = true }

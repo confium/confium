@@ -8,8 +8,15 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "Threshold ElGamal over P-256 — real implementation"
-keywords = ["crypto", "threshold", "p256", "elgamal", "confium"]
+readme = "README.md"
+description = "Threshold ElGamal encryption over P-256 for Confium"
+documentation = "https://docs.rs/confium-tc-elgamal-p256"
+keywords = ["crypto", "elgamal", "threshold", "encryption", "p256"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { workspace = true }

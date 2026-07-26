@@ -6,8 +6,12 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "Confium Store backends for cloud KMS providers (AWS KMS, Google Cloud KMS, Azure Key Vault)"
+keywords = ["crypto", "cloud", "kms", "aws", "gcp"]
+description = "AWS, GCP, and Azure cloud KMS storage backend for Confium"
+documentation = "https://docs.rs/confium-store-cloud"
 
 [lib]
 name = "confium_store_cloud"
@@ -32,6 +36,11 @@ gcp-kms = ["dep:google-cloud-kms"]
 # 0.21.x version (the Azure SDK for Rust keeps the major version
 # aligned across its crates).
 azure-keyvault = ["dep:azure-security-keyvault"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-store = { workspace = true }

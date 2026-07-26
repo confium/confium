@@ -6,8 +6,12 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "Mock hash plugin built with the confium-api SDK (proof of concept)"
+keywords = ["crypto", "mock", "plugin", "test", "confium"]
+description = "Reference mock plugin for testing Confium plugin loading"
+documentation = "https://docs.rs/confium-mock-plugin"
 
 [lib]
 # The plugin is a cdylib so the loader can dlopen it and look up
@@ -16,6 +20,11 @@ description = "Mock hash plugin built with the confium-api SDK (proof of concept
 # on it via dev-dependencies and locate the cdylib artifact at runtime
 # via `env!("CARGO_CDYLIB_FILE_confium_mock_plugin")`.
 crate-type = ["cdylib", "rlib"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-api = { workspace = true }

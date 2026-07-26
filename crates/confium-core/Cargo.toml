@@ -4,10 +4,12 @@ version = "0.2.0"
 authors = ["Ribose Open <open.source@ribose.com>"]
 edition = "2024"
 rust-version = "1.85"
-description = "Confium Engine: plugin loader, registry, and crypto dispatch"
+description = "Engine: plugin loader, registry, and FFI entry points for the Confium framework"
+documentation = "https://docs.rs/confium-core"
 homepage = "https://www.confium.org/"
 repository = "https://github.com/confium/confium"
 categories = ["authentication", "cryptography"]
+readme = "README.md"
 license = "BSD-2-Clause"
 
 # The shared library is still called `libconfium.{so,dylib,dll}` for ABI
@@ -16,6 +18,11 @@ license = "BSD-2-Clause"
 [lib]
 name = "confium"
 crate-type = ["cdylib", "rlib"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 libloading = { workspace = true }

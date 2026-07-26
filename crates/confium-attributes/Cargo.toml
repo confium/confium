@@ -8,8 +8,15 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "Attribute-based threshold party selection"
-keywords = ["crypto", "threshold", "attributes", "predicates", "confium"]
+readme = "README.md"
+description = "Attribute-based threshold party selection with predicate DSL for Confium"
+documentation = "https://docs.rs/confium-attributes"
+keywords = ["crypto", "attributes", "predicates", "threshold", "confium"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { workspace = true }

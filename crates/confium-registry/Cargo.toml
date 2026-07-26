@@ -6,12 +6,21 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "Client for the Confium plugin registry (static-site catalog)"
+keywords = ["crypto", "registry", "plugin", "catalog", "confium"]
+description = "Client for the Confium static-site plugin catalog"
+documentation = "https://docs.rs/confium-registry"
 
 [lib]
 name = "confium_registry"
 crate-type = ["rlib"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-api = { workspace = true }

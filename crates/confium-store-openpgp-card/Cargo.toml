@@ -8,8 +8,15 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "OpenPGP card backend (YubiKey OpenPGP, Nitrokey, Gnuk) for Confium store"
+readme = "README.md"
+description = "OpenPGP card backend (YubiKey, Nitrokey) for Confium store"
+documentation = "https://docs.rs/confium-store-openpgp-card"
 keywords = ["crypto", "openpgp", "yubikey", "smartcard", "confium"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { workspace = true }

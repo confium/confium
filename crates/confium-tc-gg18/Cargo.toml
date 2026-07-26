@@ -6,11 +6,20 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "GG18 threshold ECDSA over P-256 (Gennaro & Goldfeder 2018)"
+keywords = ["crypto", "ecdsa", "threshold", "gg18", "confium"]
+description = "GG18 threshold ECDSA for Confium"
+documentation = "https://docs.rs/confium-tc-gg18"
 
 [lib]
 crate-type = ["rlib"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-tc = { workspace = true }

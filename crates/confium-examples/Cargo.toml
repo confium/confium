@@ -7,8 +7,16 @@ authors.workspace = true
 license.workspace = true
 homepage.workspace = true
 repository.workspace = true
+keywords = ["crypto", "examples", "demo", "threshold", "confium"]
 categories.workspace = true
-description = "Runnable demos for the Confium ecosystem"
+readme = "README.md"
+description = "Runnable example binaries demonstrating Confium threshold cryptography"
+documentation = "https://docs.rs/confium-examples"
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium_core = { package = "confium-core", path = "../confium-core" }

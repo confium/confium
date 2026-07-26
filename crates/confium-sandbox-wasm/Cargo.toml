@@ -6,11 +6,20 @@ rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 homepage.workspace = true
+categories = ["cryptography", "authentication"]
+readme = "README.md"
 repository.workspace = true
-description = "WASM plugin sandbox backed by wasmtime"
+keywords = ["crypto", "wasm", "sandbox", "browser", "confium"]
+description = "WASM sandbox for browser-based Confium director signing"
+documentation = "https://docs.rs/confium-sandbox-wasm"
 
 [lib]
 crate-type = ["rlib"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 snafu = { workspace = true }

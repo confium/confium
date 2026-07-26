@@ -8,7 +8,9 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 categories.workspace = true
-description = "X.509 cert + scoped delegation + CMS + XMLDSig for Confium"
+readme = "README.md"
+description = "X.509 cert, scoped delegation, CMS, and XMLDSig for Confium"
+documentation = "https://docs.rs/confium-pki"
 keywords = ["crypto", "x509", "cms", "xmldsig", "confium"]
 
 [features]
@@ -17,6 +19,11 @@ parsing = []
 delegation = []
 cms = []
 xmldsig = []
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { workspace = true }
