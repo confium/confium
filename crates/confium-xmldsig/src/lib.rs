@@ -9,6 +9,10 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+mod c14n;
+
+pub use c14n::*;
+
 use serde::{Deserialize, Serialize};
 
 /// Canonicalization algorithm.

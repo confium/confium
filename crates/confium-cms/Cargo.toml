@@ -18,6 +18,8 @@ snafu = { workspace = true }
 thiserror = { workspace = true }
 chrono = { workspace = true }
 data-encoding = { workspace = true }
+der = { workspace = true }
+sha2 = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]
