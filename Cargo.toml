@@ -73,7 +73,7 @@ confium-net-tcp = { path = "crates/confium-net-tcp", version = "0.3.0" }
 confium-net-ws = { path = "crates/confium-net-ws", version = "0.3.0" }
 confium-openssl-provider = { path = "crates/confium-openssl-provider", version = "0.3.0" }
 confium-patterns = { path = "crates/confium-patterns", version = "0.3.0" }
-confium-pki = { path = "crates/confium-pki", version = "0.3.0" }
+confium-pki = { path = "crates/confium-pki", version = "0.3.1" }
 confium-pkcs11-server = { path = "crates/confium-pkcs11-server", version = "0.3.0" }
 confium-registry = { path = "crates/confium-registry", version = "0.3.0" }
 confium-ring = { path = "crates/confium-ring", version = "0.3.0" }
