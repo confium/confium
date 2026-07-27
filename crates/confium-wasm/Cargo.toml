@@ -45,6 +45,7 @@ chrono = { workspace = true }
 # Verifier-only deps — all WASM-friendly, no filesystem, no threads.
 ed25519-dalek = { workspace = true }
 sha2 = { workspace = true }
+p256 = { version = "0.13", features = ["ecdsa"] }
 
 # WASM needs the `js` feature on getrandom so it falls back to
 # `crypto.getRandomValues` in the browser. Without it, getrandom fails to
