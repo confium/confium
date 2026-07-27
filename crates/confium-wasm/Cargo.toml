@@ -1,0 +1,53 @@
+[package]
+name = "confium-wasm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories.workspace = true
+readme = "README.md"
+description = "Browser/Node.js verifier package for Confium — composite signatures, transparency proofs, certificate validation. WASM-bindgen surface; verifier-only by design."
+documentation = "https://docs.rs/confium-wasm"
+keywords = ["crypto", "wasm", "verifier", "confium", "browser"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["verify-composite", "verify-transparency", "verify-attributes"]
+# Each verify-* flag gates a subtree of the verifier surface. Off by default
+# would let consumers tree-shake aggressively; we ship them all on by default
+# so `@confium/confium-wasm` works out of the box.
+verify-composite = ["dep:confium-composite"]
+verify-transparency = ["dep:confium-transparency"]
+verify-attributes = ["dep:confium-attributes"]
+
+[dependencies]
+confium-composite = { workspace = true, optional = true }
+confium-transparency = { workspace = true, optional = true }
+confium-attributes = { workspace = true, optional = true }
+
+wasm-bindgen = "0.2"
+serde = { workspace = true }
+serde_json = { workspace = true }
+js-sys = "0.3"
+
+# Verifier-only deps — all WASM-friendly, no filesystem, no threads.
+ed25519-dalek = { workspace = true }
+sha2 = { workspace = true }
+
+# WASM needs the `js` feature on getrandom so it falls back to
+# `crypto.getRandomValues` in the browser. Without it, getrandom fails to
+# compile for `wasm32-unknown-unknown`.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.2"

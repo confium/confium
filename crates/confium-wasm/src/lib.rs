@@ -1,0 +1,43 @@
+//! Browser/Node.js **verifier** package for Confium.
+//!
+//! wasm-bindgen surface, `wasm32-unknown-unknown` target, verifier-only by
+//! design. Browsers verify; servers sign.
+//!
+//! Each subsystem is gated by a `verify-*` Cargo feature so consumers can
+//! tree-shake aggressively. All features are on by default for out-of-the-box
+//! ergonomics.
+
+#![forbid(unsafe_code)]
+#![warn(missing_docs)]
+
+use wasm_bindgen::prelude::*;
+
+#[cfg(feature = "verify-composite")]
+mod composite;
+
+#[cfg(feature = "verify-composite")]
+pub use composite::{CompositeSignature, CompositeVerificationResult};
+
+#[cfg(feature = "verify-transparency")]
+mod transparency;
+
+#[cfg(feature = "verify-transparency")]
+pub use transparency::{InclusionProof, MerkleTree};
+
+#[cfg(feature = "verify-attributes")]
+mod attributes;
+
+#[cfg(feature = "verify-attributes")]
+pub use attributes::Predicate;
+
+/// Package version (mirrors the Cargo version).
+#[wasm_bindgen]
+pub fn version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
+/// Confium-core crate version this WASM blob was built against.
+#[wasm_bindgen]
+pub fn core_version() -> String {
+    "0.2.0".to_string()
+}

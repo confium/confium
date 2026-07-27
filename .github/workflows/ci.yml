@@ -257,6 +257,37 @@ jobs:
           ctest -C Debug -V
 
   # ============================================================================
+  # WASM Build Check
+  # ============================================================================
+  wasm-build:
+    name: WASM Build
+    runs-on: ubuntu-latest
+    needs: [preflight]
+    if: needs.preflight.outputs.should_run == 'true'
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: wasm
+          cache-on-failure: true
+
+      - name: Build confium-wasm for wasm32-unknown-unknown
+        run: cargo build -p confium-wasm --target wasm32-unknown-unknown --verbose
+
+      - name: Install wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+
+      - name: Run wasm-bindgen-test suite under Node
+        run: wasm-pack test --node crates/confium-wasm --release
+
+  # ============================================================================
   # Semver Compatibility Check
   # ============================================================================
   semver:

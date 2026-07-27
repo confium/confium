@@ -1,0 +1,79 @@
+//! WASM smoke tests via wasm-bindgen-test. Run with
+//! `wasm-pack test --node crates/confium-wasm --release`.
+
+#![cfg(target_arch = "wasm32")]
+
+use wasm_bindgen_test::*;
+
+wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_node);
+
+#[wasm_bindgen_test]
+fn version_smoke() {
+    let v = confium_wasm::version();
+    assert!(v.split('.').count() >= 2, "version looks like semver: {v}");
+}
+
+#[wasm_bindgen_test]
+fn parse_invalid_composite_signature_errors() {
+    let err = confium_wasm::CompositeSignature::from_json("{not json");
+    assert!(err.is_err(), "bogus JSON should error");
+}
+
+#[wasm_bindgen_test]
+fn parse_valid_but_empty_composite_signature_compiles() {
+    // This is just a parse-level smoke test — the underlying verify
+    // against an empty component list will error, but the JSON parse
+    // itself must succeed.
+    let json = r#"{"components":[]}"#;
+    let sig = confium_wasm::CompositeSignature::from_json(json).unwrap();
+    assert_eq!(sig.component_count(), 0);
+}
+
+#[wasm_bindgen_test]
+fn merkle_tree_empty() {
+    use confium_wasm::*;
+    let tree = MerkleTree::new();
+    assert_eq!(tree.length(), 0);
+}
+
+#[wasm_bindgen_test]
+fn merkle_tree_append_increments_length() {
+    use confium_wasm::*;
+    let tree = MerkleTree::new();
+    let artifact = [0u8; 32];
+    let seq = tree.append(&artifact).unwrap();
+    assert_eq!(seq, 0);
+    assert_eq!(tree.length(), 1);
+    assert_eq!(tree.root().len(), 32);
+}
+
+#[wasm_bindgen_test]
+fn merkle_inclusion_proof_round_trip() {
+    use confium_wasm::*;
+    let tree = MerkleTree::new();
+    let mut seqs = Vec::new();
+    for i in 0u8..3 {
+        let seq = tree.append(&[i; 32]).unwrap();
+        seqs.push(seq);
+    }
+    let root = tree.root();
+    for seq in seqs {
+        let proof = tree.inclusion_proof(seq).unwrap();
+        assert_eq!(proof.sequence(), seq);
+        assert!(proof.verify(&root).unwrap(), "inclusion proof for seq {seq} must verify");
+    }
+}
+
+#[wasm_bindgen_test]
+fn predicate_parse_and_evaluate() {
+    use confium_wasm::*;
+    let pred = Predicate::parse(r#"min_count("role:director", 2)"#).unwrap();
+    let signers = r#"[
+        {"role:director": ["yes"]},
+        {"role:director": ["yes"]}
+    ]"#;
+    assert!(pred.satisfied_by(signers).unwrap());
+
+    let signers_short = r#"[{"role:director": ["yes"]}]"#;
+    assert!(!pred.satisfied_by(signers_short).unwrap());
+}
