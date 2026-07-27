@@ -75,26 +75,30 @@ Legend: ✅ = shipped, 🚧 = scaffolded/stubbed, ❌ = missing, ➖ = N/A by de
 ## Coverage as of 2026-07-27
 
 **Ruby (`confium-ruby` v0.1.0):**
-- ✅ Composite (verify + sign Ed25519 component + keypair gen)
+- ✅ Composite (verify + sign Ed25519 + ECDSA-P256 components + keypair gen)
 - ✅ Transparency Merkle tree (append + root + inclusion proof + verify)
 - ✅ Attributes (parse + evaluate)
 - ✅ PKI::Certificate (parse PEM/DER + inspect + validity)
 - ✅ PKI::CSR (parse + round-trip)
-- ✅ PKI::CMS::SignedData (JSON wire format)
+- ✅ PKI::CMS::SignedData (JSON wire format + signature verification for Ed25519 + ECDSA-P256)
 - ✅ PKI::XMLDSig (Canonical XML + Exclusive C14N)
 - ✅ Identity::Actor + actor_types
 - ✅ Config::Manifest (parse + validate)
 - ✅ TC::FrostP256 (Shamir split + Lagrange recover + ECDSA sign)
 - ✅ TC::ElGamalP256 (encapsulate + partial_decrypt + aggregate)
-- 76 specs passing including a CNML-style end-to-end integration spec
+- 78 specs passing including a CNML-style end-to-end integration spec
+- RBS type signatures in `sig/confium.rbs` + Steepfile for type checking
+- Cross-platform native gem build via rake-compiler-dock (5 platforms)
+- CI on Ruby 3.1-3.4 across Linux/macOS/Windows
 
 **WASM (`@confium/confium-wasm` v0.3.0-dev):**
-- ✅ Composite (verify only)
+- ✅ Composite (verify Ed25519 + ECDSA-P256)
 - ✅ Transparency Merkle tree (append + root + inclusion proof + verify)
 - ✅ Transparency standalone tree-head verifier (Phase 2C)
 - ✅ Attributes (parse + evaluate)
 - ✅ PKI::Certificate (parse + validity)
 - ✅ PKI::CMS::SignedData (JSON wire format)
+- CI builds for `--target web`, `--target nodejs`, `--target bundler`
 - 9 wasm-bindgen-test cases passing
 
 **Gaps by surface (post-v0.1.0 Ruby, post-2C WASM):**
