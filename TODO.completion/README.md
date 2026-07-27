@@ -13,11 +13,11 @@ monotonically across the whole plan.
 
 | # | Slug | Status |
 |---|---|---|
-| [001](001-typed-error-hierarchy.md) | typed-error-hierarchy | ⏳ |
-| [002](002-dry-p256-verifier.md) | dry-p256-verifier | ⏳ |
+| [001](001-typed-error-hierarchy.md) | typed-error-hierarchy | ✅ |
+| [002](002-dry-p256-verifier.md) | dry-p256-verifier | ✅ |
 | [003](003-core-version-build-rs.md) | core-version-build-rs | ✅ |
 | [004](004-cms-per-signer-resolution.md) | cms-per-signer-resolution | ⏳ |
-| [005](005-composite-verifier-callback.md) | composite-verifier-callback | ⏳ |
+| [005](005-composite-verifier-callback.md) | composite-verifier-callback | ✅ |
 
 ## Functional (006–011)
 
