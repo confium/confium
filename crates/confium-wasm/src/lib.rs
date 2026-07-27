@@ -22,7 +22,10 @@ pub use composite::{CompositeSignature, CompositeVerificationResult};
 mod transparency;
 
 #[cfg(feature = "verify-transparency")]
-pub use transparency::{tree_head_from_json, verify_inclusion_with_head, InclusionProof, MerkleTree};
+pub use transparency::{
+    compute_artifact_hash, compute_leaf_hash, tree_head_from_json, verify_inclusion_with_head,
+    InclusionProof, MerkleTree,
+};
 
 #[cfg(feature = "verify-attributes")]
 mod attributes;

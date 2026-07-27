@@ -145,6 +145,74 @@ fn hash_leaf(entry_hash: Hash) -> Hash {
     out
 }
 
+/// Compute the SHA-256 of an artifact's bytes. Useful when a client
+/// only has the artifact (e.g. a cert DER) and needs the leaf hash
+/// input for the inclusion-proof verifier.
+///
+/// # Example
+///
+/// ```js
+/// import init, { compute_artifact_hash } from "@confium/confium-wasm";
+/// await init();
+/// const h = compute_artifact_hash(certDerBytes);  // Uint8Array(32)
+/// ```
+#[wasm_bindgen]
+pub fn compute_artifact_hash(artifact_bytes: &[u8]) -> Vec<u8> {
+    use sha2::{Digest, Sha256};
+    let mut h = Sha256::new();
+    h.update(artifact_bytes);
+    let r = h.finalize();
+    r.to_vec()
+}
+
+/// Compute the Merkle leaf hash for an entry. The leaf hash is
+/// `SHA-256(0x01 || entry_hash)` where `entry_hash` is
+/// `SHA-256(sequence_le_bytes || timestamp_micros_le_bytes || artifact_hash)`.
+///
+/// Callers who already know the leaf hash for a given sequence should
+/// pass that directly to [`verify_inclusion_with_head`]. This helper is
+/// for callers who only have the raw artifact + the sequence metadata
+/// published by the log.
+///
+/// # Arguments
+///
+/// * `sequence` — monotonic sequence number assigned by the log.
+/// * `timestamp_ms` — Unix epoch milliseconds when the entry was
+///   appended (matches the entry's timestamp in the log).
+/// * `artifact_bytes` — the raw artifact whose SHA-256 was anchored.
+///
+/// # Returns
+///
+/// 32-byte leaf hash as `Uint8Array`.
+#[wasm_bindgen]
+pub fn compute_leaf_hash(
+    sequence: u64,
+    timestamp_ms: f64,
+    artifact_bytes: &[u8],
+) -> Vec<u8> {
+    use sha2::{Digest, Sha256};
+    // entry_hash = SHA-256(sequence_le || timestamp_micros_le || artifact_hash)
+    let artifact_hash = {
+        let mut h = Sha256::new();
+        h.update(artifact_bytes);
+        let r = h.finalize();
+        let mut out = [0u8; 32];
+        out.copy_from_slice(&r);
+        out
+    };
+    let mut entry_hasher = Sha256::new();
+    entry_hasher.update(sequence.to_le_bytes());
+    entry_hasher.update((timestamp_ms as i64).to_le_bytes());
+    entry_hasher.update(artifact_hash);
+    let entry_hash: [u8; 32] = {
+        let r = entry_hasher.finalize();
+        let mut out = [0u8; 32];
+        out.copy_from_slice(&r);
+        out
+    };
+    hash_leaf(entry_hash).to_vec()
+}
+
 fn hash_internal(left: Hash, right: Hash) -> Hash {
     use sha2::{Digest, Sha256};
     let mut h = Sha256::new();
