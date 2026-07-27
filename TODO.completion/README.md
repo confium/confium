@@ -36,7 +36,7 @@ monotonically across the whole plan.
 |---|---|---|
 | [012](012-enum-mixins.md) | enum-mixins | ⏳ |
 | [013](013-structured-error-context.md) | structured-error-context | ⏳ |
-| [014](014-wasm-leaf-hash-helper.md) | wasm-leaf-hash-helper | ⏳ |
+| [014](014-wasm-leaf-hash-helper.md) | wasm-leaf-hash-helper | ✅ |
 | [015](015-wasm-jsdoc-comments.md) | wasm-jsdoc-comments | ⏳ |
 | [016](016-hello-world-examples.md) | hello-world-examples | ⏳ |
 
@@ -63,7 +63,7 @@ monotonically across the whole plan.
 
 | # | Slug | Status |
 |---|---|---|
-| [026](026-input-size-caps.md) | input-size-caps | ⏳ |
+| [026](026-input-size-caps.md) | input-size-caps | ✅ |
 | [027](027-dsl-depth-limit.md) | dsl-depth-limit | ⏳ |
 | [028](028-zeroize-on-drop.md) | zeroize-on-drop | ⏳ |
 | [029](029-cms-signed-attrs-canonicalization.md) | cms-signed-attrs-canonicalization | ⏳ |

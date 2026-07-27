@@ -1,6 +1,6 @@
 [package]
 name = "confium-composite"
-version.workspace = true
+version = "0.3.1"
 edition.workspace = true
 rust-version.workspace = true
 authors.workspace = true
@@ -25,6 +25,7 @@ thiserror = { workspace = true }
 sha2 = { workspace = true }
 ed25519-dalek = { workspace = true, features = ["rand_core"] }
 rand_core = { workspace = true }
+p256 = { workspace = true, features = ["ecdsa"] }
 
 [lib]
 crate-type = ["rlib"]

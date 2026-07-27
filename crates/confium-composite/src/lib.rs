@@ -13,6 +13,8 @@ use serde::{Deserialize, Serialize};
 
 /// Algorithm identifier for Ed25519 components.
 pub const ED25519: &str = "Ed25519";
+/// Algorithm identifier for ECDSA-P256 components (NIST P-256 + SHA-256).
+pub const ECDSA_P256: &str = "ECDSA-P256";
 /// Algorithm identifier for ML-DSA-65 components (placeholder; no real verifier).
 pub const ML_DSA_65: &str = "ML-DSA-65";
 
@@ -222,6 +224,30 @@ pub fn ed25519_verifier(
     vk.verify(message, &sig).map_err(|e| format!("verify: {e}"))
 }
 
+/// Verify an ECDSA-P256 signature (NIST P-256 over SHA-256). The public
+/// key is encoded as SEC1 (compressed 33 bytes or uncompressed 65
+/// bytes). The signature is DER-encoded per RFC 5480.
+///
+/// Use as the per-component verifier callback in
+/// [`CompositeSignature::verify`] when the composite contains an
+/// ECDSA-P256 component.
+pub fn p256_verifier(
+    algorithm: &str,
+    public_key: &[u8],
+    message: &[u8],
+    signature: &[u8],
+) -> Result<(), String> {
+    if algorithm != ECDSA_P256 && algorithm != "ECDSA" {
+        return Err(format!("not ECDSA-P256: {algorithm}"));
+    }
+    use p256::ecdsa::{signature::Verifier, Signature, VerifyingKey};
+    let vk = VerifyingKey::from_sec1_bytes(public_key)
+        .map_err(|e| format!("invalid P-256 public key: {e}"))?;
+    let sig = Signature::from_der(signature)
+        .map_err(|e| format!("invalid DER signature: {e}"))?;
+    vk.verify(message, &sig).map_err(|e| format!("verify: {e}"))
+}
+
 /// Build a real Ed25519 component signature. Used for testing and as a
 /// reference for plugin authors.
 pub fn build_ed25519_component(
@@ -267,6 +293,33 @@ mod real_ed25519_tests {
             b"different",
             &component.signature,
         );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn real_p256_round_trip() {
+        use p256::ecdsa::{SigningKey, signature::Signer, Signature};
+        let signing = SigningKey::random(&mut OsRng);
+        let verifying = signing.verifying_key();
+        let message = b"composite p256 test message";
+        let sig: Signature = signing.sign(message);
+        let sig_der = sig.to_der();
+        let pk_bytes: Vec<u8> = verifying.to_sec1_bytes().to_vec();
+        let sig_bytes: Vec<u8> = sig_der.to_bytes().to_vec();
+        let result = p256_verifier(ECDSA_P256, &pk_bytes, message, &sig_bytes);
+        assert!(result.is_ok(), "p256 verifier should accept valid sig");
+    }
+
+    #[test]
+    fn real_p256_rejects_wrong_message() {
+        use p256::ecdsa::{SigningKey, signature::Signer, Signature};
+        let signing = SigningKey::random(&mut OsRng);
+        let verifying = signing.verifying_key();
+        let sig: Signature = signing.sign(b"original");
+        let sig_der = sig.to_der();
+        let pk_bytes: Vec<u8> = verifying.to_sec1_bytes().to_vec();
+        let sig_bytes: Vec<u8> = sig_der.to_bytes().to_vec();
+        let result = p256_verifier(ECDSA_P256, &pk_bytes, b"different", &sig_bytes);
         assert!(result.is_err());
     }
 

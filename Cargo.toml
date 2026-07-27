@@ -61,7 +61,7 @@ categories = ["authentication", "cryptography"]
 confium-api = { path = "crates/confium-api", version = "0.3.0" }
 confium-attributes = { path = "crates/confium-attributes", version = "0.3.0" }
 confium-core = { path = "crates/confium-core", version = "0.2.0" }
-confium-composite = { path = "crates/confium-composite", version = "0.3.0" }
+confium-composite = { path = "crates/confium-composite", version = "0.3.1" }
 confium-deployment = { path = "crates/confium-deployment", version = "0.3.0" }
 confium-daemon = { path = "crates/confium-daemon", version = "0.3.0" }
 confium-jce-provider = { path = "crates/confium-jce-provider", version = "0.3.0" }
