@@ -1,15 +1,27 @@
-# Build and publish the `confium-wasm` package to npm.
+# Build and publish `@confium/confium-wasm` to npm via **trusted publishing**.
+#
+# npm's modern publishing model uses OIDC-based trusted publishing: no
+# long-lived NPM_TOKEN secret. The flow is:
+#
+#   1. **First publish** is done manually by the package owner:
+#        - `wasm-pack build crates/confium-wasm --target bundler --release --scope confium`
+#        - `cd crates/confium-wasm/pkg && npm publish --access public`
+#      This creates the package on the npm registry and lets the owner
+#      configure trusted publishing for the GitHub repo.
+#
+#   2. **Trusted publishing setup** (one-time, on npm side):
+#        - Visit https://www.npmjs.com/package/@confium/confium-wasm/access
+#        - Under "Configured GitHub Actions" add:
+#            repository: confium/confium
+#            workflow:   .github/workflows/wasm.yml
+#            environment: release
+#        - Configure the GitHub environment `release` to require it.
+#
+#   3. **Subsequent publishes** run from this workflow on tag push. The
+#      `id-token: write` permission lets npm verify the workflow's OIDC
+#      identity and accept the publish without a token.
 #
 # Triggered on release tags (v*.*.*) and via workflow_dispatch.
-# Produces a single npm package containing:
-#
-#   - the WASM binary blob (confium_wasm_bg.wasm)
-#   - the generated JS bindings (confium_wasm.js)
-#   - TypeScript definitions (confium_wasm.d.ts)
-#
-# The package is published under `@confium/confium-wasm` on the public npm
-# registry. The npm token is configured as the `NPM_TOKEN` repository
-# secret.
 
 name: Release WASM
 
@@ -37,10 +49,12 @@ jobs:
       - name: Install wasm-pack
         uses: jetli/wasm-pack-action@v0.4.0
 
+      # Build the bundler target — produces ESM + CJS + .d.ts that npm
+      # consumers can use regardless of their bundler.
       - name: Build WASM package
         run: |
           wasm-pack build crates/confium-wasm \
-            --target web \
+            --target bundler \
             --release \
             --scope confium
 
@@ -56,7 +70,11 @@ jobs:
   publish-npm:
     needs: build-wasm
     runs-on: ubuntu-latest
+    environment: release  # matches the npm trusted-publishing config
     if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      id-token: write  # required for npm trusted publishing (OIDC)
+      contents: read
     steps:
       - uses: actions/checkout@v7
 
@@ -72,8 +90,6 @@ jobs:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Publish
-        run: npm publish --access public
+      - name: Publish via trusted publishing (OIDC, no NPM_TOKEN)
+        run: npm publish --access public --provenance
         working-directory: pkg/
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
