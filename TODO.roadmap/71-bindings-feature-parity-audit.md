@@ -74,29 +74,45 @@ Legend: ✅ = shipped, 🚧 = scaffolded/stubbed, ❌ = missing, ➖ = N/A by de
 
 ## Coverage as of 2026-07-27
 
-**Ruby (`confium-ruby` v0.1.0-dev):**
+**Ruby (`confium-ruby` v0.1.0):**
 - ✅ Composite (verify + sign Ed25519 component + keypair gen)
 - ✅ Transparency Merkle tree (append + root + inclusion proof + verify)
 - ✅ Attributes (parse + evaluate)
+- ✅ PKI::Certificate (parse PEM/DER + inspect + validity)
+- ✅ PKI::CSR (parse + round-trip)
+- ✅ PKI::CMS::SignedData (JSON wire format)
+- ✅ PKI::XMLDSig (Canonical XML + Exclusive C14N)
+- ✅ Identity::Actor + actor_types
+- ✅ Config::Manifest (parse + validate)
+- ✅ TC::FrostP256 (Shamir split + Lagrange recover + ECDSA sign)
+- ✅ TC::ElGamalP256 (encapsulate + partial_decrypt + aggregate)
+- 76 specs passing including a CNML-style end-to-end integration spec
 
 **WASM (`@confium/confium-wasm` v0.3.0-dev):**
 - ✅ Composite (verify only)
 - ✅ Transparency Merkle tree (append + root + inclusion proof + verify)
+- ✅ Transparency standalone tree-head verifier (Phase 2C)
 - ✅ Attributes (parse + evaluate)
+- ✅ PKI::Certificate (parse + validity)
+- ✅ PKI::CMS::SignedData (JSON wire format)
+- 9 wasm-bindgen-test cases passing
 
-**Gaps by surface:**
+**Gaps by surface (post-v0.1.0 Ruby, post-2C WASM):**
 
-Ruby — top priorities for v0.1.0:
-1. `Confium::Cert` — parse, validate, build (CNML issuer side)
-2. `Confium::CMS` — wrap and verify SignedData
-3. `Confium::Identity` + `Confium::Config` — deployment manifest types
-4. `Confium::Composite.sign_p256_component` — ECDSA-P256 component signing
+Ruby — next priorities (v0.2.0):
+1. Multi-party TC session orchestration (FROST/CMP20/GG18 ceremonies)
+2. Async Coordinator client (drives `confium-tc::coordinator`)
+3. CMS signature VERIFICATION (currently we only parse, not verify signatures)
+4. ECDSA-P256 component in Composite (sign + verify)
+5. RBS type signatures in `sig/`
+6. Cross-platform binary gems via `rake-compiler-dock`
 
-WASM — top priorities for v0.3.0:
-1. `CompositeSignature.verify_p256_component` — verifier callback for ECDSA-P256
-2. `Certificate` — parse + path validate (CNML verifier side)
-3. `CMSSignedData` — verify only
-4. (Future, gated by ML-DSA Rust crate) `CompositeSignature.verify_ml_dsa_65_component`
+WASM — next priorities (v0.3.0 release):
+1. CMS signature verification with caller-supplied verifier callback
+2. Certificate path validation (`Confium::PKI::PathValidator` equivalent)
+3. Node.js adapter (replace `getrandom` `js` feature with native `crypto.webcrypto`)
+4. `wasm-pack build --target bundler` pipeline + npm publish workflow
+5. ML-DSA-65 / SLH-DSA verifier hooks (caller-supplied, no native PQ in WASM blob)
 
 ## Related docs
 
