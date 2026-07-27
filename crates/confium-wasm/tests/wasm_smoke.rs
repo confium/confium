@@ -107,3 +107,12 @@ fn signed_data_round_trips_through_json() {
     let round = SignedData::from_json(&sd.to_json().unwrap()).unwrap();
     assert_eq!(round.content_type(), sd.content_type());
 }
+
+#[wasm_bindgen_test]
+fn tree_head_round_trips_through_json() {
+    use confium_wasm::*;
+    let json = r#"{"size":42,"root":[171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171,171]}"#;
+    let parsed = tree_head_from_json(json).unwrap();
+    assert!(parsed.contains("\"size\":42"));
+    assert!(parsed.contains("\"root_hex\":\"abab"));
+}

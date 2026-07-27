@@ -156,3 +156,70 @@ fn hash_internal(left: Hash, right: Hash) -> Hash {
     out.copy_from_slice(&r);
     out
 }
+
+/// Tree head — snapshot of a transparency log at a given size. JSON shape:
+/// `{ "size": number, "root": number[] }` (root is a 32-element Uint8Array
+/// marshaled via serde as a number array). Use [`tree_head_from_json`] /
+/// [`tree_head_to_json`] to round-trip heads published by a transparency-log
+/// server.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct TreeHead {
+    /// Number of leaves in the tree at this head.
+    pub size: usize,
+    /// 32-byte SHA-256 root hash.
+    pub root: Vec<u8>,
+}
+
+/// Parse a tree head from JSON. Returns a JSON string with `{ size, root_hex }`
+/// (root as hex string because wasm-bindgen doesn't natively marshal Vec<u8>
+/// in return position of free functions easily).
+#[wasm_bindgen]
+pub fn tree_head_from_json(json: &str) -> Result<String, JsValue> {
+    let head: TreeHead = serde_json::from_str(json)
+        .map_err(|e| JsValue::from_str(&format!("TreeHead JSON parse error: {e}")))?;
+    serde_json::to_string(&serde_json::json!({
+        "size": head.size,
+        "root_hex": head.root.iter().map(|b| format!("{:02x}", b)).collect::<String>(),
+    }))
+    .map_err(|e| JsValue::from_str(&format!("serialize: {e}")))
+}
+
+/// Verify an inclusion proof against a tree head, without needing to build
+/// the tree. Caller supplies the leaf's entry hash (the digest of the
+/// artifact being proven present), the proof itself (JSON form as produced
+/// by `MerkleTree::inclusion_proof` + serde), and the tree head (root +
+/// size).
+#[wasm_bindgen]
+pub fn verify_inclusion_with_head(
+    leaf_entry_hash: &[u8],
+    proof_json: &str,
+    head_json: &str,
+) -> Result<bool, JsValue> {
+    if leaf_entry_hash.len() != 32 {
+        return Err(JsValue::from_str(&format!(
+            "leaf_entry_hash must be 32 bytes, got {}",
+            leaf_entry_hash.len()
+        )));
+    }
+    let mut leaf_arr = [0u8; 32];
+    leaf_arr.copy_from_slice(leaf_entry_hash);
+
+    let proof: RustInclusionProof = serde_json::from_str(proof_json)
+        .map_err(|e| JsValue::from_str(&format!("proof JSON parse: {e}")))?;
+    let head: TreeHead = serde_json::from_str(head_json)
+        .map_err(|e| JsValue::from_str(&format!("head JSON parse: {e}")))?;
+    if head.root.len() != 32 {
+        return Err(JsValue::from_str("head.root must be 32 bytes"));
+    }
+    let mut root_arr = [0u8; 32];
+    root_arr.copy_from_slice(&head.root);
+
+    let mut current = hash_leaf(leaf_arr);
+    for step in &proof.steps {
+        current = match step.side {
+            confium_transparency::merkle::Side::Left => hash_internal(step.sibling, current),
+            confium_transparency::merkle::Side::Right => hash_internal(current, step.sibling),
+        };
+    }
+    Ok(current == root_arr)
+}
