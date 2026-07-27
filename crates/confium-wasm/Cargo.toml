@@ -21,23 +21,26 @@ rustdoc-args = ["--cfg", "docsrs"]
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = ["verify-composite", "verify-transparency", "verify-attributes"]
+default = ["verify-composite", "verify-transparency", "verify-attributes", "verify-pki"]
 # Each verify-* flag gates a subtree of the verifier surface. Off by default
 # would let consumers tree-shake aggressively; we ship them all on by default
 # so `@confium/confium-wasm` works out of the box.
 verify-composite = ["dep:confium-composite"]
 verify-transparency = ["dep:confium-transparency"]
 verify-attributes = ["dep:confium-attributes"]
+verify-pki = ["dep:confium-pki"]
 
 [dependencies]
 confium-composite = { workspace = true, optional = true }
 confium-transparency = { workspace = true, optional = true }
 confium-attributes = { workspace = true, optional = true }
+confium-pki = { workspace = true, optional = true }
 
 wasm-bindgen = "0.2"
 serde = { workspace = true }
 serde_json = { workspace = true }
 js-sys = "0.3"
+chrono = { workspace = true }
 
 # Verifier-only deps — all WASM-friendly, no filesystem, no threads.
 ed25519-dalek = { workspace = true }

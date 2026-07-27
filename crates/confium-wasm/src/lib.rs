@@ -30,6 +30,12 @@ mod attributes;
 #[cfg(feature = "verify-attributes")]
 pub use attributes::Predicate;
 
+#[cfg(feature = "verify-pki")]
+mod pki;
+
+#[cfg(feature = "verify-pki")]
+pub use pki::{Certificate, SignedData};
+
 /// Package version (mirrors the Cargo version).
 #[wasm_bindgen]
 pub fn version() -> String {
