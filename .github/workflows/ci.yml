@@ -284,6 +284,15 @@ jobs:
       - name: Install wasm-pack
         uses: jetli/wasm-pack-action@v0.4.0
 
+      - name: Build wasm-pack — target=web (browser)
+        run: wasm-pack build crates/confium-wasm --target web --release --scope confium --no-default-features
+
+      - name: Build wasm-pack — target=nodejs (Node.js)
+        run: wasm-pack build crates/confium-wasm --target nodejs --release --scope confium --no-default-features
+
+      - name: Build wasm-pack — target=bundler (Webpack/Vite/Rollup)
+        run: wasm-pack build crates/confium-wasm --target bundler --release --scope confium --no-default-features
+
       - name: Run wasm-bindgen-test suite under Node
         run: wasm-pack test --node crates/confium-wasm --release
 
