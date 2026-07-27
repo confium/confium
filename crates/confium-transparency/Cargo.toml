@@ -26,6 +26,8 @@ thiserror = { workspace = true }
 chrono = { workspace = true }
 sha2 = { workspace = true }
 data-encoding = { workspace = true }
+
+[dev-dependencies]
 tokio = { workspace = true }
 
 [lib]

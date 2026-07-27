@@ -39,19 +39,19 @@ jobs:
 
       - name: Build WASM package
         run: |
-          wasm-pack build crates/confium-sandbox-wasm \
+          wasm-pack build crates/confium-wasm \
             --target web \
             --release \
             --scope confium
 
       - name: Inspect package
-        run: ls -la crates/confium-sandbox-wasm/pkg/
+        run: ls -la crates/confium-wasm/pkg/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: confium-wasm-pkg
-          path: crates/confium-sandbox-wasm/pkg/
+          path: crates/confium-wasm/pkg/
 
   publish-npm:
     needs: build-wasm
