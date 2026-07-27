@@ -77,3 +77,33 @@ fn predicate_parse_and_evaluate() {
     let signers_short = r#"[{"role:director": ["yes"]}]"#;
     assert!(!pred.satisfied_by(signers_short).unwrap());
 }
+
+#[wasm_bindgen_test]
+fn certificate_from_der_rejects_garbage() {
+    use confium_wasm::*;
+    let err = Certificate::from_der(&[0u8; 10]);
+    assert!(err.is_err(), "garbage DER should error");
+}
+
+#[wasm_bindgen_test]
+fn signed_data_round_trips_through_json() {
+    use confium_wasm::*;
+    let json = r#"{
+        "version": 1,
+        "digest_algorithms": [{"oid":"2.16.840.1.101.3.4.2.1"}],
+        "encap_content_info": {
+            "content_type":"1.2.840.113549.1.7.1",
+            "content":[72,101,108,108,111]
+        },
+        "certificates":[],
+        "signer_infos":[]
+    }"#;
+    let sd = SignedData::from_json(json).unwrap();
+    assert_eq!(sd.signer_count(), 0);
+    assert_eq!(sd.content_type(), "1.2.840.113549.1.7.1");
+    assert_eq!(sd.certificate_count(), 0);
+    assert_eq!(sd.content().unwrap(), vec![72, 101, 108, 108, 111]);
+
+    let round = SignedData::from_json(&sd.to_json().unwrap()).unwrap();
+    assert_eq!(round.content_type(), sd.content_type());
+}
