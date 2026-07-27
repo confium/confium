@@ -49,16 +49,39 @@ impl CompositeSignature {
 
     /// Verify all components against `message`. Returns a
     /// [`CompositeVerificationResult`] describing per-component outcomes.
+    ///
+    /// Built-in verifiers: Ed25519 + ECDSA-P256. Unknown algorithms are
+    /// reported as failed components. JS callers needing ML-DSA-65 or
+    /// SLH-DSA verification must preprocess the composite and supply
+    /// their own verifier callback (Phase 2D).
     #[wasm_bindgen]
     pub fn verify(&self, message: &[u8]) -> Result<CompositeVerificationResult, JsValue> {
         let result = self
             .inner
             .verify(message, |algorithm, public_key, m, signature| {
-                confium_composite::ed25519_verifier(algorithm, public_key, m, signature)
+                if algorithm == confium_composite::ED25519 {
+                    confium_composite::ed25519_verifier(algorithm, public_key, m, signature)
+                } else if algorithm == "ECDSA-P256" || algorithm == "ECDSA" {
+                    p256_verifier(public_key, m, signature)
+                } else {
+                    Err(format!("unsupported algorithm: {algorithm}"))
+                }
             })
             .map_err(|e| js_err(&e.to_string()))?;
         Ok(CompositeVerificationResult { inner: result })
     }
+}
+
+/// Verify an ECDSA-P256 signature. `public_key` is SEC1-encoded verifying
+/// key (compressed 33 bytes or uncompressed 65 bytes). `signature` is
+/// DER-encoded. SHA-256 is used as the digest.
+fn p256_verifier(public_key: &[u8], message: &[u8], signature: &[u8]) -> Result<(), String> {
+    use p256::ecdsa::{signature::Verifier, Signature, VerifyingKey};
+    let vk = VerifyingKey::from_sec1_bytes(public_key)
+        .map_err(|e| format!("invalid P-256 public key: {e}"))?;
+    let sig = Signature::from_der(signature)
+        .map_err(|e| format!("invalid DER signature: {e}"))?;
+    vk.verify(message, &sig).map_err(|e| format!("verify: {e}"))
 }
 
 /// Per-component + aggregate verification outcome.
