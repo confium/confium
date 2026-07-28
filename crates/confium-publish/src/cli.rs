@@ -6,7 +6,6 @@
 // appending a field here (Open/Closed Principle — no dispatch table to
 // touch).
 //
-// CLI shape: `TODO.roadmap/07-cli-tools.md`.
 
 use std::path::PathBuf;
 

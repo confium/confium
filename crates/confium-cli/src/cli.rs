@@ -4,7 +4,6 @@
 // Each variant maps to a `*Args` struct in this file. Command
 // implementations live in `commands::*` and are dispatched from `main`.
 //
-// Design reference: `TODO.roadmap/07-cli-tools.md`.
 
 use clap::{Args, Parser, Subcommand};
 

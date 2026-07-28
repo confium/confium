@@ -1,11 +1,17 @@
 // Confium command-line tool — entry point.
 //
-// Parses arguments with `clap` and dispatches to the matching command in
-// `commands::*`. Only `version` is implemented today; every other command
-// prints a "not yet implemented" notice and exits with status 2 so callers
-// can tell scaffolding apart from real behavior.
+// Parses arguments with `clap` and dispatches to the matching command
+// in `commands::*`. Nine commands are wired through the dispatcher;
+// their implementation status is documented per-command.
 //
-// Command surface design: `TODO.roadmap/07-cli-tools.md`.
+// Functional commands (real implementation, unit-tested):
+//   version, remove, list, info, search, trust, config
+//
+// Stub commands (skeleton in place; blocked on `confium-net` for
+// HTTP fetching, which lands separately):
+//   install, update
+//
+// See `crates/confium-cli/src/commands/*.rs` for per-command status.
 
 mod cli;
 mod commands;

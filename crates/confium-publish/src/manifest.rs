@@ -1,6 +1,5 @@
 // Generate the registry `manifest.toml` for a published plugin version.
 //
-// The on-disk schema is defined in `TODO.roadmap/06-module-registry.md`
 // and mirrored by the example at
 // `sites/registry/plugins/botan/3.2.0/manifest.toml`. This module owns
 // the serde model that produces that shape and nothing else — signing,

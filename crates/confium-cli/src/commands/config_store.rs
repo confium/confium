@@ -1,7 +1,6 @@
 //! Local configuration (`~/.config/confium/config.toml`).
 //!
 //! The config file mirrors the schema documented in
-//! `TODO.roadmap/07-cli-tools.md` (Configuration section). It is a
 //! flat TOML document with four tables: `[registry]`, `[trust]`,
 //! `[plugins]`, `[preferred]`. We keep it loose (string-keyed) rather
 //! than a strict struct so `config set <dotted.key> <value>` works for
