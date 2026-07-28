@@ -1,0 +1,29 @@
+[package]
+name = "confium-python"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories = ["cryptography", "authentication"]
+keywords = ["crypto", "threshold", "python", "confium"]
+description = "Python bindings for the Confium threshold cryptography framework"
+readme = "README.md"
+
+[lib]
+name = "confium"
+crate-type = ["cdylib"]
+
+[dependencies]
+confium-core = { workspace = true }
+confium-composite = { workspace = true }
+confium-transparency = { workspace = true }
+pyo3 = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+
+[package.metadata.maturin]
+python-source = "python"
+module-name = "confium"
