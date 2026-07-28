@@ -1,3 +1,8 @@
+---
+title: "Transparency logs: security analysis"
+description: How RFC 6962 consistency proofs, witness gossip, and OTS anchoring defeat split-view attacks on Confium transparency logs.
+---
+
 # Transparency Logs: Security Analysis
 
 ## The split-view attack
@@ -42,8 +47,9 @@ If two verifiers have different heads for the same tree size, the
 witnesses detect the inconsistency.
 
 Confium's `confium-tc-coordinator` can serve as a gossip endpoint
-for CNML deployments. Each IA's coordinator shares its tree head
-with BIML's coordinator, which acts as the global witness.
+for institutional deployments. Each IA's coordinator shares its tree
+head with the institutional anchor's coordinator, which acts as the
+global witness.
 
 ### OTS anchoring (defense in depth)
 
@@ -54,16 +60,16 @@ providing an irrefutable time-stamped record of "what head existed
 at time T."
 
 Confium's `confium-transparency::ots` client supports this.
-See the OTS exposure design notes in `docs/security/ots-ers-exposure.md`.
+See the OTS exposure design notes in `docs/security/ots-ers-exposure.mdx`.
 
 ## Recommended deployment
 
-For CNML Mode 3 (highest assurance):
+For Mode 3 (highest assurance):
 
 1. Every transparency tree head is published with a consistency
    proof from the previous head.
-2. Every IA coordinator gossips its tree head to BIML every
-   <configurable interval> (default: 1 hour).
-3. BIML anchors its current tree head in Bitcoin via OTS daily.
+2. Every coordinator gossips its tree head to the institutional
+   anchor every <configurable interval> (default: 1 hour).
+3. The anchor anchors its current tree head in Bitcoin via OTS daily.
 4. Any verifier can independently verify the full chain: consistency
    from the OTS-anchored head to the current head.

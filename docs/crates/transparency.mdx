@@ -1,31 +1,29 @@
-= `confium-transparency` — transparency log
-:toc: left
-:toclevels: 2
-:sectanchors:
-:sectlinks:
-:icons: font
-:source-highlighter: rouge
+---
+title: "confium-transparency — transparency log"
+description: RFC 6962 append-only Merkle transparency log with inclusion and consistency proofs.
+---
+
+# `confium-transparency` — transparency log
 
 Append-only Merkle transparency log implementing RFC 6962 semantics.
 Leaves are arbitrary artifacts (certificate issuances, revocations,
 policy changes); the log provides cryptographic inclusion proofs and
 consistency proofs that any verifier can check independently.
 
-== When to use this crate
+## When to use this crate
 
 Use `confium-transparency` when:
 
-* You are running a Sovereign PKI deployment and need a public,
+- You are running a Sovereign PKI deployment and need a public,
   verifiable record of every certificate issued.
-* You want split-view attack protection: a log operator cannot present
+- You want split-view attack protection: a log operator cannot present
   two different tree heads to different verifiers without detection.
-* You are anchoring state to an external tamper-evident medium
+- You are anchoring state to an external tamper-evident medium
   (Bitcoin via OpenTimestamps, RFC 4998 ERS archival).
 
-== Public API
+## Public API
 
-[source,rust]
-----
+```rust
 use confium_transparency::{MerkleTree, MerkleEntry, ArtifactType};
 
 let mut tree = MerkleTree::new();
@@ -35,35 +33,34 @@ let root: [u8; 32] = tree.root();
 
 let proof = tree.inclusion_proof(seq)?;
 confium_transparency::MerkleTree::verify_inclusion(&entry, &proof, root)?;
-----
+```
 
 For a consistency proof between two tree sizes:
 
-[source,rust]
-----
+```rust
 let proof: Vec<[u8; 32]> = tree.consistency_proof(old_size)?;
 confium_transparency::MerkleTree::verify_consistency(
     old_root, new_root, old_size, new_size, &proof,
 )?;
-----
+```
 
-== Leaf hashing
+## Leaf hashing
 
 RFC 6962 domain separation:
 
-* Leaves are hashed as `SHA-256(0x01 || entry_hash)`.
-* Internal nodes are hashed as `SHA-256(0x02 || left || right)`.
+- Leaves are hashed as `SHA-256(0x01 || entry_hash)`.
+- Internal nodes are hashed as `SHA-256(0x02 || left || right)`.
 
 This prevents leaf values from being interpreted as internal nodes and
 vice versa.
 
-== Inclusion proofs
+## Inclusion proofs
 
 An inclusion proof is a sequence of `(sibling_hash, side)` pairs. The
 verifier starts with the leaf hash, combines it with each sibling in
 order, and checks the final result equals the published root.
 
-== Consistency proofs
+## Consistency proofs
 
 A consistency proof shows that the first `old_size` leaves of the
 current tree hash to the same root as a tree of exactly `old_size`
@@ -72,7 +69,7 @@ operator presents tree head `N` to verifier A and a different tree
 head `N` to verifier B, at least one of them will fail a consistency
 check against the true history.
 
-== Defenses against split-view
+## Defenses against split-view
 
 Consistency proofs alone are necessary but not sufficient — verifiers
 must also communicate (gossip) so they know about each other's heads.
@@ -86,22 +83,21 @@ Three layers of defense:
    blockchain, providing an irrefutable "what head existed at time T"
    record. Implemented in `confium-ots`.
 
-== Security notes
+## Security notes
 
-* **SHA-256 only**: the crate does not support alternative hash
+- **SHA-256 only**: the crate does not support alternative hash
   functions. SHA-256 is the RFC 6962 default and what every verifier
   expects.
-* **Sequence numbers are u64**: maximum tree size is 2^64 − 1 entries.
+- **Sequence numbers are u64**: maximum tree size is 2^64 − 1 entries.
   At 1 entry per second, that's ~584 billion years of headroom.
-* **No deletion**: the tree is append-only by construction. There is
+- **No deletion**: the tree is append-only by construction. There is
   no `remove` API and there will never be one.
-* **In-memory by default**: the tree holds all entries in memory. For
+- **In-memory by default**: the tree holds all entries in memory. For
   production deployments, wrap with a persistent backend (lmdb, rust-rocksdb).
 
-== Related
+## Related
 
-* xref:composite.adoc[`confium-composite`] — used to sign tree heads.
-* https://www.confium.org/docs/transparency-logs/[Transparency logs
-  concept page] on the public website.
-* link:../security/transparency-logs.md[Security analysis: split-view
-  attack defenses].
+- [`confium-composite`](./composite.mdx) — used to sign tree heads.
+- [Transparency logs concept page](https://www.confium.org/docs/transparency-logs/)
+  on the public website.
+- [Security analysis: split-view attack defenses](../security/transparency-logs.mdx).

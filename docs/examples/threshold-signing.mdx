@@ -1,49 +1,44 @@
-= Threshold signing end-to-end
-:toc: left
-:toclevels: 2
-:sectanchors:
-:sectlinks:
-:icons: font
-:source-highlighter: rouge
+---
+title: Threshold signing end-to-end
+description: Worked example — generate a P-256 keypair, Shamir-split across 5 parties with threshold 3, recover, and sign.
+---
+
+# Threshold signing end-to-end
 
 A worked example: generate a P-256 keypair, Shamir-split it across 5
 parties with threshold 3, recover from any 3, and sign a message. The
 complete Ruby equivalent lives at
-https://github.com/confium/confium-ruby/blob/main/examples/threshold_signing.rb[`examples/threshold_signing.rb`];
+[`examples/threshold_signing.rb`](https://github.com/confium/confium-ruby/blob/main/examples/threshold_signing.rb);
 the Rust outline below mirrors it.
 
-== Setup
+## Setup
 
-[source,sh]
-----
+```sh
 cargo add confium-tc-frost-p256
-----
+```
 
-== Generate a keypair
+## Generate a keypair
 
-[source,rust]
-----
+```rust
 use confium_tc_frost_p256::FrostP256;
 
 let kp = FrostP256::generate_keypair()?;
 println!("secret: {:x?}", &kp.private_key[..8]);
-----
+```
 
-== Split into 5 shares, threshold 3
+## Split into 5 shares, threshold 3
 
-[source,rust]
-----
+```rust
 let shares = FrostP256::split_secret(&kp.private_key, 3, 5)?;
 println!("split into {} shares, threshold = 3", shares.len());
 for (i, s) in shares.iter().enumerate() {
     println!("  share[{}]: x={}, y={:x?}", i, s.x, &s.y_bytes[..8]);
 }
-----
+```
 
-== Recover from any 3 of the 5
+## Recover from any 3 of the 5
 
-[source,rust]
-----
+```rust
 let subset = [
     shares[0].as_ref(),
     shares[2].as_ref(),
@@ -52,9 +47,9 @@ let subset = [
 let recovered = FrostP256::recover_secret(&subset)?;
 assert_eq!(recovered, kp.private_key);
 println!("recovered from shares [0, 2, 4]: MATCH");
-----
+```
 
-== Insufficient shares return the wrong answer
+## Insufficient shares return the wrong answer
 
 With only 2 shares (below the threshold), `recover_secret` returns a
 *valid* P-256 scalar that is **not** the original secret. This is the
@@ -62,48 +57,46 @@ mathematical nature of Shamir: any T−1 shares interpolate to a
 different polynomial that passes through `(0, secret')` for some
 random-looking `secret'`.
 
-[source,rust]
-----
+```rust
 let subset = [shares[0].as_ref(), shares[1].as_ref()];
 let wrong = FrostP256::recover_secret(&subset)?;
 assert_ne!(wrong, kp.private_key);
 println!("recovered from shares [0, 1]: WRONG (expected)");
-----
+```
 
 The recovery API does not — and cannot — distinguish "right" from
 "wrong" without comparing to the original secret. Callers must enforce
 the threshold in the orchestrating logic.
 
-== Sign with the original key
+## Sign with the original key
 
-[source,rust]
-----
+```rust
 let sig = FrostP256::sign(&kp.private_key, b"threshold test")?;
 println!("signature: der.size={}, fixed.size={}",
     sig.der.len(), sig.fixed.len());
-----
+```
 
 The signature is a standard ECDSA-P256 signature in two encodings:
 
-* `sig.der` — DER-encoded per RFC 3279 (what X.509 and TLS expect).
-* `sig.fixed` — fixed-length 64-byte `(r || s)` (what some protocols
+- `sig.der` — DER-encoded per RFC 3279 (what X.509 and TLS expect).
+- `sig.fixed` — fixed-length 64-byte `(r || s)` (what some protocols
   prefer for compactness).
 
 Any standard ECDSA-P256 verifier (OpenSSL, BoringSSL, Botan, the
 `p256` crate's `verify` function) will accept this signature.
 
-== Multi-party signing
+## Multi-party signing
 
 For real deployments, signers do not hold the full secret — they hold
 individual shares. A signing session collects T signature shares and
 aggregates them into the final signature without ever reconstructing
 the secret. That orchestration is handled by
-link:../crates/coordinator.adoc[`confium-tc-coordinator`].
+[`confium-tc-coordinator`](../crates/coordinator.mdx).
 
-== Related
+## Related
 
-* link:../crates/frost-p256.adoc[`confium-tc-frost-p256` deep dive].
-* link:../crates/coordinator.adoc[`confium-tc-coordinator`] for the
+- [`confium-tc-frost-p256` deep dive](../crates/frost-p256.mdx).
+- [`confium-tc-coordinator`](../crates/coordinator.mdx) for the
   multi-party session protocol.
-* https://www.confium.org/concepts/threshold-crypto-101/[Threshold
-  crypto 101] on the public website.
+- [Threshold crypto 101](https://www.confium.org/concepts/threshold-crypto-101/)
+  on the public website.

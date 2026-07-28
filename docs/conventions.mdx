@@ -1,50 +1,43 @@
-= Conventions
-:toc: left
-:toclevels: 3
-:sectanchors:
-:sectlinks:
-:icons: font
-:source-highlighter: rouge
+---
+title: Conventions
+description: The conventions every Confium crate follows — lints, edition 2024 quirks, error handling, trait design, testing.
+---
+
+# Conventions
 
 The conventions every Confium crate follows. New crates should adopt
 these from day one; existing crates are expected to comply.
 
-== Lints
+## Lints
 
 Every crate's `lib.rs` (and binary `main.rs`) starts with:
 
-[source,rust]
-----
+```rust
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
-----
+```
 
 `unsafe_code` is forbidden — there is no opt-out. All FFI is
 centralized in `confium-core` and uses the edition 2024
 `#[unsafe(no_mangle)]` form.
 
-== Edition 2024 quirks
+## Edition 2024 quirks
 
 Confium targets Rust stable 1.85+ (edition 2024). The migration from
 edition 2021 introduced three pattern changes to watch for:
 
-[cols="1,4"]
-|===
-| `#[no_mangle]` | Becomes `#[unsafe(no_mangle)]`. Bare `#[no_mangle]`
-  is now a hard error in cdylib export sites.
-| `ref` bindings | No explicit `ref` in implicitly-borrowing pattern
-  contexts. The compiler inserts it for you.
-| `.map_err(\|e\| { ...; e })` | Becomes `.inspect_err(\|_e| { ... })`
-  for side-effect-only error inspection.
-|===
+| Before | After |
+| --- | --- |
+| `#[no_mangle]` | `#[unsafe(no_mangle)]`. Bare `#[no_mangle]` is now a hard error in cdylib export sites. |
+| Explicit `ref` bindings | No explicit `ref` in implicitly-borrowing pattern contexts. The compiler inserts it for you. |
+| `.map_err(\|e\| { ...; e })` | `.inspect_err(\|_e| { ... })` for side-effect-only error inspection. |
 
-== Error handling
+## Error handling
 
 Prefer `thiserror` for new crates. It produces clean typed enums with
 descriptive variants:
 
-[source,rust]
-----
+```rust
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -61,43 +54,39 @@ pub enum MerkleError {
     #[error("inclusion proof failed for sequence {0}")]
     InclusionFailed(u64),
 }
-----
+```
 
-=== Legacy Snafu 0.8
+### Legacy Snafu 0.8
 
 Some older crates (`confium-core` and friends) use Snafu 0.8 instead.
 The conventions there:
 
-* Context structs use the `Snafu` suffix:
+- Context structs use the `Snafu` suffix:
   `NullPointer` variant → `NullPointerSnafu` struct.
-* The `Error` suffix on variant names is stripped:
+- The `Error` suffix on variant names is stripped:
   `PluginInternalError` → `PluginInternalSnafu`.
-* Visibility attribute: `#[snafu(visibility(pub(crate)))]`.
+- Visibility attribute: `#[snafu(visibility(pub(crate)))]`.
 
 When touching a Snafu crate, do not introduce a parallel `thiserror`
 dependency. Migrate fully if you migrate at all.
 
-== p256 / elliptic-curve API notes
+## p256 / elliptic-curve API notes
 
 When working with the `p256` crate (used in P-256 ECDSA, ElGamal, and
 FROST-P256):
 
-[cols="1,4"]
-|===
-| `Scalar::from_repr(FieldBytes)` | Returns `CtOption<Scalar>`, not
-  `Option<Scalar>`.
-| Point multiplication | `ProjectivePoint::GENERATOR * &scalar` is
-  canonical.
-| `CtOption<T>` → `Option<T>` | `Option::<T>::from(ct_opt)`.
-| Random scalars | `Scalar::random(rand_core::OsRng)` via
-  `elliptic_curve::Field`.
-|===
+| API | Note |
+| --- | --- |
+| `Scalar::from_repr(FieldBytes)` | Returns `CtOption<Scalar>`, not `Option<Scalar>`. |
+| Point multiplication | `ProjectivePoint::GENERATOR * &scalar` is canonical. |
+| `CtOpt<T>` → `Option<T>` | `Option::<T>::from(ct_opt)`. |
+| Random scalars | `Scalar::random(rand_core::OsRng)` via `elliptic_curve::Field`. |
 
 Never use `.unwrap()` on `CtOption` — it loses the constant-time
 property. Convert to `Option` first, then handle the `None` case
 explicitly.
 
-== Trait design
+## Trait design
 
 Confium favors OCP-compliant traits over enums-with-switches. Adding
 a new backend is a new file that implements an existing trait — no
@@ -105,21 +94,20 @@ modifications to the trait itself or to dispatchers that consume it.
 
 Traits are named after the *capability*, not the *implementation*:
 
-* `Encapsulator` (not `KemBackend`)
-* `Aead` (not `AeadAlgorithm`)
-* `ThresholdSigner` (not `FrostSigner`)
-* `QuorumDispatcher` (not `ThresholdPolicy`)
+- `Encapsulator` (not `KemBackend`)
+- `Aead` (not `AeadAlgorithm`)
+- `ThresholdSigner` (not `FrostSigner`)
+- `QuorumDispatcher` (not `ThresholdPolicy`)
 
 If a trait has multiple methods and an implementation only
 meaningfully provides some, split the trait rather than provide
 default no-op implementations.
 
-== Module layout
+## Module layout
 
 A typical crate:
 
-[source,sh]
-----
+```
 crates/confium-example/
 ├── Cargo.toml
 ├── README.md            # optional — generated from lib.rs docs otherwise
@@ -131,38 +119,35 @@ crates/confium-example/
     ├── tests.rs         # inline integration tests
     └── tests/           # larger integration tests
         └── smoke.rs
-----
+```
 
 For small crates, a single `lib.rs` is fine. Split when a file crosses
 ~500 lines or when responsibilities start to mix.
 
-== Testing
+## Testing
 
-* Unit tests live inline in `#[cfg(test)] mod tests { ... }`.
-* Integration tests live in `tests/*.rs`.
-* Tests must use real instances, not mocks. No `double()`-style fakes.
-* Test names follow `behavior_condition_expected` snake_case.
-* Every public method has at least one happy-path test and at least
+- Unit tests live inline in `#[cfg(test)] mod tests { ... }`.
+- Integration tests live in `tests/*.rs`.
+- Tests must use real instances, not mocks. No `double()`-style fakes.
+- Test names follow `behavior_condition_expected` snake_case.
+- Every public method has at least one happy-path test and at least
   one validation / error test.
 
 Run the full suite:
 
-[source,sh]
-----
+```sh
 cargo test --workspace
-----
+```
 
 Single test:
 
-[source,sh]
-----
+```sh
 cargo test -p confium-tc-frost-p256 integration
-----
+```
 
-== Cargo commands
+## Cargo commands
 
-[source,sh]
-----
+```sh
 cargo build --workspace                                # build all 43 crates
 cargo test --workspace                                 # full test suite
 cargo fmt --all --check                                # format check
@@ -170,15 +155,15 @@ cargo clippy --workspace --all-targets -- -D warnings  # lint (warnings are erro
 cargo doc --workspace --no-deps                        # doc build
 cargo deny check licenses advisories sources bans      # license / advisory / ban gates
 typos                                                  # spell check
-----
+```
 
-== Commits and PRs
+## Commits and PRs
 
-* Conventional commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`,
+- Conventional commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`,
   `ci:`, `chore:`). They drive automated version bumps via release-plz.
-* Never commit to `main` — always via PR.
-* Breaking changes use `!` (e.g. `feat!: ...`) and include a migration
+- Never commit to `main` — always via PR.
+- Breaking changes use `!` (e.g. `feat!: ...`) and include a migration
   note in the PR description.
-* Never push git tags — the release bot handles releases.
-* Never add `Co-authored-by` trailers for AI tools. The commit author
+- Never push git tags — the release bot handles releases.
+- Never add `Co-authored-by` trailers for AI tools. The commit author
   is the user; tools do not get co-author credit.

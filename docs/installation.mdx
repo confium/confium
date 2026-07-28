@@ -1,118 +1,106 @@
-= Installation
-:toc: left
-:toclevels: 3
-:sectanchors:
-:sectlinks:
-:icons: font
-:source-highlighter: rouge
+---
+title: Installation
+description: Three ways to install Confium — published crates, Nix flake, build from source.
+---
+
+# Installation
 
 Three installation paths: published crates, Nix flake, and build from
 source. Pick the one that matches your workflow.
 
-== Option 1: crates.io (recommended for libraries)
+## Option 1: crates.io (recommended for libraries)
 
 Add Confium to your `Cargo.toml`:
 
-[source,toml]
-----
+```toml
 [dependencies]
 confium-core = "0.2"
-----
+```
 
 Or via the CLI:
 
-[source,sh]
-----
+```sh
 cargo add confium-core
-----
+```
 
 The cdylib is built as `target/{debug,release}/libconfium.{so,dylib,dll}`
 and exposes the `cfm_*` C ABI.
 
-== Option 2: Nix flake (recommended for development)
+## Option 2: Nix flake (recommended for development)
 
 A fully reproducible dev shell is provided via `flake.nix`. It pins
 Rust 1.85+ (edition 2024), cbindgen, CMake, Boost, asciidoctor, and
 everything else required to build the workspace and run CI locally.
 
-[source,sh]
-----
+```sh
 nix develop
-----
+```
 
 Inside the shell, all `cargo` commands work without further setup:
 
-[source,sh]
-----
+```sh
 cargo build --workspace
 cargo test --workspace
-----
+```
 
-== Option 3: build from source
+## Option 3: build from source
 
-=== Prerequisites
+### Prerequisites
 
-* Rust stable 1.85+ via https://rustup.rs/[rustup]. The toolchain is
+- Rust stable 1.85+ via [rustup](https://rustup.rs/). The toolchain is
   pinned in `rust-toolchain.toml`.
-* CMake 3.15+ (only required for the C-binding tests under `cpp-tests/`).
-* `cbindgen` 0.29+ (`cargo install cbindgen`) — only required to
+- CMake 3.15+ (only required for the C-binding tests under `cpp-tests/`).
+- `cbindgen` 0.29+ (`cargo install cbindgen`) — only required to
   regenerate `target/confium.h`.
-* Boost (only required for `cpp-tests/`).
-* Asciidoctor (`gem install asciidoctor`) — only required to build this
+- Boost (only required for `cpp-tests/`).
+- Asciidoctor (`gem install asciidoctor`) — only required to build this
   docs site.
 
-=== Clone and build
+### Clone and build
 
-[source,sh]
-----
+```sh
 git clone https://github.com/confium/confium.git
 cd confium
 cargo build --workspace
-----
+```
 
-=== Run the test suite
+### Run the test suite
 
-[source,sh]
-----
+```sh
 cargo test --workspace
-----
+```
 
 The suite covers 725+ unit and integration tests across all 43 crates.
 
-== Verifying the install
+## Verifying the install
 
 A quick smoke test:
 
-[source,sh]
-----
+```sh
 cargo run -p confium-cli -- --version
 cargo run -p confium-cli -- hash --algorithm sha256 --input "hello"
-----
+```
 
 Expected output: a version string, then the SHA-256 digest of `"hello"`.
 
-== Workspace dependencies
+## Workspace dependencies
 
 When you depend on multiple Confium crates, prefer the workspace
 shortcut in your `Cargo.toml`:
 
-[source,toml]
-----
+```toml
 [dependencies]
 confium-core.workspace = true
 confium-composite.workspace = true
 confium-pki.workspace = true
-----
+```
 
 This requires adding the same keys to `[workspace.dependencies]` in
 your own workspace root, mirroring the layout in
-link:https://github.com/confium/confium/blob/main/Cargo.toml[Confium's
-own `Cargo.toml`].
+[Confium's own `Cargo.toml`](https://github.com/confium/confium/blob/main/Cargo.toml).
 
-== Next steps
+## Next steps
 
-* xref:workspace-map.adoc[Workspace map] — find the crate for your use
-  case.
-* xref:architecture.adoc[Architecture] — understand the engine.
-* xref:develop.adoc[Developer guide] — for contributing to Confium
-  itself.
+- [Workspace map](./workspace-map.mdx) — find the crate for your use case.
+- [Architecture](./architecture.mdx) — understand the engine.
+- [Developer guide](./develop.mdx) — for contributing to Confium itself.

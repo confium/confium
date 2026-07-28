@@ -1,31 +1,29 @@
-= `confium-tc-frost-p256` — threshold ECDSA on P-256
-:toc: left
-:toclevels: 2
-:sectanchors:
-:sectlinks:
-:icons: font
-:source-highlighter: rouge
+---
+title: "confium-tc-frost-p256 — threshold ECDSA on P-256"
+description: Real P-256 Shamir secret sharing and threshold ECDSA signing with the FROST protocol.
+---
+
+# `confium-tc-frost-p256` — threshold ECDSA on P-256
 
 Real P-256 Shamir secret sharing and threshold ECDSA signing. The
 crate provides key generation (or import), secret splitting into N
 shares with threshold T, share distribution, signing with any T
 shares, and signature recovery.
 
-== When to use this crate
+## When to use this crate
 
 Use `confium-tc-frost-p256` when:
 
-* You need P-256 ECDSA signatures (the curve used by TLS, code
+- You need P-256 ECDSA signatures (the curve used by TLS, code
   signing, X.509) where no single party holds the full key.
-* You want a software-only threshold scheme (no HSM coordination
+- You want a software-only threshold scheme (no HSM coordination
   required).
-* You are building a Mode 2 PKI drop-in that must produce signatures
+- You are building a Mode 2 PKI drop-in that must produce signatures
   indistinguishable from single-key ECDSA-P256.
 
-== Public API
+## Public API
 
-[source,rust]
-----
+```rust
 use confium_tc_frost_p256::FrostP256;
 
 // Generate a keypair.
@@ -46,38 +44,38 @@ assert_eq!(recovered, kp.private_key);
 let sig = FrostP256::sign(&kp.private_key, b"threshold test")?;
 // sig.der     — DER-encoded ECDSA signature (RFC 3279)
 // sig.fixed   — fixed-length (r || s) encoding
-----
+```
 
-== Shamir secret sharing
+## Shamir secret sharing
 
 The secret is split into `N` shares using a polynomial of degree
 `T − 1` over the scalar field of P-256. Any `T` shares uniquely
 determine the polynomial and thus the secret. Fewer than `T` shares
 reveal zero information about the secret.
 
-== Recovery
+## Recovery
 
 Recovery uses Lagrange interpolation at x = 0. The crate accepts any
 subset of T or more shares; if more than T are provided, the result
 is overdetermined and the crate verifies consistency.
 
-== Security notes
+## Security notes
 
-* **No share reuse**: each signing session must use fresh random
+- **No share reuse**: each signing session must use fresh random
   nonces. Reusing a nonce across two sessions leaks the private key.
   The crate uses `OsRng` for nonce generation by default.
-* **Constant-time scalar arithmetic**: via the `p256` crate's
+- **Constant-time scalar arithmetic**: via the `p256` crate's
   `CtOption` API. Never convert `CtOption` to `Option` and then
   branch on it for secret data.
-* **Share format**: shares are `(x, y)` pairs over the P-256 scalar
+- **Share format**: shares are `(x, y)` pairs over the P-256 scalar
   field. The crate serializes them as fixed-length byte arrays.
-* **No network code**: the crate is pure crypto. Multi-party session
+- **No network code**: the crate is pure crypto. Multi-party session
   orchestration is provided by `confium-tc-coordinator`.
 
-== Related
+## Related
 
-* link:../examples/threshold-signing.adoc[Threshold signing example]
-  — end-to-end Ruby demo using this crate.
-* xref:coordinator.adoc[`confium-tc-coordinator`] — for multi-party
+- [Threshold signing example](../examples/threshold-signing.mdx) —
+  end-to-end demo using this crate.
+- [`confium-tc-coordinator`](./coordinator.mdx) — for multi-party
   sessions across network boundaries.
-* xref:reshare.adoc[`confium-tc-reshare`] — proactive share refresh.
+- [`confium-tc-reshare`](./reshare.mdx) — proactive share refresh.
