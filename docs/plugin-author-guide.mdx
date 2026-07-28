@@ -1,10 +1,9 @@
-= Plugin Author Guide
-:toc: left
-:toclevels: 3
-:sectanchors:
-:sectlinks:
-:icons: font
-:source-highlighter: rouge
+---
+title: Plugin author guide
+description: Step-by-step guide to writing, building, and shipping a Confium plugin. Bootstrap symbols, interface implementation, dependencies, publishing.
+---
+
+# Plugin author guide
 
 This is a step-by-step guide to writing, building, and shipping a Confium
 plugin. A Confium plugin is a dynamic library (`.so` / `.dylib` / `.dll`)
@@ -13,38 +12,36 @@ per-interface implementation functions.
 
 For the host-side API that loads and drives plugins, see the generated
 header `target/confium.h`. For the engine architecture, see
-xref:architecture.adoc[the architecture page].
+[the architecture page](./architecture.mdx).
 
-== How a plugin is structured
+## How a plugin is structured
 
 Every plugin is a Rust `cdylib` that depends on `confium-api` and uses the
 procedural macros from `confium-macros` to generate the contract symbols.
 At minimum, a plugin exports:
 
-* `cfmp_interface_version` — returns the plugin-contract ABI version.
-* `cfmp_initialize(cfm, opts)` — called once after load; receive a host
+- `cfmp_interface_version` — returns the plugin-contract ABI version.
+- `cfmp_initialize(cfm, opts)` — called once after load; receive a host
   handle and options.
-* `cfmp_finalize(cfm)` — called before unload; release resources.
-* `cfmp_query_interfaces` — returns a packed stream naming the interface
+- `cfmp_finalize(cfm)` — called before unload; release resources.
+- `cfmp_query_interfaces` — returns a packed stream naming the interface
   types and versions the plugin implements.
-* `cfmp_metadata` *(optional)* — returns static metadata (name, version,
+- `cfmp_metadata` *(optional)* — returns static metadata (name, version,
   vendor, license) for the registry.
 
 For each interface it advertises (e.g. `hash`), the plugin exports the
 corresponding `cfmp_<interface>_*` symbols at the negotiated version.
 
-== Step 1: create the crate
+## Step 1: create the crate
 
-[source,sh]
-----
+```sh
 cargo new --lib my-plugin
 cd my-plugin
-----
+```
 
 Edit `Cargo.toml`:
 
-[source,toml]
-----
+```toml
 [package]
 name = "my-plugin"
 version = "0.1.0"
@@ -56,16 +53,15 @@ crate-type = ["cdylib"]
 [dependencies]
 confium-api = { path = "../confium/crates/confium-api" }
 confium-macros = { path = "../confium/crates/confium-macros" }
-----
+```
 
-== Step 2: declare the plugin
+## Step 2: declare the plugin
 
 Use the `#[confium::plugin]` attribute macro to emit the bootstrap
 symbols. The macro takes metadata and the list of interfaces you
 implement.
 
-[source,rust]
-----
+```rust
 use confium_api::PluginMetadata;
 use confium_macros::confium_plugin;
 
@@ -92,17 +88,16 @@ impl MyPlugin {
         // ...
     }
 }
-----
+```
 
-== Step 3: implement an interface
+## Step 3: implement an interface
 
 For the `hash` interface, implement the per-instance lifecycle: create,
 update, finalize, reset, clone, and size queries. The
 `#[confium::interface]` macro generates the `cfmp_hash_*` symbols that
 wire your Rust impl into the C ABI.
 
-[source,rust]
-----
+```rust
 use confium_macros::confium_interface;
 
 pub struct Sha256 {
@@ -140,16 +135,15 @@ impl Sha256 {
     /// Internal block size in bytes (e.g. 64 for SHA-256).
     pub fn block_size(&self) -> u32 { 64 }
 }
-----
+```
 
-== Step 4: declare dependencies (optional)
+## Step 4: declare dependencies (optional)
 
 If your plugin depends on another provider (e.g. you wrap a `botan`
 symmetric primitive), declare it so Confium refuses to load you unless the
 dependency is satisfied:
 
-[source,rust]
-----
+```rust
 #[confium_plugin(
     name = "my-aead",
     // ...
@@ -158,84 +152,81 @@ dependency is satisfied:
     ]
 )]
 pub struct MyPlugin;
-----
+```
 
 Confium resolves dependencies before invoking `cfmp_initialize`. An unmet
 dependency fails the load with `Error::PluginDependencyUnmet`.
 
-== Step 5: build
+## Step 5: build
 
-[source,sh]
-----
+```sh
 cargo build --release
-----
+```
 
 The output is `target/release/libmy_plugin.so` (Linux),
 `libmy_plugin.dylib` (macOS), or `my_plugin.dll` (Windows).
 
-== Step 6: load and test
+## Step 6: load and test
 
 Use the CLI to load your plugin and exercise it:
 
-[source,sh]
-----
+```sh
 confium load --path ./target/release/libmy_plugin.so --name my-hash
 confium hash --provider my-hash --algorithm sha256 --input "hello"
-----
+```
 
 For automated testing, see `crates/confium-mock-plugin/` for a reference
 implementation and `crates/confium-test-harness/` for the NIST-style test
 vectors harness.
 
-== Step 7: publish to the registry
+## Step 7: publish to the registry
 
 Once your plugin is ready, publish it to the Confium plugin registry so
 others can discover and verify it:
 
-. Generate a manifest describing the plugin (name, version, interfaces,
-  checksum, signature).
-. Submit it as a PR against `sites/registry/plugins/`.
-. The registry's publisher-key and trust-root model is documented under
-  `sites/registry/`.
+1. Generate a manifest describing the plugin (name, version, interfaces,
+   checksum, signature).
+2. Submit it as a PR against `sites/registry/plugins/`.
+3. The registry's publisher-key and trust-root model is documented under
+   `sites/registry/`.
 
-== Reference: the bootstrap symbols
+## Reference: the bootstrap symbols
 
-[cols="1,4"]
-|===
-| `cfmp_interface_version` | Returns the plugin-contract ABI version this plugin targets.
-| `cfmp_initialize(cfm, opts)` | One-time setup. `cfm` is an opaque host handle; `opts` is the loader-supplied option bag.
-| `cfmp_finalize(cfm)` | One-time teardown.
-| `cfmp_query_interfaces` | Returns `name\0version\0` pairs terminated by an empty name. Drives per-interface version negotiation.
-| `cfmp_metadata` *(optional)* | Returns a `*const CFMPluginMetadata` for the registry. Omit if you do not want to be listed.
-| `cfmp_query_dependencies` *(optional)* | Returns a `*const CFMDependency` list. Confium resolves these before `cfmp_initialize`.
-|===
+| Symbol | Role |
+| --- | --- |
+| `cfmp_interface_version` | Returns the plugin-contract ABI version this plugin targets. |
+| `cfmp_initialize(cfm, opts)` | One-time setup. `cfm` is an opaque host handle; `opts` is the loader-supplied option bag. |
+| `cfmp_finalize(cfm)` | One-time teardown. |
+| `cfmp_query_interfaces` | Returns `name\0version\0` pairs terminated by an empty name. Drives per-interface version negotiation. |
+| `cfmp_metadata` *(optional)* | Returns a `*const CFMPluginMetadata` for the registry. Omit if you do not want to be listed. |
+| `cfmp_query_dependencies` *(optional)* | Returns a `*const CFMDependency` list. Confium resolves these before `cfmp_initialize`. |
 
-== Reference: interface wire formats
+## Reference: interface wire formats
 
 Interface versioning is independent per interface. A single plugin can
 implement `hash` v0 and `cipher` v1. The `cfmp_query_interfaces` payload
 encodes this as:
 
-----
+```
 b"hash\0\x00\x00cipher\0\x01\x00\0"   // hash v0, cipher v1
-----
+```
 
 Each entry is `name` + `\0` + one version byte + `\0`. The list is
 terminated by an empty name (a leading `\0`).
 
-== Troubleshooting
+## Troubleshooting
 
-Plugin fails to load (`Error::PluginDependencyUnmet`)::
-  A declared dependency is missing or out of range. Run `confium list` to
-  see loaded providers and check the version range in your
-  `Dependency::provider(...)` call.
+**Plugin fails to load (`Error::PluginDependencyUnmet`)**:
+A declared dependency is missing or out of range. Run `confium list` to
+see loaded providers and check the version range in your
+`Dependency::provider(...)` call.
 
-Plugin loads but interface calls return `Error::InterfaceNotSupported`::
-  The interface name in `cfmp_query_interfaces` does not match what the
-  host requested, or the version byte is higher than the host supports.
-  Lower the version or fix a typo in the interface name.
+**Plugin loads but interface calls return `Error::InterfaceNotSupported`**:
+The interface name in `cfmp_query_interfaces` does not match what the
+host requested, or the version byte is higher than the host supports.
+Lower the version or fix a typo in the interface name.
 
-`cfmp_*` symbols missing from the built library::
-  Ensure `crate-type = ["cdylib"]` is set in `[lib]` and that each
-  implementation is covered by `#[confium::interface]`. Run
-  `nm -D target/release/libmy_plugin.so | grep cfmp` to verify exports.
+**`cfmp_*` symbols missing from the built library**:
+Ensure `crate-type = ["cdylib"]` is set in `[lib]` and that each
+implementation is covered by `#[confium::interface]`. Run
+`nm -D target/release/libmy_plugin.so | grep cfmp` to verify exports.

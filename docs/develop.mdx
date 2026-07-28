@@ -1,0 +1,119 @@
+---
+title: Developer guide
+description: Building, testing, and contributing to Confium itself. Prerequisites, common commands, workspace layout, PR conventions.
+---
+
+# Developer guide
+
+This guide covers building, testing, and contributing to Confium itself.
+For writing a plugin, see [the plugin author guide](./plugin-author-guide.mdx).
+
+## Prerequisites
+
+Confium targets stable Rust 1.85+ (edition 2024). The toolchain is pinned
+via `rust-toolchain.toml`. Two supported setup paths:
+
+### Nix (recommended)
+
+A `flake.nix` provides a fully reproducible dev shell with every dependency
+(Rust, cbindgen, CMake, Boost, etc.):
+
+```sh
+nix develop
+```
+
+### Manual
+
+Install Rust via [rustup](https://rustup.rs/), plus:
+
+- CMake 3.15+ (for the C-binding tests under `cpp-tests/`)
+- `cbindgen` 0.29+ (`cargo install cbindgen`)
+- Boost (for `cpp-tests/`)
+
+## Common commands
+
+```sh
+cargo build --workspace                       # build all 43 crates
+cargo test --workspace                        # run the full workspace test suite
+cargo fmt --all --check                       # format check
+cargo clippy --workspace --all-targets -- -D warnings   # lint (warnings are errors)
+cargo doc --workspace --no-deps               # build rustdoc
+cargo deny check licenses advisories sources bans       # license/advisory/ban checks
+typos                                         # spell check
+nix develop                                   # enter dev shell
+```
+
+## C bindings
+
+The host C ABI (`cfm_*`) is generated from `crates/confium-core` via
+`cbindgen.toml` at the repo root:
+
+```sh
+cbindgen --config cbindgen.toml --crate confium-core --output target/confium.h
+```
+
+The CMake build regenerates this header automatically when
+`BUILD_C_BINDINGS=ON`. C++ binding tests under `cpp-tests/` link against
+the generated header and exercise the version, hash, and other interfaces:
+
+```sh
+mkdir build && cd build
+cmake -DBUILD_TESTING=yes -DBUILD_C_BINDINGS=yes ..
+cmake --build .
+ctest -C Debug -V
+```
+
+## Pre-commit hooks
+
+Two options mirror CI exactly:
+
+Framework version:
+
+```sh
+pre-commit install
+```
+
+Shell version (no dependencies):
+
+```sh
+cp .githooks/pre-commit .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+To skip temporarily: `SKIP_PRECOMMIT=1 git commit ...` or `touch .skip-precommit`.
+
+## Workspace layout
+
+| Path | Role |
+| --- | --- |
+| `crates/` | All Rust crates (workspace members). See [the workspace map](./workspace-map.mdx) for the full breakdown by category. |
+| `crates/confium-core/` | The engine: plugin loader, registry, crypto dispatch, host FFI. |
+| `crates/confium-api/` | Shared types and the plugin contract (`cfmp_*`). |
+| `crates/confium-macros/` | Procedural macros that generate `cfmp_*` plugin scaffolding. |
+| `crates/confium-cli/` | The `confium` command-line tool. |
+| `crates/confium-daemon/` | Long-running service mode. |
+| `crates/confium-net*/` | Networking primitives (QUIC, TCP, WebSocket). |
+| `crates/confium-store*/` | Key store backends (local, cloud, PKCS#11, TPM). |
+| `crates/confium-tc*/` | Threshold-cryptography protocol implementations. |
+| `cpp-tests/` | C++ tests for the generated C header. |
+| `sites/registry/` | The plugin-registry GitHub Pages site. |
+| `docs/` | This documentation site. |
+
+## Pull requests
+
+1. Fork and create a feature branch from `main`.
+2. Use [conventional commit](https://www.conventionalcommits.org/) messages
+   (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `ci:`, `chore:`).
+   These drive automated versioning via release-plz.
+3. Ensure CI is green locally and on the PR.
+4. Breaking changes must include `!` (e.g. `feat!: ...`) and a migration
+   note in the PR description.
+
+Releases are automated: merging to `main` triggers `release-plz`, which
+opens a release PR with the version bump and changelog. Merging that PR
+publishes to crates.io.
+
+## Releases
+
+Never push tags directly — the release bot handles it. See
+`CHANGELOG.md` for published versions.

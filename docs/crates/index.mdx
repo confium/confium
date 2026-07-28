@@ -1,0 +1,39 @@
+---
+title: Crate deep dives
+description: Per-crate orientation pages covering purpose, public API, and security notes for individual Confium crates.
+---
+
+# Crate deep dives
+
+Per-crate orientation pages. Each covers purpose, public API, and
+security notes for one Confium crate. For auto-generated API docs, see
+[docs.confium.org](https://docs.confium.org/) (RustDoc).
+
+## Threshold cryptography
+
+- [`confium-tc-frost-ed25519`](./frost-ed25519.mdx) — real FROST-ed25519 threshold signing.
+- [`confium-tc-frost-p256`](./frost-p256.mdx) — real P-256 Shamir secret sharing + threshold ECDSA.
+- [`confium-composite`](./composite.mdx) — composite multi-algorithm signatures for PQC migration.
+- [`confium-transparency`](./transparency.mdx) — append-only Merkle transparency log.
+
+## Threshold encryption
+
+- [`confium-tc-elgamal-p256`](./elgamal-p256.mdx) — threshold ElGamal-P256.
+
+## Coordination
+
+- [`confium-tc-coordinator`](./coordinator.mdx) — async threshold session coordinator.
+- [`confium-tc-reshare`](./reshare.mdx) — proactive share refresh and re-sharing.
+
+## Examples
+
+- [Threshold signing end-to-end](../examples/threshold-signing.mdx) — a worked FROST-P256 example.
+- [PQ migration with composite signatures](../examples/pq-migration.mdx) — adding ML-DSA-65 alongside Ed25519.
+- [Transparency log](../examples/transparency-log.mdx) — Merkle tree, inclusion proofs, OTS anchoring.
+
+## Other crates
+
+For crates not listed here, see the
+[workspace map](../workspace-map.mdx) and
+[docs.confium.org](https://docs.confium.org/) (RustDoc). Additional
+deep-dive pages will be added as the documentation site grows.

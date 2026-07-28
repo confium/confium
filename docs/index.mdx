@@ -1,0 +1,76 @@
+---
+title: Confium Documentation
+description: Open-source framework for multi-stakeholder threshold cryptography. Configurable engine for organizations deploying their own parameters.
+---
+
+# Confium Documentation
+
+Confium is an open-source framework for **multi-stakeholder threshold
+cryptography**. It provides a configurable engine that organizations
+deploy with their own parameters — the same relationship a TLS library
+has to transport security.
+
+This is the project documentation site for the Rust workspace. For the
+Ruby bindings, see [the confium-ruby docs](https://github.com/confium/confium-ruby/tree/main/docs/).
+For the public website, see [www.confium.org](https://www.confium.org/).
+
+## Get started
+
+- [Installation](./installation.mdx) — `cargo add`, Nix flake, build
+  from source.
+- [Workspace map](./workspace-map.mdx) — the 43 crates by category.
+- [Architecture](./architecture.mdx) — engine, plugin loader,
+  registry, the versioned interfaces.
+- [Conventions](./conventions.mdx) — Snafu 0.8, edition 2024,
+  `#![forbid(unsafe_code)]`, `#![warn(missing_docs)]`.
+- [Developer guide](./develop.mdx) — building, testing, contributing.
+- [Plugin author guide](./plugin-author-guide.mdx) — write and ship a
+  Confium plugin.
+
+## The three deployment modes
+
+Confium is layered across three deployment modes. The same engine and
+the same primitives serve all three.
+
+| Mode | Description |
+| --- | --- |
+| **Mode 1 — Peer-to-Peer TC** | Nodes do threshold cryptography directly. MPC, distributed custody, BFT consensus. |
+| **Mode 2 — PKI Drop-in** | Replace single-party keys with threshold keys. Drop-in for PKCS#11 / OpenSSL / JCE consumers. |
+| **Mode 3 — Sovereign PKI** | Custom certificate formats for institutions where no single party can be trusted. Sovereign over formats, delegation rules, archival cadence, quorum composition. |
+
+See [the three-modes overview](https://www.confium.org/docs/three-modes/)
+on the public website.
+
+## Architecture at a glance
+
+- **Host library** (`libconfium`) — the engine: plugin loader, registry,
+  crypto dispatch. Exports the `cfm_*` C ABI (see `target/confium.h`).
+- **Plugins** — dynamic libraries (`.so` / `.dylib` / `.dll`) that
+  implement the `cfmp_*` plugin contract for one or more interfaces.
+- **Bindings** — Ruby and WASM language bindings wrap the host ABI.
+- **Coordinator** — async threshold-cryptography session service for
+  distributed signing across geographically separated parties.
+
+See [the architecture page](./architecture.mdx) for the full design.
+
+## Interfaces
+
+Each cryptographic primitive is a versioned interface that plugins
+advertise:
+
+- `hash` — cryptographic hash functions
+- `rng` — random number generation
+- `cipher` — symmetric block and stream ciphers
+- `aead` — authenticated encryption with associated data
+- `kdf` — key derivation functions
+- `signature` — digital signature sign/verify
+- `kem` — key encapsulation mechanisms (post-quantum friendly)
+- `key_fmt` — key serialization formats (OpenPGP, PKCS#8, JWK, OpenSSH)
+
+Versioning is per-interface and negotiated independently, so a plugin
+can implement `hash` v0 and `cipher` v1 simultaneously. Adding a new
+interface is a single module that calls `register_interface!` — no
+edits to existing code.
+
+See [the plugin author guide](./plugin-author-guide.mdx) for the
+contract details.

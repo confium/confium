@@ -1,10 +1,9 @@
-= `confium-composite` — composite signatures
-:toc: left
-:toclevels: 2
-:sectanchors:
-:sectlinks:
-:icons: font
-:source-highlighter: rouge
+---
+title: "confium-composite — composite signatures"
+description: Multi-algorithm composite signatures for post-quantum migration. Ed25519 + ECDSA-P256 + ML-DSA-65 verifiable as one.
+---
+
+# `confium-composite` — composite signatures
 
 Composite multi-algorithm signatures for post-quantum migration. A
 single composite signature contains the artifacts of multiple
@@ -12,26 +11,25 @@ component algorithms (e.g. Ed25519 + ECDSA-P256 + ML-DSA-65); verifiers
 check all components and accept the signature only if every component
 verifies.
 
-== When to use this crate
+## When to use this crate
 
 Use `confium-composite` when:
 
-* You are migrating from a classical algorithm (Ed25519, ECDSA) to a
+- You are migrating from a classical algorithm (Ed25519, ECDSA) to a
   post-quantum one (ML-DSA, SLH-DSA) and need both to verify
   simultaneously during the transition.
-* You want defense-in-depth: a break in any single algorithm does not
+- You want defense-in-depth: a break in any single algorithm does not
   compromise the composite signature.
-* You are building a transparency log leaf hash or a certificate
+- You are building a transparency log leaf hash or a certificate
   signature that must remain verifiable across the PQ transition.
 
-== Public API
+## Public API
 
 The crate exposes a `CompositeSignature` value type and a
 `CompositeVerifier` that dispatches per-component verification to
 pluggable per-algorithm verifiers.
 
-[source,rust]
-----
+```rust
 use confium_composite::{CompositeSignature, CompositeVerifier, VerifierCallback};
 
 let composite: CompositeSignature = /* ... */;
@@ -41,13 +39,13 @@ let verifier = CompositeVerifier::new()
     .with("2.16.840.1.101.3.4.3.18", my_ml_dsa_65_verifier);
 
 let valid: bool = verifier.verify(&composite, &message)?;
-----
+```
 
 Per-algorithm verifiers implement the `VerifierCallback` trait, so
 you can route verification through any crypto backend (Botan plugin,
 OpenSSL provider, in-process crate).
 
-== Verification semantics
+## Verification semantics
 
 A composite signature is **valid** if and only if:
 
@@ -60,27 +58,27 @@ A missing verifier for any component is a hard failure, not a
 soft-accept. Configure `CompositeVerifier` to include every algorithm
 the deployment expects to encounter.
 
-== Security notes
+## Security notes
 
-* **No silent downgrade**: if a verifier is missing for a component,
+- **No silent downgrade**: if a verifier is missing for a component,
   verification fails. The crate never silently accepts on the
   subset of components it can verify.
-* **Callback isolation**: per-algorithm verifiers run as isolated
+- **Callback isolation**: per-algorithm verifiers run as isolated
   callbacks. A panic or error in one does not corrupt the others;
   each result is collected and AND-reduced at the end.
-* **Constant-time where it matters**: the per-algorithm verifiers
+- **Constant-time where it matters**: the per-algorithm verifiers
   supplied by the caller are responsible for their own constant-time
   guarantees. The composite layer does not introduce branches that
   depend on secret data.
-* **Order independence**: the composite signature lists components in
+- **Order independence**: the composite signature lists components in
   a deterministic order; verification does not depend on the order
   the per-algorithm verifiers are registered.
 
-== Related
+## Related
 
-* xref:transparency.adoc[`confium-transparency`] — uses composite
+- [`confium-transparency`](./transparency.mdx) — uses composite
   signatures for tree head signatures.
-* link:../examples/pq-migration.adoc[PQ migration example] —
-  end-to-end walkthrough.
-* https://www.confium.org/docs/pq-migration/[PQ migration concept page]
+- [PQ migration example](../examples/pq-migration.mdx) — end-to-end
+  walkthrough.
+- [PQ migration concept page](https://www.confium.org/docs/pq-migration/)
   on the public website.
