@@ -1,0 +1,123 @@
+# Confium local development stack.
+#
+# Brings up a complete Confium deployment on a single host:
+#   - 1 coordinator (confiumd)
+#   - 3 signers (3-of-5 threshold, 2 offline for testing)
+#   - 1 transparency log
+#   - 1 witness
+#
+# Usage:
+#   docker compose up
+#   # In another terminal:
+#   curl --unix-socket /tmp/confium.sock -d '{"jsonrpc":"2.0","method":"version","id":1}'
+#
+# Tear down:
+#   docker compose down -v
+
+services:
+  coordinator:
+    image: ghcr.io/confium/confiumd:latest
+    command:
+      - --listen
+      - tcp://0.0.0.0:7443
+      - --config
+      - /etc/confium/daemon.toml
+    ports:
+      - "7443:7443"
+    volumes:
+      - ./config/coordinator.toml:/etc/confium/daemon.toml:ro
+      - coordinator-data:/var/lib/confium
+    depends_on:
+      - transparency-log
+    networks:
+      - confium
+
+  signer-1:
+    image: ghcr.io/confium/confiumd:latest
+    command:
+      - signer
+      - --bind
+      - 0.0.0.0:7500
+      - --coordinator
+      - coordinator:7443
+      - --identity
+      - signer-1
+    volumes:
+      - signer-1-data:/var/lib/confium
+    networks:
+      - confium
+
+  signer-2:
+    image: ghcr.io/confium/confiumd:latest
+    command:
+      - signer
+      - --bind
+      - 0.0.0.0:7500
+      - --coordinator
+      - coordinator:7443
+      - --identity
+      - signer-2
+    volumes:
+      - signer-2-data:/var/lib/confium
+    networks:
+      - confium
+
+  signer-3:
+    image: ghcr.io/confium/confiumd:latest
+    command:
+      - signer
+      - --bind
+      - 0.0.0.0:7500
+      - --coordinator
+      - coordinator:7443
+      - --identity
+      - signer-3
+    volumes:
+      - signer-3-data:/var/lib/confium
+    networks:
+      - confium
+
+  transparency-log:
+    image: ghcr.io/confium/confiumd:latest
+    command:
+      - log
+      - serve
+      - --bind
+      - 0.0.0.0:7444
+      - --backend
+      - lmdb
+      - --path
+      - /var/lib/confium/log
+    ports:
+      - "7444:7444"
+    volumes:
+      - log-data:/var/lib/confium
+    networks:
+      - confium
+
+  witness:
+    image: ghcr.io/confium/confiumd:latest
+    command:
+      - witness
+      - serve
+      - --bind
+      - 0.0.0.0:7445
+      - --peers
+      - coordinator:7443
+    ports:
+      - "7445:7445"
+    depends_on:
+      - coordinator
+    networks:
+      - confium
+
+volumes:
+  coordinator-data:
+  signer-1-data:
+  signer-2-data:
+  signer-3-data:
+  log-data:
+
+networks:
+  confium:
+    driver: bridge

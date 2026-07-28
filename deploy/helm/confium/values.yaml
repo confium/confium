@@ -1,0 +1,71 @@
+# Default values for Confium Helm chart.
+# Override with: helm install confium ./deploy/helm/confium -f values.yaml
+
+image:
+  repository: ghcr.io/confium/confiumd
+  tag: latest
+  pullPolicy: IfNotPresent
+
+coordinator:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  config:
+    logLevel: info
+    transparencyLog: "log:tcp://confium-log:7444"
+    policy:
+      fipsMode: false
+      allowedSignatureAlgorithms: ["ECDSA-P256", "Ed25519"]
+
+signers:
+  count: 3
+  threshold: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+transparencyLog:
+  replicas: 1
+  backend: lmdb
+  storage: 10Gi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+
+witness:
+  replicas: 1
+  anchorInterval: 3600
+
+service:
+  type: ClusterIP
+  coordinatorPort: 7443
+  logPort: 7444
+  witnessPort: 7445
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []
+  tls: []
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

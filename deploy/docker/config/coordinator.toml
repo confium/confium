@@ -1,0 +1,30 @@
+[server]
+listen = "tcp://0.0.0.0:7443"
+log_level = "debug"
+
+[plugins]
+dir = "/var/lib/confium/plugins"
+
+[coordinator]
+transparency_log = "log:tcp://transparency-log:7444"
+default_quorum = { threshold = 2, total = 3 }
+
+[policy]
+fips_mode = false
+allowed_signature_algorithms = ["ECDSA-P256", "Ed25519"]
+allowed_hash_algorithms = ["SHA-256", "SHA-384"]
+
+[[signers]]
+id = "signer-1"
+endpoint = "signer-1:7500"
+attributes = { region = "local", role = "director" }
+
+[[signers]]
+id = "signer-2"
+endpoint = "signer-2:7500"
+attributes = { region = "local", role = "director" }
+
+[[signers]]
+id = "signer-3"
+endpoint = "signer-3:7500"
+attributes = { region = "local", role = "director" }
