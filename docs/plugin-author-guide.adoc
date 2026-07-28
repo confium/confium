@@ -12,9 +12,8 @@ that implements the plugin contract: a small set of bootstrap symbols plus
 per-interface implementation functions.
 
 For the host-side API that loads and drives plugins, see the generated
-header `target/confium.h`. For the design rationale, see
-link:../TODO.roadmap/03-plugin-contract.md[the plugin contract design
-note].
+header `target/confium.h`. For the engine architecture, see
+xref:architecture.adoc[the architecture page].
 
 == How a plugin is structured
 
@@ -197,7 +196,7 @@ others can discover and verify it:
   checksum, signature).
 . Submit it as a PR against `sites/registry/plugins/`.
 . The registry's publisher-key and trust-root model is documented under
-  `sites/registry/` and `TODO.roadmap/06-module-registry.md`.
+  `sites/registry/`.
 
 == Reference: the bootstrap symbols
 

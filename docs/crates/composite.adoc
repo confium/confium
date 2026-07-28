@@ -1,0 +1,86 @@
+= `confium-composite` — composite signatures
+:toc: left
+:toclevels: 2
+:sectanchors:
+:sectlinks:
+:icons: font
+:source-highlighter: rouge
+
+Composite multi-algorithm signatures for post-quantum migration. A
+single composite signature contains the artifacts of multiple
+component algorithms (e.g. Ed25519 + ECDSA-P256 + ML-DSA-65); verifiers
+check all components and accept the signature only if every component
+verifies.
+
+== When to use this crate
+
+Use `confium-composite` when:
+
+* You are migrating from a classical algorithm (Ed25519, ECDSA) to a
+  post-quantum one (ML-DSA, SLH-DSA) and need both to verify
+  simultaneously during the transition.
+* You want defense-in-depth: a break in any single algorithm does not
+  compromise the composite signature.
+* You are building a transparency log leaf hash or a certificate
+  signature that must remain verifiable across the PQ transition.
+
+== Public API
+
+The crate exposes a `CompositeSignature` value type and a
+`CompositeVerifier` that dispatches per-component verification to
+pluggable per-algorithm verifiers.
+
+[source,rust]
+----
+use confium_composite::{CompositeSignature, CompositeVerifier, VerifierCallback};
+
+let composite: CompositeSignature = /* ... */;
+let verifier = CompositeVerifier::new()
+    .with("1.3.101.112", my_ed25519_verifier)       // Ed25519
+    .with("1.2.840.10045.4.3.2", my_ecdsa_verifier) // ECDSA-P256
+    .with("2.16.840.1.101.3.4.3.18", my_ml_dsa_65_verifier);
+
+let valid: bool = verifier.verify(&composite, &message)?;
+----
+
+Per-algorithm verifiers implement the `VerifierCallback` trait, so
+you can route verification through any crypto backend (Botan plugin,
+OpenSSL provider, in-process crate).
+
+== Verification semantics
+
+A composite signature is **valid** if and only if:
+
+1. Every component signature verifies against the message.
+2. Every required component algorithm is registered with the verifier.
+3. The component set matches the deployment's policy (e.g. the
+   jurisdictional policy may require ≥1 classical + ≥1 PQ algorithm).
+
+A missing verifier for any component is a hard failure, not a
+soft-accept. Configure `CompositeVerifier` to include every algorithm
+the deployment expects to encounter.
+
+== Security notes
+
+* **No silent downgrade**: if a verifier is missing for a component,
+  verification fails. The crate never silently accepts on the
+  subset of components it can verify.
+* **Callback isolation**: per-algorithm verifiers run as isolated
+  callbacks. A panic or error in one does not corrupt the others;
+  each result is collected and AND-reduced at the end.
+* **Constant-time where it matters**: the per-algorithm verifiers
+  supplied by the caller are responsible for their own constant-time
+  guarantees. The composite layer does not introduce branches that
+  depend on secret data.
+* **Order independence**: the composite signature lists components in
+  a deterministic order; verification does not depend on the order
+  the per-algorithm verifiers are registered.
+
+== Related
+
+* xref:transparency.adoc[`confium-transparency`] — uses composite
+  signatures for tree head signatures.
+* link:../examples/pq-migration.adoc[PQ migration example] —
+  end-to-end walkthrough.
+* https://www.confium.org/docs/pq-migration/[PQ migration concept page]
+  on the public website.

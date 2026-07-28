@@ -1,0 +1,79 @@
+= Why Confium? (Executive Brief)
+
+== The problem with PKI today
+
+Public Key Infrastructure (PKI) underpins TLS, code signing, document
+signing, and identity verification worldwide. But it has a structural
+weakness: **each Certificate Authority holds a single private key
+that can sign anything**. If that key is compromised, every cert the
+CA ever issued is called into question.
+
+Recent incidents (DigiNotar 2011, Symantec 2015–2018, Let's Encrypt
+2020 revocation events) prove this isn't hypothetical. The cost of
+each incident: millions of dollars, disrupted services, and eroded
+public trust.
+
+== What Confium changes
+
+Confium replaces single-key CA trust with **threshold cryptography**:
+no single party can sign alone. A configurable quorum (e.g., 3 of 5
+directors) must participate. This eliminates the single point of
+failure.
+
+**Key properties:**
+
+* **No key compromise scenario.** An attacker must compromise T
+  independent parties simultaneously.
+* **Open-source.** BSD-2-Clause licensed. No vendor lock-in, no
+  per-transaction fees, no proprietary protocol.
+* **Standards-based.** PKCS#11 v3.0, OpenSSL 3.0 provider, CMS
+  (RFC 5652), X.509, RFC 6962 transparency logs.
+* **Post-quantum ready.** Composite signatures (Ed25519 + ML-DSA-65)
+  enable migration without breaking existing verifiers.
+* **Multi-stakeholder governance.** Confium supports attribute-based
+  threshold policies: "5-of-9 directors from 3 distinct regions."
+
+== Compliance hooks
+
+* **FIPS 140 mode**: routes through FIPS-validated crypto via the
+  Botan plugin.
+* **Jurisdictional policies**: enforce per-deployment algorithm
+  requirements (EU requires P-384+, US allows P-256, China requires
+  SM2/SM3).
+* **Audit trails**: every signing operation produces a structured
+  audit record.
+
+== Deployment modes
+
+|===
+|Mode |Description |Use case
+
+|Mode 1 — P2P
+|Nodes do threshold cryptography directly
+|MPC, distributed custody, BFT consensus
+
+|Mode 2 — PKI replacement
+|Drop-in for existing PKI consumers via PKCS#11/OpenSSL/JCE
+|HSM replacement, KMS, TLS signing
+
+|Mode 3 — Certificate PKI
+|Custom certificate formats and workflows
+|Institutional accreditation, government, calibration registries
+|===
+
+== Mode 3 — Sovereign PKI
+
+Sovereign PKI is institutional certificate infrastructure where no
+single party is trusted. Examples include calibration registries,
+pharma regulator approvals, academic accreditation, and supply-chain
+provenance. Confium's Mode 3 gives institutions sovereignty over
+certificate formats, delegation rules, archival cadence, and quorum
+composition.
+
+== Cost model
+
+Confium is free open-source software. No licensing fees. The cost of
+deployment is the engineering effort to integrate + ongoing
+operational cost of running coordinator nodes. For a CNML-scale
+deployment (dozens of signers across multiple countries), this is
+comparable to running a CA — but with no single point of failure.

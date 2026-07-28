@@ -95,20 +95,18 @@ To skip temporarily: `SKIP_PRECOMMIT=1 git commit ...` or `touch .skip-precommit
 
 [cols="1,4"]
 |===
-| `crates/` | All Rust crates (workspace members)
-| `crates/confium-core/` | The engine: plugin loader, registry, crypto dispatch, host FFI
-| `crates/confium-api/` | Shared types and the plugin contract (`cfmp_*`)
-| `crates/confium-macros/` | Procedural macros that generate `cfmp_*` plugin scaffolding
-| `crates/confium-cli/` | The `confium` command-line tool
-| `crates/confium-daemon/` | Long-running service mode
-| `crates/confium-net*/` | Networking primitives (QUIC, TCP, WebSocket)
-| `crates/confium-store*/` | Key store backends (local, cloud, PKCS#11, TPM)
-| `crates/confium-tc*/` | Threshold-cryptography protocol implementations
-| `cpp-tests/` | C++ tests for the generated C header
-| `sites/registry/` | The plugin-registry GitHub Pages site
-| `docs/` | This documentation site (AsciiDoc)
-| `TODO.roadmap/` | Forward-looking design documents
-| `TODO.finalize/` | Spec-tracking documents for in-flight work
+| `crates/` | All Rust crates (workspace members). See xref:workspace-map.adoc[the workspace map] for the full breakdown by category.
+| `crates/confium-core/` | The engine: plugin loader, registry, crypto dispatch, host FFI.
+| `crates/confium-api/` | Shared types and the plugin contract (`cfmp_*`).
+| `crates/confium-macros/` | Procedural macros that generate `cfmp_*` plugin scaffolding.
+| `crates/confium-cli/` | The `confium` command-line tool.
+| `crates/confium-daemon/` | Long-running service mode.
+| `crates/confium-net*/` | Networking primitives (QUIC, TCP, WebSocket).
+| `crates/confium-store*/` | Key store backends (local, cloud, PKCS#11, TPM).
+| `crates/confium-tc*/` | Threshold-cryptography protocol implementations.
+| `cpp-tests/` | C++ tests for the generated C header.
+| `sites/registry/` | The plugin-registry GitHub Pages site.
+| `docs/` | This documentation site (AsciiDoc).
 |===
 
 == Pull requests
