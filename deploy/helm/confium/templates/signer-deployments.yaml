@@ -1,0 +1,41 @@
+{{- range $i := until (int .Values.signers.count) }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "confium.fullname" $ }}-signer-{{ $i }}
+  labels:
+    {{- include "confium.labels" $ | nindent 4 }}
+    component: signer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "confium.selectorLabels" $ | nindent 6 }}
+      component: signer
+      signer-id: "signer-{{ $i }}"
+  template:
+    metadata:
+      labels:
+        {{- include "confium.selectorLabels" $ | nindent 8 }}
+        component: signer
+        signer-id: "signer-{{ $i }}"
+    spec:
+      containers:
+        - name: signer
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          command: ["confiumd", "signer"]
+          args:
+            - --bind
+            - 0.0.0.0:7500
+            - --coordinator
+            - {{ include "confium.fullname" $ }}-coordinator:{{ $.Values.service.coordinatorPort }}
+            - --identity
+            - signer-{{ $i }}
+          ports:
+            - containerPort: 7500
+              name: signer
+          resources:
+            {{- toYaml $.Values.signers.resources | nindent 12 }}
+{{- end }}

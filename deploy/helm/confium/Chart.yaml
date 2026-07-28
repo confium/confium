@@ -1,0 +1,12 @@
+apiVersion: v2
+name: confium
+description: Confium threshold cryptography framework — coordinator, signers, transparency log, witness.
+type: application
+version: 0.1.0
+appVersion: "0.3.0"
+home: https://www.confium.org
+sources:
+  - https://github.com/confium/confium
+maintainers:
+  - name: Confium contributors
+    url: https://github.com/confium

@@ -1,0 +1,65 @@
+# GitHub Actions template: threshold-signed releases with Confium.
+#
+# Drop this into .github/workflows/threshold-sign.yml in your repo.
+# Requires secrets:
+#   CONFIUM_COORDINATOR_URL  - e.g. tcp://coordinator.internal:7443
+#   CONFIUM_SIGNER_ID        - the signer identity for this CI pipeline
+#   CONFIUM_SIGNER_TOKEN     - authentication token for the signer
+#
+# The workflow:
+# 1. Builds the release artifact (binary, container, etc.)
+# 2. Computes its SHA-256 hash
+# 3. Submits the hash to the Confium coordinator
+# 4. Waits for T-of-N quorum to co-sign
+# 5. Attaches the composite signature + inclusion proof to the GitHub Release
+
+name: Threshold-signed release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Confium CLI
+        run: cargo install confium-cli --locked
+
+      - name: Download release asset
+        id: asset
+        run: |
+          ASSET_URL=$(jq -r '.release.assets[0].browser_download_url' "$GITHUB_EVENT_PATH")
+          curl -L "$ASSET_URL" -o release-artifact
+          echo "hash=$(sha256sum release-artifact | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Submit for threshold signing
+        id: sign
+        env:
+          CONFIUM_COORDINATOR_URL: ${{ secrets.CONFIUM_COORDINATOR_URL }}
+          CONFIUM_SIGNER_ID: ${{ secrets.CONFIUM_SIGNER_ID }}
+          CONFIUM_SIGNER_TOKEN: ${{ secrets.CONFIUM_SIGNER_TOKEN }}
+        run: |
+          # Submit the hash to the coordinator and wait for quorum.
+          confium sign \
+            --coordinator "$CONFIUM_COORDINATOR_URL" \
+            --signer "$CONFIUM_SIGNER_ID" \
+            --token "$CONFIUM_SIGNER_TOKEN" \
+            --message "${{ steps.asset.outputs.hash }}" \
+            --algorithm ECDSA-P256 \
+            --wait \
+            --output signature.json
+
+          # Extract the signature and inclusion proof.
+          echo "sig=$(jq -r '.signature' signature.json)" >> "$GITHUB_OUTPUT"
+          echo "proof=$(jq -r '.inclusion_proof' signature.json)" >> "$GITHUB_OUTPUT"
+          echo "sequence=$(jq -r '.transparency_sequence' signature.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Attach signature to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            signature.json
