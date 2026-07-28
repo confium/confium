@@ -5,8 +5,6 @@
 // PGP key, and writes a directory tree ready to drop into the registry
 // repo.
 //
-// See `TODO.roadmap/06-module-registry.md` (publishing flow) and
-// `TODO.roadmap/07-cli-tools.md` (CLI shape).
 
 use std::path::Path;
 use std::process::ExitCode;

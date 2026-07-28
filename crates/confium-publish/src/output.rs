@@ -1,6 +1,5 @@
 // Write the registry-ready directory tree for a published version.
 //
-// The on-disk layout (per `TODO.roadmap/06-module-registry.md`) is:
 //
 //     <plugin>/<version>/
 //       manifest.toml          # serialized manifest

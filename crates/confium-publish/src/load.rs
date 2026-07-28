@@ -6,7 +6,6 @@
 // library with `libloading` and calls the C-ABI entry points directly.
 //
 // Two symbols are consulted, both optional per the plugin contract
-// (`TODO.roadmap/03-plugin-contract.md`):
 //
 //   * `cfmp_metadata`           -> `*const CFMPluginMetadata` (or NULL)
 //   * `cfmp_query_interfaces`   -> packed `name\0ver\0...` byte stream
@@ -25,7 +24,6 @@ use snafu::{ResultExt, Snafu};
 use crate::cli::{parse_algorithm_overrides, parse_interface_overrides};
 
 /// C-ABI mirror of the plugin metadata struct declared in
-/// `TODO.roadmap/03-plugin-contract.md`. Fields are nullable pointers —
 /// a plugin may leave any of them NULL.
 #[repr(C)]
 pub struct CFMPluginMetadata {

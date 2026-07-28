@@ -1,6 +1,5 @@
 // PGP signing of the generated manifest.
 //
-// The registry trust model (`TODO.roadmap/06-module-registry.md`) uses
 // detached ASCII-armored PGP signatures stored under `sigs/<publisher>.asc`.
 // We shell out to the system `gpg` rather than embedding a crypto
 // library: the publish ceremony already trusts the author's local GPG
