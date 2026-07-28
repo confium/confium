@@ -80,7 +80,7 @@ for the full plan.
 
 | # | Slug | Status |
 |---|---|---|
-| [032](032-rust-workspace-docs.md) | rust-workspace-docs | ⏳ |
+| [032](032-rust-workspace-docs.md) | rust-workspace-docs | ✅ |
 | [033](033-ruby-docs-augmentation.md) | ruby-docs-augmentation | ⏳ |
 | [034](034-astro-site-scaffolding.md) | astro-site-scaffolding | ⏳ |
 | [035](035-homepage-vue-islands.md) | homepage-vue-islands | ⏳ |
