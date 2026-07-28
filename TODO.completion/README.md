@@ -1,8 +1,8 @@
-# Completion Plan — Confium Bindings Gaps
+# Completion Plan — Confium Bindings + Website Gaps
 
-Living index of all identified gaps in the Ruby + WASM binding surfaces.
-Each entry points to a dedicated TODO file with problem statement,
-acceptance criteria, and code-quality requirements.
+Living index of all identified gaps in the Ruby + WASM binding surfaces
+and the public website. Each entry points to a dedicated TODO file with
+problem statement, acceptance criteria, and code-quality requirements.
 
 **Numbering convention**: `NNN-slug.md`. Grouped by category; numbered
 monotonically across the whole plan.
@@ -70,6 +70,29 @@ monotonically across the whole plan.
 | [030](030-consistency-proof-security.md) | consistency-proof-security | ⏳ |
 | [031](031-audit-log-exposure.md) | audit-log-exposure | ⏳ |
 
+## Documentation (032–043)
+
+The website (`confium.github.io/`) is being rebuilt on Astro 7 + Vue 3
++ Tailwind 4 + Vue islands, mirroring the sister RNP site architecture.
+Per-repo implementation docs live in `{repo}/docs/` and are pulled into
+the central site at build time. See `/Users/mulgogi/.claude/plans/prancy-riding-honey.md`
+for the full plan.
+
+| # | Slug | Status |
+|---|---|---|
+| [032](032-rust-workspace-docs.md) | rust-workspace-docs | ⏳ |
+| [033](033-ruby-docs-augmentation.md) | ruby-docs-augmentation | ⏳ |
+| [034](034-astro-site-scaffolding.md) | astro-site-scaffolding | ⏳ |
+| [035](035-homepage-vue-islands.md) | homepage-vue-islands | ⏳ |
+| [036](036-docs-pages.md) | docs-pages | ⏳ |
+| [037](037-about-meta-pages.md) | about-meta-pages | ⏳ |
+| [038](038-concepts-pages.md) | concepts-pages | ⏳ |
+| [039](039-use-cases-pages.md) | use-cases-pages | ⏳ |
+| [040](040-glossary-page.md) | glossary-page | ⏳ |
+| [041](041-software-bindings-specs-pull-through.md) | software-bindings-specs-pull-through | ⏳ |
+| [042](042-seed-blog-posts.md) | seed-blog-posts | ⏳ |
+| [043](043-search-cross-link-audit.md) | search-cross-link-audit | ⏳ |
+
 ## Cross-cutting requirements (apply to every TODO above)
 
 Every code change must satisfy:
@@ -102,6 +125,8 @@ Every code change must satisfy:
 Suggested order of execution — quick wins first to build momentum,
 then security, then functional gaps that unlock downstream work.
 
+### Bindings gaps (001–031)
+
 1. **Quick wins (≤ 1 PR each)**: 003, 014, 026, 027, 016, 015
 2. **Security hardening**: 028, 029, 030 (paired with 010), 031
 3. **Architectural foundations**: 001, 002, 005, 004
@@ -111,4 +136,14 @@ then security, then functional gaps that unlock downstream work.
 7. **PQ + compliance**: 021, 022, 023, 025
 8. **Audience docs**: 017, 018, 019, 020
 
-Total: 31 items.
+### Documentation (032–043)
+
+Run in phase order — earlier phases unblock later ones:
+
+1. **Phase 1 — per-repo docs** (parallel across repos): 032, 033
+2. **Phase 2 — Astro scaffolding**: 034
+3. **Phase 3 — core content**: 035, 036, 037
+4. **Phase 4 — educational + use cases**: 038, 039, 040
+5. **Phase 5 — pull-through + blog + verification**: 041, 042, 043
+
+Total: 43 items.

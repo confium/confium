@@ -1,0 +1,69 @@
+# Transparency Logs: Security Analysis
+
+## The split-view attack
+
+Without consistency proofs, a transparency log operator can present
+two different tree heads to different verifiers, and nobody can detect
+it. This is the **split-view attack**:
+
+1. Verifier A receives tree head N from the log.
+2. Verifier B receives a different tree head N' (with a different root).
+3. Both verifiers can verify their own inclusion proofs against their
+   own heads. Neither knows the other's head exists.
+4. The log operator can insert or omit entries selectively per
+   audience.
+
+## Defenses
+
+### Consistency proofs (RFC 6962 §2.1.2)
+
+Consistency proofs cryptographically prove that tree head N+1
+**extends** tree head N (i.e., the first N entries are identical).
+Implemented in `confium-transparency::merkle::MerkleTree::consistency_proof`.
+
+**How it works:**
+
+- The log publishes a consistency proof alongside each new tree head.
+- Every verifier checks the new head extends the previous head they
+  saw.
+- If the log presents inconsistent heads to different verifiers, the
+  proofs will fail.
+
+**Limitation:** consistency proofs only work if verifiers communicate.
+If Verifier A and Verifier B never share their heads, a split view
+persists.
+
+### Gossip / witness network
+
+To address the "verifiers don't communicate" gap, the standard
+defense is a **witness network**: every verifier periodically
+gossips its latest known tree head to a set of independent witnesses.
+If two verifiers have different heads for the same tree size, the
+witnesses detect the inconsistency.
+
+Confium's `confium-tc-coordinator` can serve as a gossip endpoint
+for CNML deployments. Each IA's coordinator shares its tree head
+with BIML's coordinator, which acts as the global witness.
+
+### OTS anchoring (defense in depth)
+
+Even with consistency proofs + gossip, a determined adversary who
+controls the log operator AND all witnesses can still split views.
+**OpenTimestamps (OTS)** anchors tree heads in the Bitcoin blockchain,
+providing an irrefutable time-stamped record of "what head existed
+at time T."
+
+Confium's `confium-transparency::ots` client supports this.
+See the OTS exposure design notes in `docs/security/ots-ers-exposure.md`.
+
+## Recommended deployment
+
+For CNML Mode 3 (highest assurance):
+
+1. Every transparency tree head is published with a consistency
+   proof from the previous head.
+2. Every IA coordinator gossips its tree head to BIML every
+   <configurable interval> (default: 1 hour).
+3. BIML anchors its current tree head in Bitcoin via OTS daily.
+4. Any verifier can independently verify the full chain: consistency
+   from the OTS-anchored head to the current head.

@@ -10,46 +10,58 @@
 :experimental:
 :docinfo: shared
 
-Confium is an open-source distributed trust store framework — a pluggable,
-language-agnostic engine for cryptographic providers, key stores, and
-threshold-cryptography coordination. This is the project documentation site.
+Confium is an open-source framework for **multi-stakeholder threshold
+cryptography**. It provides a configurable engine that organizations
+deploy with their own parameters — the same relationship a TLS library
+has to transport security.
+
+This is the project documentation site for the Rust workspace. For the
+Ruby bindings, see https://github.com/confium/confium-ruby/tree/main/docs/.
+For the public website, see https://www.confium.org/.
 
 == Get started
 
-* xref:develop.adoc[Developer guide] — building, testing, and contributing.
+* xref:installation.adoc[Installation] — `cargo add`, Nix flake, build
+  from source.
+* xref:workspace-map.adoc[Workspace map] — the 43 crates by category.
+* xref:architecture.adoc[Architecture] — engine, plugin loader,
+  registry, the versioned interfaces.
+* xref:conventions.adoc[Conventions] — Snafu 0.8, edition 2024,
+  `#![forbid(unsafe_code)]`, `#![warn(missing_docs)]`.
+* xref:develop.adoc[Developer guide] — building, testing, contributing.
 * xref:plugin-author-guide.adoc[Plugin author guide] — write and ship a
   Confium plugin.
-* link:../README.adoc[Project README] — high-level overview and goals.
-* link:../CONTRIBUTING.md[Contributing guide] — pull-request process and
-  conventions.
-* link:../SECURITY.md[Security policy] — reporting vulnerabilities.
 
-== What Confium is
+== The three deployment modes
 
-Confium provides a generalized API and an extensible architecture for the
-usage of trust stores and future cryptographic families. It is a component
-of https://github.com/rnpgp/rnp[RNP], an openly-licensed high-performance
-OpenPGP toolkit, and has received funding support from the Mozilla Open
-Source Support fund and NLNet.
+Confium is layered across three deployment modes. The same engine and
+the same primitives serve all three.
 
-Typically, using new cryptographic families with existing technologies is an
-immense challenge, requiring code change in the application and in the
-cryptographic library. Confium bridges cryptographers with the practical
-usage of cryptography by exposing a stable C ABI that plugins implement.
+[cols="1,4"]
+|===
+| *Mode 1 — Peer-to-Peer TC* | Nodes do threshold cryptography directly.
+  MPC, distributed custody, BFT consensus.
+| *Mode 2 — PKI Drop-in* | Replace single-party keys with threshold
+  keys. Drop-in for PKCS#11 / OpenSSL / JCE consumers.
+| *Mode 3 — Sovereign PKI* | Custom certificate formats for
+  institutions where no single party can be trusted. Sovereign over
+  formats, delegation rules, archival cadence, quorum composition.
+|===
+
+See https://www.confium.org/docs/three-modes/[the three-modes overview]
+on the public website.
 
 == Architecture at a glance
 
 * *Host library* (`libconfium`) — the engine: plugin loader, registry,
   crypto dispatch. Exports the `cfm_*` C ABI (see `target/confium.h`).
-* *Plugins* — dynamic libraries (`.so` / `.dylib` / `.dll`) that implement
-  the `cfmp_*` plugin contract for one or more interfaces (hash, cipher,
-  AEAD, KDF, RNG, signature, KEM, key serialization, keystore).
-* *Bindings* — Ruby (and future) language bindings wrap the host ABI.
-* *Registry* — a static catalog of plugins, publishers, and trust roots,
-  served from `sites/registry/`.
+* *Plugins* — dynamic libraries (`.so` / `.dylib` / `.dll`) that
+  implement the `cfmp_*` plugin contract for one or more interfaces.
+* *Bindings* — Ruby and WASM language bindings wrap the host ABI.
+* *Coordinator* — async threshold-cryptography session service for
+  distributed signing across geographically separated parties.
 
-For the full design, see the link:../TODO.roadmap/[roadmap] and
-link:../TODO.roadmap/01-architecture-overview.md[architecture overview].
+See xref:architecture.adoc[the architecture page] for the full design.
 
 == Interfaces
 
@@ -57,13 +69,18 @@ Each cryptographic primitive is a versioned interface that plugins
 advertise:
 
 * `hash` — cryptographic hash functions
+* `rng` — random number generation
 * `cipher` — symmetric block and stream ciphers
 * `aead` — authenticated encryption with associated data
 * `kdf` — key derivation functions
-* `rng` — random number generation
 * `signature` — digital signature sign/verify
 * `kem` — key encapsulation mechanisms (post-quantum friendly)
-* `keyfmt` — key serialization formats (OpenPGP, PKCS#8, JWK, OpenSSH, ...)
+* `keyfmt` — key serialization formats (OpenPGP, PKCS#8, JWK, OpenSSH)
 
-Versioning is per-interface and negotiated independently, so a plugin can
-implement `hash` v0 and `cipher` v1 simultaneously.
+Versioning is per-interface and negotiated independently, so a plugin
+can implement `hash` v0 and `cipher` v1 simultaneously. Adding a new
+interface is a single module that calls `register_interface!` — no
+edits to existing code.
+
+See xref:plugin-author-guide.adoc[the plugin author guide] for the
+contract details.
