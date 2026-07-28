@@ -1,0 +1,33 @@
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "confium"
+version = "0.3.0"
+description = "Python bindings for the Confium threshold cryptography framework"
+readme = "README.md"
+license = { text = "BSD-2-Clause" }
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
+    "Topic :: Security :: Cryptography",
+]
+keywords = ["cryptography", "threshold", "post-quantum", "pki", "transparency"]
+
+[project.urls]
+homepage = "https://www.confium.org/"
+repository = "https://github.com/confium/confium"
+documentation = "https://www.confium.org/docs/"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "confium"
