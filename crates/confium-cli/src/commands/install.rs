@@ -1,13 +1,13 @@
 //! `confium install <plugin>[@version]`.
 //!
 //! Splits the `name@version` argument, resolves the plugin against the
-//! registry, downloads the artifact (via a pluggable downloader so tests
-//! can inject bytes), verifies the SHA-256, and stages it under the
-//! local plugin directory. Prints a one-line summary on success.
+//! registry, downloads the artifact via HTTP (`ureq`), verifies the
+//! SHA-256, and stages it under the local plugin directory. Prints a
+//! one-line summary on success.
 
 use std::path::PathBuf;
 
-use confium_registry::install::{NoopDownloader, install};
+use confium_registry::install::{HttpDownloader, install};
 
 use crate::cli::InstallArgs;
 use crate::commands::common::{fail, override_home, registry_client};
@@ -22,11 +22,7 @@ pub fn run(args: InstallArgs) {
         Err(e) => fail(e),
     };
 
-    // Default downloader is a stub: real network fetching waits on
-    // `confium-net`. When that lands, swap `NoopDownloader` for an
-    // HTTP-backed implementation. Tests inject a `MemoryDownloader`
-    // through the registry crate's `install::install` directly.
-    let downloader = NoopDownloader;
+    let downloader = HttpDownloader::new();
 
     match install(&client, &downloader, home_ref, name, version) {
         Ok(record) => {

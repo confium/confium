@@ -10,6 +10,7 @@
 //! Local enumeration helpers ([`list_installed`], [`read_installed`],
 //! [`remove`]) keep the file-layout knowledge in one place.
 
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use crate::client::Client;
@@ -64,6 +65,62 @@ impl Downloader for NoopDownloader {
         Err(Error::Download {
             message: format!("network download not yet wired (confium-net pending); URL: {url}"),
         })
+    }
+}
+
+/// HTTP downloader using `ureq`. The production downloader for CLI
+/// `install` and `update` commands.
+///
+/// Construct with [`HttpDownloader::new`] for defaults, or
+/// [`HttpDownloader::with_agent`] to customize the User-Agent.
+#[derive(Clone)]
+pub struct HttpDownloader {
+    agent: ureq::Agent,
+}
+
+impl HttpDownloader {
+    /// Build a downloader with default settings: 30-second timeout,
+    /// User-Agent `confium/<version>`.
+    pub fn new() -> Self {
+        Self::with_agent(&format!("confium/{}", env!("CARGO_PKG_VERSION")))
+    }
+
+    /// Build with a custom User-Agent string.
+    pub fn with_agent(user_agent: &str) -> Self {
+        Self {
+            agent: ureq::AgentBuilder::new()
+                .timeout(std::time::Duration::from_secs(30))
+                .user_agent(user_agent)
+                .build(),
+        }
+    }
+}
+
+impl Default for HttpDownloader {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Downloader for HttpDownloader {
+    fn download(&self, url: &str) -> Result<Vec<u8>> {
+        let response = self
+            .agent
+            .get(url)
+            .call()
+            .map_err(|e| Error::Download {
+                message: format!("HTTP request to {url} failed: {e}"),
+            })?;
+
+        let mut bytes = Vec::with_capacity(1024 * 64);
+        response
+            .into_reader()
+            .read_to_end(&mut bytes)
+            .map_err(|e| Error::Download {
+                message: format!("reading body from {url} failed: {e}"),
+            })?;
+
+        Ok(bytes)
     }
 }
 

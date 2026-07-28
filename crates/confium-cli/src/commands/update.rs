@@ -64,10 +64,8 @@ pub fn run(args: UpdateArgs) {
             }
         };
         if is_newer(&latest.plugin.version, &record.version) {
-            // Real artifact download is pending confium-net; we surface
-            // the typed Download error rather than silently no-op'ing.
-            let noop = confium_registry::install::NoopDownloader;
-            match install_manifest(&noop, home_ref, latest.clone()) {
+            let downloader = confium_registry::install::HttpDownloader::new();
+            match install_manifest(&downloader, home_ref, latest.clone()) {
                 Ok(new_record) => {
                     println!(
                         "updated {} {} -> {}",
