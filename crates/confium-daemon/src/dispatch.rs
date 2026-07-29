@@ -198,6 +198,12 @@ impl Dispatch {
             rc(methods::composite::composite_verify),
         );
 
+        // -- attributes (stateless predicate evaluator) --
+        table.insert(
+            "attributes_evaluate".to_string(),
+            rc(methods::attributes::attributes_evaluate),
+        );
+
         Dispatch { table }
     }
 

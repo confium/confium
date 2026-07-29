@@ -28,6 +28,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 # imports as `confium_core::*` for clarity.
 confium_core = { package = "confium-core", path = "../confium-core", version = "0.2.0" }
 confium-composite = { path = "../confium-composite", version = "0.3.1" }
+confium-attributes = { path = "../confium-attributes", version = "0.3.1" }
 clap = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

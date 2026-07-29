@@ -11,6 +11,7 @@
 //! no dispatch change is needed.
 
 pub mod aead;
+pub mod attributes;
 pub mod audit;
 pub mod cipher;
 pub mod composite;
