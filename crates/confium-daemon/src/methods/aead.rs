@@ -2,45 +2,9 @@
 //!
 //! Skeleton handlers pending per-connection handle management.
 
-use serde_json::Value;
+use crate::pending_method;
 
-use crate::error::RpcError;
-use crate::server::SharedConfium;
-
-pub async fn aead_create(
-    _cfm: SharedConfium,
-    _params: Value,
-) -> std::result::Result<Value, RpcError> {
-    Err(RpcError::Engine {
-        message: "aead_create requires per-connection handle management (pending)".to_string(),
-    })
-}
-
-pub async fn aead_encrypt_update(
-    _cfm: SharedConfium,
-    _params: Value,
-) -> std::result::Result<Value, RpcError> {
-    Err(RpcError::Engine {
-        message: "aead_encrypt_update requires per-connection handle management (pending)"
-            .to_string(),
-    })
-}
-
-pub async fn aead_decrypt_update(
-    _cfm: SharedConfium,
-    _params: Value,
-) -> std::result::Result<Value, RpcError> {
-    Err(RpcError::Engine {
-        message: "aead_decrypt_update requires per-connection handle management (pending)"
-            .to_string(),
-    })
-}
-
-pub async fn aead_finalize(
-    _cfm: SharedConfium,
-    _params: Value,
-) -> std::result::Result<Value, RpcError> {
-    Err(RpcError::Engine {
-        message: "aead_finalize requires per-connection handle management (pending)".to_string(),
-    })
-}
+pending_method!(aead_create, "aead_create", "requires per-connection handle management (pending)");
+pending_method!(aead_encrypt_update, "aead_encrypt_update", "requires per-connection handle management (pending)");
+pending_method!(aead_decrypt_update, "aead_decrypt_update", "requires per-connection handle management (pending)");
+pending_method!(aead_finalize, "aead_finalize", "requires per-connection handle management (pending)");
