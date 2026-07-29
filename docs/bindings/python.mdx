@@ -62,6 +62,8 @@ Return the binding version and underlying engine version as strings.
 | `CompositeSignature([ComponentSignature, ...])` | Composite over multiple algorithms. |
 | `CompositeSignature.from_json(s)` | Parse from JSON envelope. |
 | `CompositeSignature.to_json()` | Serialize back to JSON. |
+| `CompositeSignature.sign_ed25519(seed, msg)` | Classmethod: build 1-component Ed25519 composite. |
+| `CompositeSignature.sign_p256(seed, msg)` | Classmethod: build 1-component ECDSA-P256 composite. |
 | `CompositeSignature.verify(msg)` | Built-in Ed25519 + ECDSA-P256. |
 | `CompositeSignature.verify_with(msg, cb)` | Caller-supplied verifier callback. |
 | `VerificationResult.all_verified` | bool — every component verified. |
@@ -81,6 +83,8 @@ Return the binding version and underlying engine version as strings.
 | `MerkleTree.inclusion_proof(seq)` | Build RFC 6962 §2.1.1 proof. |
 | `MerkleTree.verify_inclusion(seq, proof, root)` | Round-trip verify. |
 | `MerkleTree.entry(seq)` | Dict: sequence, timestamp, artifact_type, artifact_hash. |
+| `MerkleTree.consistency_proof(old_size)` | RFC 6962 §2.1.2 consistency path. |
+| `MerkleTree.verify_consistency(old_root, new_root, old_size, new_size, proof)` | Brute-force verify. |
 | `compute_leaf_hash(seq, ts, hash)` | Recompute published leaf hash. |
 | `verify_inclusion_with_leaf(leaf, proof, root)` | External-auditor entry point. |
 | `ARTIFACT_TYPES` | Tuple of accepted `artifact_type` strings. |
@@ -97,6 +101,8 @@ Return the binding version and underlying engine version as strings.
 | `Certificate.is_within_validity(now=None)` | Validity check. |
 | `CSR.from_der(bytes)` / `from_pem(str)` | Parse PKCS#10. |
 | `SignedData.from_json(s)` | Parse CMS SignedData (RFC 5652 §5.1). |
+| `SignedData.build_detached(sig, alg, certs)` | Classmethod: build 1-signer detached CMS. |
+| `SignedData.to_der()` | Encode as RFC 5652 ContentInfo DER. |
 | `SignedData.verify(msg, cb)` / `verify_with_builtin(msg)` | CMS verify. |
 
 ### `confium.attributes`
@@ -122,14 +128,16 @@ pytest tests/
 
 ## Limitations
 
-Python currently exposes **verification + parsing**. The following are
-not yet wired (use Ruby for these):
+Python now covers **verification, parsing, and signing** for composite +
+transparency + PKI. Remaining gaps (use Ruby for these):
 
-- Composite sign (Ed25519, ECDSA-P256)
-- CMS SignedData build/sign/DER encode
-- TC sessions (FROST-P256, ElGamal-P256)
-- OTS / ERS archival
+- TC sessions (FROST-P256, ElGamal-P256) — large API surface, planned for v0.4
+- OTS / ERS archival exposure
 - Identity Actor / Config Manifest
+- **External proof-only consistency verification** — `MerkleTree.verify_consistency`
+  is method-based (requires `&self`) because the proof-only algorithm is intricate.
+  External auditors who only have `(old_root, new_root, proof)` and not the tree
+  itself need the standalone verifier — tracked as TODO 067.
 
 See the [bindings parity matrix](parity.mdx) for the full breakdown.
 
