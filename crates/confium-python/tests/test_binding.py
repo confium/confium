@@ -331,6 +331,99 @@ def test_builtin_ecdsa_p256_verifier_function() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Composite signing (sign_ed25519 + sign_p256)
+# ---------------------------------------------------------------------------
+
+def test_sign_ed25519_round_trip() -> None:
+    seed = b"\x42" * 32
+    msg = b"composite sign round-trip"
+    cs = composite.CompositeSignature.sign_ed25519(seed, msg)
+    assert cs.component_count() == 1
+    assert cs.algorithms() == ["Ed25519"]
+    assert cs.verify(msg).all_verified is True
+
+
+def test_sign_ed25519_rejects_short_key() -> None:
+    with pytest.raises(ValueError, match="32 bytes"):
+        composite.CompositeSignature.sign_ed25519(b"\x00" * 10, b"msg")
+
+
+def test_sign_ed25519_tampered_message_fails() -> None:
+    seed = b"\x99" * 32
+    cs = composite.CompositeSignature.sign_ed25519(seed, b"original")
+    assert cs.verify(b"tampered").all_verified is False
+
+
+def test_sign_ed25519_pubkey_matches_seed() -> None:
+    """The seed-derived verifying key matches what the cryptography lib expects."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+        Ed25519PrivateKey,
+    )
+    from cryptography.hazmat.primitives.serialization import (
+        Encoding,
+        PublicFormat,
+    )
+    import json as _json
+
+    seed = b"\x55" * 32
+    cs = composite.CompositeSignature.sign_ed25519(seed, b"msg")
+    expected_pk = Ed25519PrivateKey.from_private_bytes(seed).public_key().public_bytes(
+        Encoding.Raw, PublicFormat.Raw
+    )
+    component = _json.loads(cs.to_json())["components"][0]
+    assert bytes(component["public_key"]) == expected_pk
+
+
+def test_sign_p256_round_trip() -> None:
+    seed = b"\x33" * 32
+    msg = b"p256 sign round-trip"
+    cs = composite.CompositeSignature.sign_p256(seed, msg)
+    assert cs.component_count() == 1
+    assert cs.algorithms() == ["ECDSA-P256"]
+    assert cs.verify(msg).all_verified is True
+
+
+def test_sign_p256_rejects_short_key() -> None:
+    with pytest.raises(ValueError, match="32 bytes"):
+        composite.CompositeSignature.sign_p256(b"\x00" * 16, b"msg")
+
+
+def test_sign_p256_signature_is_der_encoded() -> None:
+    """ECDSA-P256 components must DER-encode the signature (RFC 5480)."""
+    import json as _json
+
+    seed = b"\x22" * 32
+    cs = composite.CompositeSignature.sign_p256(seed, b"der check")
+    component = _json.loads(cs.to_json())["components"][0]
+    sig_bytes = bytes(component["signature"])
+    assert sig_bytes[0] == 0x30  # DER SEQUENCE
+
+
+def test_hybrid_ed25519_plus_p256_via_sign() -> None:
+    """End-to-end: build a hybrid from two sign() calls."""
+    import json as _json
+
+    ed_seed = b"\x10" * 32
+    p256_seed = b"\x20" * 32
+    msg = b"hybrid via sign + manual compose"
+
+    ed_cs = composite.CompositeSignature.sign_ed25519(ed_seed, msg)
+    p256_cs = composite.CompositeSignature.sign_p256(p256_seed, msg)
+
+    ed_comp = _json.loads(ed_cs.to_json())["components"][0]
+    p256_comp = _json.loads(p256_cs.to_json())["components"][0]
+    hybrid = composite.CompositeSignature.from_json(
+        _json.dumps({"components": [ed_comp, p256_comp]})
+    )
+
+    assert hybrid.component_count() == 2
+    result = hybrid.verify(msg)
+    assert result.all_verified is True
+    algs = sorted(c["algorithm"] for c in result.per_component)
+    assert algs == ["ECDSA-P256", "Ed25519"]
+
+
+# ---------------------------------------------------------------------------
 # Transparency log
 # ---------------------------------------------------------------------------
 
@@ -679,6 +772,81 @@ def test_signed_data_rejects_bad_json() -> None:
         pki.SignedData.from_json("not json")
     with pytest.raises(ValueError):
         pki.SignedData.from_json('{"wrong": "shape"}')
+
+
+# ---------------------------------------------------------------------------
+# CMS build/sign + DER encode
+# ---------------------------------------------------------------------------
+
+FAKE_CERT_DER = b"\x30\x82\x01\x00" + b"C" * 256  # ≥20 bytes for SKI extraction
+
+
+def _ed25519_signature_for(seed: bytes, message: bytes) -> bytes:
+    """Sign message with Ed25519 seed via CompositeSignature.sign_ed25519."""
+    cs = composite.CompositeSignature.sign_ed25519(seed, message)
+    return bytes(json.loads(cs.to_json())["components"][0]["signature"])
+
+
+def test_cms_build_detached_creates_one_signer() -> None:
+    sig = _ed25519_signature_for(b"\x42" * 32, b"payload")
+    sd = pki.SignedData.build_detached(sig, "1.3.101.112", [FAKE_CERT_DER])
+    assert sd.signer_count == 1
+    assert sd.certificate_count == 1
+
+
+def test_cms_build_detached_to_der_is_content_info() -> None:
+    sig = _ed25519_signature_for(b"\x42" * 32, b"payload")
+    sd = pki.SignedData.build_detached(sig, "1.3.101.112", [FAKE_CERT_DER])
+    der = sd.to_der()
+    assert der[0] == 0x30  # outer SEQUENCE per RFC 5652 §3
+    assert len(der) > 300
+
+
+def test_cms_build_detached_round_trips_json() -> None:
+    sig = _ed25519_signature_for(b"\x55" * 32, b"payload")
+    sd = pki.SignedData.build_detached(sig, "1.3.101.112", [FAKE_CERT_DER])
+    parsed = pki.SignedData.from_json(sd.to_json())
+    assert parsed.signer_count == 1
+
+
+def test_cms_build_detached_accepts_ecdsa_oid() -> None:
+    sig = _ed25519_signature_for(b"\x33" * 32, b"payload")
+    # The algorithm OID is just stored on the SignerInfo; sign() doesn't
+    # check that the signature matches the algorithm.
+    sd = pki.SignedData.build_detached(sig, "1.2.840.10045.4.3.2", [FAKE_CERT_DER])
+    assert sd.signer_count == 1
+
+
+def test_cms_build_detached_accepts_multiple_certs() -> None:
+    sig = _ed25519_signature_for(b"\x44" * 32, b"payload")
+    sd = pki.SignedData.build_detached(
+        sig, "1.3.101.112", [FAKE_CERT_DER, FAKE_CERT_DER, FAKE_CERT_DER]
+    )
+    assert sd.certificate_count == 3
+
+
+def test_cms_to_der_to_json_preserves_signatures() -> None:
+    """DER encode → parse via JSON → signer_infos signature unchanged."""
+    sig = _ed25519_signature_for(b"\x77" * 32, b"payload")
+    sd = pki.SignedData.build_detached(sig, "1.3.101.112", [FAKE_CERT_DER])
+    sd2 = pki.SignedData.from_json(sd.to_json())
+    sig2 = bytes(json.loads(sd2.to_json())["signer_infos"][0]["signature"])
+    assert sig2 == sig
+
+
+def test_cms_sign_then_anchor_in_transparency_log() -> None:
+    """End-to-end: sign Ed25519 → wrap in CMS → anchor in transparency log."""
+    seed = b"\x88" * 32
+    msg = b"end-to-end cms + transparency"
+    sig = _ed25519_signature_for(seed, msg)
+    sd = pki.SignedData.build_detached(sig, "1.3.101.112", [FAKE_CERT_DER])
+    der = sd.to_der()
+    artifact_hash = hashlib.sha256(der).digest()
+
+    tree = transparency.MerkleTree()
+    seq = tree.append("threshold_signature", artifact_hash)
+    proof = tree.inclusion_proof(seq)
+    tree.verify_inclusion(seq, proof, tree.root)
 
 
 # ---------------------------------------------------------------------------

@@ -18,7 +18,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 confium-core = "0.2"
-confium-composite = "0.3.1"
+confium-composite = { path = "../confium-composite", version = "0.3.1" }
 confium-transparency = "0.3.1"
 confium-pki = { version = "0.3.1", features = ["cms"] }
 confium-attributes = "0.3.1"
@@ -27,6 +27,8 @@ serde_json = "1"
 sha2 = "0.10"
 chrono = "0.4"
 hex = "0.4"
+ed25519-dalek = "2"
+p256 = { version = "0.13", features = ["ecdsa"] }
 
 [package.metadata.maturin]
 python-source = "python"
