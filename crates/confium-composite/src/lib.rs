@@ -263,6 +263,28 @@ pub fn build_ed25519_component(
     })
 }
 
+/// Build a real ECDSA-P256 component signature (NIST P-256 over SHA-256).
+/// The signature is DER-encoded per RFC 5480; the public key is SEC1
+/// (uncompressed, 65 bytes).
+///
+/// Sibling to [`build_ed25519_component`]. Use both to construct a
+/// hybrid classical-classical composite, or pair either with an
+/// ML-DSA component for PQ migration.
+pub fn build_p256_component(
+    signing_key: &p256::ecdsa::SigningKey,
+    message: &[u8],
+) -> Result<ComponentSignature, CompositeError> {
+    use p256::ecdsa::signature::Signer;
+    let verifying = signing_key.verifying_key();
+    let sig: p256::ecdsa::Signature = signing_key.sign(message);
+    let sig_der = sig.to_der();
+    Ok(ComponentSignature {
+        algorithm: ECDSA_P256.into(),
+        public_key: verifying.to_sec1_bytes().to_vec(),
+        signature: sig_der.to_bytes().to_vec(),
+    })
+}
+
 #[cfg(test)]
 mod real_ed25519_tests {
     use super::*;

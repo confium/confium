@@ -16,7 +16,10 @@ use pyo3::Bound;
 
 use confium_pki::{
     cert::{Certificate as RustCert, CertificateSigningRequest as RustCsr, CertError},
-    cms::{verify_signed_data, SignerVerification, SignedData as RustSignedData},
+    cms::{
+        build_detached_signature, encode_signed_data_der, verify_signed_data, SignerVerification,
+        SignedData as RustSignedData,
+    },
 };
 
 fn map_cert_err(e: CertError) -> PyErr {
@@ -176,6 +179,42 @@ impl PySignedData {
             pyo3::exceptions::PyValueError::new_err(format!("invalid SignedData JSON: {e}"))
         })?;
         Ok(Self { inner })
+    }
+
+    /// Build a detached CMS SignedData with one signer.
+    ///
+    /// Args:
+    ///     signature:     bytes — pre-computed signature over the payload.
+    ///     algorithm:     str   — signature algorithm OID
+    ///                          (Ed25519 = "1.3.101.112",
+    ///                           ECDSA-P256 = "1.2.840.10045.4.3.2").
+    ///     certificates:  list[bytes] — DER cert bytes per signer.
+    ///
+    /// The caller signs the payload separately (typically via
+    /// `composite.CompositeSignature.sign_ed25519`) and passes the
+    /// resulting signature bytes here. The first certificate's first
+    /// 20 bytes become the SubjectKeyIdentifier per RFC 5652 §5.3.
+    #[staticmethod]
+    fn build_detached(
+        signature: Vec<u8>,
+        algorithm: String,
+        certificates: Vec<Vec<u8>>,
+    ) -> PyResult<Self> {
+        let inner =
+            build_detached_signature(Vec::new(), &algorithm, signature, certificates)
+                .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
+        Ok(Self { inner })
+    }
+
+    /// Encode as RFC 5652 ContentInfo DER bytes.
+    ///
+    /// Output is parseable by `openssl cms` / `openssl pkcs7` and any
+    /// standards-compliant CMS consumer.
+    fn to_der<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
+        let der = py
+            .allow_threads(|| encode_signed_data_der(&self.inner))
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
+        Ok(PyBytes::new_bound(py, &der))
     }
 
     /// Serialize back to a JSON string.
