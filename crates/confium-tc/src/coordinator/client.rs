@@ -14,8 +14,8 @@
 //!
 //! let mut client = SignerClient::connect("127.0.0.1:18432").unwrap();
 //! client.register("director-1", "biml-root").unwrap();
-//! client.submit_commitment("session-1", "director-1", &commitment_bytes).unwrap();
-//! client.submit_share("session-1", "director-1", &share_bytes).unwrap();
+//! client.submit_commitment("session-1", "director-1", &[0u8; 32]).unwrap();
+//! client.submit_share("session-1", "director-1", &[0u8; 32]).unwrap();
 //! ```
 
 use std::io;

@@ -51,7 +51,12 @@ fn delegation_scope_can_reference_cert_types() {
 }
 
 #[test]
-fn cms_signed_data_has_unified_verification_result() {
+fn cms_signed_data_reports_failure_on_unresolvable_cert() {
+    // Since per-signer cert resolution, the verifier resolves each
+    // signer's certificate before calling the callback. A fake
+    // all-zero cert won't parse as DER, so resolution fails and
+    // all_verified is false — even though the callback would
+    // return Ok(()). This is correct behavior.
     let sd = build_detached_signature(
         vec![0u8; 32],
         "1.2.840.113549.1.1.11",
@@ -60,8 +65,9 @@ fn cms_signed_data_has_unified_verification_result() {
     )
     .unwrap();
     let result = verify_signed_data(&sd, b"payload", |_, _, _, _| Ok(())).unwrap();
-    assert!(result.all_verified);
+    assert!(!result.all_verified);
     assert_eq!(result.per_signer.len(), 1);
+    assert!(result.per_signer[0].error.is_some());
 }
 
 #[test]
