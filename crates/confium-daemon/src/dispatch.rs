@@ -192,6 +192,12 @@ impl Dispatch {
             rc(methods::audit::audit_subscribe),
         );
 
+        // -- composite (stateless verifier) --
+        table.insert(
+            "composite_verify".to_string(),
+            rc(methods::composite::composite_verify),
+        );
+
         Dispatch { table }
     }
 

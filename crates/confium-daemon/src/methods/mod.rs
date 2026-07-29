@@ -13,6 +13,7 @@
 pub mod aead;
 pub mod audit;
 pub mod cipher;
+pub mod composite;
 pub mod hash;
 pub mod kdf;
 pub mod kem;
