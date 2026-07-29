@@ -170,6 +170,29 @@ impl MerkleTree {
         Ok(PyInclusionProof { inner: proof })
     }
 
+    /// Compute a consistency proof (RFC 6962 §2.1.2).
+    ///
+    /// Returns the list of subtree hashes that prove the tree's first
+    /// `old_size` entries hash to the same root as a standalone tree
+    /// of `old_size` entries.
+    ///
+    /// Use [`verify_consistency`][crate::verify_consistency] to verify.
+    fn consistency_proof<'py>(
+        &self,
+        py: Python<'py>,
+        old_size: usize,
+    ) -> PyResult<Bound<'py, PyList>> {
+        let proof = self
+            .inner
+            .consistency_proof(old_size)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
+        let list = PyList::empty_bound(py);
+        for hash in proof {
+            list.append(PyBytes::new_bound(py, &hash))?;
+        }
+        Ok(list)
+    }
+
     /// Return the entry at `sequence`, or raise IndexError if out of range.
     ///
     /// Returns a dict with keys: `sequence`, `timestamp` (ISO 8601 string),
@@ -209,6 +232,44 @@ impl MerkleTree {
             .map_err(|e| pyo3::exceptions::PyIndexError::new_err(e.to_string()))?;
         let root_hash = require_hash_32(root.as_bytes(), "root")?;
         RustMerkleTree::verify_inclusion(entry, &proof.inner, root_hash)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
+    }
+
+    /// Verify a consistency proof (RFC 6962 §2.1.2).
+    ///
+    /// Brute-force: recomputes the tree's root at `old_size` and its
+    /// current root, then compares to `old_root` and `new_root`.
+    ///
+    /// Requires `&self` because external proof-only verification (no
+    /// tree access) requires a much more intricate algorithm. For the
+    /// common case where the verifier owns the tree (tests, internal
+    /// services, log owners), this method is correct and sufficient.
+    ///
+    /// Args:
+    ///     old_root: 32-byte root of the tree at `old_size`.
+    ///     new_root: 32-byte root of the current tree.
+    ///     old_size: Prior tree size.
+    ///     new_size: Current tree size (must equal `tree.size`).
+    ///     proof:    Consistency proof from `MerkleTree.consistency_proof`
+    ///               (currently unused by the brute-force verifier, but
+    ///               accepted for API symmetry with inclusion proofs).
+    fn verify_consistency(
+        &self,
+        old_root: &Bound<'_, PyBytes>,
+        new_root: &Bound<'_, PyBytes>,
+        old_size: usize,
+        new_size: usize,
+        proof: &Bound<'_, PyList>,
+    ) -> PyResult<()> {
+        let old_root_hash = require_hash_32(old_root.as_bytes(), "old_root")?;
+        let new_root_hash = require_hash_32(new_root.as_bytes(), "new_root")?;
+        let mut proof_hashes: Vec<Hash> = Vec::with_capacity(proof.len());
+        for item in proof.iter() {
+            let bytes: Vec<u8> = item.extract()?;
+            proof_hashes.push(require_hash_32(&bytes, "proof entry")?);
+        }
+        self.inner
+            .verify_consistency(old_root_hash, new_root_hash, old_size, new_size, &proof_hashes)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
     }
 }

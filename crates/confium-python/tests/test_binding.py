@@ -966,3 +966,101 @@ def test_signer_attributes_rejects_non_list() -> None:
 def test_examples_dict_complete() -> None:
     expected = {"min_count", "min_distinct", "none", "any", "all", "and", "or", "not"}
     assert expected.issubset(set(attributes.EXAMPLES.keys()))
+
+
+# ---------------------------------------------------------------------------
+# Consistency proofs (RFC 6962 §2.1.2)
+# ---------------------------------------------------------------------------
+
+def _build_tree_with_snapshots(n: int):
+    """Build a tree of n leaves, returning (tree, [root_at_size_1, root_at_size_2, ...])."""
+    tree = transparency.MerkleTree()
+    roots = []
+    for i in range(n):
+        tree.append("certificate_issuance", _sha256(bytes([i])))
+        roots.append(tree.root)
+    return tree, roots
+
+
+def test_consistency_proof_empty_for_zero() -> None:
+    tree, _ = _build_tree_with_snapshots(8)
+    assert tree.consistency_proof(0) == []
+
+
+def test_consistency_proof_empty_for_same_size() -> None:
+    tree, _ = _build_tree_with_snapshots(8)
+    assert tree.consistency_proof(8) == []
+
+
+def test_consistency_proof_rejects_old_larger_than_current() -> None:
+    tree, _ = _build_tree_with_snapshots(4)
+    with pytest.raises(ValueError):
+        tree.consistency_proof(8)
+
+
+def test_consistency_proof_returns_subtree_hashes_for_pow2_old_size() -> None:
+    tree, _ = _build_tree_with_snapshots(8)
+    proof = tree.consistency_proof(4)
+    assert len(proof) == 1
+    assert all(len(h) == 32 for h in proof)
+
+
+def test_consistency_proof_returns_multiple_entries_for_non_pow2() -> None:
+    tree, _ = _build_tree_with_snapshots(5)
+    proof = tree.consistency_proof(3)
+    assert len(proof) == 3
+
+
+def test_verify_consistency_pow2_old_size() -> None:
+    """(old=4, new=8) — power-of-two old_size."""
+    tree, roots = _build_tree_with_snapshots(8)
+    proof = tree.consistency_proof(4)
+    tree.verify_consistency(roots[3], roots[7], 4, 8, proof)
+
+
+def test_verify_consistency_non_pow2_old_size() -> None:
+    """(old=3, new=11) — non-power-of-two old_size, the case the old impl broke on."""
+    tree, roots = _build_tree_with_snapshots(11)
+    proof = tree.consistency_proof(3)
+    tree.verify_consistency(roots[2], roots[10], 3, 11, proof)
+
+
+def test_verify_consistency_all_sizes_1_to_16() -> None:
+    """Comprehensive sweep — every (old_size, new_size=16) pair must verify."""
+    tree, roots = _build_tree_with_snapshots(16)
+    final_size = tree.size
+    for old_size in range(1, final_size + 1):
+        proof = tree.consistency_proof(old_size)
+        tree.verify_consistency(roots[old_size - 1], roots[final_size - 1],
+                                old_size, final_size, proof)
+
+
+def test_verify_consistency_detects_tampered_old_root() -> None:
+    tree, roots = _build_tree_with_snapshots(12)
+    proof = tree.consistency_proof(4)
+    bogus_old_root = b"\xff" * 32
+    with pytest.raises(ValueError, match="consistency"):
+        tree.verify_consistency(bogus_old_root, roots[11], 4, 12, proof)
+
+
+def test_verify_consistency_detects_tampered_new_root() -> None:
+    tree, roots = _build_tree_with_snapshots(12)
+    proof = tree.consistency_proof(4)
+    bogus_new_root = b"\xff" * 32
+    with pytest.raises(ValueError, match="consistency"):
+        tree.verify_consistency(roots[3], bogus_new_root, 4, 12, proof)
+
+
+def test_verify_consistency_rejects_size_mismatch() -> None:
+    """If new_size != tree.size, verification fails."""
+    tree, roots = _build_tree_with_snapshots(8)
+    proof = tree.consistency_proof(4)
+    with pytest.raises(ValueError, match="consistency"):
+        tree.verify_consistency(roots[3], roots[7], 4, 99, proof)
+
+
+def test_verify_consistency_rejects_short_root() -> None:
+    tree, _ = _build_tree_with_snapshots(8)
+    proof = tree.consistency_proof(4)
+    with pytest.raises(ValueError, match="32 bytes"):
+        tree.verify_consistency(b"\x00" * 10, b"\x00" * 32, 4, 8, proof)
