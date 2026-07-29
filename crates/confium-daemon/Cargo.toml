@@ -27,13 +27,17 @@ rustdoc-args = ["--cfg", "docsrs"]
 # (matching the C ABI lib name `libconfium.so`). Rename it so Rust code
 # imports as `confium_core::*` for clarity.
 confium_core = { package = "confium-core", path = "../confium-core", version = "0.2.0" }
+confium-composite = { path = "../confium-composite", version = "0.3.1" }
 clap = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { version = "1", features = ["net", "rt", "rt-multi-thread", "macros", "io-util", "sync", "time"] }
 tokio-util = { version = "0.7", features = ["codec"] }
 snafu = { workspace = true }
+base64 = "0.22"
 
 [dev-dependencies]
 tempfile = { workspace = true }
+ed25519-dalek = { workspace = true }
+rand_core = { workspace = true }
 tokio = { version = "1", features = ["net", "rt", "rt-multi-thread", "macros", "io-util", "sync", "time", "test-util"] }
