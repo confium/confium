@@ -1,0 +1,84 @@
+# Bindings parity matrix
+
+Confium ships three language bindings (Ruby, Python, WASM) plus the
+Rust API. Each binding is at a different level of completeness. This
+page is the single source of truth for "which binding exposes which
+feature".
+
+## Coverage matrix
+
+| Subsystem | Rust | Ruby | Python | WASM |
+|---|:---:|:---:|:---:|:---:|
+| **Composite verify** (Ed25519) | ✅ | ✅ | ✅ | ✅ |
+| **Composite verify** (ECDSA-P256) | ✅ | ✅ | ✅ | ✅ |
+| **Composite sign** (Ed25519) | ✅ | ✅ | ❌ | ❌ |
+| **Composite sign** (ECDSA-P256) | ✅ | ✅ | ❌ | ❌ |
+| **Composite custom verifier callback** | ✅ | ✅ | ✅ | ❌ |
+| **Transparency append** | ✅ | ✅ | ✅ | ✅ |
+| **Transparency inclusion proof** | ✅ | ✅ | ✅ | ✅ |
+| **Transparency consistency proof** | ✅ | ✅ | ❌ | ❌ |
+| **Transparency compute_leaf_hash** | ✅ | ✅ | ✅ | ✅ |
+| **Transparency verify_inclusion_with_leaf** | ✅ | ❌ | ✅ | ✅ |
+| **PKI Certificate** parse (DER/PEM) | ✅ | ✅ | ✅ | ✅ |
+| **PKI CSR** parse (DER/PEM) | ✅ | ✅ | ✅ | ✅ |
+| **PKI CMS SignedData** parse (JSON) | ✅ | ✅ | ✅ | ✅ |
+| **PKI CMS SignedData** verify | ✅ | ✅ | ✅ | ✅ |
+| **PKI CMS SignedData** build/sign | ✅ | ✅ | ❌ | ❌ |
+| **PKI CMS SignedData** DER encode | ✅ | ✅ | ❌ | ❌ |
+| **PKI XMLDSig** canonicalize | ✅ | ✅ | ❌ | ❌ |
+| **Attributes predicate** parse | ✅ | ✅ | ✅ | ❌ |
+| **Attributes evaluate** | ✅ | ✅ | ✅ | ✅ |
+| **Identity Actor** | ✅ | ✅ | ❌ | ❌ |
+| **Config Manifest** | ✅ | ✅ | ❌ | ❌ |
+| **TC FROST-P256** (Shamir + ECDSA) | ✅ | ✅ | ❌ | ❌ |
+| **TC ElGamal-P256** (threshold enc) | ✅ | ✅ | ❌ | ❌ |
+| **TC CMP20** | ✅ | ❌ | ❌ | ❌ |
+| **TC GG18** | ✅ | ❌ | ❌ | ❌ |
+| **OTS anchor** | ✅ | ✅ | ❌ | ❌ |
+| **ERS archival** | ✅ | ❌ | ❌ | ❌ |
+
+## Legend
+
+- ✅ — shipped, real implementation, spec'd
+- ❌ — not exposed in this binding (yet)
+
+## How to read this table
+
+- **Downstream users**: pick a binding based on the features you need.
+  Ruby is the most complete; Python covers verification + parsing;
+  WASM is verifier-only by design (browsers verify, servers sign).
+- **Binding authors**: when adding a feature to one binding, update
+  this matrix in the same PR.
+- **Roadmap**: any row with mixed ✅/❌ is a candidate for parity work.
+  See `TODO.completion/` for in-flight items.
+
+## Binding-specific notes
+
+### Python
+
+Built on **PyO3 0.22**. Targets Python 3.9+. Ships as a native wheel
+(`pip install confium`). Source: `crates/confium-python/` in the main
+Rust workspace.
+
+### Ruby
+
+Built on **magnus 0.8** + **rb_sys**. Targets MRI 3.0+. Ships as a
+gem (`gem install confium`). Source: `github.com/confium/confium-ruby`.
+
+### WASM
+
+Built on **wasm-bindgen**. Targets `wasm32-unknown-unknown`.
+Verifier-only by design — browsers verify, servers sign. Ships as
+`@confium/confium-wasm` on npm. Source: `crates/confium-wasm/` in the
+main Rust workspace.
+
+### Rust
+
+The native API. Every other binding wraps this. Source: the 44-crate
+workspace at the repo root.
+
+## See also
+
+- [Python binding guide](python.md)
+- [Workspace map](../workspace-map.mdx) for the 44 Rust crates
+- [Architecture](../architecture.mdx) for the layered model
