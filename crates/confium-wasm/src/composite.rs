@@ -76,11 +76,10 @@ impl CompositeSignature {
 /// key (compressed 33 bytes or uncompressed 65 bytes). `signature` is
 /// DER-encoded. SHA-256 is used as the digest.
 fn p256_verifier(public_key: &[u8], message: &[u8], signature: &[u8]) -> Result<(), String> {
-    use p256::ecdsa::{signature::Verifier, Signature, VerifyingKey};
+    use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
     let vk = VerifyingKey::from_sec1_bytes(public_key)
         .map_err(|e| format!("invalid P-256 public key: {e}"))?;
-    let sig = Signature::from_der(signature)
-        .map_err(|e| format!("invalid DER signature: {e}"))?;
+    let sig = Signature::from_der(signature).map_err(|e| format!("invalid DER signature: {e}"))?;
     vk.verify(message, &sig).map_err(|e| format!("verify: {e}"))
 }
 
@@ -112,7 +111,10 @@ impl CompositeVerificationResult {
             .map(|c| {
                 let alg = serde_json::to_string(&c.algorithm).unwrap_or_else(|_| "\"\"".into());
                 let err = match &c.error {
-                    Some(e) => format!(",\"error\":{}", serde_json::to_string(e).unwrap_or_else(|_| "null".into())),
+                    Some(e) => format!(
+                        ",\"error\":{}",
+                        serde_json::to_string(e).unwrap_or_else(|_| "null".into())
+                    ),
                     None => String::new(),
                 };
                 format!(

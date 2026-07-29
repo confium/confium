@@ -67,7 +67,12 @@ pub enum TlsSignerError {
 /// Signer hook — caller provides concrete threshold signing backend.
 pub trait ThresholdSigner {
     /// Sign `data` using the quorum's threshold key.
-    fn sign(&self, quorum_id: &str, scheme: SignatureScheme, data: &[u8]) -> Result<Vec<u8>, String>;
+    fn sign(
+        &self,
+        quorum_id: &str,
+        scheme: SignatureScheme,
+        data: &[u8],
+    ) -> Result<Vec<u8>, String>;
 }
 
 /// The TLS signer.

@@ -26,3 +26,19 @@ botan = "botan"
 adoc = "adoc"
 asciidoc = "asciidoc"
 AsciiDoc = "AsciiDoc"
+
+# Compound-word forms that typos splits into incorrect parts.
+hashicorpvault = "hashicorpvault"
+certificat = "certificat"
+cose = "cose"
+gost = "gost"
+
+[default.extend-identifiers]
+# PascalCase / camelCase forms that typos' word segmentation heuristic
+# splits into bogus parts (e.g. "HashiCorp" → "Hashi" + "Corp", then
+# flags "Hashi" as a typo of "Hash"). Listing the full identifier
+# here tells typos to skip segmentation for these tokens.
+HashiCorp  = "HashiCorp"
+Certificat = "Certificat"
+COSE       = "COSE"
+GOST       = "GOST"

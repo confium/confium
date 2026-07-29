@@ -111,7 +111,7 @@ impl RpcResponse {
 
     /// Build an error response carrying the given [`RpcError`].
     /// `id` is the value from the matching request (or `Value::Null`
-    /// if the request was unparseable).
+    /// if the request was unparsable).
     pub fn err(id: Value, err: RpcError) -> Self {
         RpcResponse::Err(RpcErrorBody {
             jsonrpc: "2.0",

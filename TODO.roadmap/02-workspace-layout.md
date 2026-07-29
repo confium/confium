@@ -35,7 +35,7 @@ confium/
 │   ├── confium-macros/                 # proc-macros: #[plugin_interface], etc.
 │   └── confium-test-harness/           # mock plugins, fuzzing harness, NIST vectors
 ├── plugins/                            # in-repo mock/example plugins
-│   ├── mock-hash/                      # determinstic hash for tests
+│   ├── mock-hash/                      # deterministic hash for tests
 │   ├── mock-cipher/                    # XOR cipher for tests
 │   └── mock-rng/                       # seeded RNG for deterministic tests
 ├── sites/

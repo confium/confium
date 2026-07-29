@@ -3,21 +3,27 @@
 //! Verifies that all four submodules (cert, delegation, cms, xmldsig)
 //! work together via the public API.
 
+use chrono::Utc;
 use confium_pki::{
+    PathFailure,
+    // Result
+    VerificationResult,
     // Cert
-    cert::{Certificate, CertificateSigningRequest, CertError},
-    // Delegation
-    delegation::{Constraint, DelegationScope, Operation, ScopeValue, SignCertSpec, validate_delegation},
+    cert::{CertError, Certificate, CertificateSigningRequest},
     // CMS
     cms::{SignedData, SignedDataBuilder, build_detached_signature, verify_signed_data},
-    // Result
-    VerificationResult, PathFailure,
+    // Delegation
+    delegation::{
+        Constraint, DelegationScope, Operation, ScopeValue, SignCertSpec, validate_delegation,
+    },
 };
-use chrono::Utc;
 
 #[test]
 fn verification_result_aggregates_across_concerns() {
-    let r1 = VerificationResult { valid: true, checks: vec![] };
+    let r1 = VerificationResult {
+        valid: true,
+        checks: vec![],
+    };
     let r2 = VerificationResult {
         valid: false,
         checks: vec![PathFailure::Expired],
@@ -32,7 +38,9 @@ fn delegation_scope_can_reference_cert_types() {
     // Build a delegation scope that authorizes SignCert for instance certs.
     let scope = DelegationScope::new()
         .allow_operation(Operation::SignCert(SignCertSpec::default()))
-        .constrain(Constraint::ModelBound { model_id: "FM-2026-A".into() })
+        .constrain(Constraint::ModelBound {
+            model_id: "FM-2026-A".into(),
+        })
         .constrain(Constraint::TimeBound {
             not_before: Utc::now(),
             not_after: Utc::now() + chrono::Duration::days(365),
@@ -72,7 +80,9 @@ fn cms_signed_data_reports_failure_on_unresolvable_cert() {
 
 #[test]
 fn der_encode_round_trips_through_signed_data_construction() {
-    use confium_pki::cms::{encode_signed_data_der, AlgorithmIdentifier, EncapContentInfo, SignerIdentifier, SignerInfo};
+    use confium_pki::cms::{
+        AlgorithmIdentifier, EncapContentInfo, SignerIdentifier, SignerInfo, encode_signed_data_der,
+    };
     let sd = SignedData {
         version: 1,
         digest_algorithms: vec![AlgorithmIdentifier {

@@ -5,8 +5,8 @@
 //! interpolation.
 
 use crate::scalar;
-use p256::elliptic_curve::PrimeField;
 use p256::Scalar;
+use p256::elliptic_curve::PrimeField;
 
 /// A Shamir share: (x, y) where x is the party index and y is a scalar.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -83,10 +83,7 @@ fn u32_to_scalar(v: u32) -> Scalar {
 /// `t` shares via Lagrange interpolation.
 pub fn recover_secret(shares: &[&Share]) -> Result<Scalar, ShamirError> {
     if shares.is_empty() {
-        return Err(ShamirError::InsufficientShares {
-            have: 0,
-            need: 1,
-        });
+        return Err(ShamirError::InsufficientShares { have: 0, need: 1 });
     }
 
     // Check for duplicate x values
@@ -157,7 +154,10 @@ mod tests {
     #[test]
     fn empty_shares_fail() {
         let result = recover_secret(&[]);
-        assert!(matches!(result, Err(ShamirError::InsufficientShares { .. })));
+        assert!(matches!(
+            result,
+            Err(ShamirError::InsufficientShares { .. })
+        ));
     }
 
     #[test]

@@ -59,7 +59,7 @@ mod integration_tests {
         let signature = sign::sign_message(&keypair, message).expect("sign");
 
         // 4. Verify under the public key using standard p256::ecdsa.
-        use p256::ecdsa::{signature::Verifier, Signature};
+        use p256::ecdsa::{Signature, signature::Verifier};
         let verifying = keypair.to_verifying_key();
         let sig = Signature::from_der(&signature.der_bytes).expect("parse sig");
         verifying.verify(message, &sig).expect("verify");

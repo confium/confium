@@ -10,6 +10,12 @@ use chrono::{DateTime, Duration, Utc};
 
 /// A single signing session managed by the coordinator.
 pub struct CoordinatorSession {
+    // The session id is currently only surfaced in diagnostic output;
+    // production callers retrieve it via the surrounding coordinator's
+    // session map. Retained on the struct so future per-session APIs
+    // (audit correlation, retry idempotency) can use it without a
+    // breaking change.
+    #[allow(dead_code)]
     pub(crate) id: SessionId,
     pub(crate) request: SessionRequest,
     pub(crate) state: SessionState,
@@ -90,7 +96,8 @@ impl Coordinator {
 
         if !session.is_unlocked(Utc::now()) {
             session.state = SessionState::Expired;
-            self.audit_log.append(session_id.to_string(), AuditEvent::Expired);
+            self.audit_log
+                .append(session_id.to_string(), AuditEvent::Expired);
             return Err(SessionError::Expired(session_id.into()));
         }
 
@@ -128,11 +135,7 @@ impl Coordinator {
     }
 
     /// Submit a share to a session.
-    pub fn submit_share(
-        &mut self,
-        session_id: &str,
-        share: Share,
-    ) -> Result<(), SessionError> {
+    pub fn submit_share(&mut self, session_id: &str, share: Share) -> Result<(), SessionError> {
         let session = self
             .sessions
             .get_mut(session_id)
@@ -140,7 +143,8 @@ impl Coordinator {
 
         if !session.is_unlocked(Utc::now()) {
             session.state = SessionState::Expired;
-            self.audit_log.append(session_id.to_string(), AuditEvent::Expired);
+            self.audit_log
+                .append(session_id.to_string(), AuditEvent::Expired);
             return Err(SessionError::Expired(session_id.into()));
         }
 
@@ -154,7 +158,11 @@ impl Coordinator {
             });
         }
 
-        if session.shares.iter().any(|s| s.signer_id == share.signer_id) {
+        if session
+            .shares
+            .iter()
+            .any(|s| s.signer_id == share.signer_id)
+        {
             return Err(SessionError::DuplicateSubmission {
                 signer: share.signer_id.clone(),
                 session: session_id.into(),
@@ -206,7 +214,8 @@ impl Coordinator {
 
         session.state = SessionState::Completed;
         session.completed_at = Some(Utc::now());
-        self.audit_log.append(session_id.to_string(), AuditEvent::Aggregated);
+        self.audit_log
+            .append(session_id.to_string(), AuditEvent::Aggregated);
         Ok(sig)
     }
 
@@ -242,7 +251,9 @@ impl Coordinator {
 
     /// Get the message for a session.
     pub fn session_message(&self, session_id: &str) -> Option<&[u8]> {
-        self.sessions.get(session_id).map(|s| s.request.message.as_slice())
+        self.sessions
+            .get(session_id)
+            .map(|s| s.request.message.as_slice())
     }
 }
 
@@ -292,9 +303,14 @@ mod tests {
         let id = coord.create_session(sample_request()).unwrap();
         assert_eq!(coord.session_state(&id), Some(SessionState::Pending));
 
-        coord.submit_commitment(&id, commitment_for("alice")).unwrap();
+        coord
+            .submit_commitment(&id, commitment_for("alice"))
+            .unwrap();
         coord.submit_commitment(&id, commitment_for("bob")).unwrap();
-        assert_eq!(coord.session_state(&id), Some(SessionState::CommitmentsCollected));
+        assert_eq!(
+            coord.session_state(&id),
+            Some(SessionState::CommitmentsCollected)
+        );
 
         coord.submit_share(&id, share_for("alice")).unwrap();
         coord.submit_share(&id, share_for("bob")).unwrap();
@@ -309,9 +325,14 @@ mod tests {
     fn duplicate_commitment_rejected() {
         let mut coord = Coordinator::new();
         let id = coord.create_session(sample_request()).unwrap();
-        coord.submit_commitment(&id, commitment_for("alice")).unwrap();
+        coord
+            .submit_commitment(&id, commitment_for("alice"))
+            .unwrap();
         let result = coord.submit_commitment(&id, commitment_for("alice"));
-        assert!(matches!(result, Err(SessionError::DuplicateSubmission { .. })));
+        assert!(matches!(
+            result,
+            Err(SessionError::DuplicateSubmission { .. })
+        ));
     }
 
     #[test]
@@ -326,7 +347,9 @@ mod tests {
     fn audit_log_records_full_lifecycle() {
         let mut coord = Coordinator::new();
         let id = coord.create_session(sample_request()).unwrap();
-        coord.submit_commitment(&id, commitment_for("alice")).unwrap();
+        coord
+            .submit_commitment(&id, commitment_for("alice"))
+            .unwrap();
         coord.submit_commitment(&id, commitment_for("bob")).unwrap();
         coord.submit_share(&id, share_for("alice")).unwrap();
         coord.submit_share(&id, share_for("bob")).unwrap();

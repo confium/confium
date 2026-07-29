@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 
 use crate::coordinator::coordinator::Coordinator;
-use crate::coordinator::net::{send_message, recv_message, ProtocolMessage};
+use crate::coordinator::net::{ProtocolMessage, recv_message, send_message};
 use crate::coordinator::session::{Commitment, Share};
 use chrono::Utc;
 
@@ -62,10 +62,7 @@ impl CoordinatorServer {
     }
 }
 
-fn handle_connection(
-    mut stream: TcpStream,
-    coordinator: SharedCoordinator,
-) -> io::Result<()> {
+fn handle_connection(mut stream: TcpStream, coordinator: SharedCoordinator) -> io::Result<()> {
     loop {
         let msg = match recv_message(&mut stream) {
             Ok(m) => m,
@@ -88,11 +85,12 @@ fn process_message(
     coordinator: &SharedCoordinator,
 ) -> Option<ProtocolMessage> {
     match msg {
-        ProtocolMessage::Register { signer_id, quorum_id: _ } => {
-            Some(ProtocolMessage::Registered {
-                signer_id: signer_id.clone(),
-            })
-        }
+        ProtocolMessage::Register {
+            signer_id,
+            quorum_id: _,
+        } => Some(ProtocolMessage::Registered {
+            signer_id: signer_id.clone(),
+        }),
 
         ProtocolMessage::CreateSession {
             quorum_id,
@@ -112,11 +110,7 @@ fn process_message(
                 requested_by: "tcp-client".into(),
             };
             match coord.create_session(request) {
-                Ok(session_id) => {
-                    Some(ProtocolMessage::SessionCreated {
-                        session_id,
-                    })
-                }
+                Ok(session_id) => Some(ProtocolMessage::SessionCreated { session_id }),
                 Err(e) => Some(ProtocolMessage::Error {
                     message: format!("{e:?}"),
                 }),

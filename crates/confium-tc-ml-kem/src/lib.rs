@@ -113,7 +113,11 @@ mod tests {
 
     #[test]
     fn shared_secret_always_32() {
-        for params in [ParameterSet::MlKem512, ParameterSet::MlKem768, ParameterSet::MlKem1024] {
+        for params in [
+            ParameterSet::MlKem512,
+            ParameterSet::MlKem768,
+            ParameterSet::MlKem1024,
+        ] {
             assert_eq!(params.shared_secret_size(), 32);
         }
     }

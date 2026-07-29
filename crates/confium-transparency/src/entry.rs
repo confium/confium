@@ -44,11 +44,7 @@ pub struct MerkleEntry {
 
 impl MerkleEntry {
     /// Construct a new entry with the current timestamp.
-    pub fn new(
-        sequence: u64,
-        artifact_type: ArtifactType,
-        artifact_hash: [u8; 32],
-    ) -> Self {
+    pub fn new(sequence: u64, artifact_type: ArtifactType, artifact_hash: [u8; 32]) -> Self {
         Self {
             sequence,
             timestamp: Utc::now(),

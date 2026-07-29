@@ -8,7 +8,7 @@
 //! Stateless and self-contained — no handle store, no plugin loading.
 //! This is the shape we want for every "verifier" JSON-RPC method.
 
-use base64::{engine::general_purpose, Engine as _};
+use base64::{Engine as _, engine::general_purpose};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
@@ -39,11 +39,10 @@ pub async fn composite_verify(
     _cfm: SharedConfium,
     params: Value,
 ) -> std::result::Result<Value, RpcError> {
-    let req: CompositeVerifyRequest = serde_json::from_value(params).map_err(|e| {
-        RpcError::InvalidParams {
+    let req: CompositeVerifyRequest =
+        serde_json::from_value(params).map_err(|e| RpcError::InvalidParams {
             detail: format!("composite_verify params: {e}"),
-        }
-    })?;
+        })?;
 
     let message = general_purpose::STANDARD
         .decode(req.message.as_bytes())
@@ -52,8 +51,8 @@ pub async fn composite_verify(
         })?;
 
     let composite_json = serde_json::to_string(&req.composite).unwrap_or_else(|_| "{}".into());
-    let composite: confium_composite::CompositeSignature =
-        serde_json::from_str(&composite_json).map_err(|e| RpcError::InvalidParams {
+    let composite: confium_composite::CompositeSignature = serde_json::from_str(&composite_json)
+        .map_err(|e| RpcError::InvalidParams {
             detail: format!("composite: invalid envelope: {e}"),
         })?;
 
@@ -93,7 +92,7 @@ pub async fn composite_verify(
 mod tests {
     use super::*;
     use crate::test_util::test_confium;
-    use base64::{engine::general_purpose, Engine as _};
+    use base64::{Engine as _, engine::general_purpose};
     use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
     use rand_core::OsRng;
 

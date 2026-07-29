@@ -23,8 +23,8 @@ mod transparency;
 
 #[cfg(feature = "verify-transparency")]
 pub use transparency::{
-    compute_artifact_hash, compute_leaf_hash, tree_head_from_json, verify_inclusion_with_head,
-    InclusionProof, MerkleTree,
+    InclusionProof, MerkleTree, compute_artifact_hash, compute_leaf_hash, tree_head_from_json,
+    verify_inclusion_with_head,
 };
 
 #[cfg(feature = "verify-attributes")]

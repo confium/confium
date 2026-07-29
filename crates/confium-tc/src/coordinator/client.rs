@@ -21,7 +21,7 @@
 use std::io;
 use std::net::TcpStream;
 
-use crate::coordinator::net::{send_message, recv_message, ProtocolMessage};
+use crate::coordinator::net::{ProtocolMessage, recv_message, send_message};
 
 /// TCP signer client.
 pub struct SignerClient {
@@ -47,7 +47,10 @@ impl SignerClient {
         let resp = recv_message(&mut self.stream)?;
         match resp {
             ProtocolMessage::Registered { signer_id: sid } if sid == signer_id => Ok(()),
-            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "unexpected register response")),
+            _ => Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "unexpected register response",
+            )),
         }
     }
 
@@ -77,7 +80,10 @@ impl SignerClient {
                 io::ErrorKind::Other,
                 format!("coordinator error: {message}"),
             )),
-            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "unexpected response")),
+            _ => Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "unexpected response",
+            )),
         }
     }
 
@@ -98,7 +104,8 @@ impl SignerClient {
             },
         )?;
         // Wait for Ack or Error
-        self.stream.set_read_timeout(Some(std::time::Duration::from_secs(5)))?;
+        self.stream
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))?;
         match recv_message(&mut self.stream) {
             Ok(ProtocolMessage::Ack { .. }) => Ok(()),
             Ok(ProtocolMessage::Error { message }) => Err(io::Error::new(
@@ -130,7 +137,8 @@ impl SignerClient {
 
         // Set a short read timeout — if coordinator doesn't respond (threshold
         // not met), the client gets WouldBlock instead of blocking forever.
-        self.stream.set_read_timeout(Some(std::time::Duration::from_secs(5)))?;
+        self.stream
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))?;
 
         match recv_message(&mut self.stream) {
             Ok(ProtocolMessage::Signature { bytes, .. }) => Ok(Some(bytes)),
@@ -140,7 +148,11 @@ impl SignerClient {
                 format!("coordinator error: {message}"),
             )),
             Ok(_) => Ok(None),
-            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock || e.kind() == io::ErrorKind::TimedOut => Ok(None),
+            Err(ref e)
+                if e.kind() == io::ErrorKind::WouldBlock || e.kind() == io::ErrorKind::TimedOut =>
+            {
+                Ok(None)
+            }
             Err(e) => Err(e),
         }
     }
@@ -156,7 +168,10 @@ impl SignerClient {
         let resp = recv_message(&mut self.stream)?;
         match resp {
             ProtocolMessage::Status { state, .. } => Ok(state),
-            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "unexpected status response")),
+            _ => Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "unexpected status response",
+            )),
         }
     }
 }

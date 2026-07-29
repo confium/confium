@@ -57,16 +57,19 @@ impl Constraint {
             (Constraint::NameBound { name_pattern }, ScopeValue::Name(actual)) => {
                 glob_match(name_pattern, actual)
             }
-            (Constraint::TimeBound { not_before, not_after }, ScopeValue::Time(when)) => {
-                when >= not_before && when <= not_after
-            }
+            (
+                Constraint::TimeBound {
+                    not_before,
+                    not_after,
+                },
+                ScopeValue::Time(when),
+            ) => when >= not_before && when <= not_after,
             (Constraint::CountBound { max_issuances }, ScopeValue::Count(used)) => {
                 *used <= *max_issuances
             }
-            (
-                Constraint::GeographicBound { regions },
-                ScopeValue::Region(actual),
-            ) => regions.iter().any(|r| r == actual),
+            (Constraint::GeographicBound { regions }, ScopeValue::Region(actual)) => {
+                regions.iter().any(|r| r == actual)
+            }
             (Constraint::SubjectBound { subjects }, ScopeValue::Subject(actual)) => {
                 subjects.iter().any(|s| s == actual)
             }
@@ -96,9 +99,7 @@ pub enum ScopeValue<'a> {
 fn glob_match(pattern: &str, value: &str) -> bool {
     fn helper(p: &[u8], v: &[u8]) -> bool {
         match (p.first(), v.first()) {
-            (Some(b'*'), _) => {
-                helper(&p[1..], v) || (v.first().is_some() && helper(p, &v[1..]))
-            }
+            (Some(b'*'), _) => helper(&p[1..], v) || (v.first().is_some() && helper(p, &v[1..])),
             (Some(b'?'), Some(_)) => helper(&p[1..], &v[1..]),
             (Some(pc), Some(vc)) if pc == vc => helper(&p[1..], &v[1..]),
             (None, None) => true,

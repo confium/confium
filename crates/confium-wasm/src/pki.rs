@@ -1,10 +1,7 @@
 //! `Certificate` + `CMS::SignedData` — PKI verifiers for the browser/Node.js
 //! surface.
 
-use confium_pki::{
-    cert::Certificate as RustCert,
-    cms::SignedData as RustSignedData,
-};
+use confium_pki::{cert::Certificate as RustCert, cms::SignedData as RustSignedData};
 use wasm_bindgen::prelude::*;
 
 /// Parsed X.509 v3 certificate. Construct via [`Certificate::from_der`] or

@@ -28,8 +28,8 @@ pub mod session;
 pub mod share;
 
 pub mod coordinator;
-pub mod reshare;
 pub mod kem;
+pub mod reshare;
 
 pub use error::Error;
 pub use error::Result;

@@ -24,7 +24,7 @@ use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
 
 pub use keys::generate_keypair;
-pub use shamir::{recover_secret, split_secret, Share};
+pub use shamir::{Share, recover_secret, split_secret};
 
 /// Algorithm identifier.
 pub const ALGORITHM: &str = "ElGamal-P256-threshold";
@@ -105,7 +105,11 @@ fn decode_point(bytes: &[u8]) -> Result<ProjectivePoint, ElGamalError> {
 }
 
 fn encode_point(point: &ProjectivePoint) -> Vec<u8> {
-    point.to_affine().to_encoded_point(false).as_bytes().to_vec()
+    point
+        .to_affine()
+        .to_encoded_point(false)
+        .as_bytes()
+        .to_vec()
 }
 
 fn decode_scalar(bytes: &[u8]) -> Result<Scalar, ElGamalError> {
@@ -132,7 +136,9 @@ fn decode_scalar(bytes: &[u8]) -> Result<Scalar, ElGamalError> {
 ///
 /// The receiver threshold-decrypts to recover the same c2 point, then
 /// takes its X-coordinate as the shared secret.
-pub fn encapsulate(recipient_public_key: &PublicKey) -> Result<(Ciphertext, Vec<u8>), ElGamalError> {
+pub fn encapsulate(
+    recipient_public_key: &PublicKey,
+) -> Result<(Ciphertext, Vec<u8>), ElGamalError> {
     use p256::elliptic_curve::rand_core::RngCore;
 
     let recipient_pt = decode_point(&recipient_public_key.bytes)?;

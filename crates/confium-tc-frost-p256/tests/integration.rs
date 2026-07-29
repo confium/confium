@@ -10,10 +10,10 @@
 use confium_tc_frost_p256::{
     keys::{generate_keypair, public_key_for},
     scalar,
-    shamir::{recover_secret, split_secret, Share},
+    shamir::{Share, recover_secret, split_secret},
     sign::sign_message,
 };
-use p256::ecdsa::{signature::Verifier, Signature};
+use p256::ecdsa::{Signature, signature::Verifier};
 
 #[test]
 fn integration_full_threshold_lifecycle_3_of_5() {

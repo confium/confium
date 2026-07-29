@@ -121,10 +121,7 @@ mod tests {
         let client = OtsClient::new();
         let hash = [1u8; 32];
         let proof = OtsProof::new(hash, 800_000);
-        let result = client
-            .verify(&proof, |_| Ok([0u8; 32]))
-            .await
-            .unwrap();
+        let result = client.verify(&proof, |_| Ok([0u8; 32])).await.unwrap();
         assert!(result.valid);
     }
 }

@@ -187,10 +187,7 @@ impl MerkleTree {
             level = next;
             idx /= 2;
         }
-        Ok(InclusionProof {
-            sequence,
-            steps,
-        })
+        Ok(InclusionProof { sequence, steps })
     }
 
     /// Verify an inclusion proof (RFC 6962 §2.1.1).
@@ -330,7 +327,8 @@ mod consistency_tests {
     fn build_tree(n: usize) -> MerkleTree {
         let mut tree = MerkleTree::new();
         for i in 0..n {
-            let entry = MerkleEntry::new(i as u64, ArtifactType::CertificateIssuance, [i as u8; 32]);
+            let entry =
+                MerkleEntry::new(i as u64, ArtifactType::CertificateIssuance, [i as u8; 32]);
             tree.append(entry);
         }
         tree
@@ -382,11 +380,27 @@ mod tests {
         let mut tree1 = MerkleTree::new();
         let mut tree2 = MerkleTree::new();
 
-        tree1.append(MerkleEntry::new(0, ArtifactType::CertificateIssuance, [1u8; 32]));
-        tree1.append(MerkleEntry::new(1, ArtifactType::CertificateIssuance, [2u8; 32]));
+        tree1.append(MerkleEntry::new(
+            0,
+            ArtifactType::CertificateIssuance,
+            [1u8; 32],
+        ));
+        tree1.append(MerkleEntry::new(
+            1,
+            ArtifactType::CertificateIssuance,
+            [2u8; 32],
+        ));
 
-        tree2.append(MerkleEntry::new(0, ArtifactType::CertificateIssuance, [1u8; 32]));
-        tree2.append(MerkleEntry::new(1, ArtifactType::CertificateIssuance, [3u8; 32]));
+        tree2.append(MerkleEntry::new(
+            0,
+            ArtifactType::CertificateIssuance,
+            [1u8; 32],
+        ));
+        tree2.append(MerkleEntry::new(
+            1,
+            ArtifactType::CertificateIssuance,
+            [3u8; 32],
+        ));
 
         assert_ne!(tree1.root(), tree2.root());
     }
@@ -438,8 +452,7 @@ mod tests {
         let root = tree.root();
         for i in 0..8 {
             let proof = tree.inclusion_proof(i).unwrap();
-            MerkleTree::verify_inclusion(&entries[i as usize], &proof, root)
-                .expect("must verify");
+            MerkleTree::verify_inclusion(&entries[i as usize], &proof, root).expect("must verify");
         }
     }
 

@@ -2,7 +2,7 @@
 
 use crate::cert::Certificate as RustCert;
 use crate::cms::envelope::CmsError;
-use crate::cms::signed_data::{SignerIdentifier, SignedData};
+use crate::cms::signed_data::{SignedData, SignerIdentifier};
 
 /// Result of CMS verification.
 #[derive(Debug, Clone, Default)]
@@ -76,7 +76,7 @@ pub fn resolve_signer_certificate(
 }
 
 /// Extract the SubjectKeyIdentifier extension value from a DER-encoded
-/// certificate. Returns None if the extension is absent or unparseable.
+/// certificate. Returns None if the extension is absent or unparsable.
 fn extract_ski_extension(cert_der: &[u8]) -> Option<Vec<u8>> {
     let cert = match RustCert::from_der(cert_der) {
         Ok(c) => c,

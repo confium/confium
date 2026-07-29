@@ -4,7 +4,7 @@
 //! Each party holds a share; T-of-N collaborate via the coordinator to
 //! decapsulate a shared secret that can then AEAD-decrypt the ciphertext.
 
-use crate::kem::encapsulate::{EncapsulatedKey, EncapsulateError};
+use crate::kem::encapsulate::{EncapsulateError, EncapsulatedKey};
 use crate::kem::share::ThresholdShare;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -123,8 +123,7 @@ impl KemSession {
 
     /// Submit a partial decryption from another party.
     pub fn submit_partial(&mut self, partial: PartialDecryption) -> Result<(), KemError> {
-        if self.state != KemSessionState::Pending && self.state != KemSessionState::Round1Complete
-        {
+        if self.state != KemSessionState::Pending && self.state != KemSessionState::Round1Complete {
             return Err(KemError::InvalidState {
                 current: self.state,
                 expected: "pending or round1_complete",

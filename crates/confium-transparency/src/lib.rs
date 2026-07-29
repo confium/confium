@@ -18,9 +18,9 @@
 #![warn(missing_docs)]
 
 pub mod entry;
+pub mod ers;
 pub mod merkle;
 pub mod ots;
-pub mod ers;
 pub mod proof;
 
 pub use entry::*;

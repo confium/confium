@@ -56,10 +56,7 @@ pub fn validate_path(path: &CertPath<'_>, now: DateTime<Utc>) -> VerificationRes
 /// Hook for signature verification — caller provides a verifier function.
 /// The verifier receives (parent_pubkey, signed_cert_der) and returns Ok(())
 /// if the signature is valid.
-pub fn verify_path_signatures<F>(
-    path: &CertPath<'_>,
-    verifier: F,
-) -> VerificationResult
+pub fn verify_path_signatures<F>(path: &CertPath<'_>, verifier: F) -> VerificationResult
 where
     F: Fn(&[u8], &[u8]) -> Result<(), String>,
 {

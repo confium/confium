@@ -14,10 +14,10 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+pub mod identity;
 pub mod manifest;
 pub mod mode;
 pub mod validate;
-pub mod identity;
 
 pub use manifest::*;
 pub use mode::*;

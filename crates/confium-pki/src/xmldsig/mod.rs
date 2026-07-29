@@ -61,7 +61,9 @@ impl SignatureAlgorithm {
     /// Algorithm identifier.
     pub fn algorithm_id(&self) -> &'static str {
         match self {
-            SignatureAlgorithm::EcdsaSha256 => "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256",
+            SignatureAlgorithm::EcdsaSha256 => {
+                "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256"
+            }
             SignatureAlgorithm::Ed25519 => "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519",
             SignatureAlgorithm::RsaSha256 => "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
         }
@@ -101,7 +103,9 @@ impl Transform {
         match self {
             Transform::ExclusiveC14N => "http://www.w3.org/2001/10/xml-exc-c14n#",
             Transform::InclusiveC14N => "http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
-            Transform::EnvelopedSignature => "http://www.w3.org/2000/09/xmldsig#enveloped-signature",
+            Transform::EnvelopedSignature => {
+                "http://www.w3.org/2000/09/xmldsig#enveloped-signature"
+            }
             Transform::Base64Decode => "http://www.w3.org/2000/09/xmldsig#base64",
         }
     }

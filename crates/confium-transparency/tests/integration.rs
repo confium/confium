@@ -9,8 +9,7 @@ use confium_transparency::{
 fn make_entry(seq: u64, hash_byte: u8) -> MerkleEntry {
     let mut e = MerkleEntry::new(seq, ArtifactType::CertificateIssuance, [hash_byte; 32]);
     // Make timestamps deterministic for tests that compare roots.
-    e.timestamp = chrono::TimeZone::with_ymd_and_hms(&chrono::Utc, 2026, 1, 1, 0, 0, 0)
-        .unwrap();
+    e.timestamp = chrono::TimeZone::with_ymd_and_hms(&chrono::Utc, 2026, 1, 1, 0, 0, 0).unwrap();
     e
 }
 

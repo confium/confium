@@ -3,12 +3,12 @@
 //! Verifies that all four areas (session primitives, coordinator, reshare,
 //! kem) work together via the public API.
 
-use confium_tc::coordinator::{
-    session::{SessionRequest, SessionState, SignerId},
-    Coordinator, Commitment, Share,
-};
-use confium_tc::reshare::{lagrange, RefreshContribution};
 use chrono::Utc;
+use confium_tc::coordinator::{
+    Commitment, Coordinator, Share,
+    session::{SessionRequest, SessionState, SignerId},
+};
+use confium_tc::reshare::{RefreshContribution, lagrange};
 
 fn sample_session_request() -> SessionRequest {
     SessionRequest {
@@ -31,9 +31,16 @@ fn coordinator_full_session_lifecycle() {
     let alice: SignerId = "alice".into();
     let bob: SignerId = "bob".into();
 
-    coord.submit_commitment(&id, sample_commitment(&alice)).unwrap();
-    coord.submit_commitment(&id, sample_commitment(&bob)).unwrap();
-    assert_eq!(coord.session_state(&id), Some(SessionState::CommitmentsCollected));
+    coord
+        .submit_commitment(&id, sample_commitment(&alice))
+        .unwrap();
+    coord
+        .submit_commitment(&id, sample_commitment(&bob))
+        .unwrap();
+    assert_eq!(
+        coord.session_state(&id),
+        Some(SessionState::CommitmentsCollected)
+    );
 
     coord.submit_share(&id, sample_share(&alice)).unwrap();
     coord.submit_share(&id, sample_share(&bob)).unwrap();
@@ -47,10 +54,18 @@ fn coordinator_full_session_lifecycle() {
 fn coordinator_audit_records_lifecycle() {
     let mut coord = Coordinator::new();
     let id = coord.create_session(sample_session_request()).unwrap();
-    coord.submit_commitment(&id, sample_commitment(&"alice".into())).unwrap();
-    coord.submit_commitment(&id, sample_commitment(&"bob".into())).unwrap();
-    coord.submit_share(&id, sample_share(&"alice".into())).unwrap();
-    coord.submit_share(&id, sample_share(&"bob".into())).unwrap();
+    coord
+        .submit_commitment(&id, sample_commitment(&"alice".into()))
+        .unwrap();
+    coord
+        .submit_commitment(&id, sample_commitment(&"bob".into()))
+        .unwrap();
+    coord
+        .submit_share(&id, sample_share(&"alice".into()))
+        .unwrap();
+    coord
+        .submit_share(&id, sample_share(&"bob".into()))
+        .unwrap();
     coord.aggregate(&id).unwrap();
 
     let entries = coord.audit_log().entries_for(&id);
@@ -61,17 +76,19 @@ fn coordinator_audit_records_lifecycle() {
 fn reshare_lagrange_interpolates_correctly() {
     // Integer arithmetic helpers for testing
     let points = vec![
-        (1u64, lagrange::FieldElement::new(5i128.to_be_bytes().to_vec())),
-        (2u64, lagrange::FieldElement::new(7i128.to_be_bytes().to_vec())),
+        (
+            1u64,
+            lagrange::FieldElement::new(5i128.to_be_bytes().to_vec()),
+        ),
+        (
+            2u64,
+            lagrange::FieldElement::new(7i128.to_be_bytes().to_vec()),
+        ),
     ];
-    let result = lagrange::interpolate_at(
-        &points,
-        0,
-        &|x| x,
-        &|a, b| a * b,
-        &|a, b| a + b,
-        &|a, b| if b == 0 { i128::MAX } else { a / b },
-    );
+    let result =
+        lagrange::interpolate_at(&points, 0, &|x| x, &|a, b| a * b, &|a, b| a + b, &|a, b| {
+            if b == 0 { i128::MAX } else { a / b }
+        });
     let recovered = i128::from_be_bytes(result.0[..16].try_into().unwrap());
     assert_eq!(recovered, 3); // y = 2x + 3, at x=0 y=3
 }
