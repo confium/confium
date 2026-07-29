@@ -1,0 +1,17 @@
+# Language bindings
+
+Confium ships three bindings on top of the Rust core. Pick the one
+that matches your stack.
+
+- **[Python](python.md)** — `pip install confium`. Composite verify,
+  transparency log, PKI parse, attributes DSL.
+- **[Ruby](https://github.com/confium/confium-ruby)** — `gem install confium`.
+  Most complete: composite sign + verify, CMS build/sign, TC sessions,
+  transparency log, OTS.
+- **WASM** (`@confium/confium-wasm` on npm) — verifier-only, designed
+  for browser verification of server-side signatures.
+- **Rust API** — every other binding wraps this. See the
+  [workspace map](../workspace-map.mdx).
+
+For the full feature-by-feature comparison, see the
+[bindings parity matrix](parity.mdx).

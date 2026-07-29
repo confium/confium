@@ -1,0 +1,142 @@
+# Python binding
+
+Confium ships a native Python extension built with [PyO3][pyo3] 0.22.
+Targets Python 3.9+. Source: `crates/confium-python/` in the main
+Rust workspace.
+
+## Install
+
+```sh
+pip install confium
+```
+
+Or from source:
+
+```sh
+pip install maturin
+maturin develop --release   # builds + installs into the current venv
+```
+
+## Quick start
+
+```python
+import confium
+
+print(confium.version())            # "0.3.0"
+print(confium.core_version())       # engine version
+
+# Composite signature verification
+from confium import composite
+
+cs = composite.CompositeSignature([
+    composite.ComponentSignature(
+        algorithm=composite.ED25519,
+        public_key=pk_bytes,        # 32 bytes
+        signature=sig_bytes,        # 64 bytes
+    ),
+])
+result = cs.verify(message_bytes)
+assert result.all_verified
+
+# Transparency log
+from confium import transparency
+
+tree = transparency.MerkleTree()
+seq = tree.append("certificate_issuance", artifact_hash_bytes)
+root = tree.root                   # 32 bytes
+proof = tree.inclusion_proof(seq)
+tree.verify_inclusion(seq, proof, root)   # raises on failure
+```
+
+## API surface
+
+### `confium.version()` / `confium.core_version()`
+
+Return the binding version and underlying engine version as strings.
+
+### `confium.composite`
+
+| Symbol | Description |
+|---|---|
+| `ComponentSignature(algorithm, public_key, signature)` | Single component. |
+| `CompositeSignature([ComponentSignature, ...])` | Composite over multiple algorithms. |
+| `CompositeSignature.from_json(s)` | Parse from JSON envelope. |
+| `CompositeSignature.to_json()` | Serialize back to JSON. |
+| `CompositeSignature.verify(msg)` | Built-in Ed25519 + ECDSA-P256. |
+| `CompositeSignature.verify_with(msg, cb)` | Caller-supplied verifier callback. |
+| `VerificationResult.all_verified` | bool — every component verified. |
+| `VerificationResult.per_component` | list of dicts. |
+| `verify_ed25519(pk, msg, sig)` | Standalone Ed25519 verifier. |
+| `verify_ecdsa_p256(pk, msg, sig)` | Standalone ECDSA-P256 verifier (SEC1 pubkey, DER sig). |
+| `ED25519` / `ECDSA_P256` / `ML_DSA_65` | Algorithm name constants. |
+
+### `confium.transparency`
+
+| Symbol | Description |
+|---|---|
+| `MerkleTree()` | New empty RFC 6962 tree. |
+| `MerkleTree.append(artifact_type, hash)` | Append entry; returns sequence. |
+| `MerkleTree.root` | 32-byte root (empty → all-zeros). |
+| `MerkleTree.size` / `is_empty` | Entry count / emptiness. |
+| `MerkleTree.inclusion_proof(seq)` | Build RFC 6962 §2.1.1 proof. |
+| `MerkleTree.verify_inclusion(seq, proof, root)` | Round-trip verify. |
+| `MerkleTree.entry(seq)` | Dict: sequence, timestamp, artifact_type, artifact_hash. |
+| `compute_leaf_hash(seq, ts, hash)` | Recompute published leaf hash. |
+| `verify_inclusion_with_leaf(leaf, proof, root)` | External-auditor entry point. |
+| `ARTIFACT_TYPES` | Tuple of accepted `artifact_type` strings. |
+
+### `confium.pki`
+
+| Symbol | Description |
+|---|---|
+| `Certificate.from_der(bytes)` / `from_pem(str)` | Parse X.509 v3. |
+| `Certificate.to_der()` / `to_pem()` | Serialize back. |
+| `Certificate.fingerprint_sha256` | Lowercase hex SHA-256. |
+| `Certificate.serial_bytes` / `public_key_bytes` | SPKI fields. |
+| `Certificate.not_before` / `not_after` | ISO 8601 validity bounds. |
+| `Certificate.is_within_validity(now=None)` | Validity check. |
+| `CSR.from_der(bytes)` / `from_pem(str)` | Parse PKCS#10. |
+| `SignedData.from_json(s)` | Parse CMS SignedData (RFC 5652 §5.1). |
+| `SignedData.verify(msg, cb)` / `verify_with_builtin(msg)` | CMS verify. |
+
+### `confium.attributes`
+
+| Symbol | Description |
+|---|---|
+| `Predicate.parse(src)` | Parse DSL expression. |
+| `Predicate.evaluate([SignerAttributes, ...])` | Evaluate against signers. |
+| `SignerAttributes({attr: [vals]})` | Construct from dict. |
+| `SignerAttributes.add(key, val)` | Add value to attribute. |
+| `EXAMPLES` | Dict of example DSL expressions. |
+
+## Building from source
+
+```sh
+cd crates/confium-python
+python3 -m venv .venv
+source .venv/bin/activate
+pip install maturin pytest cryptography
+maturin develop --release
+pytest tests/
+```
+
+## Limitations
+
+Python currently exposes **verification + parsing**. The following are
+not yet wired (use Ruby for these):
+
+- Composite sign (Ed25519, ECDSA-P256)
+- CMS SignedData build/sign/DER encode
+- TC sessions (FROST-P256, ElGamal-P256)
+- OTS / ERS archival
+- Identity Actor / Config Manifest
+
+See the [bindings parity matrix](parity.mdx) for the full breakdown.
+
+## See also
+
+- [Bindings parity matrix](parity.mdx)
+- [Workspace map](../workspace-map.mdx)
+- [Crate README](https://github.com/confium/confium/blob/main/crates/confium-python/README.md)
+
+[pyo3]: https://pyo3.rs
