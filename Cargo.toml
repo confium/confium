@@ -98,7 +98,7 @@ confium-tc-gg18 = { path = "crates/confium-tc-gg18", version = "0.3.0" }
 confium-tc-ml-kem = { path = "crates/confium-tc-ml-kem", version = "0.3.0" }
 confium-test-harness = { path = "crates/confium-test-harness", version = "0.3.0" }
 confium-tls-signer = { path = "crates/confium-tls-signer", version = "0.3.0" }
-confium-transparency = { path = "crates/confium-transparency", version = "0.3.1" }
+confium-transparency = { path = "crates/confium-transparency", version = "0.4.0" }
 confium-wasm = { path = "crates/confium-wasm", version = "0.3.0" }
 
 libloading = "0.8"
