@@ -54,12 +54,7 @@ impl Pkcs11Server {
     }
 
     /// Register a slot for a Confium quorum.
-    pub fn register_quorum(
-        &mut self,
-        slot: SlotId,
-        slot_info: SlotInfo,
-        token_info: TokenInfo,
-    ) {
+    pub fn register_quorum(&mut self, slot: SlotId, slot_info: SlotInfo, token_info: TokenInfo) {
         self.slots.insert(slot.clone(), slot_info);
         self.tokens.insert(slot, token_info);
     }

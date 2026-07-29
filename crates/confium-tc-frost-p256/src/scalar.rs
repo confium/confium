@@ -90,4 +90,3 @@ mod tests {
         assert!(scalar_from_bytes(&[0u8; 16]).is_none());
     }
 }
-

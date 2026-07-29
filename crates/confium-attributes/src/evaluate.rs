@@ -18,7 +18,10 @@ impl SignerAttributes {
 
     /// Add a value to an attribute.
     pub fn add(&mut self, key: impl Into<String>, value: impl Into<String>) {
-        self.attrs.entry(key.into()).or_default().insert(value.into());
+        self.attrs
+            .entry(key.into())
+            .or_default()
+            .insert(value.into());
     }
 
     /// Does this signer have attribute `key`?

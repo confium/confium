@@ -23,19 +23,14 @@
 //! - Threshold enforcement (3-of-5, not 2-of-5)
 //! - Real P-256 ECDSA signature production and verification
 
+use chrono::Utc;
 use confium_tc::coordinator::{
+    Commitment, Coordinator, Share,
     audit::AuditEvent,
     session::{SessionRequest, SessionState},
-    Coordinator, Commitment, Share,
 };
-use confium_tc_frost_p256::{
-    keys,
-    shamir,
-    sign,
-    scalar,
-};
-use chrono::Utc;
-use p256::ecdsa::{signature::Verifier, Signature};
+use confium_tc_frost_p256::{keys, scalar, shamir, sign};
+use p256::ecdsa::{Signature, signature::Verifier};
 
 /// Simulate a distributed signer. Each signer:
 /// 1. Holds a Shamir share
@@ -70,7 +65,9 @@ impl SimulatedSigner {
             signer_signature: vec![0u8; 64], // Real protocol: signed by YubiKey identity key
             submitted_at: Utc::now(),
         };
-        coordinator.submit_commitment(session_id, commitment).unwrap();
+        coordinator
+            .submit_commitment(session_id, commitment)
+            .unwrap();
     }
 
     /// Simulate the signer submitting their signature share.
@@ -118,7 +115,10 @@ fn e2e_full_threshold_signing_ceremony_3_of_5() {
         requested_by: "e2e-test-harness".into(),
     };
     let session_id = coordinator.create_session(request).unwrap();
-    assert_eq!(coordinator.session_state(&session_id), Some(SessionState::Pending));
+    assert_eq!(
+        coordinator.session_state(&session_id),
+        Some(SessionState::Pending)
+    );
 
     // ================================================================
     // Phase 4: Simulate 5 distributed signers
@@ -158,7 +158,10 @@ fn e2e_full_threshold_signing_ceremony_3_of_5() {
     // Phase 7: Coordinator aggregates into final signature
     // ================================================================
     let aggregated = coordinator.aggregate(&session_id).unwrap();
-    assert_eq!(coordinator.session_state(&session_id), Some(SessionState::Completed));
+    assert_eq!(
+        coordinator.session_state(&session_id),
+        Some(SessionState::Completed)
+    );
     assert_eq!(aggregated.contributing_signers.len(), 3);
 
     // ================================================================
@@ -182,9 +185,9 @@ fn e2e_full_threshold_signing_ceremony_3_of_5() {
     );
 
     // Verify specific event types are present
-    let has_session_created = audit_entries.iter().any(|e| {
-        matches!(&e.event, AuditEvent::SessionCreated { .. })
-    });
+    let has_session_created = audit_entries
+        .iter()
+        .any(|e| matches!(&e.event, AuditEvent::SessionCreated { .. }));
     assert!(has_session_created, "audit log must contain SessionCreated");
 
     let commitment_count = audit_entries
@@ -272,12 +275,18 @@ fn e2e_async_participation_pattern() {
     // Signer 1 participates immediately
     let s1 = SimulatedSigner::new(0, shares[0].clone(), true);
     s1.submit_commitment(&mut coordinator, &session_id);
-    assert_eq!(coordinator.session_state(&session_id), Some(SessionState::Pending));
+    assert_eq!(
+        coordinator.session_state(&session_id),
+        Some(SessionState::Pending)
+    );
 
     // ... hours pass ... (signer 2 in different time zone)
     let s2 = SimulatedSigner::new(1, shares[1].clone(), true);
     s2.submit_commitment(&mut coordinator, &session_id);
-    assert_eq!(coordinator.session_state(&session_id), Some(SessionState::Pending));
+    assert_eq!(
+        coordinator.session_state(&session_id),
+        Some(SessionState::Pending)
+    );
 
     // ... more hours pass ... (signer 3 finally available)
     let s3 = SimulatedSigner::new(2, shares[2].clone(), true);
@@ -295,7 +304,10 @@ fn e2e_async_participation_pattern() {
 
     let aggregated = coordinator.aggregate(&session_id).unwrap();
     assert_eq!(aggregated.contributing_signers.len(), 3);
-    assert_eq!(coordinator.session_state(&session_id), Some(SessionState::Completed));
+    assert_eq!(
+        coordinator.session_state(&session_id),
+        Some(SessionState::Completed)
+    );
 }
 
 #[test]

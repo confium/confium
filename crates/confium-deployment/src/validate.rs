@@ -23,9 +23,10 @@ pub fn validate_manifest(manifest: &Manifest) -> ValidationReport {
     };
 
     if manifest.deployment.manifest_version != 1 {
-        report
-            .errors
-            .push(format!("unsupported manifest version {}", manifest.deployment.manifest_version));
+        report.errors.push(format!(
+            "unsupported manifest version {}",
+            manifest.deployment.manifest_version
+        ));
     }
 
     match manifest.mode {
@@ -68,8 +69,7 @@ pub fn validate_manifest(manifest: &Manifest) -> ValidationReport {
 }
 
 fn validate_tier_chain(tiers: &[crate::manifest::Tier], report: &mut ValidationReport) {
-    let names: std::collections::HashSet<&str> =
-        tiers.iter().map(|t| t.name.as_str()).collect();
+    let names: std::collections::HashSet<&str> = tiers.iter().map(|t| t.name.as_str()).collect();
 
     for tier in tiers {
         if let Some(parent) = &tier.delegated_by {

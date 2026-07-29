@@ -5,7 +5,7 @@
 //! threshold ECDSA workflow for testing and integration.
 
 use crate::keys::Keypair;
-use p256::ecdsa::{signature::Signer, Signature};
+use p256::ecdsa::{Signature, signature::Signer};
 use thiserror::Error;
 
 /// Result of signing: DER-encoded signature bytes plus the raw signature object.
@@ -41,7 +41,7 @@ pub fn sign_message(keypair: &Keypair, message: &[u8]) -> Result<Signed, SignErr
 mod tests {
     use super::*;
     use crate::keys::generate_keypair;
-    use p256::ecdsa::{signature::Verifier, VerifyingKey};
+    use p256::ecdsa::{VerifyingKey, signature::Verifier};
 
     #[test]
     fn sign_and_verify_round_trip() {

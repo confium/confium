@@ -1,7 +1,8 @@
 //! `Predicate` — attribute-based threshold policy DSL, browser-side evaluate-only.
 
-use confium_attributes::{evaluate, parse as dsl_parse, Predicate as RustPredicate,
-    SignerAttributes};
+use confium_attributes::{
+    Predicate as RustPredicate, SignerAttributes, evaluate, parse as dsl_parse,
+};
 use wasm_bindgen::prelude::*;
 
 /// Parsed DSL predicate. Construct via [`Predicate::parse`] and evaluate

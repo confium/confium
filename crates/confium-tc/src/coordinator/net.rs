@@ -8,7 +8,7 @@
 //! - Client → Coordinator: CreateSession, GetStatus
 //! - Coordinator → Client: SessionCreated, Signature, Error
 
-use crate::coordinator::session::{SignerId};
+use crate::coordinator::session::SignerId;
 use serde::{Deserialize, Serialize};
 use std::io::{self, Read, Write};
 use std::net::TcpStream;
@@ -162,7 +162,10 @@ mod tests {
         assert!(json.len() > 10);
         let recovered: ProtocolMessage = serde_json::from_slice(&json).unwrap();
         match recovered {
-            ProtocolMessage::Register { signer_id, quorum_id } => {
+            ProtocolMessage::Register {
+                signer_id,
+                quorum_id,
+            } => {
                 assert_eq!(signer_id, "alice");
                 assert_eq!(quorum_id, "test");
             }

@@ -78,7 +78,11 @@ impl Certificate {
 
     /// Not-before validity bound (raw `der::DateTime`).
     pub fn not_before(&self) -> der::DateTime {
-        self.inner.tbs_certificate.validity.not_before.to_date_time()
+        self.inner
+            .tbs_certificate
+            .validity
+            .not_before
+            .to_date_time()
     }
 
     /// Not-after validity bound (raw `der::DateTime`).

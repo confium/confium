@@ -13,8 +13,7 @@
 //! See `tests/rnp_integration.rs` for the end-to-end sign+verify round trip.
 
 use rnp::{
-    context::Context, key::KeyIdentifier, Algorithm, Hash, KeyBuilder, KeyUsage,
-    PasswordProvider,
+    Algorithm, Hash, KeyBuilder, KeyUsage, PasswordProvider, context::Context, key::KeyIdentifier,
 };
 
 use crate::backend::{CardError, CardId, OpenpgpCardBackend};
@@ -27,11 +26,7 @@ struct StaticPasswordProvider {
 }
 
 impl PasswordProvider for StaticPasswordProvider {
-    fn get_password(
-        &self,
-        _key: Option<&rnp::key::Key>,
-        _ctx: &str,
-    ) -> Option<Cow<'_, str>> {
+    fn get_password(&self, _key: Option<&rnp::key::Key>, _ctx: &str) -> Option<Cow<'_, str>> {
         Some(Cow::Owned(self.pin.clone()))
     }
 }
@@ -56,10 +51,7 @@ pub struct RnpOpenpgpCardBackend {
 impl RnpOpenpgpCardBackend {
     /// Construct a new backend. The `pin` is what would be the user/admin
     /// PINs on a physical OpenPGP card.
-    pub fn new(
-        card_id: impl Into<String>,
-        pin: impl Into<String>,
-    ) -> Result<Self, CardError> {
+    pub fn new(card_id: impl Into<String>, pin: impl Into<String>) -> Result<Self, CardError> {
         let mut ctx = Context::new().map_err(|e| CardError::Io(e.to_string()))?;
         let pin = pin.into();
         ctx.set_password_provider(Box::new(StaticPasswordProvider { pin: pin.clone() }));
@@ -146,15 +138,15 @@ impl OpenpgpCardBackend for RnpOpenpgpCardBackend {
             .map_err(|e| CardError::Io(e.to_string()))
     }
 
-    fn import_keypair(
-        &mut self,
-        slot: OpenpgpSlot,
-        private_key: &[u8],
-    ) -> Result<(), CardError> {
+    fn import_keypair(&mut self, slot: OpenpgpSlot, private_key: &[u8]) -> Result<(), CardError> {
         self.require_admin()?;
         let userid = self.slot_userid(slot);
         self.ctx
-            .load_keys(rnp::context::KeyringFormat::Gpg, private_key, rnp::key::LoadSaveFlags::SECRET)
+            .load_keys(
+                rnp::context::KeyringFormat::Gpg,
+                private_key,
+                rnp::key::LoadSaveFlags::SECRET,
+            )
             .map_err(|e| CardError::Io(e.to_string()))?;
         *self.slot_userid_mut(slot) = Some(userid);
         Ok(())
@@ -209,14 +201,18 @@ impl OpenpgpCardBackend for RnpOpenpgpCardBackend {
 
     fn verify_pin(&self, pin: &str) -> Result<(), CardError> {
         if pin != self.pin {
-            return Err(CardError::WrongPin { attempts_remaining: 2 });
+            return Err(CardError::WrongPin {
+                attempts_remaining: 2,
+            });
         }
         Ok(())
     }
 
     fn verify_admin_pin(&self, admin_pin: &str) -> Result<(), CardError> {
         if admin_pin != self.pin {
-            return Err(CardError::WrongPin { attempts_remaining: 2 });
+            return Err(CardError::WrongPin {
+                attempts_remaining: 2,
+            });
         }
         Ok(())
     }

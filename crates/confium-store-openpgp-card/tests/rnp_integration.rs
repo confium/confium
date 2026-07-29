@@ -13,7 +13,7 @@
 use confium_store_openpgp_card::{
     CardError, OpenpgpCardBackend, OpenpgpSlot, RnpOpenpgpCardBackend,
 };
-use rnp::{Context, Hash, KeyBuilder, KeyUsage, Algorithm};
+use rnp::{Algorithm, Context, Hash, KeyBuilder, KeyUsage};
 
 const PIN: &str = "12345678";
 
@@ -30,7 +30,9 @@ fn sign_verify_round_trip_via_rnp_backend() {
 
     // Admin verifies → can generate SIG slot key.
     card.verify_admin_pin_session(PIN).unwrap();
-    let pub_key = card.generate_keypair(OpenpgpSlot::Signature, "RSA-2048").unwrap();
+    let pub_key = card
+        .generate_keypair(OpenpgpSlot::Signature, "RSA-2048")
+        .unwrap();
     assert!(!pub_key.is_empty(), "public key export must be non-empty");
 
     // User verifies → can sign.
@@ -67,7 +69,8 @@ fn sign_verify_round_trip_via_rnp_backend() {
 fn factory_reset_clears_session_state() {
     let mut card = RnpOpenpgpCardBackend::new("YubiKey-Test-002", PIN).unwrap();
     card.verify_admin_pin_session(PIN).unwrap();
-    card.generate_keypair(OpenpgpSlot::Signature, "RSA-2048").unwrap();
+    card.generate_keypair(OpenpgpSlot::Signature, "RSA-2048")
+        .unwrap();
     card.verify_pin_session(PIN).unwrap();
 
     card.factory_reset().unwrap();

@@ -30,7 +30,9 @@ impl MemoryIdentityBackend {
     }
 
     fn lock(&self) -> Result<MutexGuard<'_, HashMap<String, ActorIdentity>>, IdentityError> {
-        self.inner.lock().map_err(|_| IdentityError::NotFound("lock poisoned".into()))
+        self.inner
+            .lock()
+            .map_err(|_| IdentityError::NotFound("lock poisoned".into()))
     }
 }
 

@@ -57,6 +57,10 @@ pub enum ReshareState {
 pub struct ReshareSession {
     params: ReshareParams,
     state: ReshareState,
+    // Populated by `complete()`. Kept on the struct so a follow-up
+    // accessor (e.g. `new_shares()` returning the post-reshare share
+    // set per party) doesn't require an API break.
+    #[allow(dead_code)]
     new_shares: Vec<(u32, FieldElement)>,
     created_at: DateTime<Utc>,
 }
@@ -203,7 +207,10 @@ mod tests {
         params.old_threshold = 5;
         let mut session = ReshareSession::new(params);
         let result = session.mark_contributions_computed();
-        assert!(matches!(result, Err(ReshareError::InsufficientOldShares { .. })));
+        assert!(matches!(
+            result,
+            Err(ReshareError::InsufficientOldShares { .. })
+        ));
     }
 
     #[test]

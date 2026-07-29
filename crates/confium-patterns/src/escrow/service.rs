@@ -123,12 +123,7 @@ impl EscrowService {
         shared_secret: &[u8],
         aead: &dyn Aead,
     ) -> Result<Vec<u8>, EscrowError> {
-        aead.decrypt(
-            shared_secret,
-            &blob.ciphertext,
-            &blob.nonce,
-            &blob.aad,
-        )
+        aead.decrypt(shared_secret, &blob.ciphertext, &blob.nonce, &blob.aad)
     }
 }
 
@@ -151,7 +146,10 @@ mod tests {
     /// 32 zero bytes as shared secret.
     struct MockEncapsulator;
     impl Encapsulator for MockEncapsulator {
-        fn encapsulate(&self, recipient: &QuorumPublicKey) -> Result<(Vec<u8>, Vec<u8>), EscrowError> {
+        fn encapsulate(
+            &self,
+            recipient: &QuorumPublicKey,
+        ) -> Result<(Vec<u8>, Vec<u8>), EscrowError> {
             Ok((recipient.bytes.clone(), vec![0u8; 32]))
         }
     }

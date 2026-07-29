@@ -111,7 +111,8 @@ impl SignedData {
         // Add the digest algorithm to digest_algorithms if not present.
         let oid = &signer_info.digest_algorithm.oid;
         if !self.digest_algorithms.iter().any(|a| &a.oid == oid) {
-            self.digest_algorithms.push(signer_info.digest_algorithm.clone());
+            self.digest_algorithms
+                .push(signer_info.digest_algorithm.clone());
         }
         self.signer_infos.push(signer_info);
     }

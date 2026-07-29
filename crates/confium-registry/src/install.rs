@@ -104,13 +104,9 @@ impl Default for HttpDownloader {
 
 impl Downloader for HttpDownloader {
     fn download(&self, url: &str) -> Result<Vec<u8>> {
-        let response = self
-            .agent
-            .get(url)
-            .call()
-            .map_err(|e| Error::Download {
-                message: format!("HTTP request to {url} failed: {e}"),
-            })?;
+        let response = self.agent.get(url).call().map_err(|e| Error::Download {
+            message: format!("HTTP request to {url} failed: {e}"),
+        })?;
 
         let mut bytes = Vec::with_capacity(1024 * 64);
         response

@@ -119,12 +119,8 @@ impl InclusionProof {
         let mut current = self.leaf_hash;
         for step in &self.inner.steps {
             current = match step.side {
-                confium_transparency::merkle::Side::Left => {
-                    hash_internal(step.sibling, current)
-                }
-                confium_transparency::merkle::Side::Right => {
-                    hash_internal(current, step.sibling)
-                }
+                confium_transparency::merkle::Side::Left => hash_internal(step.sibling, current),
+                confium_transparency::merkle::Side::Right => hash_internal(current, step.sibling),
             };
         }
         Ok(current == root_arr)
@@ -185,11 +181,7 @@ pub fn compute_artifact_hash(artifact_bytes: &[u8]) -> Vec<u8> {
 ///
 /// 32-byte leaf hash as `Uint8Array`.
 #[wasm_bindgen]
-pub fn compute_leaf_hash(
-    sequence: u64,
-    timestamp_ms: f64,
-    artifact_bytes: &[u8],
-) -> Vec<u8> {
+pub fn compute_leaf_hash(sequence: u64, timestamp_ms: f64, artifact_bytes: &[u8]) -> Vec<u8> {
     use sha2::{Digest, Sha256};
     // entry_hash = SHA-256(sequence_le || timestamp_micros_le || artifact_hash)
     let artifact_hash = {

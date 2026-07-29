@@ -30,12 +30,11 @@ use std::time::Duration;
 
 use confium_tc::coordinator::{
     client::SignerClient,
-    net::{recv_message, send_message, ProtocolMessage},
+    net::{ProtocolMessage, recv_message, send_message},
     net_server::CoordinatorServer,
 };
 use confium_tc_frost_p256::{keys, scalar, shamir, sign};
-use p256::ecdsa::{signature::Verifier, Signature};
-
+use p256::ecdsa::{Signature, signature::Verifier};
 
 #[test]
 fn network_e2e_full_3_of_5_signing_ceremony() {
@@ -163,7 +162,9 @@ fn network_e2e_protocol_round_trip() {
 
     // Connect and register
     let mut client = SignerClient::connect(&addr).expect("connect");
-    client.register("test-signer", "test-quorum").expect("register");
+    client
+        .register("test-signer", "test-quorum")
+        .expect("register");
 
     // Create session
     let session_id = client
@@ -174,7 +175,10 @@ fn network_e2e_protocol_round_trip() {
 
     // Query status
     let state = client.get_status(&session_id).expect("status");
-    assert!(state.contains("Pending"), "new session should be Pending, got: {state}");
+    assert!(
+        state.contains("Pending"),
+        "new session should be Pending, got: {state}"
+    );
 
     println!("Protocol round-trip verified over real TCP");
 }
@@ -194,7 +198,9 @@ fn network_e2e_concurrent_connections() {
         let handle = thread::spawn(move || {
             let mut client = SignerClient::connect(&addr_clone).expect("connect");
             let signer_id = format!("concurrent-{i}");
-            client.register(&signer_id, "test-quorum").expect("register");
+            client
+                .register(&signer_id, "test-quorum")
+                .expect("register");
             signer_id
         });
         handles.push(handle);
@@ -228,13 +234,19 @@ fn network_e2e_session_lifecycle_over_tcp() {
     let msg_clone = message.to_vec();
     let handle1 = thread::spawn(move || {
         let mut client = SignerClient::connect(&addr1).expect("connect");
-        client.register("signer-1", "lifecycle-quorum").expect("register");
+        client
+            .register("signer-1", "lifecycle-quorum")
+            .expect("register");
         let sid = client
             .create_session("lifecycle-quorum", "FROST-P256", &msg_clone, 2, 3)
             .expect("create");
-        client.submit_commitment(&sid, "signer-1", &share1).expect("commitment");
+        client
+            .submit_commitment(&sid, "signer-1", &share1)
+            .expect("commitment");
         thread::sleep(Duration::from_millis(200));
-        client.submit_share(&sid, "signer-1", &share1).expect("share");
+        client
+            .submit_share(&sid, "signer-1", &share1)
+            .expect("share");
         sid
     });
 
@@ -243,9 +255,13 @@ fn network_e2e_session_lifecycle_over_tcp() {
     let share2 = scalar::scalar_to_bytes(&shares[1].y).to_vec();
     let handle2 = thread::spawn(move || {
         let mut client = SignerClient::connect(&addr2).expect("connect");
-        client.register("signer-2", "lifecycle-quorum").expect("register");
+        client
+            .register("signer-2", "lifecycle-quorum")
+            .expect("register");
         thread::sleep(Duration::from_millis(100)); // wait for session creation
-        client.submit_commitment("session-0", "signer-2", &share2).expect("commitment");
+        client
+            .submit_commitment("session-0", "signer-2", &share2)
+            .expect("commitment");
         thread::sleep(Duration::from_millis(200));
         // This submit_share should trigger aggregation (2nd share for T=2)
         let result = client.submit_share("session-0", "signer-2", &share2);

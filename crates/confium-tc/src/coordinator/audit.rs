@@ -108,7 +108,9 @@ mod tests {
         );
         log.append(
             "session-1",
-            AuditEvent::CommitmentReceived { signer: "alice".into() },
+            AuditEvent::CommitmentReceived {
+                signer: "alice".into(),
+            },
         );
         log.append(
             "session-2",
@@ -127,10 +129,7 @@ mod tests {
     #[test]
     fn jsonl_round_trips() {
         let mut log = AuditLog::new();
-        log.append(
-            "session-1",
-            AuditEvent::Aggregated,
-        );
+        log.append("session-1", AuditEvent::Aggregated);
         let jsonl = log.to_jsonl().unwrap();
         assert!(jsonl.contains("session-1"));
         assert!(jsonl.contains("aggregated"));

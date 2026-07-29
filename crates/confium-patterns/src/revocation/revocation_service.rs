@@ -79,19 +79,18 @@ impl RevocationService {
 
     /// Service-side: process first confirmation for a submission.
     pub fn confirm_first(&mut self, submission_id: &str) -> Result<(), RevocationError> {
-        let sub = self
-            .submissions
-            .get_mut(submission_id)
-            .ok_or_else(|| RevocationError::Malformed(format!("unknown submission {submission_id}")))?;
-        sub.confirm_first().map_err(|e| RevocationError::EmailVerificationFailed(e))
+        let sub = self.submissions.get_mut(submission_id).ok_or_else(|| {
+            RevocationError::Malformed(format!("unknown submission {submission_id}"))
+        })?;
+        sub.confirm_first()
+            .map_err(|e| RevocationError::EmailVerificationFailed(e))
     }
 
     /// Service-side: process second confirmation (after 24h delay).
     pub fn confirm_second(&mut self, submission_id: &str) -> Result<(), RevocationError> {
-        let sub = self
-            .submissions
-            .get_mut(submission_id)
-            .ok_or_else(|| RevocationError::Malformed(format!("unknown submission {submission_id}")))?;
+        let sub = self.submissions.get_mut(submission_id).ok_or_else(|| {
+            RevocationError::Malformed(format!("unknown submission {submission_id}"))
+        })?;
         sub.confirm_second()
             .map_err(|e| RevocationError::EmailVerificationFailed(e))
     }
@@ -102,7 +101,8 @@ impl RevocationService {
         let mut count = 0;
         for sub in self.submissions.values_mut() {
             if sub.state == SubmissionState::SecondConfirmed {
-                sub.mark_decrypted().map_err(|e| RevocationError::ThresholdDecryption(e))?;
+                sub.mark_decrypted()
+                    .map_err(|e| RevocationError::ThresholdDecryption(e))?;
                 count += 1;
             }
         }
@@ -111,10 +111,9 @@ impl RevocationService {
 
     /// Service-side: publish a processed submission to keyservers.
     pub fn publish(&mut self, submission_id: &str) -> Result<(), RevocationError> {
-        let sub = self
-            .submissions
-            .get_mut(submission_id)
-            .ok_or_else(|| RevocationError::Malformed(format!("unknown submission {submission_id}")))?;
+        let sub = self.submissions.get_mut(submission_id).ok_or_else(|| {
+            RevocationError::Malformed(format!("unknown submission {submission_id}"))
+        })?;
         sub.mark_published()
             .map_err(|e| RevocationError::Publish(e))
     }
@@ -123,7 +122,12 @@ impl RevocationService {
     pub fn pending_count(&self) -> usize {
         self.submissions
             .values()
-            .filter(|s| !matches!(s.state, SubmissionState::Published | SubmissionState::Cancelled))
+            .filter(|s| {
+                !matches!(
+                    s.state,
+                    SubmissionState::Published | SubmissionState::Cancelled
+                )
+            })
             .count()
     }
 
@@ -178,7 +182,10 @@ mod tests {
         assert_eq!(processed, 1);
         service.publish(&id).unwrap();
 
-        assert_eq!(service.submission(&id).unwrap().state, SubmissionState::Published);
+        assert_eq!(
+            service.submission(&id).unwrap().state,
+            SubmissionState::Published
+        );
     }
 
     #[test]

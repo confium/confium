@@ -60,7 +60,10 @@ fn merkle_inclusion_proof_round_trip() {
     for seq in seqs {
         let proof = tree.inclusion_proof(seq).unwrap();
         assert_eq!(proof.sequence(), seq);
-        assert!(proof.verify(&root).unwrap(), "inclusion proof for seq {seq} must verify");
+        assert!(
+            proof.verify(&root).unwrap(),
+            "inclusion proof for seq {seq} must verify"
+        );
     }
 }
 
@@ -123,9 +126,9 @@ fn compute_artifact_hash_is_sha256() {
     let h = compute_artifact_hash(b"hello");
     // SHA-256("hello") = 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824
     let expected = [
-        0x2c, 0xf2, 0x4d, 0xba, 0x5f, 0xb0, 0xa3, 0x0e, 0x26, 0xe8, 0x3b, 0x2a, 0xc5, 0xb9,
-        0xe2, 0x9e, 0x1b, 0x16, 0x1e, 0x5c, 0x1f, 0xa7, 0x42, 0x5e, 0x73, 0x04, 0x33, 0x62, 0x93,
-        0x8b, 0x98, 0x24,
+        0x2c, 0xf2, 0x4d, 0xba, 0x5f, 0xb0, 0xa3, 0x0e, 0x26, 0xe8, 0x3b, 0x2a, 0xc5, 0xb9, 0xe2,
+        0x9e, 0x1b, 0x16, 0x1e, 0x5c, 0x1f, 0xa7, 0x42, 0x5e, 0x73, 0x04, 0x33, 0x62, 0x93, 0x8b,
+        0x98, 0x24,
     ];
     assert_eq!(h, expected);
 }
@@ -147,7 +150,11 @@ fn compute_leaf_hash_round_trips_through_inclusion_proof() {
     let proof_json = format!(r#"{{"sequence":{seq},"steps":[]}}"#);
     let head_json = format!(
         r#"{{"size":1,"root":[{}]}}"#,
-        tree.root().iter().map(|b| format!("{b}")).collect::<Vec<_>>().join(",")
+        tree.root()
+            .iter()
+            .map(|b| format!("{b}"))
+            .collect::<Vec<_>>()
+            .join(",")
     );
     // For a 1-leaf tree, root == hash_leaf(entry_hash) == leaf_hash.
     // So verify_inclusion_with_head(leaf_hash, proof, head) should be true.

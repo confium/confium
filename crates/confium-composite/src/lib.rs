@@ -63,7 +63,10 @@ impl CompositeSignature {
 
     /// List the algorithm identifiers.
     pub fn algorithms(&self) -> Vec<&str> {
-        self.components.iter().map(|c| c.algorithm.as_str()).collect()
+        self.components
+            .iter()
+            .map(|c| c.algorithm.as_str())
+            .collect()
     }
 
     /// Verify all components. Caller provides the verifier function:
@@ -161,9 +164,7 @@ mod tests {
         ]);
         assert_eq!(composite.component_count(), 2);
 
-        let result = composite
-            .verify(b"hello", |_, _, _, _| Ok(()))
-            .unwrap();
+        let result = composite.verify(b"hello", |_, _, _, _| Ok(())).unwrap();
         assert!(result.all_verified);
     }
 
@@ -240,11 +241,10 @@ pub fn p256_verifier(
     if algorithm != ECDSA_P256 && algorithm != "ECDSA" {
         return Err(format!("not ECDSA-P256: {algorithm}"));
     }
-    use p256::ecdsa::{signature::Verifier, Signature, VerifyingKey};
+    use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
     let vk = VerifyingKey::from_sec1_bytes(public_key)
         .map_err(|e| format!("invalid P-256 public key: {e}"))?;
-    let sig = Signature::from_der(signature)
-        .map_err(|e| format!("invalid DER signature: {e}"))?;
+    let sig = Signature::from_der(signature).map_err(|e| format!("invalid DER signature: {e}"))?;
     vk.verify(message, &sig).map_err(|e| format!("verify: {e}"))
 }
 
@@ -298,7 +298,7 @@ mod real_ed25519_tests {
 
     #[test]
     fn real_p256_round_trip() {
-        use p256::ecdsa::{SigningKey, signature::Signer, Signature};
+        use p256::ecdsa::{Signature, SigningKey, signature::Signer};
         let signing = SigningKey::random(&mut OsRng);
         let verifying = signing.verifying_key();
         let message = b"composite p256 test message";
@@ -312,7 +312,7 @@ mod real_ed25519_tests {
 
     #[test]
     fn real_p256_rejects_wrong_message() {
-        use p256::ecdsa::{SigningKey, signature::Signer, Signature};
+        use p256::ecdsa::{Signature, SigningKey, signature::Signer};
         let signing = SigningKey::random(&mut OsRng);
         let verifying = signing.verifying_key();
         let sig: Signature = signing.sign(b"original");

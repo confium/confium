@@ -33,7 +33,7 @@ use p256::{AffinePoint, EncodedPoint, FieldBytes, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
 
 pub use keys::generate_keypair;
-pub use shamir::{recover_secret, split_secret, Share};
+pub use shamir::{Share, recover_secret, split_secret};
 
 /// Algorithm identifier.
 pub const ALGORITHM: &str = "ECIES-P256-threshold";
@@ -120,7 +120,11 @@ fn decode_point(bytes: &[u8]) -> Result<ProjectivePoint, EciesError> {
 }
 
 fn encode_point(point: &ProjectivePoint) -> Vec<u8> {
-    point.to_affine().to_encoded_point(false).as_bytes().to_vec()
+    point
+        .to_affine()
+        .to_encoded_point(false)
+        .as_bytes()
+        .to_vec()
 }
 
 fn decode_scalar(bytes: &[u8]) -> Result<Scalar, EciesError> {

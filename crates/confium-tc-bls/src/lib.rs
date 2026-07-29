@@ -57,7 +57,9 @@ pub enum BlsError {
 /// Mock: XORs all signature bytes together.
 pub fn aggregate_signatures(signatures: &[Signature]) -> Result<Signature, BlsError> {
     if signatures.is_empty() {
-        return Err(BlsError::AggregationFailed("no signatures to aggregate".into()));
+        return Err(BlsError::AggregationFailed(
+            "no signatures to aggregate".into(),
+        ));
     }
     let mut combined = signatures[0].bytes.clone();
     for sig in &signatures[1..] {
@@ -76,8 +78,12 @@ mod tests {
 
     #[test]
     fn aggregate_two_signatures() {
-        let s1 = Signature { bytes: vec![0xFF; 96] };
-        let s2 = Signature { bytes: vec![0xFF; 96] };
+        let s1 = Signature {
+            bytes: vec![0xFF; 96],
+        };
+        let s2 = Signature {
+            bytes: vec![0xFF; 96],
+        };
         let combined = aggregate_signatures(&[s1, s2]).unwrap();
         // XOR of two identical = all zeros
         assert!(combined.bytes.iter().all(|b| *b == 0));

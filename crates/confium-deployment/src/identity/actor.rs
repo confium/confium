@@ -163,10 +163,16 @@ impl ActorIdentityBuilder {
     /// Build the identity.
     pub fn build(self) -> Result<ActorIdentity, IdentityError> {
         Ok(ActorIdentity {
-            actor_id: self.actor_id.ok_or(IdentityError::MissingField("actor_id"))?,
-            actor_type: self.actor_type.ok_or(IdentityError::MissingField("actor_type"))?,
+            actor_id: self
+                .actor_id
+                .ok_or(IdentityError::MissingField("actor_id"))?,
+            actor_type: self
+                .actor_type
+                .ok_or(IdentityError::MissingField("actor_type"))?,
             quorum_id: self.quorum_id,
-            signing_key: self.signing_key.ok_or(IdentityError::MissingField("signing_key"))?,
+            signing_key: self
+                .signing_key
+                .ok_or(IdentityError::MissingField("signing_key"))?,
             encryption_key: self.encryption_key,
             certificate_chain_der: self.certificate_chain_der,
             hardware_token: self.hardware_token,

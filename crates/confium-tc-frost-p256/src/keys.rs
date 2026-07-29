@@ -2,9 +2,9 @@
 
 use crate::scalar;
 use p256::{
+    AffinePoint, ProjectivePoint, Scalar,
     ecdsa::{SigningKey, VerifyingKey},
     elliptic_curve::sec1::ToEncodedPoint,
-    AffinePoint, ProjectivePoint, Scalar,
 };
 
 /// A P-256 keypair.

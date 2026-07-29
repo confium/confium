@@ -157,19 +157,8 @@ mod tests {
 
     #[test]
     fn renew_adds_sequence() {
-        let mut r = build_initial_evidence_record(
-            [1u8; 32],
-            HashAlgorithm::Sha256,
-            "tsa",
-            vec![],
-        );
-        renew_evidence_record(
-            &mut r,
-            HashAlgorithm::Sha384,
-            [2u8; 32],
-            "tsa2",
-            vec![],
-        );
+        let mut r = build_initial_evidence_record([1u8; 32], HashAlgorithm::Sha256, "tsa", vec![]);
+        renew_evidence_record(&mut r, HashAlgorithm::Sha384, [2u8; 32], "tsa2", vec![]);
         assert_eq!(renewal_count(&r), 2);
         assert_eq!(r.digest_algorithms.len(), 2);
     }

@@ -49,11 +49,7 @@ pub trait OpenpgpCardBackend {
     ) -> Result<Vec<u8>, CardError>;
 
     /// Import a keypair into the given slot (rare; usually generated in-card).
-    fn import_keypair(
-        &mut self,
-        slot: OpenpgpSlot,
-        private_key: &[u8],
-    ) -> Result<(), CardError>;
+    fn import_keypair(&mut self, slot: OpenpgpSlot, private_key: &[u8]) -> Result<(), CardError>;
 
     /// Get the public key from a slot.
     fn public_key(&self, slot: OpenpgpSlot) -> Result<Vec<u8>, CardError>;
@@ -112,11 +108,7 @@ impl OpenpgpCardBackend for MockOpenpgpCardBackend {
         Ok(vec![slot as u8; 32])
     }
 
-    fn import_keypair(
-        &mut self,
-        _slot: OpenpgpSlot,
-        _private_key: &[u8],
-    ) -> Result<(), CardError> {
+    fn import_keypair(&mut self, _slot: OpenpgpSlot, _private_key: &[u8]) -> Result<(), CardError> {
         if !self.admin_verified {
             return Err(CardError::VerificationRequired("admin PIN".into()));
         }
