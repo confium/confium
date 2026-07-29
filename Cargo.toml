@@ -45,7 +45,6 @@ members = [
     "crates/confium-tls-signer",
     "crates/confium-transparency",
     "crates/confium-wasm",
-    "crates/confium-python",
 ]
 
 [workspace.package]

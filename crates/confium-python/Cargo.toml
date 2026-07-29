@@ -1,12 +1,12 @@
 [package]
 name = "confium-python"
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
-authors.workspace = true
-license.workspace = true
-homepage.workspace = true
-repository.workspace = true
+version = "0.3.0"
+edition = "2024"
+rust-version = "1.85"
+authors = ["Ribose Open <open.source@ribose.com>"]
+license = "BSD-2-Clause"
+homepage = "https://www.confium.org/"
+repository = "https://github.com/confium/confium"
 categories = ["cryptography", "authentication"]
 keywords = ["crypto", "threshold", "python", "confium"]
 description = "Python bindings for the Confium threshold cryptography framework"
@@ -17,13 +17,15 @@ name = "confium"
 crate-type = ["cdylib"]
 
 [dependencies]
-confium-core = { workspace = true }
-confium-composite = { workspace = true }
-confium-transparency = { workspace = true }
-pyo3 = { workspace = true }
-serde_json = { workspace = true }
-sha2 = { workspace = true }
+confium-core = "0.2"
+confium-composite = "0.3.1"
+confium-transparency = "0.3.1"
+pyo3 = { version = "0.22", features = ["extension-module"] }
+serde_json = "1"
+sha2 = "0.10"
 
 [package.metadata.maturin]
 python-source = "python"
 module-name = "confium"
+
+[workspace]
