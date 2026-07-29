@@ -1064,3 +1064,96 @@ def test_verify_consistency_rejects_short_root() -> None:
     proof = tree.consistency_proof(4)
     with pytest.raises(ValueError, match="32 bytes"):
         tree.verify_consistency(b"\x00" * 10, b"\x00" * 32, 4, 8, proof)
+
+
+# ---------------------------------------------------------------------------
+# XMLDSig canonicalization
+# ---------------------------------------------------------------------------
+
+def test_xmldsig_canonicalize_strips_declaration() -> None:
+    from confium import xmldsig
+    xml = '<?xml version="1.0"?>\n<root><child>text</child></root>'
+    result = xmldsig.canonicalize(xml)
+    assert result.startswith("<root>")
+    assert not result.startswith("<?xml")
+
+
+def test_xmldsig_canonicalize_preserves_content() -> None:
+    from confium import xmldsig
+    xml = '<root><child attr="val">hello</child></root>'
+    result = xmldsig.canonicalize(xml)
+    assert "hello" in result
+    assert 'attr="val"' in result
+
+
+def test_xmldsig_canonicalize_exclusive_round_trip() -> None:
+    from confium import xmldsig
+    xml = '<root><child>x</child></root>'
+    assert xmldsig.canonicalize_exclusive(xml) == xmldsig.canonicalize(xml)
+
+
+def test_xmldsig_sha256_digest() -> None:
+    from confium import xmldsig
+    import hashlib
+    result = xmldsig.sha256_digest(b"hello")
+    expected = hashlib.sha256(b"hello").digest()
+    assert result == expected
+
+
+def test_xmldsig_rejects_malformed_xml() -> None:
+    from confium import xmldsig
+    with pytest.raises(ValueError):
+        xmldsig.canonicalize("&&&unterminated")
+
+
+# ---------------------------------------------------------------------------
+# Deployment manifest
+# ---------------------------------------------------------------------------
+
+def test_deployment_manifest_round_trip() -> None:
+    from confium import deployment
+    toml = """[deployment]
+name = "Test Deployment"
+operator = "Test Operator"
+manifest_version = 1
+
+mode = "certificate_pki"
+
+[[tiers]]
+name = "root"
+role = "root"
+signing_algorithm = "FROST-ed25519"
+threshold = { t = 3, n = 5 }
+"""
+    m = deployment.Manifest.from_toml(toml)
+    assert m.name == "Test Deployment"
+    assert m.operator == "Test Operator"
+    assert m.tier_count == 1
+    round_tripped = m.to_toml()
+    assert "Test Deployment" in round_tripped
+
+
+def test_deployment_manifest_rejects_bad_toml() -> None:
+    from confium import deployment
+    with pytest.raises(ValueError):
+        deployment.Manifest.from_toml("not valid toml ===")
+
+
+def test_deployment_manifest_validate_returns_list() -> None:
+    from confium import deployment
+    toml = """[deployment]
+name = "test"
+operator = "test-org"
+manifest_version = 1
+
+mode = "certificate_pki"
+
+[[tiers]]
+name = "root"
+role = "root"
+signing_algorithm = "FROST-ed25519"
+threshold = { t = 1, n = 1 }
+"""
+    m = deployment.Manifest.from_toml(toml)
+    results = m.validate()
+    assert isinstance(results, list)

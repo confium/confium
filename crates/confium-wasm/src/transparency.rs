@@ -62,6 +62,22 @@ impl MerkleTree {
         self.inner.borrow().root().to_vec()
     }
 
+    /// Build a consistency proof (RFC 6962 §2.1.2) for `old_size`.
+    /// Returns a flat array of 32-byte subtree hashes concatenated
+    /// (total length = proof.len() * 32).
+    pub fn consistency_proof(&self, old_size: usize) -> Result<Vec<u8>, JsValue> {
+        let proof = self
+            .inner
+            .borrow()
+            .consistency_proof(old_size)
+            .map_err(|e| JsValue::from_str(&e.to_string()))?;
+        let mut flat = Vec::with_capacity(proof.len() * 32);
+        for h in &proof {
+            flat.extend_from_slice(h);
+        }
+        Ok(flat)
+    }
+
     /// Build an inclusion proof for `sequence`.
     pub fn inclusion_proof(&self, sequence: u64) -> Result<InclusionProof, JsValue> {
         let proof = self
