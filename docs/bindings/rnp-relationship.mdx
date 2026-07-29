@@ -1,0 +1,64 @@
+# Confium + RNP: complementary cryptography
+
+Confium and [RNP](https://github.com/rnpgp/rnp) are sibling projects
+from the same team. They serve complementary roles:
+
+| | Confium | RNP |
+|---|---|---|
+| **Focus** | Threshold cryptography + transparency logs | Standard OpenPGP (RFC 9580) |
+| **Key model** | Multi-party (no single party holds the full key) | Single-party (one private key) |
+| **Signature type** | Composite (hybrid classical + PQ) | Standard OpenPGP signatures |
+| **Transparency** | RFC 6962 Merkle tree + inclusion/consistency proofs | None |
+| **Deployment** | Three modes (peer-to-peer TC, PKI drop-in, Sovereign PKI) | Standard PGP keyring |
+
+## When to use which
+
+- **Confium** when you need: multi-stakeholder signing, threshold
+  quorums, transparency logs, post-quantum migration via composite
+  signatures, institutional PKI with custom certificate formats.
+- **RNP** when you need: standard OpenPGP key generation, signing,
+  verification, encryption, armor encode/decode — the full RFC 9580
+  toolkit.
+- **Both** when your application uses standard OpenPGP for
+  person-to-person communication AND threshold signing for
+  institutional decisions (e.g., a certificate authority that issues
+  both standard PGP keys and threshold-signed certificates).
+
+## Language bindings
+
+Both projects ship bindings for the same languages:
+
+| Language | Confium | RNP |
+|---|---|---|
+| **Ruby** | `gem install confium` | `gem install ruby-rnp` |
+| **Python** | `pip install confium` | `pip install py-rnp` |
+| **WASM** | `npm install @confium/confium-wasm` | `npm install @rnpgp/rnp` |
+| **Rust** | `cargo add confium-core` | `cargo add rnp-rs` |
+| **Swift** | (planned) | `swift-rnp` |
+
+## Ruby integration
+
+The Confium Ruby gem includes a `Confium::OpenPGP` module that
+optionally wraps `ruby-rnp`. Install both gems and Confium
+automatically detects RNP:
+
+```ruby
+require "confium"
+
+# Threshold signing (Confium)
+tree = Confium::Transparency::MerkleTree.new
+seq = tree.append(artifact_type: :threshold_signature, artifact_hash: hash)
+
+# Standard OpenPGP (RNP, via Confium::OpenPGP wrapper)
+Confium::OpenPGP.verify(pgp_signature, signed_data, pgp_pubkey)
+```
+
+The `Confium::OpenPGP` module is a soft dependency — it loads `ruby-rnp`
+lazily on first use. If ruby-rnp isn't installed, methods raise
+`Confium::OpenPGP::NotInstalledError` with install instructions.
+
+## See also
+
+- [Bindings parity matrix](bindings/parity.mdx) — Confium binding coverage
+- [RNP project](https://github.com/rnpgp) — RNP on GitHub
+- [@rnpgp/rnp on npm](https://www.npmjs.com/package/@rnpgp/rnp) — WASM OpenPGP
