@@ -38,9 +38,9 @@ Both projects ship bindings for the same languages:
 
 ## Ruby integration
 
-The Confium Ruby gem includes a `Confium::OpenPGP` module that
-optionally wraps `ruby-rnp`. Install both gems and Confium
-automatically detects RNP:
+The Confium Ruby gem **hard-bundles** rnp-rs (OpenPGP, RFC 9580) into
+the native extension. No external gem required — install `confium` and
+OpenPGP armor encode/decode is available immediately:
 
 ```ruby
 require "confium"
@@ -49,13 +49,33 @@ require "confium"
 tree = Confium::Transparency::MerkleTree.new
 seq = tree.append(artifact_type: :threshold_signature, artifact_hash: hash)
 
-# Standard OpenPGP (RNP, via Confium::OpenPGP wrapper)
-Confium::OpenPGP.verify(pgp_signature, signed_data, pgp_pubkey)
+# Standard OpenPGP armor (RNP, bundled in the extension)
+armored = Confium::OpenPGP.armor(raw_bytes, Confium::OpenPGP::PUBLIC_KEY)
+decoded = Confium::OpenPGP.dearmor(armored)
 ```
 
-The `Confium::OpenPGP` module is a soft dependency — it loads `ruby-rnp`
-lazily on first use. If ruby-rnp isn't installed, methods raise
-`Confium::OpenPGP::NotInstalledError` with install instructions.
+The extension links `librnp` at build time and exposes `_native_armor`
+/ `_native_dearmor` via the Rust→magnus bridge. The Ruby wrapper in
+`lib/confium/openpgp.rb` adds default-arg convenience.
+
+## Python integration
+
+```sh
+pip install confium py-rnp
+```
+
+The `py-rnp` package provides standard OpenPGP operations alongside
+`confium` for a complete Python crypto toolkit.
+
+## WASM (browser)
+
+```sh
+npm install @confium/confium-wasm @rnpgp/rnp
+```
+
+- `@confium/confium-wasm` — transparency log verification, composite
+  signature verification, attribute predicate evaluation.
+- `@rnpgp/rnp` — full OpenPGP (RFC 9580) in the browser.
 
 ## See also
 
