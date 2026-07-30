@@ -19,6 +19,8 @@ use pyo3::prelude::*;
 pub mod attributes;
 pub mod composite;
 pub mod deployment;
+pub mod ers;
+pub mod ots;
 pub mod pki;
 pub mod transparency;
 pub mod version;
@@ -35,6 +37,8 @@ fn confium(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     attributes::register_module(py, m)?;
     composite::register_module(py, m)?;
     deployment::register_module(py, m)?;
+    ers::register_module(py, m)?;
+    ots::register_module(py, m)?;
     pki::register_module(py, m)?;
     transparency::register_module(py, m)?;
     xmldsig::register_module(py, m)?;

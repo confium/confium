@@ -1157,3 +1157,65 @@ threshold = { t = 1, n = 1 }
     m = deployment.Manifest.from_toml(toml)
     results = m.validate()
     assert isinstance(results, list)
+
+
+# ---------------------------------------------------------------------------
+# OTS (OpenTimestamps)
+# ---------------------------------------------------------------------------
+
+def test_ots_client_has_calendar_servers() -> None:
+    from confium import ots
+    client = ots.OtsClient()
+    assert len(client.calendar_servers) > 0
+    assert all(isinstance(s, str) for s in client.calendar_servers)
+
+
+def test_ots_stamp_returns_proof() -> None:
+    from confium import ots
+    client = ots.OtsClient()
+    h = hashlib.sha256(b"test").digest()
+    proof = client.stamp(h)
+    assert proof.hash == h
+    assert proof.bitcoin_height > 0
+
+
+def test_ots_stamp_rejects_short_hash() -> None:
+    from confium import ots
+    client = ots.OtsClient()
+    with pytest.raises(ValueError, match="32 bytes"):
+        client.stamp(b"short")
+
+
+# ---------------------------------------------------------------------------
+# ERS (Evidence Record Syntax, RFC 4998)
+# ---------------------------------------------------------------------------
+
+def test_ers_build_initial() -> None:
+    from confium import ers
+    h = hashlib.sha256(b"archived data").digest()
+    record = ers.EvidenceRecord.build_initial(h, "test-tsa", b"token")
+    assert record.renewal_count >= 1
+
+
+def test_ers_renew_increments_count() -> None:
+    from confium import ers
+    h = hashlib.sha256(b"data").digest()
+    record = ers.EvidenceRecord.build_initial(h, "tsa-1", b"token-1")
+    initial = record.renewal_count
+    renewed = record.renew(h, "tsa-2", b"token-2")
+    assert renewed.renewal_count == initial + 1
+
+
+def test_ers_renew_does_not_mutate_original() -> None:
+    from confium import ers
+    h = hashlib.sha256(b"data").digest()
+    record = ers.EvidenceRecord.build_initial(h, "tsa", b"token")
+    original_count = record.renewal_count
+    record.renew(h, "tsa-2", b"new-token")
+    assert record.renewal_count == original_count
+
+
+def test_ers_rejects_short_hash() -> None:
+    from confium import ers
+    with pytest.raises(ValueError, match="32 bytes"):
+        ers.EvidenceRecord.build_initial(b"short", "tsa", b"token")
