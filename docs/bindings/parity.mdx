@@ -11,36 +11,37 @@ feature".
 |---|:---:|:---:|:---:|:---:|
 | **Composite verify** (Ed25519) | ✅ | ✅ | ✅ | ✅ |
 | **Composite verify** (ECDSA-P256) | ✅ | ✅ | ✅ | ✅ |
-| **Composite sign** (Ed25519) | ✅ | ✅ | ✅ | ❌ |
-| **Composite sign** (ECDSA-P256) | ✅ | ✅ | ✅ | ❌ |
-| **Composite custom verifier callback** | ✅ | ✅ | ✅ | ❌ |
+| **Composite sign** (Ed25519) | ✅ | ✅ | ✅ | ➖ |
+| **Composite sign** (ECDSA-P256) | ✅ | ✅ | ✅ | ➖ |
+| **Composite custom verifier callback** | ✅ | ✅ | ✅ | ➖ |
 | **Transparency append** | ✅ | ✅ | ✅ | ✅ |
 | **Transparency inclusion proof** | ✅ | ✅ | ✅ | ✅ |
-| **Transparency consistency proof** | ✅ | ✅ | ✅ | ❌ |
+| **Transparency consistency proof** | ✅ | ✅ | ✅ | ✅ |
 | **Transparency compute_leaf_hash** | ✅ | ✅ | ✅ | ✅ |
 | **Transparency verify_inclusion_with_leaf** | ✅ | ❌ | ✅ | ✅ |
 | **PKI Certificate** parse (DER/PEM) | ✅ | ✅ | ✅ | ✅ |
 | **PKI CSR** parse (DER/PEM) | ✅ | ✅ | ✅ | ✅ |
 | **PKI CMS SignedData** parse (JSON) | ✅ | ✅ | ✅ | ✅ |
 | **PKI CMS SignedData** verify | ✅ | ✅ | ✅ | ✅ |
-| **PKI CMS SignedData** build/sign | ✅ | ✅ | ✅ | ❌ |
-| **PKI CMS SignedData** DER encode | ✅ | ✅ | ✅ | ❌ |
-| **PKI XMLDSig** canonicalize | ✅ | ✅ | ✅ | ❌ |
+| **PKI CMS SignedData** build/sign | ✅ | ✅ | ✅ | ➖ |
+| **PKI CMS SignedData** DER encode | ✅ | ✅ | ✅ | ➖ |
+| **PKI XMLDSig** canonicalize | ✅ | ✅ | ✅ | ✅ |
 | **Attributes predicate** parse | ✅ | ✅ | ✅ | ✅ |
 | **Attributes evaluate** | ✅ | ✅ | ✅ | ✅ |
-| **Identity Actor** | ✅ | ✅ | ✅ | ❌ |
-| **Config Manifest** | ✅ | ✅ | ✅ | ❌ |
-| **TC FROST-P256** (Shamir + ECDSA) | ✅ | ✅ | ❌ | ❌ |
-| **TC ElGamal-P256** (threshold enc) | ✅ | ✅ | ❌ | ❌ |
-| **TC CMP20** | ✅ | ❌ | ❌ | ❌ |
-| **TC GG18** | ✅ | ❌ | ❌ | ❌ |
-| **OTS anchor** | ✅ | ✅ | ❌ | ❌ |
-| **ERS archival** | ✅ | ❌ | ❌ | ❌ |
+| **Identity Actor** | ✅ | ✅ | ✅ | ➖ |
+| **Config Manifest** | ✅ | ✅ | ✅ | ➖ |
+| **TC FROST-P256** (Shamir + ECDSA) | ✅ | ✅ | ❌ | ➖ |
+| **TC ElGamal-P256** (threshold enc) | ✅ | ✅ | ❌ | ➖ |
+| **TC CMP20** | ✅ | ❌ | ❌ | ➖ |
+| **TC GG18** | ✅ | ❌ | ❌ | ➖ |
+| **OTS anchor** | ✅ | ✅ | ❌ | ➖ |
+| **ERS archival** | ✅ | ❌ | ❌ | ➖ |
 
 ## Legend
 
 - ✅ — shipped, real implementation, spec'd
 - ❌ — not exposed in this binding (yet)
+- ➖ — **by design** not exposed (WASM is verifier-only: browsers verify, servers sign)
 
 ## How to read this table
 
