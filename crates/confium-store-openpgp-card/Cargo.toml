@@ -21,10 +21,10 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 serde = { workspace = true }
 thiserror = { workspace = true }
-rnp = { workspace = true }
+rnp = { workspace = true, features = ["vendored"] }
 
 [dev-dependencies]
-rnp = { workspace = true }
+rnp = { workspace = true, features = ["vendored"] }
 
 [lib]
 crate-type = ["rlib"]
