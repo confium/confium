@@ -1,6 +1,6 @@
 [package]
 name = "confium-wasm"
-version.workspace = true
+version = "0.3.1"
 edition.workspace = true
 rust-version.workspace = true
 authors.workspace = true
@@ -29,12 +29,29 @@ verify-composite = ["dep:confium-composite"]
 verify-transparency = ["dep:confium-transparency"]
 verify-attributes = ["dep:confium-attributes"]
 verify-pki = ["dep:confium-pki"]
+# The `sign` feature gates the signing surface. **Off by default** for
+# the browser build — browsers verify, servers sign. Enable this when
+# building for a WASI host (Cloudflare Workers, Fastly Compute@Edge,
+# Vercel Edge, Deno, Bun, Wasmtime, Wasmer) where the WASM module IS
+# the server and needs to produce signatures.
+#
+# Build with: `cargo build --target wasm32-wasip1 --features sign`
+sign = [
+  "dep:confium-tc-cmp20",
+  "dep:confium-tc-gg18",
+  "dep:confium-tc-frost-p256",
+  "dep:confium-tc-elgamal-p256",
+]
 
 [dependencies]
 confium-composite = { workspace = true, optional = true }
 confium-transparency = { workspace = true, optional = true }
 confium-attributes = { workspace = true, optional = true }
 confium-pki = { workspace = true, optional = true }
+confium-tc-cmp20 = { workspace = true, optional = true }
+confium-tc-gg18 = { workspace = true, optional = true }
+confium-tc-frost-p256 = { workspace = true, optional = true }
+confium-tc-elgamal-p256 = { workspace = true, optional = true }
 
 wasm-bindgen = "0.2"
 serde = { workspace = true }
