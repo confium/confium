@@ -1,0 +1,122 @@
+---
+title: Migration Guide — 0.2 to 0.3
+description: How to update from Confium 0.2 to the 6-product restructuring
+audience: security-engineer, devsecops
+---
+
+# Migrating from 0.2 to 0.3
+
+0.3 introduces the 6-product restructuring: Threshold, Transparency, PKI, Keyless, Privacy, Verify. This guide walks you through the changes if you depended on 0.2.
+
+## TL;DR
+
+- Most public APIs are unchanged at the type level.
+- New crate names: `confium-threshold`, `confium-keyless`, `confium-verify` (product facades)
+- `confium-tc` is now a compatibility facade over `confium-tc-core`, `confium-coordinator`, `confium-tc-keys`, etc.
+- `Mode 1/2/3` terminology deprecated on the public site; use product names
+- Old share-file format (`confium-tc` 0.2) is NOT compatible with 0.3
+
+## What's new
+
+### 6 product facades
+
+Before:
+
+```toml
+[dependencies]
+confium-tc = "0.2"
+confium-tc-cmp20 = "0.2"
+confium-coordinator = "0.2"
+# ... 5-12 separate crates
+```
+
+After:
+
+```toml
+[dependencies]
+confium-threshold = { version = "0.3", features = ["cmp20"] }
+```
+
+The facade re-exports everything you need. Use `confium-threshold::cmp20::keygen(...)` instead of `confium_tc_cmp20::keygen(...)`.
+
+### New crates
+
+- `confium-tc-core` — extracted from `confium-tc`
+- `confium-crypto-vss` — extracted from `confium-tc`
+- `confium-crypto-zk` — extracted from `confium-tc`
+- `confium-privacy` — extracted from `confium-tc`
+- `confium-coordinator` — extracted from `confium-tc`
+- `confium-tc-keys` — extracted from `confium-tc`
+- `confium-observability` — extracted from `confium-tc`
+- `confium-pki-tc` — extracted from `confium-tc`
+
+All 8 are published to crates.io. The `confium-tc` crate stays as a compatibility facade.
+
+### Product terminology
+
+Old (deprecated on public site):
+- "Mode 1 — Peer-to-Peer TC"
+- "Mode 2 — PKI Drop-in"
+- "Mode 3 — Certificate PKI"
+
+New (use these):
+- "Confium Threshold"
+- "Confium PKI"
+- "Confium Keyless" (replaces Mode 3 for keyless flows)
+- "Confium Transparency"
+- "Confium Privacy"
+- "Confium Verify"
+
+Specs still reference modes for historical context (never delete source).
+
+## Breaking changes
+
+### Share-file format
+
+0.2 share files use a flat JSON shape. 0.3 wraps them in an envelope with scheme name and threshold.
+
+**0.2:**
+```json
+{"x": 1, "y": "hex..."}
+```
+
+**0.3:**
+```json
+{"scheme": "CMP20-ECDSA-P256", "threshold": 2, "party_count": 3, "public_key": "hex...", "shares": [{"x": 1, "y": "hex..."}, ...]}
+```
+
+**Migration:** Use `confium threshold migrate-shares --in old.json --out new.json` (available in 0.3.0+).
+
+### Cargo feature flags
+
+`confium-tc` had `full`, `coordinator`, `keys` features. 0.3 splits these:
+- `coordinator` → use `confium-coordinator` directly or via `confium-threshold` with `coordinator` feature
+- `keys` → use `confium-tc-keys` directly or via `confium-threshold` with `keys` feature
+
+If you had `confium-tc = { version = "0.2", features = ["full"] }`, switch to `confium-threshold = { version = "0.3", features = ["full"] }`.
+
+### CLI commands
+
+Old:
+```
+confium tc keygen --threshold 2 --parties 3
+```
+
+New (umbrella commands):
+```
+confium threshold keygen --threshold 2 --parties 3
+```
+
+Old commands still work as aliases for back-compat in 0.3.x. They'll be removed in 0.5.
+
+## Migration steps
+
+1. **Audit your deps** — `cargo tree | grep confium`
+2. **Switch to facades** — replace direct `confium-tc-*` deps with `confium-threshold` / `confium-keyless` / `confium-verify` / `confium-pki` / `confium-transparency` / `confium-privacy`
+3. **Migrate share files** — `confium threshold migrate-shares` on each persisted share file
+4. **Update CLI usage** — switch to product-umbrella commands; old aliases work for now
+5. **Update docs/links** — replace "Mode 1/2/3" language with product names
+
+## Need help
+
+Open a [Discussion](https://github.com/confium/confium/discussions) tagged `migration-help`.

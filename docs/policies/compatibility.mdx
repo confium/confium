@@ -1,0 +1,95 @@
+---
+title: Compatibility Matrix
+description: What works with what — Rust versions, platforms, language bindings
+---
+
+# Compatibility Matrix
+
+What Confium supports, on what, talking to what.
+
+## Rust
+
+| Confium version | Min Rust | Notes |
+|-----------------|----------|-------|
+| 0.3.x | 1.85 (edition 2024) | Current |
+| 0.4.x (planned) | 1.85 | No MSRV bump |
+| 1.0.0 (planned) | TBD | LTS |
+
+We test against stable on Linux, macOS, Windows in CI. Nightly is not supported.
+
+## Platforms
+
+| Platform | Tier | Notes |
+|----------|------|-------|
+| Linux x86_64 (glibc) | Tier 1 | Primary CI target |
+| Linux aarch64 (glibc) | Tier 1 | Multi-arch Docker images |
+| Linux x86_64 (musl, static) | Tier 1 | Static CLI binary |
+| Linux aarch64 (musl, static) | Tier 1 | Static CLI binary |
+| macOS x86_64 (Intel) | Tier 1 | CI target |
+| macOS aarch64 (Apple Silicon) | Tier 1 | CI target |
+| Windows x86_64 (MSVC) | Tier 2 | Builds but not first-class |
+| Windows x86_64 (GNU) | Tier 2 | Static binary target |
+| WebAssembly (`wasm32-unknown-unknown`) | Tier 1 | For the Verify product only |
+| WASI (`wasm32-wasip1`) | Tier 3 | For Signer in edge workers |
+| FreeBSD / OpenBSD | Tier 3 | Community-supported; no CI |
+| Android / iOS | Tier 4 | Out of scope; see [ROADMAP](../../ROADMAP.md) |
+
+## Language bindings
+
+| Binding | Confium version | Tier | Maintenance |
+|---------|-----------------|------|-------------|
+| Rust | 0.3.x | Tier 1 | First-class |
+| Python (`confium` on PyPI) | 0.3.x | Tier 1 | PyO3 native extension |
+| Ruby (`confium` on RubyGems) | 0.3.x | Tier 1 | magnus + rb_sys native gem |
+| Node.js (`confium-node` on npm) | 0.3.x | Tier 2 | N-API native addon |
+| WASM (`@confium/confium-wasm` on npm) | 0.3.x | Tier 1 | wasm-bindgen, verifier-only |
+| Go (`github.com/confium/confium-go`) | 0.3.x | Tier 3 | Community-supported |
+
+See the [bindings parity matrix](../bindings/parity.mdx) for feature coverage per binding.
+
+## Cross-version interop
+
+| From → To | Works? |
+|-----------|--------|
+| Confium 0.3 sign + Confium 0.3 verify | ✅ |
+| Confium 0.3 sign + Confium 0.2 verify | ❌ (transparency log format changed) |
+| Confium 0.3 sign + OpenSSL verify | ✅ (standard ECDSA) |
+| Confium 0.3 sign + Browser (WASM) verify | ✅ |
+| Confium 0.3 threshold share files ↔ Confium 0.2 | ❌ (share envelope format changed) |
+
+Share files, transparency logs, and other persistent formats are NOT compatible across minor versions during pre-1.0. Migrate via the [migration guides](../migrations/).
+
+## PKI / OpenSSL interop
+
+| Surface | Status |
+|---------|--------|
+| Confium-issued X.509 certs verifiable by OpenSSL | ✅ |
+| Confium CMS SignedData verifiable by OpenSSL | ✅ |
+| Confium XMLDSig verifiable by xmlsec1 | ✅ |
+| Confium composite signatures verifiable by OpenSSL | ❌ (until composite IETF draft is ratified; use Confium to verify) |
+
+## Cryptographic algorithm support
+
+| Algorithm | Implementation | Notes |
+|-----------|----------------|-------|
+| Ed25519 | `ed25519-dalek` | Tier 1 |
+| ECDSA-P256 | `p256` crate | Tier 1 |
+| BLS12-381 | `blst` (planned) | Tier 3 today |
+| Paillier | `confium-crypto-vss` | 2048-4096 bit modulus |
+| ML-DSA-65 | `fips204` (planned) | Tier 3 today; threshold via FROST-ML-DSA |
+| ML-KEM-768 | `fips203` (planned) | Tier 3 today |
+| SLH-DSA-SHA2-256 | TBD | Tier 4 (research) |
+
+See the [bindings parity matrix](../bindings/parity.mdx) for which algorithms are exposed per language.
+
+## FIPS mode
+
+Not yet. FIPS 140-3 preparation tracked in [docs/security/fips-140-3-preparation.mdx](../security/fips-140-3-preparation.mdx). Targeting FIPS 140-3 validation post-1.0.
+
+## Reporting compatibility issues
+
+If you hit an unexpected incompatibility, open a [bug report](https://github.com/confium/confium/issues/new?template=bug_report.md) with:
+
+- Confium version (both sides of the interop)
+- Platform / language / runtime versions
+- Reproduction steps

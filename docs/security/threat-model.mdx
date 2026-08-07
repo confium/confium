@@ -1,0 +1,167 @@
+---
+title: Threat Model
+description: Assets, adversaries, threats, and mitigations for the Confium framework
+audience: security-engineer, compliance
+---
+
+# Confium Threat Model
+
+This document captures the threat model for Confium as a framework. Per-deployment threat models are the consumer's responsibility (Confium is configurable; a threshold CA has different threats than a DeFi bridge custody system).
+
+**Status:** Draft. Reviewed by external security researchers (TODO).
+
+## Assets
+
+What an attacker might want to compromise.
+
+| Asset | Where it lives | Compromise impact |
+|-------|----------------|-------------------|
+| **Threshold signing key** | Split across N shares, never assembled | Forge signatures; impersonate the quorum |
+| **Individual share** | One per party, under HSM/file/memory | One share alone is useless; reduces effective threshold by 1 |
+| **Joint public key** | Public; published in cert / transparency log | No confidentiality impact; integrity impact = catastrophic |
+| **DKG transcript** | Coordinator ephemeral state | Privacy of which party contributed what; integrity = DKG soundness |
+| **Signing transcript** | Coordinator ephemeral state | Privacy of which party contributed what; integrity = signature unforgeability |
+| **Transparency log** | Public log server storage | Append-only invariant; compromise = silent rewrite of history |
+| **Witness signatures** | Each witness's storage | Compromise = false "I saw this head" claim |
+| **OIDC JWT** | CI/CD runtime; short-lived | Forge a keyless signing identity |
+| **Short-lived cert** | CI/CD + transparency log | Forge a keyless attestation |
+| **CA root (threshold)** | Underlying threshold keys | Issue arbitrary certs under the CA |
+
+## Adversaries
+
+Who might attack.
+
+| Adversary | Capability | Motivation |
+|-----------|------------|------------|
+| **Network attacker** | Observe / modify traffic between parties, coordinator, log | Disrupt; MITM |
+| **Malicious party (T-1 of them)** | Deviate from protocol, drop messages, replay | Forge signature without the threshold |
+| **Malicious coordinator** | Drop / replay / reorder messages; observe transcripts | DoS; metadata leak; bias outcomes |
+| **Malicious log server** | Serve different heads to different witnesses | Silent rewrite of history |
+| **Malicious verifier** | Run verifier with non-standard policy | Accept forgeries as valid |
+| **Supply chain attacker** | Compromise a dep (crate, base image, action) | Persist access across all deployments |
+| **Insider (operator)** | Has shell access to operator machines | Steal shares from disk if not HSM-protected |
+| **Quantum adversary** | Future; large-scale quantum computer | Break ECDSA / Ed25519; need PQ migration |
+
+## Trust boundaries
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│ Threshold quorum (T-of-N)                                           │
+│                                                                     │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐                       │
+│  │ Party 1  │◄──►│ Party 2  │◄──►│ Party N  │   (peer-to-peer)     │
+│  │  HSM     │    │  HSM     │    │  HSM     │                       │
+│  └────┬─────┘    └────┬─────┘    └────┬─────┘                       │
+│       │                │                │                            │
+│       └────────────────┼────────────────┘                            │
+│                        ▼                                             │
+│              ┌──────────────────┐                                    │
+│              │   Coordinator    │   (network boundary)               │
+│              └────────┬─────────┘                                    │
+└───────────────────────┼─────────────────────────────────────────────┘
+                        │
+                        ▼
+┌────────────────────────────────────────────────────────────────────┐
+│ Transparency log                                                    │
+│   ┌──────────┐    ┌──────────┐                                      │
+│   │ Log      │◄──►│ Witness  │                                      │
+│   │ Server   │    │ 1..N     │                                      │
+│   └──────────┘    └──────────┘                                      │
+└─────────────────────────────────────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ Public verifiers                                                    │
+│   Browser, CLI, server-side (HTTP verify), CI gate                  │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+## Threats → mitigations
+
+### Threshold signing
+
+| Threat | Mitigation |
+|--------|------------|
+| T-1 parties collude to forge signature | Information-theoretic threshold; needs T shares to sign |
+| Malicious coordinator reorders messages | Round-by-round transcript hashing; parties verify before signing |
+| Replay of old signing transcript | Session ID embedded in every signature; verifier checks |
+| Share theft from disk | HSM backing (PKCS#11 / OpenPGP card); zeroize on unload |
+| DKG subliminal channel | Feldman VSS with verifiable commitments; parties verify |
+| Nonce reuse | RFC 8941 deterministic nonce derivation; never reuse `(d, e)` |
+| Malicious party submits bad share | Identifiable abort (CMP20); offending party reported |
+
+### Transparency log
+
+| Threat | Mitigation |
+|--------|------------|
+| Log mis-issuance (backdated entries) | Witness gossip; cross-witness head verification |
+| Log silent rewrite | OTS anchoring to Bitcoin (or other public chain) |
+| Log presents different heads to different verifiers | Witnesses publish signed heads; monitors compare |
+| Long-term algorithm weakness | ERS renewal cadence re-strengthens archival evidence |
+| Monitor goes dark | Multiple monitors required for "auditable" claim |
+
+### Keyless
+
+| Threat | Mitigation |
+|--------|------------|
+| OIDC JWT replay | `aud` claim pinned to Confium; `exp` short (10 min) |
+| OIDC JWT forgery | Verify against provider's published JWKS; fetch fresh |
+| Short-lived cert overstay | TTL 10 min; cert embedded in transparency log so CA can't reissue retroactively |
+| Identity spoofing | OIDC `sub` claim must match verifier's policy |
+
+### PKI
+
+| Threat | Mitigation |
+|--------|------------|
+| CA key compromise | Threshold CA: T parties required to issue |
+| Mis-issuance by colluding threshold quorum | Attribute-based policies; transparency log anchor |
+| Composite signature alg break | Strict (ALL components must verify) policy by default |
+| PQ migration window | Composite signatures bridge classical + PQ; either/both unbroken |
+
+### Verify
+
+| Threat | Mitigation |
+|--------|------------|
+| Verifier fooled by forged signature | Standard signature verification; no shortcuts |
+| Verifier cache poisoning | Cache keyed by `hash(message || signature)`; SHA-256 |
+| Verifier DoS via expensive inputs | Rate limit + LRU cache; verify-server is stateless so scale horizontally |
+
+### Cross-cutting
+
+| Threat | Mitigation |
+|--------|------------|
+| Supply chain compromise (Rust crate) | cargo-deny + cargo-audit in CI; SBOM per release; SLSA provenance |
+| Supply chain compromise (Docker base) | Distroless base; Trivy scan; SLSA provenance |
+| Insider (operator) | HSM share protection; all sessions logged |
+| Compromised GitHub Action | OIDC trusted publishing (no NPM_TOKEN); pin action SHAs |
+
+## Residual risks
+
+Things Confium does NOT defend against:
+
+1. **T or more parties colluding** — by design, T parties can sign. Choose T accordingly.
+2. **Coordinator + T-1 parties colluding** — coordinator sees transcript metadata; combined with T-1 shares can forge.
+3. **Future quantum adversary** — until PQ composites are universal, signatures are quantum-vulnerable.
+4. **Provider-side OIDC compromise** — if GitHub Actions' OIDC issuer is compromised, Confium accepts the resulting keyless certs.
+5. **Witness cartel** — if all witnesses collude with the log, fork detection fails. Use multiple independent witness operators.
+6. **Cryptanalytic breaks in underlying curves** — if P-256 falls, all P-256 threshold signatures fall.
+
+## Security audit status
+
+- **Internal review:** ongoing
+- **External audit:** TBD (seeking funding via NLnet NGI Zero PET)
+- **Bug bounty:** planned post-1.0
+- **Pen test of reference deployment:** planned with partner
+
+## Reporting issues
+
+See [SECURITY.md](../../SECURITY.md) for the disclosure process. Do NOT open public issues for security vulnerabilities.
+
+## References
+
+- CMP20 paper — Gennaro & Goldfeder 2020
+- GG18 paper — Gennaro & Goldfeder 2018
+- FROST paper — Komlo & Goldberg 2020
+- RFC 6962 — Certificate Transparency
+- RFC 4998 — Evidence Record Syntax (ERS)
+- NIST MPTS evaluation harness — `crates/confium-test-harness`

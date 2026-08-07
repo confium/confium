@@ -1,0 +1,45 @@
+---
+title: Migration Guide — 0.3 to 0.4
+description: How to update from Confium 0.3 (product facades) to 0.4 (deprecated facade re-exports)
+audience: security-engineer, devsecops
+status: draft
+---
+
+# Migrating from 0.3 to 0.4
+
+0.4 deprecates the `confium-tc` facade's blanket re-exports. Consumers should depend directly on the extracted crates (`confium-tc-core`, `confium-coordinator`, `confium-tc-keys`, etc.) or on the product facades (`confium-threshold`, etc.).
+
+**Status:** Draft — 0.4 is not yet released. This guide will be finalized when 0.4 ships.
+
+## What's changing
+
+### `confium-tc` re-exports deprecated
+
+Every `pub use` in `confium-tc/src/lib.rs` that re-exports from an extracted crate gets `#[deprecated(since = "0.4.0", note = "use confium-{extracted-crate} directly")]`.
+
+In 0.4 you'll see deprecation warnings but everything still works. In 0.6 the re-exports are removed entirely.
+
+### Cargo features
+
+`confium-tc` features `coordinator`, `keys` are now no-ops (still accepted, do nothing). Switch to depending on `confium-coordinator` / `confium-tc-keys` directly.
+
+## Migration steps
+
+1. **Run `cargo build`** — note every deprecation warning
+2. **For each warning**, replace `confium_tc::{X}` with the new path:
+   - `confium_tc::coordinator` → `confium_coordinator`
+   - `confium_tc::paillier` → `confium_crypto_vss::paillier`
+   - `confium_tc::share_envelope` → `confium_tc_core::share_envelope`
+   - `confium_tc::ring_sig` → `confium_privacy::ring_sig`
+   - etc.
+3. **Or** — switch to a product facade: `confium-threshold` for everything threshold, `confium-privacy` for everything privacy, etc.
+
+## Why we're doing this
+
+`confium-tc` was a 120-module god-crate. The 0.3 restructuring extracted 8 focused crates but kept `confium-tc` as a thin facade for back-compat. In 0.4 we deprecate the facade to signal the new shape. In 0.6 the facade is emptied.
+
+The benefit: new consumers depend on focused crates (5K lines each), not the 27K-line facade. Build times drop; dependency graphs shrink; crate boundaries become real.
+
+## Need help
+
+Open a [Discussion](https://github.com/confium/confium/discussions) tagged `migration-help`.

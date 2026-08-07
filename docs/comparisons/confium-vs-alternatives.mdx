@@ -1,0 +1,92 @@
+---
+title: Confium vs Other Threshold Solutions
+description: How Confium compares to Threshold Network, MPCHs, ZenGo, tss-lib, and other threshold cryptography solutions
+audience: security-engineer, cto, blockchain-dev
+---
+
+# Confium vs Other Threshold Solutions
+
+This page helps adopters compare Confium against other threshold cryptography solutions. We've tried to be fair; if you see something wrong, open a PR.
+
+## At a glance
+
+| | Confium | Threshold Network (TACo) | tss-lib (Binance) | MPCHs | ZenGo X | Torus |
+|---|---------|----------|---------|-------|---------|-------|
+| License | BSD-2-Clause | Apache-2.0 | Apache-2.0 | AGPL-3.0 | Commercial | Apache-2.0 |
+| Languages | Rust (5 bindings) | Solidity + JS | Go | Rust | Go | JS |
+| Threshold ECDSA | CMP20, GG18, FROST | GG18 | GG18 | CMP20 | MPC | CMP |
+| Threshold EdDSA | FROST | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Threshold BLS | 🚧 | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Transparency log | ✅ RFC 6962 | ❌ | ❌ | ❌ | ❌ | ❌ |
+| PKI adapters | ✅ PKCS#11/OpenSSL/JCE | ❌ | ❌ | ❌ | ❌ | ❌ |
+| PQ composite sigs | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Browser verify (WASM) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Self-hosted | ✅ | ❌ (network) | ✅ | ✅ | ❌ | ❌ |
+| Standards-only HSM integration | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+## Confium vs Threshold Network (TACo)
+
+**Threshold Network** is a blockchain-based threshold network. TACo is its access-control layer.
+
+- **Use Threshold Network if**: you want a hosted threshold service and you're already in their ecosystem; you want staking economics
+- **Use Confium if**: you want self-hosted threshold infra; you need PKI/PKCS#11 adapters; you want transparency logs alongside signing; you want browser-side verification
+
+Confium is chain-agnostic; Threshold Network is Ethereum-native.
+
+## Confium vs tss-lib (Binance)
+
+**tss-lib** is a Go library implementing GG18 and related protocols. Solid foundation, narrow scope.
+
+- **Use tss-lib if**: you're building in Go and only need the cryptographic primitives; you don't need PKI / transparency / bindings
+- **Use Confium if**: you want a framework (engine + coordinator + adapters + bindings); you need bindings beyond Go; you want transparency / PKI / keyless surfaces
+
+tss-lib's algorithms are a subset of Confium's (we ship GG18 too).
+
+## Confium vs MPCHs
+
+**MPCHs** is a Rust MPC library (Coinbase). AGPL-3.0 license.
+
+- **Use MPCHs if**: you're OK with AGPL; you want a research-grade MPC library; you don't need PKI / transparency surfaces
+- **Use Confium if**: you need permissive BSD-2-Clause license; you need a full product surface (PKI / transparency / keyless / verify); you want Ruby/Python/WASM bindings
+
+## Confium vs ZenGo X
+
+**ZenGo X** is a commercial threshold wallet solution.
+
+- **Use ZenGo X if**: you want a commercial product with support; you're building a wallet; you're OK with closed-source components
+- **Use Confium if**: you need open-source; you're integrating into your own infrastructure; you want full control of deployment
+
+## Confium vs Torus / Web3Auth
+
+**Torus (now Web3Auth)** is a key-management service focused on wallets and dApps.
+
+- **Use Torus if**: you want a hosted key-management service; you're building a Web3 wallet; you want social-login-based key recovery
+- **Use Confium if**: you want self-hosted; you need enterprise PKI features; you want transparency / audit-trail alongside keys
+
+## When to pick what
+
+| You want... | Pick |
+|-------------|------|
+| Self-hosted threshold + transparency + PKI | **Confium** |
+| Hosted threshold for an Ethereum dApp | Threshold Network |
+| Go library, narrow scope, just GG18 | tss-lib |
+| Research-grade Rust MPC | MPCHs (if AGPL OK) |
+| Commercial wallet SDK | ZenGo X |
+| Hosted wallet key management | Torus / Web3Auth |
+| Browser-side verification only | Confium Verify product (WASM, free) |
+
+## Methodology
+
+This comparison is based on:
+
+1. Public docs of each project as of 2026-08-07
+2. Source code where available
+3. Direct conversations with maintainers where possible
+
+We update this quarterly. If you maintain one of the projects above and see an inaccuracy, please open a PR or issue.
+
+## See also
+
+- [Architecture](../architecture.mdx)
+- [Per-product deep dives](../threshold/)
+- [Bindings parity matrix](../bindings/parity.mdx)

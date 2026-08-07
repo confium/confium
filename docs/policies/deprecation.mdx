@@ -1,0 +1,79 @@
+---
+title: Deprecation Policy
+description: How features leave Confium, and how long they're supported after deprecation
+---
+
+# Deprecation Policy
+
+This document explains how Confium retires features, types, and crates without leaving consumers stranded.
+
+## Pre-1.0 vs post-1.0
+
+### Pre-1.0 (current)
+
+Confium is on `0.x`. In this range:
+
+- **Breaking changes happen** (see [versioning policy](./versioning.mdx)), with a migration guide.
+- Deprecation process is **lightweight**: a `#[deprecated]` attribute + a CHANGELOG note + 1 minor release of overlap before removal.
+
+### Post-1.0
+
+Strict deprecation:
+
+- `#[deprecated(since = "1.x", note = "...")]` on the public item.
+- Item stays in the API for **at least 2 minor releases** (e.g., deprecated in 1.3, removed in 1.5).
+- Removal requires a major version bump (1.x → 2.0).
+- Migration guide in `docs/migrations/`.
+
+## What can be deprecated
+
+- Public types, traits, functions, modules
+- Feature flags
+- CLI subcommands / flags
+- Config file fields
+- Spec behavior (rare; spec changes follow [spec process](../../GOVERNANCE.md))
+
+## Deprecation signals
+
+A consumer will see deprecation in:
+
+1. **Compile-time** — `#[deprecated]` triggers a `cargo build` warning with the `since` and `note` fields.
+2. **Docs** — `cargo doc` shows a "Deprecated" banner on the item.
+3. **CHANGELOG** — every minor release lists new deprecations.
+4. **Migration guide** — `docs/migrations/{old}-to-{new}.mdx` for each breaking release.
+
+## Removal
+
+After the deprecation window:
+
+1. The item is removed in a major version bump (post-1.0) or next minor (pre-1.0).
+2. The CHANGELOG entry links to the migration guide.
+3. The git commit references the deprecation introduction commit for archaeology.
+
+## Current deprecations
+
+| Item | Since | Removed in | Migration |
+|------|-------|------------|-----------|
+| `confium-tc` re-exports (use `confium-tc-core` / `confium-coordinator` / `confium-tc-keys` directly) | 0.4 (planned) | 0.6 (planned) | [0.3 → 0.4 migration](../migrations/0.3-to-0.4.mdx) |
+| `Mode 1` / `Mode 2` / `Mode 3` terminology on public site | 0.3 | n/a (already removed from public site; specs kept for history) | n/a |
+
+## Long-term support (LTS)
+
+Post-1.0, the latest `1.x` will be maintained as LTS for **24 months** after `2.0` ships. During LTS:
+
+- Security fixes backported
+- Bug fixes backported if they don't change behavior
+- No new features
+
+Pre-1.0 there is no formal LTS; patch releases go to the latest minor only.
+
+## Out-of-scope features
+
+Things we DON'T commit to maintaining:
+
+- Anything in a crate marked `publish = false` (e.g., `confium-fuzz`, `confium-benchmarks`)
+- Anything behind an `unstable-*` feature flag
+- Anything in a crate with version `0.0.x`
+- Items marked `#[doc(hidden)]`
+
+If you depend on any of these, fork or pin.
