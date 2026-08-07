@@ -1,0 +1,177 @@
+---
+title: Confium for Python Developers
+description: Idiomatic Python usage of the confium package
+audience: developers
+---
+
+# Confium for Python Developers
+
+The `confium` PyPI package wraps Confium's verifier + PKI surface. Threshold signing stays server-side (Rust or via the coordinator).
+
+## Install
+
+```sh
+pip install confium
+```
+
+Or with `uv`:
+
+```sh
+uv add confium
+```
+
+## Hello, verify
+
+```python
+from confium import CompositeSignature
+
+# Composite signature JSON envelope (from `confium pki composite-sign`)
+sig = CompositeSignature.from_json(sig_json)
+result = sig.verify(b"hello, threshold world")
+print(f"valid: {result.all_verified}")
+for component in result.per_component:
+    print(f"  {component.algorithm}: {component.valid}")
+```
+
+## Parse an X.509 cert
+
+```python
+from confium.pki import Certificate
+
+with open("cert.der", "rb") as f:
+    cert = Certificate.from_der(f.read())
+
+print(f"subject: {cert.subject}")
+print(f"issuer: {cert.issuer}")
+print(f"not after: {cert.not_after}")
+print(f"fingerprint (sha256): {cert.fingerprint_sha256}")
+```
+
+## Verify a transparency inclusion proof
+
+```python
+from confium.transparency import verify_inclusion_with_head
+
+# proof and head are JSON-serializable dicts
+with open("proof.json") as f:
+    proof = f.read()
+with open("head.json") as f:
+    head = f.read()
+
+ok = verify_inclusion_with_head(proof, head)
+print(f"in log: {ok}")
+```
+
+## Apply differential privacy
+
+```python
+from confium.privacy import dp_query
+
+true_value = 1234
+sensitivity = 1
+epsilon = 0.5
+
+# Returns a perturbed value with formal privacy guarantees.
+publish = dp_query(true_value, sensitivity, epsilon)
+print(f"publish: {publish}")
+```
+
+## XMLDSig canonicalization
+
+```python
+from confium.pki import canonicalize_xml, canonicalize_exclusive_xml
+
+xml = "<root><child>text</child></root>"
+canon = canonicalize_xml(xml)
+print(canon)
+```
+
+## Async usage
+
+The Python binding exposes both sync and async APIs:
+
+```python
+import asyncio
+from confium.asyncio import CompositeSignature
+
+async def verify():
+    sig = await CompositeSignature.from_json_async(sig_json)
+    result = await sig.verify_async(message)
+    print(result)
+
+asyncio.run(verify())
+```
+
+## Type stubs
+
+Type stubs ship in the `confium` package. Type checkers (mypy, pyright) pick them up automatically:
+
+```sh
+mypy your_code.py
+```
+
+## Idiomatic Python patterns
+
+### Errors
+
+Confium raises typed exceptions:
+
+```python
+from confium import ConfiumError, VerificationError, ParseError
+
+try:
+    sig = CompositeSignature.from_json(bad_json)
+except ParseError as e:
+    print(f"parse: {e}")
+except ConfiumError as e:
+    print(f"other: {e}")
+```
+
+### Binary data
+
+All binary inputs/outputs are `bytes`. Don't pass strings:
+
+```python
+# Correct
+sig.verify(b"message bytes")
+
+# Wrong — will raise TypeError
+sig.verify("message string")
+```
+
+### Pinning
+
+For production, pin to a specific minor version:
+
+```toml
+# pyproject.toml
+[project]
+dependencies = [
+    "confium ~= 0.4",   # Any 0.4.x
+]
+```
+
+## Coverage
+
+Python ships the verifier-side surface. For threshold signing, deploy a Rust coordinator and call its HTTP API:
+
+```python
+import httpx
+
+resp = httpx.post("https://coordinator.internal:7000/v1/sessions", json={
+    "scheme": "CMP20-ECDSA-P256",
+    "threshold": 2,
+    "parties": 3,
+    "message": "aGVsbG8="
+})
+session = resp.json()
+```
+
+See the [parity audit](../bindings/parity-audit.mdx) for the full coverage matrix.
+
+## See also
+
+- [Python examples](https://github.com/confium/confium/tree/main/crates/confium-python/examples)
+- [Cookbook](../cookbook/) — task-focused recipes
+- [Python binding source](https://github.com/confium/confium/tree/main/crates/confium-python)
+- [Bindings docs](../bindings/python.mdx)

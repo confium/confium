@@ -1,0 +1,160 @@
+---
+title: Confium for Rust Developers
+description: Idiomatic Rust usage of Confium crates
+audience: developers
+---
+
+# Confium for Rust Developers
+
+Confium is Rust-native. Every crate ships on crates.io; rustdoc at `docs.rs/confium-{crate}`.
+
+## Install
+
+```toml
+# Cargo.toml — pick the product facades you need
+[dependencies]
+confium-threshold = { version = "0.4", features = ["cmp20", "frost-p256"] }
+confium-verify    = "0.4"
+confium-pki       = { version = "0.4", features = ["full"] }
+confium-transparency = "0.4"
+confium-privacy   = "0.4"
+```
+
+## Hello, threshold
+
+```rust
+use confium_threshold::cmp20;
+
+// 2-of-3 DKG
+let kg = cmp20::keygen(2, 3).expect("DKG");
+
+// Sign with all 3 shares (the threshold is 2, so any 2 would suffice)
+let sig = cmp20::sign(&kg.shares, 2, b"hello, threshold world").expect("sign");
+
+// Verify with the joint public key
+assert!(cmp20::verify(&sig, &kg.public_key, b"hello, threshold world").expect("verify"));
+```
+
+## Verify a composite signature
+
+```rust
+use confium_composite::{CompositeSignature, ed25519_verifier, p256_verifier};
+
+let sig: CompositeSignature = serde_json::from_str(&sig_json)?;
+let result = sig.verify(&message, |alg, pk, msg, sig| {
+    match alg {
+        "Ed25519" => ed25519_verifier(alg, pk, msg, sig),
+        "ECDSA-P256" => p256_verifier(alg, pk, msg, sig),
+        _ => Err(format!("unknown algorithm: {alg}")),
+    }
+})?;
+println!("valid: {}, components checked: {}", result.all_verified(), result.per_component.len());
+```
+
+## Append to a transparency log
+
+```rust
+use confium_transparency::{MerkleTree, entry::{ArtifactType, MerkleEntry}};
+
+let mut tree = MerkleTree::new();
+let hash = [0u8; 32]; // sha256 of your artifact
+let entry = MerkleEntry::new(0, ArtifactType::CertificateIssuance, hash);
+let seq = tree.append(entry);
+let root = tree.root();
+
+let proof = tree.inclusion_proof(seq)?;
+```
+
+## Parse + verify an X.509 cert
+
+```rust
+use confium_pki::Certificate;
+
+let cert = Certificate::from_der(&der_bytes)?;
+println!("Subject: {}", cert.subject());
+println!("Not after: {}", cert.not_after());
+
+// Verify chain
+use confium_pki::path::{CertPath, verify_path_signatures};
+let path = CertPath { leaf: &cert, intermediates: &[], root: &anchor };
+let result = verify_path_signatures(&path, |issuer_pk, sig| {
+    // Dispatch on algorithm; return Ok if sig verifies.
+    Ok(())
+});
+```
+
+## Apply differential privacy
+
+```rust
+use confium_privacy::privacy_and_dist_patterns::{dp_query, gaussian_noise};
+
+let true_value = 1234.0;
+let sensitivity = 1.0;
+let epsilon = 0.5;
+
+let perturbed = dp_query(true_value, sensitivity, epsilon);
+println!("publish: {perturbed}");
+```
+
+## Idiomatic Rust patterns
+
+### Error handling
+
+Every Confium crate uses `thiserror` (newer) or `snafu 0.8` (legacy). Match on the error enum:
+
+```rust
+use confium_pki::CertError;
+
+match Certificate::from_der(&bytes) {
+    Ok(cert) => { /* ... */ },
+    Err(CertError::Parse(e)) => eprintln!("parse error: {e}"),
+    Err(CertError::InvalidSignature) => eprintln!("bad signature"),
+    Err(e) => eprintln!("other: {e:?}"),
+}
+```
+
+### Feature flags
+
+Each crate exposes its surface behind feature flags. Default features are conservative; opt in to more if needed:
+
+```toml
+confium-threshold = { version = "0.4", default-features = false, features = ["cmp20"] }
+confium-pki = { version = "0.4", features = ["parsing", "cms"] }
+```
+
+### Async
+
+Threshold signing sessions are inherently async (multi-party). Use the coordinator's async API:
+
+```rust
+use confium_coordinator::Coordinator;
+
+let coordinator = Coordinator::connect("https://coordinator:7000").await?;
+let session = coordinator.start_dkg("CMP20-ECDSA-P256", 2, 3).await?;
+let kg = session.wait_for_completion().await?;
+```
+
+### WASM target
+
+`confium-wasm` is verifier-only by design. For WASI hosts (Cloudflare Workers, edge), enable the `sign` feature:
+
+```sh
+rustup target add wasm32-wasip1
+cargo build --target wasm32-wasip1 --features sign --release
+```
+
+## Rust reference docs
+
+- [`confium-threshold` on docs.rs](https://docs.rs/confium-threshold)
+- [`confium-pki` on docs.rs](https://docs.rs/confium-pki)
+- [`confium-transparency` on docs.rs](https://docs.rs/confium-transparency)
+- [`confium-composite` on docs.rs](https://docs.rs/confium-composite)
+- [`confium-privacy` on docs.rs](https://docs.rs/confium-privacy)
+- [`confium-coordinator` on docs.rs](https://docs.rs/confium-coordinator)
+
+## See also
+
+- [Cookbook](../cookbook/) — task-focused recipes
+- [Architecture](../architecture.mdx) — workspace organization
+- [Conventions](../conventions.mdx) — error / unsafe / edition 2024 patterns
+- [Plugin author guide](../plugin-author-guide.mdx) — extending Confium with custom plugins

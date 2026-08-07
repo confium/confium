@@ -1,0 +1,86 @@
+---
+title: Confium for Go Developers
+description: Go bindings for Confium
+audience: developers
+---
+
+# Confium for Go Developers
+
+`github.com/confium/confium-go` provides Go bindings via CGO + Rust FFI. **Tier 3 — community-maintained.**
+
+## Status
+
+**Tier 3** — community-maintained skeleton. Contributions welcome.
+
+## Install
+
+```sh
+go get github.com/confium/confium-go
+```
+
+CGO required (Rust static lib linked at build time).
+
+## Hello, verify
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/confium/confium-go/composite"
+)
+
+func main() {
+    sig, err := composite.FromJSON(sigJSON)
+    if err != nil {
+        panic(err)
+    }
+
+    result, err := sig.Verify([]byte("hello, threshold world"))
+    if err != nil {
+        panic(err)
+    }
+
+    fmt.Printf("valid: %v\n", result.AllVerified)
+    for _, c := range result.PerComponent {
+        fmt.Printf("  %s: %v\n", c.Algorithm, c.Valid)
+    }
+}
+```
+
+## CGO build
+
+CGO builds require Rust on the host:
+
+```sh
+# Build the Rust static lib first
+cd $GOPATH/src/github.com/confium/confium-go
+./build.sh  # produces libconfium_go.a
+
+# Then build your Go program
+go build ./...
+```
+
+Pre-built static libs ship in releases for major platforms.
+
+## Coverage
+
+Currently ships:
+- Composite signature verify
+- Transparency inclusion proof verify
+- Cert parse + chain verify
+
+Planned:
+- Threshold signing flows (wrapping coordinator HTTP API)
+- Privacy primitives (PSI, DP)
+- Async patterns via Go channels
+
+## Contributing
+
+Go binding is in [`confium/confium-go`](https://github.com/confium/confium-go). Issues + PRs welcome.
+
+## See also
+
+- [confium-go source](https://github.com/confium/confium-go)
+- [Cookbook](../cookbook/)
+- [Bindings parity audit](../bindings/parity-audit.mdx)

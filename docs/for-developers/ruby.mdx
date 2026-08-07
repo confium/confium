@@ -1,0 +1,156 @@
+---
+title: Confium for Ruby Developers
+description: Idiomatic Ruby usage of the confium gem
+audience: developers
+---
+
+# Confium for Ruby Developers
+
+The `confium` RubyGems package wraps Confium's verifier + PKI surface. Built via `rb_sys` + `magnus` (Rust native extension). No C ABI layer.
+
+## Install
+
+Add to your Gemfile:
+
+```ruby
+gem 'confium', '~> 0.4'
+```
+
+Or install directly:
+
+```sh
+gem install confium
+```
+
+`gem install` compiles the native extension on the fly (requires Rust 1.85+).
+
+## Hello, verify
+
+```ruby
+require 'confium'
+
+sig = Confium::Composite::Signature.from_json(sig_json)
+result = sig.verify("hello, threshold world")
+puts "valid: #{result.all_verified?}"
+result.per_component.each do |c|
+  puts "  #{c.algorithm}: #{c.valid}"
+end
+```
+
+## Parse an X.509 cert
+
+```ruby
+require 'confium'
+
+der_bytes = File.binread('cert.der')
+cert = Confium::PKI::Certificate.from_der(der_bytes)
+
+puts "subject: #{cert.subject}"
+puts "issuer: #{cert.issuer}"
+puts "not after: #{cert.not_after}"
+puts "fingerprint (sha256): #{cert.fingerprint_sha256}"
+```
+
+## Verify a transparency inclusion proof
+
+```ruby
+proof = File.read('proof.json')
+head = File.read('head.json')
+
+ok = Confium::Transparency.verify_inclusion_with_head(proof, head)
+puts "in log: #{ok}"
+```
+
+## Sinatra integration
+
+Drop Confium into a Sinatra app for an HTTP verify endpoint:
+
+```ruby
+# app.rb
+require 'sinatra'
+require 'confium'
+require 'json'
+
+post '/verify/composite' do
+  content_type :json
+  body = JSON.parse(request.body.read)
+
+  sig = Confium::Composite::Signature.from_json(body['signature'])
+  message = body['message'].unpack1('m') # base64 decode
+
+  result = sig.verify(message)
+  {
+    valid: result.all_verified?,
+    components: result.per_component.map { |c| { algorithm: c.algorithm, valid: c.valid } }
+  }.to_json
+end
+```
+
+Run: `ruby app.rb` → `http://localhost:4567/verify/composite`
+
+## XMLDSig canonicalization
+
+```ruby
+xml = '<root><child>text</child></root>'
+canon = Confium::PKI::XMLDSig.canonicalize(xml)
+puts canon
+```
+
+## Idiomatic Ruby patterns
+
+### Binary data
+
+All binary inputs/outputs use `Encoding::ASCII_8BIT` Strings:
+
+```ruby
+# Correct
+sig.verify("hello".b)  # binary-encoded string
+
+# Wrong — encoding mismatch
+sig.verify("hello")    # UTF-8 string, will raise
+```
+
+### Errors
+
+Confium raises typed exceptions inheriting from `Confium::Error`:
+
+```ruby
+begin
+  sig = Confium::Composite::Signature.from_json(bad_json)
+rescue Confium::ParseError => e
+  warn "parse: #{e.message}"
+rescue Confium::Error => e
+  warn "other: #{e.class}: #{e.message}"
+end
+```
+
+### Pinning
+
+Pin to a specific minor:
+
+```ruby
+# Gemfile
+gem 'confium', '~> 0.4.0'
+```
+
+## Native extension notes
+
+- **Rust required**: `gem install confium` compiles the native extension. Requires Rust 1.85+ on the host.
+- **Cross-platform gems**: Pre-compiled binary gems for Linux/macOS via `rake-compiler-dock` planned for v0.4.1.
+- **MRI only**: Confium is tested against MRI (CRuby) 3.1+. JRuby / TruffleRuby support is untested.
+
+## Examples
+
+See [`crates/confium-ruby/examples/`](https://github.com/confium/confium-ruby/tree/main/examples) for runnable scripts:
+
+- `hello_composite.rb` — verify a composite signature
+- `parse_cert.rb` — parse + inspect an X.509 cert
+- `verify_transparency_log.rb` — full transparency log flow
+- `sinatra_verify_endpoint.rb` — HTTP verify service
+
+## See also
+
+- [Ruby gem source](https://github.com/confium/confium-ruby)
+- [Cookbook](../cookbook/) — task-focused recipes
+- [Bindings docs](../bindings/ruby.mdx) (cross-link TBD when website has Ruby-specific page)
+- [Sinatra](https://sinatrarb.com/) — recommended web framework for Confium Ruby integrations

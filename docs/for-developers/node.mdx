@@ -1,0 +1,66 @@
+---
+title: Confium for Node.js Developers
+description: Native Node.js bindings via N-API
+audience: developers
+---
+
+# Confium for Node.js Developers
+
+`confium-node` provides native Node.js bindings via N-API. Faster than WASM for server-side Node.js use cases.
+
+## Status
+
+**Tier 2** — skeleton. Full surface mirrors the WASM package; coverage in progress. For production use today, the WASM package (`@confium/confium-wasm`) is recommended.
+
+## Install
+
+```sh
+npm install confium-node
+```
+
+Pre-compiled binaries ship for:
+- Linux x86_64 (glibc + musl)
+- macOS x86_64 + arm64
+- Windows x86_64
+
+No native compilation needed.
+
+## Hello, verify
+
+```typescript
+import { CompositeSignature } from 'confium-node';
+
+const sig = CompositeSignature.fromJson(sigJson);
+const result = sig.verify(Buffer.from('hello'));
+console.log('valid:', result.allVerified);
+```
+
+## When to pick confium-node over @confium/confium-wasm
+
+| Use case | Pick |
+|----------|------|
+| Browser SPA | `@confium/confium-wasm` (WASM is universal) |
+| Cloudflare Workers / edge | `@confium/confium-wasm` (WASI build) |
+| Node.js backend, performance-critical | `confium-node` (native, ~2x faster than WASM) |
+| Node.js backend, simplicity first | `@confium/confium-wasm` (one package for browser + Node) |
+| Bun / Deno | `@confium/confium-wasm` |
+
+## Performance comparison
+
+| Operation | confium-node | @confium/confium-wasm |
+|-----------|--------------|------------------------|
+| Composite verify (Ed25519 + P256) | ~0.1 ms | ~0.5 ms |
+| Cert chain verify | ~0.5 ms | ~1 ms |
+| Init / require | ~5 ms | ~50 ms (one-time) |
+
+For most server-side workloads the WASM performance is fine. Pick `confium-node` if you're doing thousands of verifications per second.
+
+## API parity
+
+`confium-node` mirrors `@confium/confium-wasm`'s API. Code that works with one should work with the other (just change the import).
+
+## See also
+
+- [npm: confium-node](https://www.npmjs.com/package/confium-node)
+- [TypeScript / WASM developer guide](./typescript.mdx)
+- [Cookbook](../cookbook/)

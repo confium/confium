@@ -1,0 +1,52 @@
+---
+title: For Developers
+description: Confium developer guides per language ecosystem
+audience: developers
+---
+
+# Confium for Developers
+
+Quickstarts per language ecosystem. Pick your language; each guide shows install, idiomatic usage, and links to deeper docs.
+
+| Language | Quickstart | Status |
+|----------|-----------|--------|
+| [Rust](./rust.mdx) | Tier 1 — full coverage | ✅ |
+| [Python](./python.mdx) | Tier 1 verify, Tier 2 other | 🚧 |
+| [Ruby](./ruby.mdx) | Tier 1 verify, Tier 2 other | 🚧 |
+| [TypeScript / WASM](./typescript.mdx) | Tier 1 verify (browser/Node/edge) | ✅ |
+| [Node.js native](./node.mdx) | Tier 2 skeleton | 🚧 |
+| [Go](./go.mdx) | Tier 3 community | 🚧 |
+
+## Which should I pick?
+
+- **You're building a Rust service** → Rust
+- **You're building a Python web app** → Python
+- **You're integrating with a Ruby/Sinatra app** → Ruby
+- **You're building a browser SPA / static site** → TypeScript (WASM)
+- **You're building a Node.js backend** → Node.js native
+- **You're building a Go microservice** → Go
+
+For all languages, the [browser playground](https://www.confium.org/playground/) is a good zero-install first look.
+
+## Common patterns across languages
+
+Regardless of language, the canonical flows are:
+
+1. **Verify a composite signature** — `CompositeSignature.verify(message, components)`
+2. **Verify a transparency inclusion proof** — `verifyInclusion(proof, entry, root)`
+3. **Verify a cert chain** — `Certificate.verifyChain([intermediate, leaf, anchor])`
+4. **Generate a threshold DKG** — `ThresholdKeygen(scheme, threshold, parties)` (Rust-only; signing surfaces stay server-side)
+5. **Sign with threshold shares** — `ThresholdSign(shares, message)` (Rust-only)
+
+The [cookbook](../cookbook/) has copy-paste recipes for these in every supported language.
+
+## API parity
+
+Bindings don't always ship the same surface at the same time. See the [parity audit](../bindings/parity-audit.mdx) for the per-feature coverage matrix.
+
+## See also
+
+- [Bindings docs](../bindings/) — installation, examples, API reference per binding
+- [Cookbook](../cookbook/) — task-focused recipes
+- [Getting started](../getting-started/) — 30-minute end-to-end tour
+- [FAQ](../faq/) — common questions
