@@ -32,6 +32,7 @@ permissions:
   # Required for SLSA build provenance attestation.
   id-token: write
   attestations: write
+  security-events: write
 
 env:
   REGISTRY: ghcr.io

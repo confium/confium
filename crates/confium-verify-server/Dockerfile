@@ -5,7 +5,7 @@
 # image = minimal attack surface.
 
 # --- build stage -----------------------------------------------------------
-FROM rust:1.85-bookworm AS builder
+FROM rust:1-bookworm AS builder
 
 WORKDIR /build
 # Cache deps separately from source for faster incremental builds.
