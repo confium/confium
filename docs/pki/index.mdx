@@ -1,0 +1,49 @@
+---
+title: Confium PKI
+description: Threshold-backed certificate authority, OCSP/CRL, ACME, composite signatures
+product: pki
+audience: ca-operator, security-engineer
+---
+
+# Confium PKI
+
+Confium PKI is the **public-key-infrastructure** product: run a CA
+without a single trusted key. Issue, revoke, and prove via threshold
+signing.
+
+## Components
+
+- `confium-pki` — X.509 cert, CSR, CMS SignedData, XMLDSig
+- `confium-composite` — Composite signatures for PQ migration
+- `confium-attributes` — Attribute-based signing predicates
+- `confium-pkcs11-server` — Drop-in HSM replacement via PKCS#11
+- `confium-openssl-provider` — OpenSSL 3.0 provider
+- `confium-jce-provider` — Java Cryptography Extension provider
+- `confium-tls-signer` — TLS 1.3 signature callback
+
+## Concepts
+
+- [Threshold CA lifecycle](./concepts/threshold-ca.mdx)
+- [OCSP / CRL from threshold keys](./concepts/ocsp-crl.mdx)
+- [ACME integration](./concepts/acme.mdx)
+- [Composite signatures (PQ migration)](./concepts/composite.mdx)
+- [Attribute-based signing policies](./concepts/attributes.mdx)
+
+## How-to
+
+- [Deploy PKCS#11 server as HSM replacement](./how-to/deploy-pkcs11-server.mdx)
+- [Configure OpenSSL 3.0 provider](./how-to/configure-openssl.mdx)
+- [Integrate JCE into Java apps](./how-to/integrate-jce.mdx)
+- [Stand up a threshold CA](./how-to/threshold-ca.mdx)
+
+## Reference
+
+- [Rust API](https://docs.rs/confium-pki)
+- [Threshold CA spec](https://www.confium.org/specs/81-threshold-ca)
+- [Composite signatures spec](https://www.confium.org/specs/82-composite-signatures)
+- [PKCS#11 server spec](https://www.confium.org/specs/83-pkcs11-server)
+
+## Cross-links
+
+- [Confium architecture](../architecture.mdx)
+- [Confium PKI on the website](https://www.confium.org/pki/)

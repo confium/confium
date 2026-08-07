@@ -1,0 +1,46 @@
+---
+title: Confium Transparency
+description: RFC 6962 append-only Merkle tree with witness gossip, OTS, ERS
+product: transparency
+audience: compliance, ca-operator
+---
+
+# Confium Transparency
+
+Confium Transparency is the **audit-trail** product: append-only Merkle
+trees with cryptographic inclusion proofs. Tamper-evidence is proven,
+not claimed.
+
+## Components
+
+- `confium-transparency` — RFC 6962 Merkle tree, OTS, ERS
+- `confium-log-server` — production log server
+- `confium-log-monitor` — third-party monitor (witness)
+- `confium-log-edge` — Cloudflare Workers edge verifier
+
+## Concepts
+
+- [RFC 6962 inclusion & consistency proofs](./concepts/rfc-6962.mdx)
+- [Witness gossip & fork-resistance](./concepts/witness-gossip.mdx)
+- [OTS anchoring to Bitcoin / public chains](./concepts/ots-anchoring.mdx)
+- [Evidence Record Syntax (ERS) long-term archival](./concepts/ers.mdx)
+
+## How-to
+
+- [Deploy a production log server](./how-to/deploy-log-server.mdx)
+- [Run a monitor (third-party auditing)](./how-to/deploy-monitor.mdx)
+- [Deploy the Cloudflare Workers edge verifier](./how-to/deploy-edge.mdx)
+- [Anchor tree heads to Bitcoin](./how-to/bitcoin-anchor.mdx)
+
+## Reference
+
+- [Rust API](https://docs.rs/confium-transparency)
+- [Transparency log spec](https://www.confium.org/specs/42-transparency-log)
+- [Witness gossip spec](https://www.confium.org/specs/43-witness-gossip)
+- [OTS anchoring spec](https://www.confium.org/specs/44-ots-anchoring)
+- [ERS archival spec](https://www.confium.org/specs/45-ers-archival)
+
+## Cross-links
+
+- [Confium architecture](../architecture.mdx)
+- [Confium Transparency on the website](https://www.confium.org/transparency/)

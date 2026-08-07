@@ -1,0 +1,49 @@
+---
+title: Confium Verify
+description: Verify threshold signatures anywhere — browser, edge, server, CLI
+product: verify
+audience: web-developer, devsecops, oss-maintainer
+---
+
+# Confium Verify
+
+Confium Verify is the **verification** product: lightweight, multi-language
+verification for composite signatures, transparency proofs, and
+certificate chains. Verifier-only by design.
+
+## Components
+
+- `confium-wasm` — Browser/Node/edge verifier via WASM
+- `confium-verify-server` — HTTP verification service
+- `confium-composite` — Composite signature verification (shared with PKI)
+- `confium-python` — Python bindings
+- `confium-node` — Node.js bindings
+- `confium-go` — Go bindings
+- `confium-ruby` (sibling repo) — Ruby gem
+
+## Concepts
+
+- [Verifier-only design philosophy](./concepts/verifier-only.mdx)
+- [Provenance & transparency-log anchoring](./concepts/provenance.mdx)
+- [Batch verification + LRU cache](./concepts/batch-verify.mdx)
+- [Language bindings parity model](./concepts/bindings.mdx)
+
+## How-to
+
+- [Embed WASM in a SPA](./how-to/wasm-in-spa.mdx)
+- [Add verify gate to CI](./how-to/ci-gate.mdx)
+- [Deploy verify-server](./how-to/server-deploy.mdx)
+- [Real-time verify dashboard](./how-to/dashboard.mdx)
+
+## Reference
+
+- [npm package](https://www.npmjs.com/package/@confium/confium-wasm)
+- [Bindings parity matrix](../bindings/parity.mdx)
+- [WASM verifier spec](https://www.confium.org/specs/61-wasm-verifier)
+- [HTTP verify spec](https://www.confium.org/specs/62-http-verify)
+- [Bindings matrix spec](https://www.confium.org/specs/63-bindings-matrix)
+
+## Cross-links
+
+- [Confium architecture](../architecture.mdx)
+- [Confium Verify on the website](https://www.confium.org/verify/)

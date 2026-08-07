@@ -1,0 +1,44 @@
+---
+title: Confium Keyless
+description: OIDC-based keyless threshold signing for short-lived certificates
+product: keyless
+audience: oss-maintainer, devsecops
+---
+
+# Confium Keyless
+
+Confium Keyless is the **keyless-signing** product: sign releases
+without managing keys. OIDC providers (GitHub Actions, Google, GitLab,
+Azure AD, Okta) prove identity; Confium issues short-lived signing
+certificates from threshold keys.
+
+## Components
+
+- `confium-oidc` — OIDC JWT verification + claim validation
+- `confium-keyless` (TODO 20) — facade crate for the keyless flow
+- The Confium Action (GitHub) — drop-in for release workflows
+
+## Concepts
+
+- [OIDC for code signing](./concepts/oidc.mdx)
+- [Short-lived certificates from threshold keys](./concepts/short-lived-certs.mdx)
+- [Transparency log anchoring](./concepts/anchoring.mdx)
+- [Root of trust model](./concepts/root-of-trust.mdx)
+
+## How-to
+
+- [Configure the GitHub Action](./how-to/github-action.mdx)
+- [Add a new OIDC provider](./how-to/new-oidc-provider.mdx)
+- [Verify keyless signatures in CI](./how-to/verify-in-ci.mdx)
+
+## Reference
+
+- [Rust API](https://docs.rs/confium-oidc)
+- [OIDC binding spec](https://www.confium.org/specs/90-oidc-binding)
+- [Keyless flow spec](https://www.confium.org/specs/91-keyless-flow)
+- [Short-lived cert spec](https://www.confium.org/specs/92-short-lived-cert)
+
+## Cross-links
+
+- [Confium architecture](../architecture.mdx)
+- [Confium Keyless on the website](https://www.confium.org/keyless/)

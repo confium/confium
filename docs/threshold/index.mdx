@@ -1,0 +1,67 @@
+---
+title: Confium Threshold
+description: T-of-N distributed signing — CMP20, GG18, FROST, MuSig, BLS
+product: threshold
+audience: security-engineer, devsecops, blockchain-dev
+---
+
+# Confium Threshold
+
+Confium Threshold is the **threshold-signing** product: replace a single
+private key with T-of-N distributed shares. No single party can sign
+alone. Compromising any T-1 parties doesn't compromise the key.
+
+## Algorithms
+
+| Algorithm | Curve / Group | Rounds | Status |
+|-----------|---------------|--------|--------|
+| CMP20 | P-256 | 3 | Shipped |
+| GG18 | P-256 | 4 | Shipped (legacy; prefer CMP20) |
+| FROST | P-256 | 2 | Shipped |
+| FROST | Ed25519 | 2 | Shipped |
+| MuSig | Schnorr | 2 | Skeleton |
+| BLS | BLS12-381 | 2 | Skeleton |
+| Threshold ElGamal | P-256 | N/A (encryption) | Shipped |
+
+## Crates
+
+- `confium-tc-core` — session primitives, share interface, registry
+- `confium-tc-keys` — key lifecycle, HSM/KMS, BIP-32
+- `confium-coordinator` — multi-round orchestration service
+- `confium-tc-cmp20` — CMP20 threshold ECDSA
+- `confium-tc-gg18` — GG18 threshold ECDSA
+- `confium-tc-frost-p256` — FROST over P-256
+- `confium-tc-frost-ed25519` — FROST over Ed25519
+- `confium-tc-bls` — Threshold BLS (skeleton)
+- `confium-tc-elgamal-p256` — Threshold ElGamal encryption
+- `confium-signerd` — production signing daemon
+
+## Concepts
+
+- [Threshold signing fundamentals](./concepts/threshold-signing.mdx)
+- [Distributed key generation (DKG)](./concepts/dkg.mdx)
+- [Multiplicative-to-Additive (MtA) via Paillier](./concepts/mta.mdx)
+- [Share refresh & proactive security](./concepts/share-refresh.mdx)
+- [Reshare: changing T or N without re-keying](./concepts/reshare.mdx)
+
+## How-to
+
+- [Deploy signerd in production](./how-to/deploy-signerd.mdx)
+- [Protect shares with an HSM](./how-to/integrate-hsm.mdx)
+- [Schedule Herzberg share refresh](./how-to/refresh.mdx)
+- [Monitor signing sessions](./how-to/monitor.mdx)
+- [Attribute-based signing policies](./how-to/policy.mdx)
+
+## Reference
+
+- [Rust API](https://docs.rs/confium-threshold)
+- [signerd config reference](./reference/config.mdx)
+- [CLI commands](./reference/cli.mdx)
+- [Threshold session spec](https://www.confium.org/specs/22-threshold-session)
+- [CMP20 spec](https://www.confium.org/specs/70-cmp20)
+
+## Cross-links
+
+- [Confium architecture](../architecture.mdx) — engine, plugin loader
+- [Bindings parity matrix](../bindings/parity.mdx) — what's available per language
+- [Confium Threshold on the website](https://www.confium.org/threshold/)
