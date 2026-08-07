@@ -176,10 +176,11 @@ pub enum PkiCommand {
     Version,
     /// Parse an X.509 cert (DER or PEM).
     ParseCert(PkiParseCertArgs),
-    /// Composite sign (placeholder; full impl with composite crate TBD).
-    CompositeSign,
-    /// Verify a cert chain (placeholder; full impl TBD).
-    Verify,
+    /// Verify a certificate chain (leaf + intermediates + anchor).
+    Verify(PkiVerifyArgs),
+    /// Composite sign — sign a message with classical + PQ keys (demo
+    /// uses Ed25519 + ECDSA-P256; full PQ composite lands with ML-DSA).
+    CompositeSign(PkiCompositeSignArgs),
 }
 
 #[derive(Args, Debug)]
@@ -190,6 +191,39 @@ pub struct PkiParseCertArgs {
     /// Format: der or pem.
     #[arg(long, default_value = "der")]
     pub format: String,
+}
+
+#[derive(Args, Debug)]
+pub struct PkiVerifyArgs {
+    /// Leaf cert (end-entity).
+    #[arg(long)]
+    pub leaf: std::path::PathBuf,
+    /// Anchor cert (root CA).
+    #[arg(long)]
+    pub anchor: std::path::PathBuf,
+    /// Intermediate certs, leaf-adjacent first. Repeat the flag for
+    /// multiple intermediates.
+    #[arg(long = "intermediate")]
+    pub intermediates: Vec<std::path::PathBuf>,
+    /// Format for all certs: der or pem.
+    #[arg(long, default_value = "der")]
+    pub format: String,
+}
+
+#[derive(Args, Debug)]
+pub struct PkiCompositeSignArgs {
+    /// Message to sign. Use @file to read from a file.
+    #[arg(long)]
+    pub message: String,
+    /// Ed25519 signing key (32 bytes raw, hex-encoded in file).
+    #[arg(long)]
+    pub ed25519_key: std::path::PathBuf,
+    /// ECDSA-P256 signing key (DER-encoded, PEM or raw bytes).
+    #[arg(long)]
+    pub p256_key: std::path::PathBuf,
+    /// Write composite signature bytes here (hex).
+    #[arg(long)]
+    pub out: Option<std::path::PathBuf>,
 }
 
 /// Subcommands under `confium keyless`.
@@ -208,12 +242,48 @@ pub enum KeylessCommand {
 pub enum PrivacyCommand {
     /// Show version and component crate info.
     Version,
-    /// Run a two-party PSI (placeholder; full impl TBD).
-    Psi,
-    /// Run a MPC computation (placeholder).
+    /// Compute the intersection of two sets (ECDH-PSI variant:
+    /// hash-based, demo only — uses a salt instead of true ECDH).
+    Psi(PrivacyPsiArgs),
+    /// Apply Laplace DP noise to a query result.
+    Dp(PrivacyDpArgs),
+    /// Run a MPC computation (placeholder; needs multi-process setup).
     Mpc,
-    /// Apply differential privacy to a query (placeholder).
-    Dp,
+}
+
+#[derive(Args, Debug)]
+pub struct PrivacyPsiArgs {
+    /// First set file (one entry per line).
+    #[arg(long)]
+    pub set_a: std::path::PathBuf,
+    /// Second set file (one entry per line).
+    #[arg(long)]
+    pub set_b: std::path::PathBuf,
+    /// Salt file (raw bytes) for hash blinding.
+    #[arg(long, default_value = "/dev/urandom")]
+    pub salt: std::path::PathBuf,
+    /// Report only the cardinality of the intersection, not the elements.
+    #[arg(long)]
+    pub cardinality_only: bool,
+}
+
+#[derive(Args, Debug)]
+pub struct PrivacyDpArgs {
+    /// True query result to perturb.
+    #[arg(long)]
+    pub value: f64,
+    /// Sensitivity of the query (how much one record can move the result).
+    #[arg(long)]
+    pub sensitivity: f64,
+    /// Privacy budget ε. Smaller = more private, more noise.
+    #[arg(long)]
+    pub epsilon: f64,
+    /// Noise distribution: laplace or gaussian.
+    #[arg(long, default_value = "laplace")]
+    pub distribution: String,
+    /// δ for gaussian distribution. Ignored for laplace.
+    #[arg(long, default_value = "0.00001")]
+    pub delta: f64,
 }
 
 /// Subcommands under `confium verify`.
@@ -221,12 +291,54 @@ pub enum PrivacyCommand {
 pub enum VerifyCommand {
     /// Show version and component crate info.
     Version,
-    /// Verify a composite signature (placeholder).
-    Composite,
-    /// Verify a transparency inclusion proof (placeholder).
-    Inclusion,
-    /// Verify a certificate chain (placeholder).
-    CertChain,
+    /// Verify a composite signature (COSE-encoded bytes).
+    Composite(VerifyCompositeArgs),
+    /// Verify a transparency inclusion proof.
+    Inclusion(VerifyInclusionArgs),
+    /// Verify a certificate chain (leaf + intermediates + anchor).
+    CertChain(VerifyCertChainArgs),
+}
+
+#[derive(Args, Debug)]
+pub struct VerifyCompositeArgs {
+    /// Message that was signed (use @file for file contents).
+    #[arg(long)]
+    pub message: String,
+    /// Composite signature file (raw COSE bytes).
+    #[arg(long)]
+    pub signature: std::path::PathBuf,
+    /// Algorithm name (ed25519 or ecdsa-p256).
+    #[arg(long)]
+    pub algorithm: String,
+    /// Public key file (raw bytes).
+    #[arg(long)]
+    pub public_key: std::path::PathBuf,
+}
+
+#[derive(Args, Debug)]
+pub struct VerifyInclusionArgs {
+    /// Proof JSON file (from `transparency prove`).
+    #[arg(long)]
+    pub proof: std::path::PathBuf,
+    /// Entry JSON file (the leaf being proven).
+    #[arg(long)]
+    pub entry: std::path::PathBuf,
+}
+
+#[derive(Args, Debug)]
+pub struct VerifyCertChainArgs {
+    /// Leaf cert (end-entity).
+    #[arg(long)]
+    pub leaf: std::path::PathBuf,
+    /// Anchor cert (root CA).
+    #[arg(long)]
+    pub anchor: std::path::PathBuf,
+    /// Intermediate certs, leaf-adjacent first. Repeat for multiple.
+    #[arg(long = "intermediate")]
+    pub intermediates: Vec<std::path::PathBuf>,
+    /// Format for all certs: der or pem.
+    #[arg(long, default_value = "der")]
+    pub format: String,
 }
 
 /// `confium install <plugin>[@version]`

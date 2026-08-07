@@ -32,6 +32,10 @@ confium-tc-cmp20 = { workspace = true }
 confium-tc-gg18 = { workspace = true }
 confium-transparency = { workspace = true }
 confium-pki = { workspace = true }
+confium-composite = { workspace = true }
+confium-privacy = { workspace = true }
+ed25519-dalek = { workspace = true }
+p256 = { workspace = true, features = ["ecdsa"] }
 clap = { workspace = true }
 hex = { workspace = true }
 serde = { workspace = true }
