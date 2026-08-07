@@ -1,0 +1,176 @@
+---
+title: Cross-Binding Parity Audit
+description: Feature-by-feature coverage matrix across Confium's language bindings
+audience: web-developer, devsecops, blockchain-dev
+---
+
+# Cross-Binding Parity Audit
+
+Where to use which language. Feature coverage per binding, including what's shipped, what's in progress, and what's not planned.
+
+## Tier system
+
+| Tier | Meaning |
+|------|---------|
+| ✅ Tier 1 — Shipped | Implemented, tested, documented |
+| 🚧 Tier 2 — In Progress | Code exists but incomplete or untested |
+| ⏳ Tier 3 — Planned | On the roadmap, not yet started |
+| ❌ Tier 4 — Not Planned | Out of scope for current release |
+
+## Feature matrix (v0.4.0 snapshot)
+
+### Composite signatures
+
+| Feature | Rust | Python | Ruby | WASM | Node | Go |
+|---------|------|--------|------|------|------|----| 
+| Verify Ed25519 component | ✅ | ✅ | ✅ | ✅ | 🚧 | 🚧 |
+| Verify ECDSA-P256 component | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Sign Ed25519 component | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Sign ECDSA-P256 component | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Strict (ALL components) policy | ✅ | ✅ | ✅ | ✅ | 🚧 | 🚧 |
+| Relaxed (N-of-M) policy | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+### Transparency log
+
+| Feature | Rust | Python | Ruby | WASM | Node | Go |
+|---------|------|--------|------|------|------|----| 
+| Append entry | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Generate inclusion proof | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Verify inclusion proof | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Generate consistency proof | ✅ | 🚧 | ❌ | ❌ | ❌ | ❌ |
+| Verify consistency proof | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Tree head inspection | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Standalone verify-inclusion-with-head | ✅ | ✅ | ✅ | ✅ | 🚧 | 🚧 |
+
+### PKI / X.509
+
+| Feature | Rust | Python | Ruby | WASM | Node | Go |
+|---------|------|--------|------|------|------|----| 
+| Cert parse (DER) | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Cert parse (PEM) | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Cert chain verify | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| CSR parse | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| CMS SignedData parse | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| XMLDSig canonicalize | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| XMLDSig canonicalize exclusive | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+
+### Threshold signing
+
+| Feature | Rust | Python | Ruby | WASM | Node | Go |
+|---------|------|--------|------|------|------|----| 
+| CMP20 keygen (DKG) | ✅ | ❌ | ❌ | ❌ (verifier-only) | ❌ | ❌ |
+| CMP20 sign | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| GG18 keygen | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| GG18 sign | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| FROST-P256 keygen | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| FROST-P256 sign | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Threshold ElGamal encapsulate | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Threshold ElGamal partial decrypt | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Threshold ElGamal aggregate | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+### Privacy
+
+| Feature | Rust | Python | Ruby | WASM | Node | Go |
+|---------|------|--------|------|------|------|----| 
+| PSI (hash-based) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| PIR (trivial) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Differential privacy (Laplace) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Differential privacy (Gaussian) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| MPC (SPDZ) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Ring signatures | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| VRF | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| VDF | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+### Deployment / infrastructure
+
+| Feature | Rust | Python | Ruby | WASM | Node | Go |
+|---------|------|--------|------|------|------|----| 
+| PKCS#11 server | ✅ | n/a | n/a | n/a | n/a | n/a |
+| OpenSSL 3.0 provider | ✅ | n/a | n/a | n/a | n/a | n/a |
+| JCE provider | ✅ | n/a | n/a | n/a | n/a | n/a |
+| TLS signer | ✅ | n/a | n/a | n/a | n/a | n/a |
+| Coordinator service | ✅ | n/a | n/a | n/a | n/a | n/a |
+| signerd | ✅ | n/a | n/a | n/a | n/a | n/a |
+| log-server | ✅ | n/a | n/a | n/a | n/a | n/a |
+| verify-server | ✅ | n/a | n/a | n/a | n/a | n/a |
+| Kubernetes operator | ✅ | n/a | n/a | n/a | n/a | n/a |
+
+## Per-binding status
+
+### Rust (Tier 1)
+**Coverage:** full. All features ship. Reference implementation.
+
+- Install: `cargo add confium-{threshold,pki,transparency,verify,keyless,privacy}`
+- API: <https://docs.rs/confium-{product}>
+- Source: `crates/confium-*` in this repo
+
+### Python (Tier 1 for verify, Tier 2 for everything else)
+**Coverage:** verifier-side operations fully covered; threshold signing limited.
+
+- Install: `pip install confium`
+- API surface: composite verify, transparency verify, PKI parse/verify, XMLDSig canonicalize
+- Gaps: threshold DKG/sign, privacy primitives, deployment
+
+### Ruby (Tier 1 for verify, Tier 2 for everything else)
+**Coverage:** similar to Python — verifier-side + PKI parse.
+
+- Install: `gem install confium`
+- API surface: composite verify, transparency verify, PKI parse, XMLDSig canonicalize
+- Gaps: threshold DKG/sign, privacy primitives, deployment
+
+### WASM / TypeScript (Tier 1 for verify)
+**Coverage:** verifier-only by design. Browser/Node/edge runtimes.
+
+- Install: `npm install @confium/confium-wasm`
+- API surface: composite verify, transparency verify, PKI parse/verify
+- Gaps: signing (intentional — browsers verify, servers sign)
+- Optional `sign` feature for WASI hosts (Cloudflare Workers, edge)
+
+### Node.js native (Tier 2)
+**Coverage:** partial — wraps the same surface as WASM.
+
+- Install: `npm install confium-node`
+- Status: skeleton; full surface TBD
+
+### Go (Tier 3)
+**Coverage:** community-maintained.
+
+- Install: `go get github.com/confium/confium-go`
+- Status: skeleton; community contributions welcome
+
+## Bringing bindings to Tier 1
+
+For a binding to reach Tier 1 on a feature:
+
+1. **Implementation:** code shipped and tested
+2. **Tests:** at least 80% line coverage on the implemented surface
+3. **Docs:** API documented in the binding's idiomatic style (rustdoc, RBS, type stubs, etc.)
+4. **Examples:** at least 3 runnable examples in the binding's example dir
+5. **Cross-binding parity tests:** passes the cross-binding integration tests in `scripts/cross-binding-integration-test.sh`
+
+## Cross-binding integration tests
+
+Confium ships integration tests that verify bindings produce/consume identical artifacts:
+
+```sh
+# Generate a signature in Rust, verify in Python / Ruby / WASM
+./scripts/cross-binding-integration-test.sh
+```
+
+The test matrix covers composite verify, transparency inclusion verify, and cert chain verify.
+
+## Contributing
+
+To add a feature to a binding:
+
+1. Open a Discussion describing the feature + target binding
+2. Implement behind the binding's standard test framework
+3. Update this matrix
+4. Add an example in the binding's `examples/` directory
+5. Open a PR; CI runs the cross-binding integration tests
+
+## See also
+
+- [Bindings parity spec](https://www.confium.org/specs/63-bindings-matrix)
+- [Bindings docs](../bindings/)
+- [Comparison vs alternatives](../comparisons/confium-vs-alternatives.mdx)
