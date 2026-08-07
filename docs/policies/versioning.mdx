@@ -1,0 +1,108 @@
+---
+title: Versioning Policy
+description: How Confium uses semver, what counts as breaking, and how changes are released
+---
+
+# Versioning Policy
+
+Confium follows [Semantic Versioning 2.0.0](https://semver.org/) with the conventions below.
+
+## Scope
+
+This policy applies to:
+
+- All published Rust crates (every `crates/confium-*` with `publish = true`)
+- The Ruby gem (`confium` on RubyGems)
+- The Python package (`confium` on PyPI)
+- The WASM npm package (`@confium/confium-wasm`)
+- The Docker images (`ghcr.io/confium/*`)
+- The CLI (`confium`)
+
+## Pre-1.0 (current: 0.x)
+
+Confium is currently on `0.x`. In this range:
+
+- **0.x → 0.y** (e.g. `0.3.0` → `0.4.0`): **breaking changes allowed**, called out in CHANGELOG and migration guide. We follow the cargo convention where the `0.x.0` → `0.y.0` bump signals potentially-breaking changes.
+- **0.x.y → 0.x.z** (e.g. `0.3.0` → `0.3.1`): backwards-compatible only (bug fixes, new non-breaking features).
+
+Even in `0.x` we minimize breaking changes. Each `0.y.0` ships with:
+
+- A migration guide under `docs/migrations/{old}-to-{new}.mdx`
+- A CHANGELOG entry listing every breaking change with a "why"
+- At least 4 weeks between breaking releases (so consumers can update at a sustainable cadence)
+
+## What counts as "breaking"
+
+Breaking changes include:
+
+1. **Public API removed or renamed** — any `pub` item in a Rust crate that disappears or changes signature
+2. **Public API behavior change** — same signature, different semantics that consumers could observe
+3. **MSRV bump** — minimum supported Rust version goes up
+4. **Wire format change** — bytes-on-the-wire changes that break interop with older clients/servers
+5. **File format change** — share files, transparency logs, config files become unreadable by old versions
+6. **Feature flag default change** — a feature that was off-by-default becomes on-by-default (or vice versa) counts as breaking for consumers depending on the prior default
+
+Non-breaking changes:
+
+- Adding a new public item (function, type, trait)
+- Adding a new feature flag (off by default)
+- Adding a new error variant
+- Performance improvements
+- Bug fixes that change behavior the spec called incorrect
+
+## 1.0 commitment
+
+Confium will hit 1.0 when **5 of 6 products** are at production maturity (see [ROADMAP](../../ROADMAP.md)). At 1.0:
+
+- Strict semver; no breaking changes without a 2.0
+- LTS branch for 1.x maintained for at least 24 months after 2.0 ships
+- Public API documented as Tier 1 / Tier 2 / Tier 3 (see [API Stability Tiers](#api-stability-tiers))
+
+## API stability tiers (post-1.0)
+
+| Tier | What it means | Breaking-change cadence |
+|------|---------------|-------------------------|
+| **Tier 1 — Stable** | Documented public API, multiple consumers depend on it | Major version only (1.x → 2.0) |
+| **Tier 2 — Evolving** | Documented public API, narrow consumer base | Minor version (1.x → 1.y) with migration guide |
+| **Tier 3 — Experimental** | Marked `#[doc(hidden)]` or behind `unstable-*` feature | Any version; don't depend on these in production |
+
+Every `pub` item is implicitly Tier 1 unless explicitly documented otherwise in its module docs.
+
+## Release cadence
+
+| Cadence | What |
+|---------|------|
+| **Patch (0.x.y)** | As needed for bug fixes |
+| **Minor (0.y.0)** | Monthly during pre-1.0 (first Monday) |
+| **Major (1.0.0)** | When 5 of 6 products hit production maturity |
+| **LTS** | Quarterly pick of the latest minor; maintained 12 months |
+
+## Cargo version compatibility
+
+Confium crates use `version = "0.x.y"` ranges. Consumers should pin via:
+
+```toml
+# Production: pin to a minor
+confium-threshold = "=0.3.2"
+
+# Conservative: any patch in 0.3
+confium-threshold = "~0.3"
+
+# Cutting edge: any 0.x
+confium-threshold = "0"
+```
+
+## Release artifacts
+
+Each minor release produces:
+
+- crates.io publish (via release-plz)
+- RubyGems publish
+- PyPI publish
+- npm publish (`@confium/confium-wasm`)
+- Docker images (`ghcr.io/confium/{service}:{version}` + `:latest`)
+- Static binaries (Linux amd64/arm64, macOS amd64/arm64, Windows amd64)
+- CycloneDX SBOM
+- SLSA build provenance attestations
+
+See [Release Pipeline](../architecture/repo-strategy.mdx) for the full matrix.
