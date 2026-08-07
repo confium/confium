@@ -65,6 +65,10 @@ members = [
     "crates/confium-oidc",
     "crates/confium-node",
     "crates/confium-fuzz",
+    # Product facade crates (Layer 3 entry points).
+    "crates/confium-threshold",
+    "crates/confium-keyless",
+    "crates/confium-verify",
 ]
 
 [workspace.package]
@@ -138,6 +142,10 @@ confium-operator = { path = "crates/confium-operator", version = "0.3.0" }
 confium-oidc = { path = "crates/confium-oidc", version = "0.3.0" }
 confium-node = { path = "crates/confium-node", version = "0.3.0" }
 confium-fuzz = { path = "crates/confium-fuzz", version = "0.3.0" }
+# Product facade crates (Layer 3 entry points).
+confium-threshold = { path = "crates/confium-threshold", version = "0.3.0" }
+confium-keyless = { path = "crates/confium-keyless", version = "0.3.0" }
+confium-verify = { path = "crates/confium-verify", version = "0.3.0" }
 
 libloading = "0.8"
 snafu = "0.8"

@@ -1,0 +1,33 @@
+[package]
+name = "confium-keyless"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories.workspace = true
+readme = "README.md"
+description = "Confium Keyless product facade — OIDC-based keyless threshold signing"
+documentation = "https://docs.rs/confium-keyless"
+keywords = ["crypto", "keyless", "oidc", "signing", "confium"]
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+default = ["oidc", "threshold"]
+oidc = ["dep:confium-oidc"]
+threshold = ["dep:confium-threshold"]
+verify = ["dep:confium-composite"]
+full = ["oidc", "threshold", "verify"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+confium-oidc = { workspace = true, optional = true }
+confium-threshold = { workspace = true, optional = true }
+confium-composite = { workspace = true, optional = true }

@@ -1,0 +1,37 @@
+[package]
+name = "confium-verify"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories.workspace = true
+readme = "README.md"
+description = "Confium Verify product facade — multi-language verification of signatures, proofs, certs"
+documentation = "https://docs.rs/confium-verify"
+keywords = ["crypto", "verify", "wasm", "signature", "confium"]
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+default = ["composite", "transparency", "pki"]
+composite = ["dep:confium-composite"]
+transparency = ["dep:confium-transparency"]
+pki = ["dep:confium-pki"]
+attributes = ["dep:confium-attributes"]
+server = ["dep:confium-verify-server"]
+full = ["composite", "transparency", "pki", "attributes", "server"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+confium-composite = { workspace = true, optional = true }
+confium-transparency = { workspace = true, optional = true }
+confium-pki = { workspace = true, optional = true }
+confium-attributes = { workspace = true, optional = true }
+confium-verify-server = { workspace = true, optional = true }
