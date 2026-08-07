@@ -51,10 +51,14 @@ pub enum Commands {
     /// Show version and crate info.
     Version,
 
+    // Cross-cutting utilities.
+    /// Generate shell completion scripts (bash, zsh, fish, elvish, powershell).
+    Completions(CompletionsArgs),
+
     // Product-umbrella subcommands. Each routes to the product's own
     // subcommand enum and dispatch module. Adding a new product = adding
     // a variant here + a new module in commands/ + a Subcommand enum.
-    /// Threshold signing operations (DKG, sign, refresh, recover).
+    /// Threshold signing operations (DKG, sign, refresh, recover, migrate).
     #[command(name = "threshold", subcommand)]
     Threshold(ThresholdCommand),
 
@@ -90,6 +94,38 @@ pub enum ThresholdCommand {
     /// Threshold sign. Reads shares from --shares and signs --message;
     /// writes the signature to --out (default: stdout, hex).
     Sign(ThresholdSignArgs),
+    /// Migrate a 0.2.x share file to the 0.3+ JSON envelope format.
+    /// Reads a flat {"x":..., "y":...} JSON, wraps it in the modern
+    /// envelope with scheme/threshold/party_count/public_key/shares[].
+    MigrateShares(ThresholdMigrateSharesArgs),
+}
+
+/// `confium threshold migrate-shares`
+#[derive(Args, Debug)]
+pub struct ThresholdMigrateSharesArgs {
+    /// Input file in legacy 0.2.x format (JSON with x, y, optional public_key).
+    #[arg(long)]
+    pub input: std::path::PathBuf,
+    /// Output file (modern 0.3+ envelope).
+    #[arg(long)]
+    pub out: std::path::PathBuf,
+    /// Scheme name to embed in the new envelope (e.g. "CMP20-ECDSA-P256").
+    #[arg(long, default_value = "CMP20-ECDSA-P256")]
+    pub scheme: String,
+    /// Threshold to embed in the envelope.
+    #[arg(long, default_value_t = 2)]
+    pub threshold: u32,
+    /// Party count to embed in the envelope.
+    #[arg(long, default_value_t = 3)]
+    pub parties: u32,
+}
+
+/// `confium completions`
+#[derive(Args, Debug)]
+pub struct CompletionsArgs {
+    /// Shell to generate completions for.
+    #[arg(value_parser = ["bash", "zsh", "fish", "elvish", "powershell"])]
+    pub shell: String,
 }
 
 /// `confium threshold dkg`
