@@ -40,5 +40,13 @@ fn dispatch(cli: Cli) {
         Commands::Trust(args) => commands::trust::run(args),
         Commands::Config(args) => commands::config::run(args),
         Commands::Version => commands::version::run(),
+
+        // Product-umbrella subcommands.
+        Commands::Threshold(cmd) => commands::threshold::run(cmd),
+        Commands::Transparency(cmd) => commands::transparency::run(cmd),
+        Commands::Pki(cmd) => commands::pki::run(cmd),
+        Commands::Keyless(cmd) => commands::keyless::run(cmd),
+        Commands::Privacy(cmd) => commands::privacy::run(cmd),
+        Commands::Verify(cmd) => commands::verify::run(cmd),
     }
 }

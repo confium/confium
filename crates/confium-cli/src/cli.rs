@@ -50,6 +50,107 @@ pub enum Commands {
     Config(ConfigArgs),
     /// Show version and crate info.
     Version,
+
+    // Product-umbrella subcommands. Each routes to the product's own
+    // subcommand enum and dispatch module. Adding a new product = adding
+    // a variant here + a new module in commands/ + a Subcommand enum.
+    /// Threshold signing operations (DKG, sign, refresh, recover).
+    #[command(name = "threshold", subcommand)]
+    Threshold(ThresholdCommand),
+
+    /// Transparency log operations (append, prove, verify, serve).
+    #[command(name = "transparency", subcommand)]
+    Transparency(TransparencyCommand),
+
+    /// PKI operations (issue, verify, composite sign).
+    #[command(name = "pki", subcommand)]
+    Pki(PkiCommand),
+
+    /// Keyless signing operations (sign, verify, configure).
+    #[command(name = "keyless", subcommand)]
+    Keyless(KeylessCommand),
+
+    /// Privacy primitives (psi, mpc, dp, ring-sig).
+    #[command(name = "privacy", subcommand)]
+    Privacy(PrivacyCommand),
+
+    /// Verification operations (composite, inclusion, cert-chain).
+    #[command(name = "verify", subcommand)]
+    Verify(VerifyCommand),
+}
+
+/// Subcommands under `confium threshold`.
+#[derive(Subcommand, Debug)]
+pub enum ThresholdCommand {
+    /// Show version and component crate info.
+    Version,
+    /// Threshold DKG (placeholder; full impl lands with signerd integration).
+    Dkg,
+    /// Threshold sign (placeholder).
+    Sign,
+}
+
+/// Subcommands under `confium transparency`.
+#[derive(Subcommand, Debug)]
+pub enum TransparencyCommand {
+    /// Show version and component crate info.
+    Version,
+    /// Append an artifact hash to the log (placeholder).
+    Append,
+    /// Generate an inclusion proof (placeholder).
+    Prove,
+    /// Verify an inclusion proof (placeholder).
+    Verify,
+}
+
+/// Subcommands under `confium pki`.
+#[derive(Subcommand, Debug)]
+pub enum PkiCommand {
+    /// Show version and component crate info.
+    Version,
+    /// Parse a certificate (placeholder).
+    ParseCert,
+    /// Verify a certificate chain (placeholder).
+    Verify,
+    /// Composite-sign a payload (placeholder).
+    CompositeSign,
+}
+
+/// Subcommands under `confium keyless`.
+#[derive(Subcommand, Debug)]
+pub enum KeylessCommand {
+    /// Show version and component crate info.
+    Version,
+    /// Keyless sign (placeholder).
+    Sign,
+    /// Verify a keyless signature (placeholder).
+    Verify,
+}
+
+/// Subcommands under `confium privacy`.
+#[derive(Subcommand, Debug)]
+pub enum PrivacyCommand {
+    /// Show version and component crate info.
+    Version,
+    /// Run a two-party PSI (placeholder).
+    Psi,
+    /// Run a MPC computation (placeholder).
+    Mpc,
+    /// Apply differential privacy to a query (placeholder).
+    Dp,
+}
+
+/// Subcommands under `confium verify`.
+#[derive(Subcommand, Debug)]
+pub enum VerifyCommand {
+    /// Show version and component crate info.
+    Version,
+    /// Verify a composite signature (placeholder).
+    Composite,
+    /// Verify a transparency inclusion proof (placeholder).
+    Inclusion,
+    /// Verify a certificate chain (placeholder).
+    CertChain,
 }
 
 /// `confium install <plugin>[@version]`
