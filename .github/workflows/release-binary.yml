@@ -122,7 +122,7 @@ jobs:
       - name: Generate SBOM (CycloneDX)
         run: |
           cargo install cargo-cyclonedx --locked --quiet
-          cargo cyclonedx --format json --output-pattern package --output-directory dist/
+          cargo cyclonedx --format json --output-directory dist/
           # Flatten the per-crate SBOMs into one rollup that consumers can verify.
           jq -s 'map(.components) | {components: add, bomFormat: "CycloneDX", specVersion: "1.5", version: 1}' \
             dist/*.cdx.json > dist/confium-sbom.cdx.json
