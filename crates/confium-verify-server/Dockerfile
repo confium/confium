@@ -1,9 +1,8 @@
 # Multi-stage build for confium-verify-server.
 #
-# Builds a static musl binary in the build stage, then copies just the
-# binary + CA bundle into a distroless runtime image. No shell, no
-# package manager, no compilers in the final image = minimal attack
-# surface.
+# Builds the binary in the build stage, then copies just the binary
+# into a slim runtime image. No shell, no package manager in the final
+# image = minimal attack surface.
 
 # --- build stage -----------------------------------------------------------
 FROM rust:1.85-bookworm AS builder
@@ -12,16 +11,32 @@ WORKDIR /build
 # Cache deps separately from source for faster incremental builds.
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
-RUN cargo build --release --target x86_64-unknown-linux-musl -p confium-verify-server
+
+# Install the binary's target deps (some crates need system libs).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        pkg-config libssl-dev ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Build the specific binary. Uses glibc (default target), not musl —
+# the base image already has glibc, no extra setup needed.
+RUN cargo build --release -p confium-verify-server
 
 # --- runtime stage ---------------------------------------------------------
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM debian:bookworm-slim
 
-# nonroot user (uid 65532) is the default; we set it explicitly for clarity.
+# Install just the runtime libs the binary needs (libssl, libgcc).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libssl3 ca-certificates tini \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --uid 65532 --no-create-home --shell /usr/sbin/nologin confium
+
 USER 65532:65532
 
-COPY --from=builder     /build/target/x86_64-unknown-linux-musl/release/confium-verify-server     /usr/local/bin/confium-verify-server
+COPY --from=builder \
+    /build/target/release/confium-verify-server \
+    /usr/local/bin/confium-verify-server
 
 # Default config mounted at /etc/confium/config.toml.
 VOLUME ["/etc/confium"]
-ENTRYPOINT ["/usr/local/bin/confium-verify-server"]
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/confium-verify-server"]
