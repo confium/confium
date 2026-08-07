@@ -1,0 +1,356 @@
+# Confium production deployment on Kubernetes.
+#
+# This is a fuller deployment than deploy/k8s/bundle.yaml — includes
+# monitoring, NetworkPolicies, PodDisruptionBudgets, HPAs, and TLS.
+# Use this as a starting point for production; tune for your cluster.
+#
+# Apply:
+#   kubectl apply -f deploy/k8s/production/
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: confium-system
+  labels:
+    name: confium-system
+    pod-security.kubernetes.io/enforce: restricted
+---
+# ----- ServiceAccounts + RBAC -------------------------------------------
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: confium-coordinator
+  namespace: confium-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: confium-signerd
+  namespace: confium-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: confium-log-server
+  namespace: confium-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: confium-signerd
+  namespace: confium-system
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: confium-signerd
+  namespace: confium-system
+subjects:
+  - kind: ServiceAccount
+    name: confium-signerd
+    namespace: confium-system
+roleRef:
+  kind: Role
+  name: confium-signerd
+  apiGroup: rbac.authorization.k8s.io
+---
+# ----- ConfigMaps -------------------------------------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: confium-coordinator-config
+  namespace: confium-system
+data:
+  coordinator.toml: |
+    [server]
+    listen = "0.0.0.0:7000"
+    tls_cert = "/etc/confium/tls/tls.crt"
+    tls_key = "/etc/confium/tls/tls.key"
+
+    [policy]
+    max_concurrent_sessions = 100
+    session_timeout_seconds = 300
+
+    [metrics]
+    path = "/metrics"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: confium-log-server-config
+  namespace: confium-system
+data:
+  log-server.toml: |
+    [log]
+    identity = "confium-prod"
+    data_path = "/var/lib/confium/log.db"
+
+    [gossip]
+    witnesses = []
+
+    [anchor]
+    cadence_minutes = 60
+    calendar_url = "https://a.pool.opentimestamps.org"
+---
+# ----- Coordinator Deployment -------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: confium-coordinator
+  namespace: confium-system
+spec:
+  replicas: 1  # Single instance; coordinator holds session state
+  strategy:
+    type: Recreate  # Don't roll more than one at a time
+  selector:
+    matchLabels: { app: confium-coordinator }
+  template:
+    metadata:
+      labels: { app: confium-coordinator }
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "7000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: confium-coordinator
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: coordinator
+          image: ghcr.io/confium/coordinator:latest
+          imagePullPolicy: IfNotPresent
+          args: ["--config", "/etc/confium/coordinator.toml"]
+          env:
+            - name: RUST_LOG
+              value: info
+          ports:
+            - name: grpc
+              containerPort: 7000
+            - name: metrics
+              containerPort: 9000
+          volumeMounts:
+            - name: config
+              mountPath: /etc/confium
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/confium
+            - name: tls
+              mountPath: /etc/confium/tls
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 9000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 9000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 250m, memory: 256Mi }
+            limits:   { cpu: 1,    memory: 1Gi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+      volumes:
+        - name: config
+          configMap: { name: confium-coordinator-config }
+        - name: data
+          persistentVolumeClaim: { claimName: confium-coordinator-data }
+        - name: tls
+          secret: { secretName: confium-coordinator-tls }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: confium-coordinator-data
+  namespace: confium-system
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests: { storage: 10Gi }
+---
+# ----- Signerd StatefulSet (3 replicas for 2-of-3 CMP20) ----------------
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: confium-signerd
+  namespace: confium-system
+spec:
+  serviceName: confium-signerd
+  replicas: 3
+  selector:
+    matchLabels: { app: confium-signerd }
+  template:
+    metadata:
+      labels: { app: confium-signerd }
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "7000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: confium-signerd
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: signerd
+          image: ghcr.io/confium/signerd:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: COORDINATOR_URL
+              value: https://confium-coordinator:7000
+            - name: RUST_LOG
+              value: info
+          ports:
+            - name: grpc
+              containerPort: 7000
+          volumeMounts:
+            - name: shares
+              mountPath: /etc/confium/shares
+          readinessProbe:
+            tcpSocket: { port: 7000 }
+            initialDelaySeconds: 5
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+  volumeClaimTemplates:
+    - metadata: { name: shares }
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests: { storage: 1Gi }
+---
+# ----- Log server -------------------------------------------------------
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: confium-log-server
+  namespace: confium-system
+spec:
+  serviceName: confium-log-server
+  replicas: 1
+  selector:
+    matchLabels: { app: confium-log-server }
+  template:
+    metadata:
+      labels: { app: confium-log-server }
+    spec:
+      serviceAccountName: confium-log-server
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: log-server
+          image: ghcr.io/confium/log-server:latest
+          env: [{ name: RUST_LOG, value: info }]
+          ports: [{ name: http, containerPort: 7878 }]
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/confium
+            - name: config
+              mountPath: /etc/confium
+              readOnly: true
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests: { storage: 50Gi }
+  volumes:
+    - name: config
+      configMap: { name: confium-log-server-config }
+---
+# ----- Services ---------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: confium-coordinator
+  namespace: confium-system
+spec:
+  selector: { app: confium-coordinator }
+  ports: [{ name: grpc, port: 7000, targetPort: 7000 }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: confium-signerd
+  namespace: confium-system
+spec:
+  selector: { app: confium-signerd }
+  ports: [{ name: grpc, port: 7000, targetPort: 7000 }]
+  clusterIP: None  # headless, for StatefulSet
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: confium-log-server
+  namespace: confium-system
+spec:
+  selector: { app: confium-log-server }
+  ports: [{ name: http, port: 7878, targetPort: 7878 }]
+---
+# ----- PodDisruptionBudgets --------------------------------------------
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: confium-signerd
+  namespace: confium-system
+spec:
+  minAvailable: 2  # Keep at least 2 of 3 signerd up for quorum
+  selector:
+    matchLabels: { app: confium-signerd }
+---
+# ----- NetworkPolicies --------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: confium-signerd
+  namespace: confium-system
+spec:
+  podSelector:
+    matchLabels: { app: confium-signerd }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { app: confium-coordinator }
+      ports: [{ port: 7000 }]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels: { app: confium-coordinator }
+      ports: [{ port: 7000 }]
+    - to: [{ namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } } }]
+      ports: [{ port: 53, protocol: UDP }]
+---
+# ----- HPA for signerd (auto-scale on CPU) ------------------------------
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: confium-signerd
+  namespace: confium-system
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: confium-signerd
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 70 }

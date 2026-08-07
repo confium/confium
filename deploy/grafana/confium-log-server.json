@@ -1,0 +1,62 @@
+{
+  "annotations": { "list": [] },
+  "description": "Confium log server — transparency log metrics",
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "title": "Appends per minute",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "rate(confium_log_appends_total[1m])",
+          "legendFormat": "appends",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "title": "Tree size",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "confium_log_tree_size", "legendFormat": "entries", "refId": "A" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    },
+    {
+      "title": "Proof requests per minute",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "rate(confium_log_proof_requests_total[1m])",
+          "legendFormat": "proofs",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 }
+    },
+    {
+      "title": "OTS anchoring success rate",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(confium_log_anchor_success_total[5m])) / sum(rate(confium_log_anchor_total[5m]))",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 16 }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["confium", "transparency"],
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "Confium Log Server",
+  "uid": "confium-log-server",
+  "version": 1
+}
