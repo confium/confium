@@ -40,6 +40,7 @@ fn dispatch(cli: Cli) {
         Commands::Trust(args) => commands::trust::run(args),
         Commands::Config(args) => commands::config::run(args),
         Commands::Version => commands::version::run(),
+        Commands::Completions(args) => commands::completions::run(args),
 
         // Product-umbrella subcommands.
         Commands::Threshold(cmd) => commands::threshold::run(cmd),

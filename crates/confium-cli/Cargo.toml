@@ -37,6 +37,7 @@ confium-privacy = { workspace = true }
 ed25519-dalek = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa"] }
 clap = { workspace = true }
+clap_complete = "4"
 hex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

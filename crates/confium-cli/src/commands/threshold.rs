@@ -4,7 +4,9 @@
 //! The full implementation lives in `confium-tc-cmp20`, `confium-tc-gg18`,
 //! `confium-tc-frost-p256`, `confium-tc-frost-ed25519`, and the coordinator.
 
-use crate::cli::{ThresholdCommand, ThresholdDkgArgs, ThresholdSignArgs};
+use crate::cli::{
+    ThresholdCommand, ThresholdDkgArgs, ThresholdMigrateSharesArgs, ThresholdSignArgs,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -24,11 +26,85 @@ pub fn run(cmd: ThresholdCommand) {
         }
         ThresholdCommand::Dkg(args) => dkg(args),
         ThresholdCommand::Sign(args) => sign(args),
+        ThresholdCommand::MigrateShares(args) => migrate_shares(args),
     };
     if let Err(e) = result {
         eprintln!("confium threshold: {e}");
         std::process::exit(1);
     }
+}
+
+// Legacy 0.2.x share file shape.
+#[derive(Deserialize)]
+struct LegacyShare {
+    x: serde_json::Number,
+    y: String,
+    #[serde(default)]
+    public_key: Option<String>,
+}
+
+fn migrate_shares(args: ThresholdMigrateSharesArgs) -> Result<(), String> {
+    let input_json = std::fs::read_to_string(&args.input)
+        .map_err(|e| format!("read {}: {e}", args.input.display()))?;
+
+    // 0.2.x share files were either a single object or an array of objects.
+    // Handle both shapes.
+    let legacy_shares: Vec<LegacyShare> = if input_json.trim_start().starts_with('[') {
+        serde_json::from_str(&input_json)
+            .map_err(|e| format!("parse legacy array: {e}"))?
+    } else {
+        let single: LegacyShare = serde_json::from_str(&input_json)
+            .map_err(|e| format!("parse legacy object: {e}"))?;
+        vec![single]
+    };
+
+    // Synthesize a public key if not provided. In a real migration you
+    // would already have the joint public key from your DKG ceremony;
+    // for the migration tool we preserve it if present, otherwise emit
+    // a placeholder and warn.
+    let public_key = legacy_shares
+        .iter()
+        .find_map(|s| s.public_key.clone())
+        .unwrap_or_else(|| {
+            eprintln!("warning: no public_key in legacy file; using placeholder. Replace with the actual joint public key.");
+            "00".repeat(33)
+        });
+
+    // Encode each legacy share as a hex string of the JSON {"x":..., "y":...}.
+    // The modern share envelope stores opaque blobs; the scheme crate
+    // decides how to decode them. For CMP20 the underlying format is
+    // scheme-specific.
+    let shares: Vec<String> = legacy_shares
+        .iter()
+        .map(|s| {
+            let x = s.x.as_u64().unwrap_or(0);
+            hex::encode(&[
+                ((x >> 56) & 0xff) as u8,
+                ((x >> 48) & 0xff) as u8,
+                ((x >> 40) & 0xff) as u8,
+                ((x >> 32) & 0xff) as u8,
+                ((x >> 24) & 0xff) as u8,
+                ((x >> 16) & 0xff) as u8,
+                ((x >> 8) & 0xff) as u8,
+                (x & 0xff) as u8,
+            ]) + &s.y
+        })
+        .collect();
+
+    let envelope = ShareEnvelope {
+        scheme: args.scheme.clone(),
+        threshold: args.threshold,
+        party_count: args.parties,
+        public_key,
+        shares,
+    };
+
+    let json = serde_json::to_string_pretty(&envelope)
+        .map_err(|e| format!("serialize: {e}"))?;
+    std::fs::write(&args.out, json.as_bytes())
+        .map_err(|e| format!("write {}: {e}", args.out.display()))?;
+    eprintln!("migrated {} shares → {}", legacy_shares.len(), args.out.display());
+    Ok(())
 }
 
 fn dkg(args: ThresholdDkgArgs) -> Result<(), String> {

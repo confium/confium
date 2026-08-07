@@ -14,6 +14,7 @@
 //   3. Declare the module here.
 
 pub mod common;
+pub mod completions;
 pub mod config;
 pub mod config_store;
 pub mod info;
