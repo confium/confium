@@ -92,7 +92,15 @@ jobs:
           # a token for the PUT itself.
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
-          # No NODE_AUTH_TOKEN — trusted publishing authenticates via OIDC.
+
+      - name: Drop empty auth from .npmrc (force OIDC for the PUT)
+        run: |
+          NPMRC="${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}"
+          echo "Before:"
+          [ -f "$NPMRC" ] && cat "$NPMRC" || echo "(no npmrc at $NPMRC)"
+          [ -f "$NPMRC" ] && sed -i -E '/_authToken=/d; /^[[:space:]]*$/d' "$NPMRC" || true
+          echo "After:"
+          [ -f "$NPMRC" ] && cat "$NPMRC" || echo "(no npmrc at $NPMRC)"
 
       - name: Publish via trusted publishing (OIDC, no NPM_TOKEN)
         run: npm publish --access public --provenance
