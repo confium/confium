@@ -90,7 +90,7 @@ jobs:
       # Trivy vuln scan. CRITICAL findings fail the workflow; HIGH gets
       # reported but does not block the push (which already happened).
       - name: Trivy vuln scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: ${{ steps.tags.outputs.image }}:latest
           format: sarif
