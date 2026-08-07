@@ -11,12 +11,12 @@ The `main` branch is protected. This document explains what's enforced and why.
 
 | Setting | Value | Why |
 |---------|-------|-----|
-| Require pull request before merging | ✅ | No direct commits to main; everything is reviewed |
-| Required approving reviews | 1 | One maintainer approval gates merge; CODEOWNERS adds auto-routing |
+| Require pull request before merging | ✅ | No direct commits to main; everything goes through a PR |
+| Required approving reviews | 0 (status checks are the gate) | Solo-maintainer + AI-assisted workflow; CODEOWNERS routes reviews when collaborators join |
 | Dismiss stale pull request reviews when new commits are pushed | ✅ | Approvals don't persist across changes; reviewer must re-approve |
 | Require status checks to pass before merging | ✅ | CI failures block merge |
 | Require branches to be up to date before merging | ✅ | PRs must rebase on latest main before merging |
-| Required status checks | `Spell Check`, `Security Audit`, `Format and Lint` | The fast subset; full suite runs on the PR before merge but these are the gating set |
+| Required status checks | `Spell Check`, `Security Audit`, `Format and Lint` | The fast subset; full suite runs on the PR but these are the gating set |
 | Allow force pushes | ❌ | No history rewrites on main |
 | Allow deletions | ❌ | Main cannot be deleted |
 | Enforce for admins | ❌ | Admins can override in emergencies (e.g., revert a bad merge) |
@@ -49,7 +49,7 @@ These are exceptional; they're logged and reviewed.
 
 ## Why CODEOWNERS isn't required-review enforcement
 
-CODEOWNERS currently routes reviews but doesn't *require* them (no `require_code_owner_reviews` on the protection rule). This keeps the merge friction low while the team is small. Once the maintainer count exceeds 3, this setting will be flipped to ON.
+CODEOWNERS currently routes reviews but doesn't *require* them (no `require_code_owner_reviews` on the protection rule). Required reviews are set to 0 because the project is currently solo-maintainer + AI-assisted; status checks are the real gate. Once the maintainer count exceeds 3, both settings will be flipped to ON.
 
 ## Status check list
 
