@@ -1,0 +1,109 @@
+---
+title: "Keyless threshold code signing"
+description: Mode 4 replaces single-certificate code signing with multi-maintainer OIDC-verified threshold signing. The release signature is still a single signature under a single public key — but that key was produced by a threshold ceremony of OIDC-verified signers.
+---
+
+# Keyless threshold code signing
+
+Mode 4 (Keyless Threshold) generalizes the Sigstore keyless
+pattern to threshold signing. For code signing, it replaces the
+traditional model — one maintainer holds one long-lived signing
+certificate — with a model where multiple maintainers
+authenticate via OIDC and jointly produce one release signature.
+
+## What changes for the verifier
+
+Nothing. The verifier still sees:
+
+- One signature (64-byte `(r, s)` ECDSA-P256).
+- One public key (33-byte SEC1 compressed P-256 point).
+- One certificate (the Fulcio-issued short-lived cert that binds
+  the OIDC identities to the joint public key).
+
+The signature verifies under the public key in the normal way
+(OpenSSL, `node:crypto`, Go's `crypto/ecdsa`, etc.). What's
+different is **where the public key came from**: a per-ceremony
+threshold DKG, not a long-lived HSM.
+
+## What changes for the signers
+
+Under the old model:
+
+- One maintainer holds a long-lived signing key.
+- That key is used to sign every release.
+- If the key is lost, every future release is delayed until
+  re-provisioning.
+- If the key is stolen, every past release is suspect until the
+  key is revoked and every consumer updates their trust store.
+
+Under Mode 4:
+
+- N maintainers each authenticate via OIDC (GitHub Actions, Google,
+  Okta) at signing time.
+- The coordinator runs ephemeral DKG across their ephemeral
+  public keys → produces one joint ephemeral public key.
+- A Fulcio-style CA issues a short-lived cert binding the OIDC
+  identities to the joint key.
+- T-of-N maintainers threshold-sign the release.
+- All ephemeral keys are destroyed at end of ceremony.
+
+No long-lived key. No key storage. No key rotation. No HSM.
+
+## What changes for the release artifact
+
+The release artifact ships with three things:
+
+1. **The signature** (standard ECDSA-P256 `(r, s)`).
+2. **The Fulcio cert** (X.509 DER, validity ~10 minutes).
+3. **The transparency log entry** (inclusion proof + tree head
+   from `log.confium.org`).
+
+Consumers verify by:
+
+1. Extracting the joint public key from the Fulcio cert.
+2. Verifying the signature under that key.
+3. Verifying the Fulcio cert chain (issued by the Fulcio CA,
+   within validity window).
+4. Verifying the transparency log inclusion proof.
+5. Inspecting the OIDC identities in the Fulcio cert to decide
+   whether the signers are trusted maintainers.
+
+The trust decision becomes: **"this release was signed by a
+T-of-N quorum of these specific maintainers at this specific time,
+recorded in the transparency log"** — not **"this release was
+signed by key 0xABC"**.
+
+## Comparison with traditional code signing
+
+| Property | Traditional (single-cert) | Mode 4 (keyless threshold) |
+|---|---|---|
+| Signing key | Long-lived, held by one maintainer | Ephemeral, produced by threshold ceremony |
+| Key management | HSM, rotation, revocation, audit | None — keys are per-ceremony |
+| Signer identity | Anonymous (key is the identity) | OIDC-bound (GitHub, Google, Okta identity) |
+| Threshold | 1 (single signer) | T-of-N (configurable) |
+| Key compromise impact | Every past + future release suspect | One release suspect; no future impact |
+| Key loss impact | Releases blocked until re-provisioning | No impact — next ceremony uses fresh keys |
+| Transparency | Optional | Required (Fulcio cert + log anchor) |
+| Verifier complexity | Standard ECDSA verify | Standard ECDSA verify + Fulcio cert chain + log proof |
+
+## When to choose Mode 4 over traditional code signing
+
+Choose Mode 4 when:
+
+- Multiple maintainers should jointly approve releases (T-of-N).
+- Key management overhead is a bottleneck.
+- Signer identity matters more than key identity.
+- Per-release auditability is required.
+
+Choose traditional (single-cert) code signing when:
+
+- One party must be able to sign alone.
+- Long-term archival is required (Fulcio cert expires in ~10 min).
+- The signing infrastructure is air-gapped from OIDC providers.
+
+## See also
+
+- [Mode 4 — Keyless Threshold design](../architecture/mode-4-keyless-threshold.mdx)
+- [Four deployment modes](../architecture/four-modes.mdx)
+- [Code signing example](https://github.com/confium/confium-ruby/blob/main/examples/code_signing.rb)
+- [Keyless CI signing example](https://github.com/confium/confium-ruby/blob/main/examples/keyless_ci_signing.rb)

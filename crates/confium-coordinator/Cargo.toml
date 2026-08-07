@@ -1,0 +1,42 @@
+[package]
+name = "confium-coordinator"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories = ["cryptography", "authentication"]
+description = "Distributed threshold signing coordinator: session orchestration, rate limiting, policy, metrics"
+documentation = "https://docs.rs/confium-coordinator"
+keywords = ["crypto", "threshold", "coordinator", "confium"]
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+confium-api = { workspace = true }
+confium-tc-core = { workspace = true }
+confium-net = { workspace = true }
+confium-store = { workspace = true }
+p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+sha2 = { workspace = true }
+hmac = { workspace = true }
+tracing = { workspace = true }
+rand_core = { workspace = true }
+hex = { workspace = true }
+num-bigint = { workspace = true, features = ["rand"] }
+num-traits = { workspace = true }
+inventory = { workspace = true }
+data-encoding = { workspace = true }
+snafu = { workspace = true }
+zeroize = { workspace = true, features = ["zeroize_derive"] }
+
+[dev-dependencies]
+proptest = { workspace = true }
+tempfile = { workspace = true }

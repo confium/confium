@@ -1,0 +1,31 @@
+[package]
+name = "confium-crypto-vss"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories = ["cryptography"]
+description = "Verifiable secret sharing, Paillier, Schnorr proofs, and NIZK primitives"
+documentation = "https://docs.rs/confium-crypto-vss"
+keywords = ["crypto", "vss", "paillier", "schnorr", "confium"]
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
+sha2 = { workspace = true }
+hmac = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+subtle = { workspace = true }
+num-bigint = { workspace = true, features = ["rand"] }
+num-integer = { workspace = true }
+num-traits = { workspace = true }
+rand = { workspace = true }
+rand_core = { workspace = true }
+hex = { workspace = true }

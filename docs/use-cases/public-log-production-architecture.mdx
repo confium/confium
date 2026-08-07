@@ -1,0 +1,238 @@
+---
+title: "log.confium.org — production architecture"
+description: Tiered deployment design from dev (SQLite single-node) through small production (PostgreSQL + CDN) to large production (multi-region + serverless anchor). Why SQLite is dev-only, why edge-only doesn't work for the append path, and how the pieces fit together.
+---
+
+# `log.confium.org` — production architecture
+
+## TL;DR
+
+| Tier | Storage | Reads | Writes | Anchor | Cost / mo | When |
+|---|---|---|---|---|---|---|
+| **Dev / single-node** | SQLite | Same process | Same process | Inline cron | $5 | Local dev, single-org test, monitor test |
+| **Small prod** | PostgreSQL | Primary + 1 replica | Primary only | Lambda / Workers cron | $200 | 1–10 organizations, ~10M entries |
+| **Large prod** | PostgreSQL + read replicas × N | CDN-cached globally | Primary only (single region) | Lambda cron + 2 fallback witnesses | $2–10k | 100+ orgs, 100M+ entries |
+| **Pure edge** | Cloudflare D1 / SQLite-as-a-service | Edge POP | **Doesn't work** — see below | Workers cron | — | **Not viable** for append path |
+
+**Why not pure edge (Cloudflare D1, Lambda, etc.)?**
+
+The append path needs **strong consistency** — two concurrent appends must never produce two different tree roots at the same sequence number. Edge databases (Cloudflare D1, FaunaDB, DynamoDB Global Tables) are **eventually consistent across regions**. For read-heavy workloads this is fine; for the append path it's fatal — a forked log is the worst-case outcome.
+
+The architecture that works: **single-region append + global cached reads**. Writes go to one primary (strong consistency); reads fan out via CDN with cache invalidation on each new tree head.
+
+## Tier 1 — Dev / single-node (current implementation)
+
+This is what `confium-log-server` ships with by default. Single
+process, embedded SQLite, in-memory Merkle tree.
+
+```sh
+$ cargo run -p confium-log-server -- --db /var/lib/confium/log.db --listen 0.0.0.0:8080
+```
+
+**Pros**:
+- Zero operational dependencies
+- Survives restart (SQLite WAL is durable on a single disk)
+- ~1000 writes/sec on commodity hardware
+- Free
+
+**Cons**:
+- No replication. Disk failure = log loss.
+- Single region. Append latency from far-away clients is poor.
+- No horizontal scaling.
+
+**When to use**:
+- Local development
+- Single-org deployments with low write volume
+- Running your own monitor against the public log
+- Test environments for the API surface
+
+## Tier 2 — Small production (1–10 organizations)
+
+Promote storage to PostgreSQL. Keep the rest of the architecture
+the same.
+
+```
+                       ┌─────────────────────────┐
+                       │  log.confium.org (axum) │
+                       │  single process         │
+   Publisher  ────────►│  ─────────────────────  │
+                       │  • verify API token     │
+                       │  • append to Postgres   │
+                       │  • maintain Merkle tree │
+                       └──────────┬──────────────┘
+                                  │
+                       ┌──────────▼──────────────┐
+                       │  PostgreSQL primary     │
+                       │  + 1 hot standby        │
+                       │  (managed RDS / Aurora) │
+                       └──────────┬──────────────┘
+                                  │
+                                  │  read replica
+                                  ▼
+                       ┌─────────────────────────┐
+                       │  CDN (CloudFront /      │
+                       │  Cloudflare)            │
+                       │  caches /v1/head,       │
+                       │  /v1/proof/*, /v1/ots/* │
+                       └─────────────────────────┘
+                                  │
+                                  ▼
+                       ┌─────────────────────────┐
+                       │  AWS Lambda / CF Workers│
+                       │  cron every 10 minutes: │
+                       │  fetch current root,    │
+                       │  submit to OTS calendars│
+                       │  store proof back       │
+                       └─────────────────────────┘
+```
+
+**What changes from Tier 1**:
+1. SQLite → PostgreSQL (managed service: RDS, Aurora, Cloud SQL).
+2. Reads cached via CDN (CloudFront/Cloudflare) with short TTL.
+3. OTS anchor runs as a Lambda/Workers function, not in-process.
+
+**Operational cost**: ~$200/month at small scale (1 primary + 1
+replica + Lambda + CDN + DNS).
+
+**When to use**:
+- Initial production launch
+- Up to ~10M entries / ~100 writes/sec sustained
+
+## Tier 3 — Large production (100+ organizations, 100M+ entries)
+
+Add multi-region read replicas, paged API, and a dedicated
+witness-as-a-service.
+
+```
+   ┌──────────────────────────────────────────────────────────┐
+   │                   multi-region CDN                       │
+   │   (CloudFront / Cloudflare with 100+ POPs globally)      │
+   └─┬────────────────┬─────────────────┬─────────────────────┘
+     │                │                 │
+     ▼                ▼                 ▼
+   ┌─────────┐    ┌─────────┐      ┌─────────┐
+   │us-east-1│    │eu-west-1│      │ap-sou-1 │  ← read replicas
+   │Postgres │    │Postgres │      │Postgres │     (per-region)
+   │replica  │    │replica  │      │replica  │
+   └────┬────┘    └────┬────┘      └────┬────┘
+        │              │                │
+        └──────────────┼────────────────┘
+                       │  logical replication
+                       ▼
+                ┌─────────────────┐
+                │ Postgres primary│
+                │  (us-east-1)    │
+                │  ★ writes only ★│
+                └────────┬────────┘
+                         │
+                ┌────────▼────────┐
+                │  axum app       │
+                │  (auto-scaled)  │
+                │  in us-east-1   │
+                └─────────────────┘
+```
+
+**What changes from Tier 2**:
+1. PostgreSQL primary + 2+ cross-region read replicas via logical
+   replication.
+2. App auto-scaled behind a regional load balancer in us-east-1.
+3. CDN serves cached reads; cache invalidates on each new tree head.
+4. Paged API (`?before=<sequence>&limit=<n>`) for large queries.
+5. Independent witness services (third parties running
+   `confium-log-monitor` against the primary) publish their own
+   countersignatures via the witness endpoint.
+
+**Operational cost**: ~$2–10k/month at scale (multi-region Postgres
++ multi-POP CDN + Lambda + witness infra).
+
+**When to use**:
+- 100M+ entries
+- Global user base requiring low-latency reads
+- Regulatory requirements for multi-region redundancy
+
+## Why not pure edge (Cloudflare D1 / Lambda + DynamoDB Global)?
+
+The appeal is obvious: zero ops, scales to zero, global
+distribution. Three reasons it doesn't work for the **append path**
+of a transparency log:
+
+### 1. Strong consistency vs. eventual consistency
+
+A transparency log's invariant is: every reader sees the same
+tree head for the same tree size. Edge databases that replicate
+writes across regions are **eventually consistent** — a write to
+us-east might take seconds to propagate to ap-southeast. During
+that window:
+
+- Two appenders could see different `tree_size` values
+- Each would compute a different `root`
+- The log would silently fork
+
+Once forked, **the log can never be merged back** without picking
+a side and discarding the other's history — which is exactly the
+"rewrite history" attack transparency logs exist to prevent.
+
+### 2. No globally-ordered sequence numbers
+
+The `sequence` of an entry is its position in the global order.
+Edge databases typically provide only per-region monotonicity,
+not global monotonicity. Two entries appended concurrently might
+both get sequence `42`, or sequence `42` might appear before `41`
+in some regions.
+
+A transparency log requires global monotonicity. The only way to
+guarantee it is single-writer: append goes to one primary, gets
+its sequence there, then replicates.
+
+### 3. OTS anchor wants a single witness view
+
+The whole point of OTS-anchoring is that an independent observer
+(Bitcoin) attests "this tree head existed at this time". If the
+tree head varies by region, what does Bitcoin anchor? You'd need
+to anchor every region's view separately — and then monitors would
+have to verify every region's anchor. Complexity explodes.
+
+## Hybrid: edge reads, single-region writes
+
+The architecture that works:
+
+- **Append path**: single-region (us-east-1). Strong consistency,
+  global monotonicity, single OTS anchor.
+- **Read path**: global, CDN-cached. Tree head + inclusion proofs
+  are immutable once published — perfect CDN candidates.
+- **Cache invalidation**: on each new tree head, the primary
+  publishes a `Cache-Control: no-cache` for `/v1/head` and a
+  long TTL for everything else.
+
+This gives:
+- ~50 ms read latency globally (via CDN edge)
+- ~150 ms append latency (cross-region to us-east-1)
+- Strong consistency on writes (single primary)
+- Cheap reads (CDN caching is ~$0.10/GB)
+
+## Implementation roadmap
+
+The `confium-log-server` codebase is structured so the storage
+backend is pluggable. Tier 1 (SQLite) ships today. Tier 2
+(PostgreSQL) is a feature flag. Tier 3 (multi-region) is operational
+configuration on top of Tier 2.
+
+| Step | What | Status |
+|---|---|---|
+| 1 | SQLite backend (Tier 1) | ✅ shipped (TODO 102) |
+| 2 | PostgreSQL backend (Tier 2) | ✅ scaffold (TODO 191) |
+| 3 | CDN caching layer | ⏳ operational config |
+| 4 | Multi-region read replicas | ⏳ operational config |
+| 5 | Lambda/Workers OTS anchor | ⏳ operational config |
+| 6 | Independent witness services | ⏳ community-run |
+
+## See also
+
+- [RFC 6962-bis](https://www.rfc-editor.org/rfc/rfc9162) — the
+  transparency log spec.
+- [Certificate Transparency](https://certificate.transparency.dev/)
+  — the original deployment of this pattern (Chrome + CAs).
+- [Rekor](https://github.com/sigstore/rekor) — Sigstore's
+  transparency log; same architecture, different signature surface.
+- [OpenTimestamps](https://opentimestamps.org/) — the Bitcoin
+  anchoring layer.

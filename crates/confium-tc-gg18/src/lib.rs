@@ -15,6 +15,7 @@
 //! reveal in the clear) rather than a Paillier-based homomorphic MtA.
 
 pub mod error;
+pub mod inprocess;
 pub mod keygen;
 pub mod lagrange;
 pub mod mta;

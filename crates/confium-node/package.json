@@ -1,0 +1,38 @@
+{
+  "name": "@confium/confium-node",
+  "version": "0.1.0",
+  "description": "Node.js bindings for the Confium threshold cryptography framework (CMP20 + GG18 + FROST-P256 + ElGamal-P256)",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "cargo build --release",
+    "test": "node --test test/",
+    "prepublishOnly": "cargo build --release"
+  },
+  "keywords": [
+    "cryptography",
+    "threshold",
+    "ecdsa",
+    "p256",
+    "frost",
+    "cmp20",
+    "gg18",
+    "post-quantum",
+    "pki"
+  ],
+  "license": "BSD-2-Clause",
+  "homepage": "https://www.confium.org/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/confium/confium.git",
+    "directory": "crates/confium-node"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md"
+  ]
+}

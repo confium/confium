@@ -1,0 +1,50 @@
+[package]
+name = "confium-log-server"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories = ["cryptography", "authentication", "web-programming::http-server"]
+keywords = ["crypto", "transparency", "log", "rfc6962", "confium"]
+description = "Public transparency log server for Confium (log.confium.org reference implementation)"
+readme = "README.md"
+
+[[bin]]
+name = "confium-log-server"
+path = "src/main.rs"
+
+[dependencies]
+confium-transparency = { workspace = true }
+confium-pki = { workspace = true }
+anyhow = "1"
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+rusqlite = { version = "0.32", features = ["bundled"] }
+chrono = { workspace = true }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+clap = { workspace = true }
+parking_lot = "0.12"
+base64 = "0.22"
+
+# PostgreSQL backend (Tier 2/3 production). Off by default; opt in
+# via `--features postgres`. See src/db_pg.rs and
+# docs/use-cases/public-log-production-architecture.mdx.
+tokio-postgres = { version = "0.7", optional = true }
+
+[features]
+default = []
+# Production PostgreSQL storage backend. SQLite (the default) is
+# dev-only — see the production architecture doc for why.
+postgres = ["dep:tokio-postgres"]
+
+[dev-dependencies]
+tempfile = { workspace = true }

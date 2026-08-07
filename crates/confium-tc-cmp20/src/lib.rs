@@ -31,9 +31,13 @@
 //! the GG18 crate's deferred-Paillier approach.
 
 pub mod error;
+pub mod inprocess;
 pub mod keygen;
 pub mod lagrange;
 pub mod mta;
+pub mod paillier_mta;
+pub mod recovery;
+pub mod refresh;
 pub mod scheme;
 pub mod share;
 pub mod sign;

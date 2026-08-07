@@ -1,0 +1,95 @@
+---
+title: "confium-tc in-process driver — synchronous session orchestration"
+description: Single-call driver for any registered threshold scheme. Used by language bindings and integration tests.
+---
+
+# `confium_tc::inprocess` — synchronous session driver
+
+Wraps the multi-round session state machine in a single function call
+so language bindings (Ruby, Python, WASM) and integration tests don't
+have to reconstruct the round / message-routing loop on their own side.
+
+## Why this exists
+
+Without this module every binding had to copy the same
+N-session-create + route-messages + drive-rounds boilerplate. The CMP20
+and GG18 in-process shims used to be ~200 LOC each, ~90% of which was
+identical. This module collapses that pattern into one place;
+scheme-specific shims now only declare their scheme name and how to
+extract a public key from a share blob.
+
+## Public API
+
+```rust
+use confium_tc::inprocess;
+
+// Drive a registered DKG scheme to completion in-process.
+// Returns the per-party share blobs in roster order.
+let share_blobs: Vec<Vec<u8>> =
+    inprocess::run_dkg("CMP20-ECDSA-P256", threshold = 2, party_count = 3)?;
+
+// Drive a registered signing / decapsulation scheme to completion.
+// Returns the cryptographic artifact (e.g. 64-byte (r, s) ECDSA sig).
+let signature: Vec<u8> =
+    inprocess::run_sign("CMP20-ECDSA-P256-SIGN", &share_blobs[..2], 2, b"msg")?;
+```
+
+## How it works
+
+1. **Build N sessions** — one per party, all sharing the same
+   `PartyList`. Parties are in-process (`Party::inproc`), identified
+   `p0` … `p{n-1}`.
+2. **Drive rounds** — each iteration:
+   - Routes the previous round's outgoing messages to their
+     recipients as the next round's incoming.
+   - Calls `Session::round_step` on every session.
+   - Checks if every session reports `is_complete()`.
+3. **Bound at `MAX_ROUNDS = 8`** — if a scheme hasn't completed after
+   8 framework rounds, the driver returns `RoundOverflow`. Real
+   protocols top out at 4.
+
+## When to use this vs `confium-tc-coordinator`
+
+| Use case                                | Driver           |
+|-----------------------------------------|------------------|
+| Language binding (Ruby, Python, WASM)   | `inprocess`      |
+| Integration test / unit test            | `inprocess`      |
+| Local demo / example binary             | `inprocess`      |
+| Real network deployment                 | `coordinator`    |
+| Cross-datacenter signing ceremony       | `coordinator`    |
+
+The driver is local — no networking. For real distributed deployments
+use `confium-tc-coordinator`, which drives the same `Session::create`
++ `round_step` API but routes messages over `confium-net` transports.
+
+## Security notes
+
+- The driver inherits whatever security properties the underlying
+  scheme has. For CMP20 / GG18 the MtA sub-round is a simplified
+  in-clear stub — see each crate's docs.
+- Parties are identified by string IDs only. The driver does not
+  authenticate peers. Real deployments authenticate via the
+  coordinator's transport layer.
+- All in-process state (sessions, messages) is dropped on function
+  return. Scalars inside share blobs are zeroized by the
+  scheme-specific `Drop` impls.
+
+## Scheme-specific wrappers
+
+Each threshold crate ships a thin wrapper that names its scheme
+constants and pulls the joint public key out of the first share:
+
+- [`confium_tc_cmp20::inprocess`](./cmp20.mdx)
+- [`confium_tc_gg18::inprocess`](./gg18.mdx)
+
+These wrappers are the recommended entry points for bindings — they
+return `(shares, public_key)` directly.
+
+## Related
+
+- [`confium-tc` crate docs](./index.mdx) — the framework this module
+  drives.
+- [CMP20 crate](./cmp20.mdx), [GG18 crate](./gg18.mdx) — the
+  threshold-ECDSA schemes this driver runs.
+- [`confium-tc-coordinator`](./coordinator.mdx) — the production
+  networked driver (planned).

@@ -1,0 +1,85 @@
+---
+title: "confium-tc-elgamal-p256 — threshold ElGamal KEM on P-256"
+description: Real threshold ElGamal over P-256 for sealed-data workflows with T-of-N decryption.
+---
+
+# `confium-tc-elgamal-p256` — threshold ElGamal KEM on P-256
+
+Real threshold ElGamal encryption over P-256. Used for medium-term
+sealed data — e.g. the 5–10 year appeals window in CNML deployments —
+where any T-of-N custodians can jointly recover the shared secret.
+
+## When to use this crate
+
+Use `confium-tc-elgamal-p256` when:
+
+- You need to seal data now and recover it later via a threshold
+  quorum (no single party can decrypt alone).
+- You want a KEM-style API: encapsulate produces a fresh shared
+  secret per call; partial decryptions are combined to recover it.
+- Your sealed-data lifetime is bounded (months to a decade). For
+  longer horizons, prefer threshold-encryption schemes with active
+  share refresh.
+
+## Public API
+
+```rust
+use confium_tc_elgamal_p256::{
+    encapsulate, partial_decrypt, aggregate_partials,
+    PublicKey, DecryptionShare, Ciphertext,
+};
+
+// 1. Receiver holds a threshold-shared secret key; only the public
+//    key is needed to encapsulate.
+let pk = PublicKey { bytes: recipient_pubkey_sec1_bytes };
+
+let (ciphertext, shared_secret) = encapsulate(&pk)?;
+// ciphertext.c1, ciphertext.c2 are SEC1-encoded P-256 points
+// shared_secret is the 32-byte X-coordinate of c2
+
+// 2. Each of T custodians computes a partial decryption using their
+//    share of the secret key.
+let partial_a = partial_decrypt(&share_a, &ciphertext)?;
+let partial_b = partial_decrypt(&share_b, &ciphertext)?;
+
+// 3. Any combiner (could be one of the custodians, or a separate
+//    service) aggregates T partials to recover the shared secret.
+let recovered = aggregate_partials(&[partial_a, partial_b], 2, &ciphertext)?;
+assert_eq!(recovered, shared_secret);
+```
+
+## Shamir-shared secret key
+
+The secret key `x` is Shamir-shared among N parties via
+[`confium_tc_frost_p256::shamir`]. The split and recover functions
+are re-used from FROST-P256 because both crates share the same
+underlying P-256 scalar arithmetic.
+
+## Wire formats
+
+| Type               | Wire shape                                                  |
+|--------------------|-------------------------------------------------------------|
+| `PublicKey`        | 65-byte SEC1 uncompressed P-256 point                       |
+| `Ciphertext`       | two 65-byte SEC1 uncompressed points (`c1`, `c2`)           |
+| `DecryptionShare`  | `(party_index: u32, bytes: 32-byte scalar)`                 |
+| `PartialDecryption`| `(party_index: u32, bytes: 65-byte SEC1 uncompressed)`      |
+
+## Security notes
+
+- **No plaintext-in-ciphertext**: ElGamal here is KEM-only. The
+  ciphertext carries a shared secret, not plaintext. Callers wrap
+  the shared secret through an AEAD (e.g. AES-GCM) for actual
+  payload encryption.
+- **Fresh ephemeral per encapsulate**: each call generates a new
+  random `r`. The caller never manages nonces.
+- **Threshold decryption is safe across many ciphertexts**: unlike
+  threshold-ECDSA, threshold-ElGamal doesn't have nonce-reuse
+  pitfalls.
+- **`#![forbid(unsafe_code)]`**.
+
+## Related
+
+- [FROST-P256 crate](./frost-p256.mdx) — provides the Shamir split /
+  recover used by this crate.
+- [Composite signatures](./composite.mdx) — for hybrid PQ/classical
+  signing.

@@ -1,0 +1,30 @@
+[package]
+name = "confium-privacy"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories = ["cryptography"]
+description = "Privacy-preserving crypto: MPC, PSI, PIR, differential privacy, ring signatures"
+documentation = "https://docs.rs/confium-privacy"
+keywords = ["crypto", "privacy", "mpc", "psi", "confium"]
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
+sha2 = { workspace = true }
+hmac = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+num-bigint = { workspace = true, features = ["rand"] }
+num-traits = { workspace = true }
+rand_core = { workspace = true }
+rand = { workspace = true }
+hex = { workspace = true }
+chrono = { workspace = true }

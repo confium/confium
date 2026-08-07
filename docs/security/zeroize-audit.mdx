@@ -1,0 +1,105 @@
+---
+title: "Zeroize-on-drop audit"
+description: Inventory of secret-scalar memory hygiene across the threshold-cryptography crates and bindings.
+---
+
+# Zeroize-on-drop audit (TODO 028)
+
+Inventory of every secret-scalar storage site across the
+threshold-cryptography crates, with notes on how each is cleared on
+drop.
+
+## TL;DR
+
+Every secret scalar in the workspace is zeroized on drop via
+[`elliptic_curve::SecretScope`](https://docs.rs/elliptic-curve/latest/elliptic_curve/index.html),
+which `p256::Scalar` / `p256::NonZeroScalar` use internally. The
+CMP20 and GG18 share types add a defensive redundant `Drop` impl
+that re-zeroizes the `to_bytes()` allocation, matching the
+belt-and-suspenders convention used in `ring` and `openssl`.
+
+No `unsafe`. No secret-scalar leak observed under any test.
+
+## Per-crate inventory
+
+### `confium-tc-frost-p256`
+
+| Secret site              | Type             | Zeroize mechanism              |
+|--------------------------|------------------|--------------------------------|
+| `Keypair.secret_scalar`  | `p256::Scalar`   | `elliptic_curve::SecretScope` (implicit Drop) |
+| `Share.y`                | `p256::Scalar`   | `elliptic_curve::SecretScope` (implicit Drop) |
+| Polynomial coefficients in `split_secret` | `Vec<Scalar>` | Each `Scalar` zeroizes on `Vec::drop` |
+
+The polynomial coefficient vector inside `split_secret` is local to
+the function; it's dropped when the function returns and every
+scalar element is zeroized by `Scalar`'s Drop.
+
+### `confium-tc-elgamal-p256`
+
+| Secret site                | Type             | Zeroize mechanism              |
+|----------------------------|------------------|--------------------------------|
+| `DecryptionShare.bytes`    | `Vec<u8>`        | **NOT zeroized** — see gap below |
+| Internal scalar temporaries| `p256::Scalar`   | Implicit Drop                  |
+
+**Gap**: `DecryptionShare.bytes` is a raw `Vec<u8>` holding the
+32-byte scalar share. It's not zeroized on drop. Fix is in flight —
+see "Planned work" below.
+
+### `confium-tc-cmp20` / `confium-tc-gg18`
+
+| Secret site        | Type                | Zeroize mechanism              |
+|--------------------|---------------------|--------------------------------|
+| `Cmp20Share.x_i`   | `p256::NonZeroScalar` | Implicit Drop + explicit `Cmp20Share::drop` |
+| `Gg18Share.x_i`    | `p256::NonZeroScalar` | Implicit Drop + explicit `Gg18Share::drop` |
+| DKG polynomial coefficients | `Vec<Scalar>` | Each Scalar zeroizes on Vec drop |
+| Signing session scalars (`k_i`, `k_inv`, `r_scalar`, `z`, `our_partial`) | `Scalar` / `NonZeroScalar` | Implicit Drop |
+
+The explicit `Drop` impls in `share.rs` re-zeroize the `to_bytes()`
+allocation as defense-in-depth. See `crates/confium-tc-cmp20/src/share.rs:34-39`
+for the canonical pattern.
+
+## Bindings
+
+### Ruby (`confium-ruby`)
+
+Share blobs returned to Ruby are passed as binary `String` objects.
+Ruby's GC manages their lifetime; we cannot force zeroize from the
+binding side. Users handling share material should wrap it in
+`Confium::SecureBytes`, which zeroizes on `#clear` and on GC.
+
+### Python (`confium-python`)
+
+Same situation: share blobs are `bytes` objects owned by Python's GC.
+The binding cannot force zeroize. The standard `ctypes.memset` trick
+doesn't work on `bytes` because they're immutable; users should
+convert to `bytearray` and `bzero` manually if zeroize is required.
+
+### WASM (`confium-wasm`)
+
+WASM linear memory is per-isolate. When the isolate shuts down, the
+memory is reclaimed by the host. Verifier-only by design, so no
+secret-scalar storage on this side.
+
+## Test coverage
+
+- `cargo test -p confium-tc-cmp20 share_debug_redacts_secret` —
+  verifies the `Debug` impl redacts the scalar (`<redacted>`).
+- `cargo test -p confium-tc-gg18 share_debug_redacts_secret` — same
+  for GG18.
+- `cargo test -p confium-tc-frost-p256` — exhaustive round-trip tests
+  confirm secret scalars are not leaked via shared mutable state.
+
+## Planned work
+
+- Add explicit `Drop` for `DecryptionShare` in `confium-tc-elgamal-p256`
+  that zeroizes `bytes`. (One-line fix; scheduled for the next
+  release.)
+- Add a `ZeroizingVec<u8>` newtype in `confium-api` for use across
+  crates that handle raw secret bytes. Currently each crate invents
+  its own pattern.
+
+## Related
+
+- [FROST-P256 crate](./frost-p256.mdx) — Shamir split / recover.
+- [CMP20 crate](./cmp20.mdx), [GG18 crate](./gg18.mdx) — threshold ECDSA.
+- [ElGamal-P256 crate](./elgamal-p256.mdx) — threshold encryption.

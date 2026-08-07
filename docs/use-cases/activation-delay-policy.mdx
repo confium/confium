@@ -1,0 +1,110 @@
+---
+title: "Activation-delay policy for transparency log entries"
+description: How verifiers should treat entries whose activation_time has not yet passed. The policy that makes pure-edge eventual consistency safe.
+---
+
+# Activation-delay policy
+
+A transparency log entry is **visible** immediately after append.
+It is **trustable** only after `activation_time` has passed. This
+policy is what allows pure-edge (Tier 4) deployments to use
+eventually-consistent storage safely: the activation window gives
+the global merger time to converge.
+
+Certificate Transparency itself relies on the same property —
+Chrome's CT policy requires hours of monitoring before a cert is
+trusted. Confium makes the policy explicit and machine-checkable.
+
+## Policy
+
+Every log entry carries an `activation_time` field. Verifiers:
+
+1. **Accept** the entry for read queries (proofs, lookups) at any
+   time after append.
+2. **Reject** the entry for trust decisions until
+   `activation_time` has passed. Specifically:
+   - Don't accept the entry as proof of issuance.
+   - Don't update policy state based on the entry.
+   - Don't serve the entry to downstream consumers as "verified".
+3. **After** `activation_time`, treat the entry normally.
+
+The default activation delay is **1 hour** for pure-edge
+deployments (Tier 4) and **0 seconds** for single-region
+deployments (Tier 1/2/3) where strong consistency is already
+guaranteed.
+
+## Implementation
+
+### Server side (log.confium.org)
+
+Every entry response includes:
+
+```json
+{
+  "sequence": 42,
+  "activation_time": "2026-07-31T12:34:56Z",
+  "timestamp": "2026-07-31T11:34:56Z",
+  ...
+}
+```
+
+For pure-edge deployments, the server populates `activation_time =
+timestamp + DEFAULT_ACTIVATION_DELAY_SECONDS` (default 3600).
+
+### Verifier side
+
+Verifiers MUST check `activation_time` before treating an entry as
+trustworthy. Reference logic:
+
+```python
+import time
+
+def is_trustable(entry, now=None):
+    now = now or time.time()
+    activation = parse_iso8601(entry["activation_time"])
+    return now >= activation
+```
+
+### Monitor side
+
+Monitors should track the gap between `timestamp` and the latest
+global tree head's `timestamp`. If the gap grows beyond 2× the
+expected merge interval, the merger is lagging; verifiers should
+extend their trust window accordingly.
+
+## Choosing the delay
+
+| Delay | When |
+|---|---|
+| 0 seconds | Tier 1/2/3 (single-region PostgreSQL with strong consistency). |
+| 1 hour | Tier 4 (pure edge), default. Long enough for D1 replication + merger cycle + OTS anchor. |
+| 24 hours | High-paranoia deployments that want a full day of monitor coverage before trusting entries. Mirrors Chrome's CT policy of "MMD" (Maximum Merge Delay). |
+
+The right delay depends on:
+
+- **Merge interval**: 5 minutes default. Delay should be at least
+  6× the merge interval to cover merger-lag cases.
+- **Monitor cadence**: how often third-party monitors poll. Delay
+  should give them at least 2 polling cycles.
+- **OTS anchor cadence**: 10 minutes default. Delay should be at
+  least 6× this.
+
+## API contract
+
+| Endpoint | Affected by activation delay? |
+|---|---|
+| `POST /v1/append` | No — append returns immediately. |
+| `GET /v1/head` | No — head is always the latest. |
+| `GET /v1/proof/<sequence>` | No — proof exists as soon as entry is in the tree. |
+| `GET /v1/certificates/<fingerprint>` | **Yes** — verifier MUST check `activation_time`. |
+| `GET /v1/head/<sequence>/ots` | No — OTS proof only available after activation delay (since OTS anchoring takes time). |
+
+The activation_delay policy is enforced by the verifier, not by
+the log server. The server returns the `activation_time` field;
+verifiers use it.
+
+## See also
+
+- [Pure-edge architecture](./public-log-pure-edge.mdx)
+- [Tier 1–3 architectures](./public-log-production-architecture.mdx)
+- [RFC 6962-bis §4.1 (MMD)](https://www.rfc-editor.org/rfc/rfc9162#section-4.1)

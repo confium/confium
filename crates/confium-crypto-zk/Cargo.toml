@@ -1,0 +1,28 @@
+[package]
+name = "confium-crypto-zk"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories = ["cryptography"]
+description = "Zero-knowledge proof systems: set membership, signature possession, accumulators"
+documentation = "https://docs.rs/confium-crypto-zk"
+keywords = ["crypto", "zk", "proof", "confium"]
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
+sha2 = { workspace = true }
+hmac = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+num-bigint = { workspace = true, features = ["rand"] }
+num-traits = { workspace = true }
+rand_core = { workspace = true }
+hex = { workspace = true }

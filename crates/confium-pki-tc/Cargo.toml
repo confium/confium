@@ -1,0 +1,27 @@
+[package]
+name = "confium-pki-tc"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories = ["cryptography"]
+description = "Threshold PKI integration: CT log, OCSP, ACME, attribute-based encryption"
+documentation = "https://docs.rs/confium-pki-tc"
+keywords = ["crypto", "pki", "threshold", "confium"]
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+hmac = { workspace = true }
+chrono = { workspace = true }
+hex = { workspace = true }
+thiserror = { workspace = true }
+p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
+rand_core = { workspace = true }

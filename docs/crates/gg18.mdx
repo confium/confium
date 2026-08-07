@@ -1,0 +1,75 @@
+---
+title: "confium-tc-gg18 — GG18 threshold ECDSA on P-256"
+description: Real GG18 (Gennaro–Goldfeder 2018) threshold ECDSA with Feldman VSS DKG and four-round signing.
+---
+
+# `confium-tc-gg18` — GG18 threshold ECDSA on P-256
+
+Real GG18 threshold ECDSA over P-256. The original Gennaro–Goldfeder
+2018 protocol (eprint 2019/114). CMP20 is the newer, more efficient
+successor — prefer CMP20 for new deployments.
+
+## When to use this crate
+
+Use `confium-tc-gg18` when:
+
+- You need to interoperate with an existing GG18 deployment.
+- You're benchmarking against an older protocol baseline.
+- You want a protocol with deeper third-party audit history than CMP20.
+
+For new code, prefer [`confium-tc-cmp20`](./cmp20.mdx).
+
+## Architecture
+
+Two registered schemes:
+
+| Name                   | Kind        | Produces                          |
+|------------------------|-------------|-----------------------------------|
+| `GG18-ECDSA-P256`      | `Dkg`       | per-party `Gg18Share` + pubkey    |
+| `GG18-ECDSA-P256-SIGN` | `Signature` | 64-byte `(r, s)` ECDSA signature  |
+
+## Public API
+
+### In-process driver (recommended)
+
+```rust
+use confium_tc_gg18::inprocess;
+
+let kg = inprocess::keygen(2, 3)?;
+let sig = inprocess::sign(&kg.shares[..2], 2, b"hello gg18")?;
+assert_eq!(sig.len(), 64);
+```
+
+### Session API (advanced)
+
+Identical shape to CMP20 — see [the CMP20 docs](./cmp20.mdx) for the
+session-driver pattern. The only differences are the scheme names and
+the round count (GG18 = 4 framework rounds for signing vs CMP20's 4
+framework rounds covering 3 protocol rounds).
+
+## Share wire format
+
+Each share blob is 71 bytes, identical shape to CMP20 except for the
+magic:
+
+```
+magic[4]      = b"GG18"
+version[1]    = 1
+x_i[32]       = Shamir share scalar (big-endian)
+X[33]         = joint public key (SEC1 compressed)
+idx[1]        = 1-based DKG roster index
+```
+
+## Security notes
+
+Same caveats as CMP20:
+
+- Real Feldman VSS, real Lagrange, real threshold-ECDSA combine.
+- MtA is a simplified in-clear stub (see `mta.rs`).
+- `#![forbid(unsafe_code)]`, zeroize-on-drop for scalars.
+
+## Related
+
+- [CMP20 crate](./cmp20.mdx) — newer, more efficient.
+- [FROST-P256 crate](./frost-p256.mdx) — Shamir + single-party sign.
+- [In-process driver](./tc-inprocess.mdx) — generic driver.

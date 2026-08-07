@@ -1,0 +1,210 @@
+---
+title: "Tier 4 — pure edge (Cloudflare Workers + D1)"
+description: Pure-edge transparency log architecture. Why activation delay makes eventual consistency safe, cost model, conflict resolution, and the cert-trust activation policy.
+---
+
+# Tier 4 — pure edge (Cloudflare Workers + D1)
+
+Transparency logs are audit systems, not real-time systems. A
+certificate isn't trusted the instant it's issued; it's trusted
+after consumers have had time to see it in the log. Certificate
+Transparency itself relies on this — Chrome's CT policy requires
+that a cert appear in 2+ logs and gives monitors hours to detect
+misissuance.
+
+Once that audit-window property is accepted, **pure edge becomes
+viable**. Eventual consistency + activation delay = safe.
+
+## The key property
+
+| System type | Real-time verification | Audit-after-the-fact |
+|---|---|---|
+| Payment authorization | Required | — |
+| Auth token issuance | Required | — |
+| **Transparency log entry** | **Not required** | **Yes** |
+
+For a transparency log:
+
+- **Append latency**: doesn't matter. Seconds to minutes is fine.
+- **Read latency**: matters for user experience. Edge cache handles it.
+- **Consistency**: needs to converge within the activation window.
+- **Sequence numbers**: don't need to be globally monotonic per-write; the global Merkle tree head is the source of truth.
+
+## Pure-edge architecture
+
+```
+   ┌────────────────────────────────────────────────────────────┐
+   │                 Cloudflare edge network                    │
+   │                  (300+ POPs globally)                      │
+   │                                                            │
+   │  ┌──────────────────────────────────────────────────────┐ │
+   │  │ Worker (POST /v1/append)                              │ │
+   │  │ • verify API token                                    │ │
+   │  │ • write to regional D1                                │ │
+   │  │ • return sequence (region-prefixed) + activation time │ │
+   │  └────────────────┬─────────────────────────────────────┘ │
+   │                   │                                        │
+   │  ┌────────────────▼─────────────────────────────────────┐ │
+   │  │ D1 (per-region SQLite, eventually consistent)        │ │
+   │  │ • accepts local writes                                │ │
+   │  │ • replicates globally in seconds                      │ │
+   │  └────────────────┬─────────────────────────────────────┘ │
+   │                   │                                        │
+   │  ┌────────────────▼─────────────────────────────────────┐ │
+   │  │ Durable Object: "global-merger" (singleton)          │ │
+   │  │ • every 5 min: pull from all regions                 │ │
+   │  │ • compute global Merkle tree                          │ │
+   │  │ • publish tree head                                   │ │
+   │  │ • submit OTS anchor                                   │ │
+   │  └────────────────┬─────────────────────────────────────┘ │
+   │                   │                                        │
+   │  ┌────────────────▼─────────────────────────────────────┐ │
+   │  │ KV (read cache, 60-second TTL)                       │ │
+   │  │ • /v1/head                                            │ │
+   │  │ • /v1/proof/*                                         │ │
+   │  │ • /v1/ots/*                                           │ │
+   │  └──────────────────────────────────────────────────────┘ │
+   └────────────────────────────────────────────────────────────┘
+```
+
+### Component roles
+
+- **Worker** (per-region): handles HTTP, writes to local D1,
+  returns a region-prefixed sequence + activation time.
+- **D1** (per-region SQLite at the edge): accepts writes
+  immediately, replicates globally in seconds.
+- **Durable Object** ("global-merger" singleton): single instance
+  globally; runs every 5 minutes to merge regional logs into the
+  global Merkle tree. Strongly consistent by definition (single
+  instance).
+- **Workers KV**: 60-second-TTL read cache for tree head + proofs.
+  Invalidated by the merger on each new tree head.
+
+### Activation delay
+
+Every entry has an `activation_time = submission_time + delay`
+where `delay` defaults to **1 hour**. Verifiers:
+
+- **See** the entry in the log immediately (read latency ~50ms).
+- **Trust** the entry only after `activation_time` has passed.
+
+This gives the merger time to:
+
+1. Receive the entry from regional D1 replication (~seconds).
+2. Include it in the global Merkle tree (~5 minutes).
+3. Submit the OTS anchor (~10 minutes Bitcoin-anchored).
+4. Publish the witness signature (~seconds).
+
+If the merger is slow or down, monitors detect the lag and
+verifiers hold entries beyond the normal activation window until
+things converge.
+
+## Cloudflare D1 pricing
+
+Published Cloudflare pricing (2026):
+
+| Resource | Free tier | Paid |
+|---|---|---|
+| Rows read | 5M / day | $0.001 per million after free |
+| Rows written | 100k / day | $1.00 per million after free |
+| Storage | 5 GB | $0.75 / GB-month after free |
+| Workers requests | 100k / day | $5/month base includes 10M, then $0.30/million |
+| Durable Objects requests | — | $0.15 / million |
+| Workers KV reads | 100k / day | $0.50 / million after free |
+| Workers KV writes | 1k / day | $5.00 / million after free |
+| OTS calendar submissions | — | free (public OTS calendars) |
+
+### Sample cost: 100M entries, 1-year retention
+
+| Resource | Volume | Cost |
+|---|---|---|
+| Storage (entries + indexes) | ~25 GB | $15 / month |
+| Reads (100M verifications/month) | 100M | $50 / month |
+| Writes (1M entries/month at ~10 rows each) | 10M | $10 / month |
+| Workers requests (150M/month) | 150M | $40 / month |
+| Durable Object requests (merger every 5 min = 8.6k/month) | 8.6k | $0.01 / month |
+| Durable Object duration (always-on merger) | small | $1 / month |
+| KV writes (12k new heads/year) | 12k | $0.06 / month |
+| KV reads (200M/month) | 200M | $100 / month |
+| **Total** | | **~$220 / month** |
+
+Compare Tier 3 (multi-region PostgreSQL + CDN + Lambda + witnesses):
+**~$2,000–10,000 / month** at the same scale.
+
+Pure edge is **10–50× cheaper** at scale.
+
+### When does the cost flip?
+
+At very high write volume (>10M entries/month sustained), D1's
+write pricing starts to bite. At 100M entries/month, writes alone
+would cost ~$1k/month. Tier 3 (PostgreSQL) may be more economical
+there.
+
+For typical transparency-log volumes (1M–10M entries/month), pure
+edge dominates.
+
+## Conflict resolution
+
+With regional writes, two regions could accept the same fingerprint
+in the same 5-minute window before the merger runs. Three cases:
+
+### 1. Same fingerprint, different metadata
+
+Two CAs issue a cert with the same fingerprint (impossible — the
+fingerprint is the cert's SHA-256). Cannot happen.
+
+### 2. Same artifact hash, different content
+
+An attempt to anchor the same hash twice. **Keep both entries**.
+This is real signal — either a legitimate re-issuance or a
+monitoring opportunity. The log is append-only; duplicates are
+information.
+
+### 3. Split-brain: regional D1 hasn't converged
+
+If two regions both think they have sequence N, the merger
+resolves by ordering both entries into N and N+1 deterministically
+(by region ID + local sequence). No data is lost; the entries just
+appear in a stable global order.
+
+The merger publishes the global sequence assignment in its tree
+head, so all verifiers see the same final ordering after the merge.
+
+## When to choose Tier 4
+
+Choose pure edge when:
+
+- **Low operational overhead** is paramount (no DBA, no region
+  management, no failover drills).
+- **Global read latency** matters (the edge has 300+ POPs vs. CDN
+  caching which still hits origin on cache miss).
+- **Cost sensitivity** at scale (10–50× cheaper than Tier 3).
+- **An activation delay of 1+ hour for trust decisions is
+  acceptable.** (Most transparency-log consumers can.)
+
+Don't choose pure edge when:
+
+- **Real-time verification is required** (e.g. payment-system event
+  log). Stick with Tier 2/3.
+- **Regulatory requirements** mandate specific data residency or
+  database technology. (Some gov use cases require on-prem.)
+- **Write volume exceeds ~10M/month sustained**. Tier 3 may be
+  cheaper.
+
+## Implementation status
+
+| Component | Status |
+|---|---|
+| Architecture design | ✅ this doc |
+| Cloudflare Workers scaffold | ✅ `crates/confium-log-edge/` |
+| Activation-delay policy docs | ✅ |
+| Production deployment to log.confium.org | ⏳ operational |
+| Migration from Tier 1 (SQLite) to Tier 4 (edge) | ⏳ planned |
+
+## See also
+
+- [Cloudflare D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/)
+- [Cloudflare Workers](https://developers.cloudflare.com/workers/)
+- [Durable Objects](https://developers.cloudflare.com/durable-objects/)
+- [Certificate Transparency policy](https://certificate.transparency.dev/)
+- [Tier 1–3 architectures](./public-log-production-architecture.mdx)

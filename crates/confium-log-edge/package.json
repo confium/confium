@@ -1,0 +1,19 @@
+{
+  "name": "@confium/log-edge",
+  "version": "0.1.0",
+  "description": "log.confium.org — pure-edge Cloudflare Workers + D1 implementation",
+  "main": "src/worker.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "db:init": "wrangler d1 execute confium-log --file=./schema.sql",
+    "db:init:remote": "wrangler d1 execute confium-log --remote --file=./schema.sql"
+  },
+  "keywords": ["cloudflare-workers", "d1", "transparency-log", "confium"],
+  "license": "BSD-2-Clause",
+  "homepage": "https://www.confium.org/",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

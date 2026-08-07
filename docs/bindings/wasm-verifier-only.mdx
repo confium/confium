@@ -1,0 +1,72 @@
+---
+title: "WASM binding — verifier-only by design"
+description: Why the WASM package exposes verifiers but no signing, threshold, or secret-key operations.
+---
+
+# WASM binding — verifier-only by design
+
+The `@confium/confium-wasm` package targets `wasm32-unknown-unknown`
+and ships **verifiers only**. There is no threshold signing, no
+secret-key storage, no PKCS#11 / OpenSSL provider, no composite
+*signing* — every operation that handles a secret lives server-side.
+
+This is a deliberate architectural choice, not a TODO. Browsers
+verify; servers sign.
+
+## Why
+
+| Reason | Detail |
+|---|---|
+| **Threat model** | Browser code runs in a hostile environment (extensions, dev tools, supply chain). Treating it as untrusted w.r.t. secret material is the only safe default. |
+| **Audit/compliance** | Signing events must be auditable. A browser-side signing key has no audit trail. A server-side key participates in the audit log. |
+| **Multi-stakeholder quorum** | Threshold signing requires a coordinator. The browser is the wrong place to run a coordinator — it's ephemeral, behind NAT, and unreliable. |
+| **Performance** | Real Paillier / MtA arithmetic over P-256 / ML-DSA-65 is heavy. Server-side computation is cheaper and amortizes across many signatures. |
+
+## What's exposed
+
+- **Composite signatures** (`CompositeSignature`) — verify multi-alg
+  signatures produced server-side.
+- **Transparency log** (`MerkleTree`, `InclusionProof`) — verify
+  inclusion and consistency proofs against a published tree head.
+- **Attribute DSL** (`Predicate`) — evaluate signing policies
+  client-side for UX (e.g. "show a warning if this cert's quorum
+  doesn't include a director from region X").
+- **PKI** (`Certificate`, `SignedData`) — parse and inspect X.509
+  + CMS without exposing private keys.
+- **XML canonicalization** — RFC 3076 + Exclusive C14N for XMLDSig.
+
+Each subsystem is gated by a Cargo feature (`verify-composite`,
+`verify-transparency`, `verify-attributes`, `verify-pki`) so
+consumers can tree-shake aggressively. All features are on by
+default for out-of-the-box ergonomics.
+
+## What's NOT exposed
+
+| Operation | Why not in WASM |
+|---|---|
+| `Composite::sign` | Secret key in browser = catastrophic. |
+| `TC::Cmp20::keygen` / `sign` | Same. Threshold signing runs server-side. |
+| `TC::ElGamalP256::encapsulate` / `partial_decrypt` | Threshold encryption is for sealed data; custodians run server-side. |
+| `PKI::CMS::SignedData::build/sign` | Signing server-side. |
+| `PKI::Certificate` issuance | CA-side. |
+| `OpenPGP` armor / dearmor | Server-side. |
+
+The parity matrix marks all of these as ➖ (by design).
+
+## If you need a signer
+
+Run a server. The Rust API (`confium-tc-*`, `confium-composite`,
+`confium-pki`) is the signing surface; expose it behind your own
+authenticated endpoint. The browser then verifies what the server
+produces via `@confium/confium-wasm`.
+
+This pattern — server signs, browser verifies — is the same one TLS
+uses. Browsers never hold the server's TLS private key; they verify
+the server's signature against a public key in the trust store.
+Confium applies the same separation to threshold cryptography.
+
+## See also
+
+- [Parity matrix](../bindings/parity.mdx) — every binding at a glance.
+- [WASM binding guide](../bindings/wasm.mdx) — installation + usage.
+- [Composite signatures](../crates/composite.mdx) — what browsers verify.
