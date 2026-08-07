@@ -4,10 +4,14 @@
 :source-highlighter: rouge
 
 ifdef::env-github[]
-image:https://img.shields.io/badge/crates-24-blue.svg[Crates]
-image:https://img.shields.io/badge/tests-555%20passing-green.svg[Tests]
+image:https://github.com/confium/confium/actions/workflows/ci.yml/badge.svg?branch=main[CI, link=https://github.com/confium/confium/actions/workflows/ci.yml]
+image:https://github.com/confium/confium/actions/workflows/coverage.yml/badge.svg[Coverage, link=https://github.com/confium/confium/actions/workflows/coverage.yml]
+image:https://img.shields.io/crates/v/confium-threshold.svg[crates.io version, link=https://crates.io/crates/confium-threshold]
+image:https://img.shields.io/npm/v/@confium/confium-wasm.svg[npm version, link=https://www.npmjs.com/package/@confium/confium-wasm]
+image:https://img.shields.io/gem/v/confium.svg[RubyGems version, link=https://rubygems.org/gems/confium]
 image:https://img.shields.io/badge/license-BSD--2--Clause-blue.svg[License]
 image:https://img.shields.io/badge/Rust-2024-orange.svg[Rust Edition]
+image:https://img.shields.io/github/discussions/confium/confium[Discussions, link=https://github.com/confium/confium/discussions]
 endif::[]
 
 Confium is an open-source framework that **bridges threshold-cryptography

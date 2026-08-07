@@ -467,3 +467,10 @@ $RECYCLE.BIN/
 
 # Claude Code worktrees
 .claude/worktrees/
+
+# Phase 2 — newly noisy after product restructuring
+crates/*/proptest-regressions/
+**/__pycache__/
+crates/confium-wasm/pkg/
+crates/confium-python/scripts/__pycache__/
+*.cdx.json.bak

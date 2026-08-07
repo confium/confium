@@ -1,0 +1,35 @@
+{
+  "name": "Confium",
+  "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    "ghcr.io/devcontainers/features/rust:1": { "version": "stable" },
+    "ghcr.io/devcontainers/features/node:1": { "version": "24" },
+    "ghcr.io/devcontainers/features/python:1": { "version": "3.12" },
+    "ghcr.io/devcontainers/features/common-utils:2": { "installZsh": true, "configureZshAsDefaultShell": true }
+  },
+  "postCreateCommand": "pre-commit install --install-hooks && pip install --user pre-commit",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "vadimcn.vscode-lldb",
+        "serayuzgur.crates",
+        "ms-azuretools.vscode-docker",
+        "GitHub.vscode-github-actions"
+      ],
+      "settings": {
+        "rust-analyzer.linkedProjects": ["Cargo.toml"],
+        "files.watcherExclude": {
+          "**/target/**": true,
+          "**/pkg/**": true
+        }
+      }
+    }
+  },
+  "remoteUser": "vscode",
+  "mounts": [
+    "source=${localWorkspaceFolderBasename}-cargo,target=/home/vscode/.cargo,type=volume",
+    "source=${localWorkspaceFolderBasename}-target,target=${containerWorkspaceFolder}/target,type=volume"
+  ]
+}
