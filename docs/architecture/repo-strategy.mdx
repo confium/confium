@@ -1,0 +1,114 @@
+---
+title: Repository Strategy
+description: Why Confium is one Rust workspace with product facades, and when we'd split
+---
+
+# Repository Strategy
+
+## Decision
+
+**One Rust workspace** containing all 65+ crates, with **product facade crates** as the public consumer surface. **Sibling repositories** for language bindings and standalone deployable artifacts.
+
+## Status
+
+Accepted — 2026-08-07. Supersedes the implicit "stay in monorepo" decision from the 6-product restructuring (TODO.restructure/00).
+
+## Context
+
+Confium is organized into 6 products (Threshold, Transparency, PKI, Keyless, Privacy, Verify). Three repo strategies were considered:
+
+1. **One workspace with product facades** (current). All Rust crates live in `confium/confium`. Each product has a facade crate that re-exports its component crates.
+2. **Per-product repos.** Split into `confium/threshold`, `confium/transparency`, etc. Cross-product deps via crates.io.
+3. **Hybrid.** Core crates in `confium/confium`; each product gets its own repo at the facade layer; bindings in sibling repos.
+
+## Decision drivers
+
+| Driver | Monorepo | Per-product | Hybrid |
+|--------|----------|-------------|--------|
+| Intra-workspace dep ergonomics | Native path deps | crates.io round-trip | Mixed |
+| Single PR can span products | Yes | No | Partial |
+| Independent release cadence | Shared | Per product | Per product |
+| Independent contributor base | Shared | Per product | Per product |
+| Discoverability of related work | High | Low | Medium |
+| CI complexity | One pipeline | N pipelines | N+1 pipelines |
+
+## Rationale for Option 1
+
+### Cargo workspaces handle intra-workspace deps natively
+
+The Confium DAG is a strict layered graph (zero circular deps). Path deps resolve at build time — no publish round-trip when a shared primitive updates. Splitting would force every shared-crate update through crates.io before downstream products could pick it up.
+
+### Shared primitives are already publishable
+
+Layer 0-1 crates (`confium-crypto-vss`, `confium-crypto-zk`, `confium-privacy`, `confium-observability`) are published to crates.io. External consumers can pull them without the workspace. Internal consumers use path deps.
+
+### Product facades are the public consumer surface
+
+Each product has (or will have) a facade crate that re-exports its component crates behind feature flags. Consumers depend on the facade, not 5-12 component crates:
+
+```toml
+confium-threshold = { version = "0.4", features = ["cmp20", "frost-p256"] }
+```
+
+This makes the product boundary the public API surface, regardless of how the source is organized internally.
+
+### The 65-crate count is fine
+
+Cargo workspaces scale cleanly past 100 crates. Rust's compile model handles parallel builds. IDE tooling (rust-analyzer) handles it. The only real cost is cold-build time, which is mitigated by `sccache` and incremental builds.
+
+## When to revisit
+
+Per-product repos become attractive when:
+
+- A product's release cadence diverges significantly from the workspace's (e.g., Privacy wants weekly releases, Threshold wants quarterly).
+- A product's contributor base becomes largely disjoint (e.g., a Privacy-only team that doesn't touch Threshold).
+- A product needs different licensing (e.g., a commercial product alongside BSD-2-Clause core).
+- A product grows complex non-Rust tooling (e.g., a Keyless product with significant Python/TypeScript/infra code).
+
+If two or more of these apply to a product, extract it to its own repo.
+
+## Current sibling repos
+
+| Repo | Purpose | Boundaries |
+|------|---------|------------|
+| `confium/confium` | Main Rust workspace (all 6 products' Rust code) | Source of truth for crates.io facades |
+| `confium/confium-ruby` | Ruby bindings (gem) | Published to RubyGems as `confium` |
+| `confium/specs` | Multi-spec technical specs | Deploys to `www.confium.org/specs/` |
+| `confium/confium.github.io` | Marketing + docs site | Deploys to `www.confium.org` |
+| `confium/hash-botan` | Botan hash plugin | Extracted for separate licensing |
+
+## Sibling repo rules
+
+A repo gets extracted from `confium/confium` when:
+
+1. It has a different deployment target (e.g., Ruby gem, marketing site), AND
+2. It has independent release cadence, AND
+3. It does NOT need to track Rust API changes byte-for-byte.
+
+The Ruby gem satisfies all three (it's a Ruby-native release, with its own version cadence, that depends on published crates.io versions rather than workspace path deps).
+
+The specs repo satisfies all three (AsciiDoc sources, versioned independently, references Rust APIs by name not by SHA).
+
+## Alternatives considered and rejected
+
+### Federated per-product workspaces
+
+Each product in its own workspace, with shared primitives published to crates.io and consumed as git deps or crates.io deps. Rejected because:
+
+- Cross-product refactors (e.g., changing `confium-tc-core` shape) would require coordinated multi-repo PRs.
+- The current 6 products share 4-5 primitives heavily. Splitting would multiply the dep graph.
+
+### Mono-repo with all language bindings included
+
+Everything (Rust workspace + Ruby gem + Python package + WASM package + marketing site) in `confium/confium`. Rejected because:
+
+- Release cadence for language bindings varies (Python and Ruby ship on PyPI/RubyGems schedules).
+- Marketing site needs to deploy on every web change, not on every Rust change.
+- Different tooling (cargo vs bundler vs npm vs Astro) doesn't share CI.
+
+## Consequences
+
+- Adding a new product = adding a workspace member + a facade crate. No repo split.
+- Adding a new language binding = creating a sibling repo.
+- Cross-cutting concerns (engine, plugin SDK, observability) stay in the main workspace.
+- The main workspace's release cadence is shared across products. If a product needs to ship faster, that product is the next extraction candidate.

@@ -132,6 +132,14 @@ Errors are typed via `thiserror` (or `snafu` 0.8 in legacy crates).
 Each crate has its own error enum with descriptive variants. No
 string errors.
 
+### Product facades
+
+Confium is organized into 6 products, each with a single facade crate
+that re-exports its component crates behind feature flags. See
+[Repository Strategy](./architecture/repo-strategy.mdx) for the
+rationale and [Product Architecture](./architecture/products.mdx) for
+the product/crate matrix.
+
 ## Architecture diagrams
 
 The authoritative architectural diagrams live in the
