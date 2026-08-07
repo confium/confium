@@ -84,10 +84,44 @@ pub enum Commands {
 pub enum ThresholdCommand {
     /// Show version and component crate info.
     Version,
-    /// Threshold DKG (placeholder; full impl lands with signerd integration).
-    Dkg,
-    /// Threshold sign (placeholder).
-    Sign,
+    /// Threshold DKG. Generates N shares for a T-of-N key. Output is a
+    /// JSON envelope written to --out (default: stdout).
+    Dkg(ThresholdDkgArgs),
+    /// Threshold sign. Reads shares from --shares and signs --message;
+    /// writes the signature to --out (default: stdout, hex).
+    Sign(ThresholdSignArgs),
+}
+
+/// `confium threshold dkg`
+#[derive(Args, Debug)]
+pub struct ThresholdDkgArgs {
+    /// Threshold scheme: cmp20, gg18.
+    #[arg(long, default_value = "cmp20")]
+    pub scheme: String,
+    /// Quorum size (T in T-of-N).
+    #[arg(long)]
+    pub threshold: u32,
+    /// Total number of parties (N in T-of-N).
+    #[arg(long)]
+    pub parties: u32,
+    /// Write output here instead of stdout.
+    #[arg(long)]
+    pub out: Option<std::path::PathBuf>,
+}
+
+/// `confium threshold sign`
+#[derive(Args, Debug)]
+pub struct ThresholdSignArgs {
+    /// Path to the share envelope (JSON written by `threshold dkg`).
+    #[arg(long)]
+    pub shares: std::path::PathBuf,
+    /// Message to sign. Use @file to read from a file; otherwise the
+    /// literal string is signed.
+    #[arg(long)]
+    pub message: String,
+    /// Write signature here (DER-encoded hex) instead of stdout.
+    #[arg(long)]
+    pub out: Option<std::path::PathBuf>,
 }
 
 /// Subcommands under `confium transparency`.
@@ -95,12 +129,44 @@ pub enum ThresholdCommand {
 pub enum TransparencyCommand {
     /// Show version and component crate info.
     Version,
-    /// Append an artifact hash to the log (placeholder).
-    Append,
-    /// Generate an inclusion proof (placeholder).
-    Prove,
-    /// Verify an inclusion proof (placeholder).
-    Verify,
+    /// Append an artifact hash to the log. Returns the sequence number.
+    Append(TransparencyAppendArgs),
+    /// Generate an inclusion proof for a sequence number.
+    Prove(TransparencyProveArgs),
+    /// Verify an inclusion proof against a tree head.
+    Verify(TransparencyVerifyArgs),
+}
+
+#[derive(Args, Debug)]
+pub struct TransparencyAppendArgs {
+    /// Path to the log database file.
+    #[arg(long, default_value = "./transparency.db")]
+    pub db: std::path::PathBuf,
+    /// Artifact hash to append (e.g. "sha256:abc...").
+    #[arg(long)]
+    pub artifact_hash: String,
+}
+
+#[derive(Args, Debug)]
+pub struct TransparencyProveArgs {
+    #[arg(long, default_value = "./transparency.db")]
+    pub db: std::path::PathBuf,
+    /// Sequence number to prove inclusion for.
+    #[arg(long)]
+    pub seq: usize,
+    /// Write proof JSON here.
+    #[arg(long)]
+    pub out: Option<std::path::PathBuf>,
+}
+
+#[derive(Args, Debug)]
+pub struct TransparencyVerifyArgs {
+    /// Proof JSON file.
+    #[arg(long)]
+    pub proof: std::path::PathBuf,
+    /// Tree head JSON file.
+    #[arg(long)]
+    pub head: std::path::PathBuf,
 }
 
 /// Subcommands under `confium pki`.
@@ -108,12 +174,22 @@ pub enum TransparencyCommand {
 pub enum PkiCommand {
     /// Show version and component crate info.
     Version,
-    /// Parse a certificate (placeholder).
-    ParseCert,
-    /// Verify a certificate chain (placeholder).
-    Verify,
-    /// Composite-sign a payload (placeholder).
+    /// Parse an X.509 cert (DER or PEM).
+    ParseCert(PkiParseCertArgs),
+    /// Composite sign (placeholder; full impl with composite crate TBD).
     CompositeSign,
+    /// Verify a cert chain (placeholder; full impl TBD).
+    Verify,
+}
+
+#[derive(Args, Debug)]
+pub struct PkiParseCertArgs {
+    /// Cert file path.
+    #[arg(long)]
+    pub cert: std::path::PathBuf,
+    /// Format: der or pem.
+    #[arg(long, default_value = "der")]
+    pub format: String,
 }
 
 /// Subcommands under `confium keyless`.
@@ -121,7 +197,7 @@ pub enum PkiCommand {
 pub enum KeylessCommand {
     /// Show version and component crate info.
     Version,
-    /// Keyless sign (placeholder).
+    /// Keyless sign (placeholder; requires OIDC + threshold CA infra).
     Sign,
     /// Verify a keyless signature (placeholder).
     Verify,
@@ -132,7 +208,7 @@ pub enum KeylessCommand {
 pub enum PrivacyCommand {
     /// Show version and component crate info.
     Version,
-    /// Run a two-party PSI (placeholder).
+    /// Run a two-party PSI (placeholder; full impl TBD).
     Psi,
     /// Run a MPC computation (placeholder).
     Mpc,
