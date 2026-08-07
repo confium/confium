@@ -1,6 +1,6 @@
 [package]
 name = "confium-python"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 rust-version = "1.85"
 authors = ["Ribose Open <open.source@ribose.com>"]
@@ -18,11 +18,11 @@ crate-type = ["cdylib"]
 
 [dependencies]
 confium-core = "0.2"
-confium-composite = { path = "../confium-composite", version = "0.3.1" }
+confium-composite = { path = "../confium-composite", version = "0.4.0" }
 confium-transparency = { path = "../confium-transparency", version = "0.4.0" }
-confium-pki = { path = "../confium-pki", version = "0.3.1", features = ["cms"] }
-confium-attributes = { path = "../confium-attributes", version = "0.3.1" }
-confium-deployment = { path = "../confium-deployment", version = "0.3.0" }
+confium-pki = { path = "../confium-pki", version = "0.4.0", features = ["cms"] }
+confium-attributes = { path = "../confium-attributes", version = "0.4.0" }
+confium-deployment = { path = "../confium-deployment", version = "0.4.0" }
 pyo3 = { version = "0.22", features = ["extension-module"] }
 serde_json = "1"
 sha2 = "0.10"
