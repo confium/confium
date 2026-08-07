@@ -1,0 +1,113 @@
+# Reference deployment — full-stack local via Docker Compose
+#
+# Brings up:
+#   - 3 signerd replicas (one share each of a 2-of-3 CMP20 key)
+#   - 1 coordinator (orchestrates signing sessions)
+#   - 1 log-server (RFC 6962 transparency log)
+#   - 1 verify-server (HTTP verification endpoint)
+#   - 1 prometheus (scrape all services)
+#   - 1 grafana (dashboards)
+#
+# Usage:
+#   docker compose -f deploy/docker-compose/full-stack.yml up -d
+#   open http://localhost:3000  (grafana, admin/admin)
+#
+# Tear down:
+#   docker compose -f deploy/docker-compose/full-stack.yml down -v
+
+name: confium-full-stack
+
+services:
+  # --- Threshold signing cluster -----------------------------------------
+  coordinator:
+    image: ghcr.io/confium/coordinator:latest
+    ports:
+      - "7000:7000"
+    environment:
+      RUST_LOG: info
+    volumes:
+      - coordinator-data:/var/lib/confium
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "7000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  signerd-1:
+    image: ghcr.io/confium/signerd:latest
+    depends_on: [coordinator]
+    environment:
+      COORDINATOR_URL: http://coordinator:7000
+      RUST_LOG: info
+    volumes:
+      - signerd-1-data:/etc/confium/shares
+
+  signerd-2:
+    image: ghcr.io/confium/signerd:latest
+    depends_on: [coordinator]
+    environment:
+      COORDINATOR_URL: http://coordinator:7000
+      RUST_LOG: info
+    volumes:
+      - signerd-2-data:/etc/confium/shares
+
+  signerd-3:
+    image: ghcr.io/confium/signerd:latest
+    depends_on: [coordinator]
+    environment:
+      COORDINATOR_URL: http://coordinator:7000
+      RUST_LOG: info
+    volumes:
+      - signerd-3-data:/etc/confium/shares
+
+  # --- Transparency log --------------------------------------------------
+  log-server:
+    image: ghcr.io/confium/log-server:latest
+    ports:
+      - "7878:7878"
+    environment:
+      RUST_LOG: info
+    volumes:
+      - log-data:/var/lib/confium
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "7878"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # --- HTTP verification service -----------------------------------------
+  verify-server:
+    image: ghcr.io/confium/verify-server:latest
+    ports:
+      - "8080:8080"
+    environment:
+      RUST_LOG: info
+
+  # --- Observability -----------------------------------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ../grafana:/var/lib/grafana/dashboards:ro
+      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+    depends_on: [prometheus]
+
+volumes:
+  coordinator-data:
+  signerd-1-data:
+  signerd-2-data:
+  signerd-3-data:
+  log-data:
+  prometheus-data:

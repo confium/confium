@@ -1,0 +1,34 @@
+# Prometheus scrape config for Confium services.
+# Used by deploy/docker-compose/full-stack.yml
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'coordinator'
+    static_configs:
+      - targets: ['coordinator:7000']
+    metrics_path: /metrics
+
+  - job_name: 'signerd'
+    static_configs:
+      - targets:
+          - 'signerd-1:7000'
+          - 'signerd-2:7000'
+          - 'signerd-3:7000'
+    metrics_path: /metrics
+
+  - job_name: 'log-server'
+    static_configs:
+      - targets: ['log-server:7878']
+    metrics_path: /metrics
+
+  - job_name: 'verify-server'
+    static_configs:
+      - targets: ['verify-server:8080']
+    metrics_path: /metrics
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
