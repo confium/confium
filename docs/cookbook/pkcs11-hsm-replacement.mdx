@@ -1,0 +1,122 @@
+---
+title: Drop-in PKCS#11 HSM replacement
+description: Use Confium as the threshold signing layer behind your existing PKCS#11 consumer
+audience: ca-operator, security-engineer
+---
+
+# Drop-in PKCS#11 HSM replacement
+
+**Problem:** Your application consumes an HSM via PKCS#11. You want the security of threshold signing without rewriting the application.
+
+## Solution
+
+`confium-pkcs11-server` is a drop-in PKCS#11 module that dispatches sign / verify / decrypt calls into a Confium threshold signing cluster. The application sees a normal PKCS#11 token; behind the scenes, every signing op requires T-of-N quorum.
+
+## Architecture
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│ Application (e.g., OpenSSL, Java JCE, Thunderbird)                  │
+└────────────────────────────────┬───────────────────────────────────┘
+                                 │  PKCS#11 v3.0 API
+                                 ▼
+┌────────────────────────────────────────────────────────────────────┐
+│ confium-pkcs11-server                                              │
+│ (drop-in module)                                                   │
+└────────────────────────────────┬───────────────────────────────────┘
+                                 │  Internal RPC
+                                 ▼
+┌────────────────────────────────────────────────────────────────────┐
+│ Confium coordinator + signerd cluster (2-of-3 CMP20)               │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+The application never sees Confium directly. It just talks PKCS#11.
+
+## Quickstart
+
+### 1. Stand up the signing cluster
+
+See [deploy-signerd-k8s.mdx](./deploy-signerd-k8s.mdx). You need a working `confium-coordinator` + N signerd replicas before installing the PKCS#11 server.
+
+### 2. Install the PKCS#11 module
+
+```sh
+docker pull ghcr.io/confium/pkcs11-server:latest
+
+# Run as a local daemon; the PKCS#11 module will RPC to it
+docker run -d \
+    --name confium-pkcs11 \
+    -p 2345:2345 \
+    -v $(pwd)/pkcs11.toml:/etc/confium/pkcs11.toml \
+    ghcr.io/confium/pkcs11-server:latest
+```
+
+### 3. Configure
+
+```toml
+# pkcs11.toml
+[server]
+listen = "127.0.0.1:2345"
+
+[token."Production Signing Key"]
+label = "Production Signing Key"
+threshold_key_id = "production-signing-key"
+coordinator_url = "http://confium-coordinator:7000"
+
+[token."Backup Signing Key"]
+label = "Backup Signing Key"
+threshold_key_id = "backup-signing-key"
+coordinator_url = "http://confium-coordinator:7000"
+```
+
+### 4. Install the client module
+
+The PKCS#11 module is a stub library your application loads. It forwards calls to the local `confium-pkcs11-server`.
+
+```sh
+# Linux
+sudo cp libconfium_pkcs11.so /usr/lib/pkcs11/
+sudo ldconfig
+
+# Configure OpenSSL to use it
+sudo tee /etc/openssl-pkcs11.conf <<EOF
+[pkcs11]
+module = /usr/lib/pkcs11/libconfium_pkcs11.so
+init = 1
+EOF
+```
+
+### 5. Use it
+
+Your application's PKCS#11 calls now dispatch into Confium:
+
+```sh
+# OpenSSL: use the Confium-backed token
+openssl req -engine pkcs11 -keyform engine \
+    -key 'pkcs11:token=Production Signing Key' \
+    -new -x509 -days 365 -out cert.pem
+
+# The signing op requires the threshold quorum (2-of-3 signerd
+# replicas must respond). OpenSSL sees it as a normal PKCS#11 sign.
+```
+
+## What this gives you
+
+- **No application rewrite** — any PKCS#11 consumer works unchanged.
+- **Threshold security** — no single HSM compromise can forge signatures.
+- **Audit trail** — every signing op goes through the coordinator's audit log.
+- **Policy enforcement** — attribute-based policies apply to every sign (e.g., "only sign from 9am-5pm ET").
+
+## Limitations
+
+- **Latency** — every PKCS#11 sign op now requires a threshold ceremony (~200ms-2s depending on scheme + network). Applications that sign thousands of ops per second will be slower.
+- **Key generation** — PKCS#11 `C_GenerateKeyPair` doesn't map cleanly to threshold DKG. Use `confium threshold dkg` separately, then register the resulting key as a token.
+- **Algorithm support** — Confium currently supports ECDSA-P256 and Ed25519 via PKCS#11. RSA support is on the roadmap.
+
+## See also
+
+- [PKCS#11 server spec](https://www.confium.org/specs/83-pkcs11-server)
+- [Threshold CA lifecycle](./threshold-ca-issue.mdx)
+- [Deploy signerd on Kubernetes](./deploy-signerd-k8s.mdx)
+- [PKI product docs](https://www.confium.org/pki/)

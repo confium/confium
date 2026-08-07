@@ -1,0 +1,108 @@
+---
+title: Run a third-party witness
+description: Operate a transparency log witness to detect forks
+audience: compliance, ca-operator
+---
+
+# Run a third-party witness
+
+**Problem:** You want to provide third-party oversight of a Confium transparency log so its operator can't silently rewrite history.
+
+## Why run a witness?
+
+A transparency log is append-only by social contract — the log operator *could* reissue past entries to cover mis-issuance. The defense against this is **witness gossip**:
+
+1. Multiple independent witnesses fetch the latest tree head from the log.
+2. Each witness signs the head and republishes the signature.
+3. If the log serves different heads to different witnesses, the fork becomes publicly visible.
+
+By running a witness you:
+- Provide a public good (helps the ecosystem detect bad operators)
+- Build trust in logs you depend on (your clients can verify against YOUR witness signature)
+- Earn reputation as a transparency-log auditor
+
+## Quickstart
+
+```sh
+docker pull ghcr.io/confium/log-monitor:latest
+
+# Configure which logs to witness
+cat > witnesses.toml <<EOF
+[witness]
+identity = "your-org-witness"
+listen = "0.0.0.0:7879"
+storage_path = "/var/lib/confium/witness.db"
+
+[witness.private_key]
+# Ed25519 private key (32 bytes, hex). Generate fresh for your witness.
+hex = "abcd...generate_your_own..."
+
+[[logs]]
+id = "confium-default"
+url = "https://log.confium.org"
+poll_interval_seconds = 60
+
+[[logs]]
+id = "your-org-internal"
+url = "https://log.internal.yourorg.com"
+poll_interval_seconds = 30
+EOF
+
+docker run -d \
+    -p 7879:7879 \
+    -v $(pwd)/witnesses.toml:/etc/confium/witnesses.toml \
+    -v witness-data:/var/lib/confium \
+    ghcr.io/confium/log-monitor:latest \
+    --config /etc/confium/witnesses.toml
+```
+
+The witness will poll each configured log, sign observed heads, and publish signatures at `http://your-witness:7879/heads/{log_id}`.
+
+## Publishing witness signatures
+
+Other witnesses and monitors fetch your signed heads via:
+
+```sh
+curl http://your-witness:7879/heads/confium-default | jq
+# {
+#   "log_id": "confium-default",
+#   "tree_size": 4823,
+#   "root_hash": "sha256:abc...",
+#   "timestamp": 1723046400,
+#   "witness_signature": "..."
+# }
+```
+
+## Fork detection
+
+A monitor fetches the same head from the log directly and from N witnesses. If two sources disagree on `(tree_size, root_hash)`, that's a fork — the log operator served different heads to different observers.
+
+```sh
+# Compare log head vs witness head
+LOG_HEAD=$(curl -s https://log.confium.org/head | jq -r '.root_hash')
+WITNESS_HEAD=$(curl -s http://your-witness:7879/heads/confium-default | jq -r '.root_hash')
+
+if [ "$LOG_HEAD" != "$WITNESS_HEAD" ]; then
+    echo "⚠️ Fork detected! Log says $LOG_HEAD, witness says $WITNESS_HEAD"
+fi
+```
+
+## Trust model
+
+- **Witness identity:** Each witness has a long-lived Ed25519 keypair. Clients pin witness public keys out-of-band (DNS TXT record, documentation, transparency log of witness keys).
+- **Witness honesty:** A witness that signs a head it didn't actually observe is useless. Reputable witnesses publish their polling cadence + storage.
+- **Witness cartel:** If all witnesses collude with the log operator, fork detection fails. Use multiple INDEPENDENT witnesses (different orgs, different jurisdictions).
+
+## Operational concerns
+
+- **Storage:** Witness DB grows with log size; plan for it.
+- **Uptime:** A witness that's down can't sign heads. Deploy with high availability.
+- **Key rotation:** Rotate witness signing key annually. Publish the new key in the same place you published the old one.
+- **Auditing:** Publish your witness's storage state periodically so others can verify you're being honest.
+
+## See also
+
+- [Witness gossip spec](https://www.confium.org/specs/43-witness-gossip)
+- [Local transparency log](./local-transparency-log.mdx)
+- [OTS Bitcoin anchoring](./ots-bitcoin-anchoring.mdx)
+- [Transparency product docs](https://www.confium.org/transparency/)

@@ -1,0 +1,157 @@
+---
+title: Deploy signerd on Kubernetes
+description: Production signerd deployment with operator, HSM, and monitoring
+audience: devsecops
+---
+
+# Deploy signerd on Kubernetes
+
+**Problem:** You want to run a 3-replica signerd cluster in production, with HSM-backed shares, monitoring, and graceful upgrades.
+
+## Solution
+
+Confium ships:
+
+- A [production K8s manifest](https://github.com/confium/confium/blob/main/deploy/k8s/production/00-confium.yaml) with everything pre-wired
+- A [Helm chart](https://github.com/confium/confium/tree/main/deploy/helm/confium) for parameterized installs
+- A [Terraform module](https://github.com/confium/terraform-confium) for infra-as-code
+
+This recipe walks through the manifest path.
+
+## Step 1: Apply the manifest
+
+```sh
+kubectl apply -f https://confium.org/deploy/k8s/production/00-confium.yaml
+```
+
+This brings up:
+
+- 1 coordinator (Deployment)
+- 3 signerd replicas (StatefulSet with PVC per replica)
+- 1 log-server (StatefulSet)
+- RBAC, ConfigMaps, PDBs, NetworkPolicies, HPAs
+
+```sh
+kubectl -n confium-system get pods -w
+# NAME                                    READY   STATUS    RESTARTS   AGE
+# confium-coordinator-7d4f5b6c8-x9k2j     1/1     Running   0          1m
+# confium-log-server-0                    1/1     Running   0          1m
+# confium-signerd-0                       1/1     Running   0          1m
+# confium-signerd-1                       1/1     Running   0          1m
+# confium-signerd-2                       1/1     Running   0          1m
+```
+
+## Step 2: Run the DKG ceremony
+
+The signerd pods start without shares. You need to run a DKG to generate the initial 2-of-3 threshold key.
+
+### Option A: Manual via kubectl exec
+
+```sh
+kubectl -n confium-system exec -it confium-signerd-0 -- bash
+
+# Inside the pod
+confium threshold dkg \
+    --threshold 2 \
+    --parties 3 \
+    --scheme cmp20 \
+    --out /tmp/shares.json
+
+# Distribute shares to the other 2 pods
+kubectl -n confium-system cp \
+    confium-signerd-0:/tmp/shares.json /tmp/shares.json
+# Parse and distribute per-party shares to signerd-1, signerd-2
+```
+
+### Option B: Operator-driven (recommended)
+
+Install the [K8s bundle](https://github.com/confium/confium/blob/main/deploy/k8s/bundle.yaml) which adds the Confium operator. Then:
+
+```sh
+kubectl apply -f - <<EOF
+apiVersion: confium.org/v1
+kind: ThresholdKey
+metadata:
+  name: production-signing-key
+  namespace: confium-system
+spec:
+  threshold: 2
+  party_count: 3
+  scheme: cmp20
+  share_storage:
+    backend: hsm
+    hsm_config_ref: signerd-hsm-config
+EOF
+```
+
+The operator runs the DKG across the signerd replicas and distributes shares automatically.
+
+## Step 3: Wire up HSM
+
+For production, shares MUST live under HSM protection (not on PVC). Confium supports PKCS#11, OpenPGP card, TPM 2.0, AWS KMS, GCP KMS, Azure Key Vault.
+
+```sh
+# Example: PKCS#11 HSM via SoftHSM2 (dev), or a real HSM in prod
+kubectl -n confium-system create secret generic signerd-hsm-config \
+    --from-literal=pkcs11_module=/usr/lib/softhsm/libsofthsm2.so \
+    --from-literal=pkcs11_token_label=confium-signerd \
+    --from-literal=pkcs11_pin=$(kubectl get secret hsm-pin -o jsonpath='{.data.pin}' | base64 -d)
+```
+
+Patch the StatefulSet to mount the HSM config + device:
+
+```sh
+kubectl -n confium-system patch statefulset confium-signerd --type=json \
+    -p='[{
+      "op": "add",
+      "path": "/spec/template/spec/volumes/-",
+      "value": {
+        "name": "hsm-config",
+        "secret": { "secretName": "signerd-hsm-config" }
+      }
+    }, {
+      "op": "add",
+      "path": "/spec/template/spec/containers/0/volumeMounts/-",
+      "value": {
+        "name": "hsm-config",
+        "mountPath": "/etc/confium/hsm"
+      }
+    }]'
+```
+
+For a real HSM, also mount the device node (e.g., `/dev/usb/hiddev0`).
+
+## Step 4: Monitoring
+
+Prometheus scrapes each pod's `/metrics` automatically (annotations are in the manifest). Import the [Confium Grafana dashboards](https://github.com/confium/confium/tree/main/deploy/grafana).
+
+Key alerts to configure:
+- `confium_signerd_active_sessions == 0` for >5 min → cluster not signing
+- `rate(confium_signerd_sessions_total{status="failed"}[5m]) > 0.05` → high failure rate
+- `count(confium_signerd_active_sessions == 0) >= 1` → quorum at risk
+
+See [prometheus-monitoring.mdx](./prometheus-monitoring.mdx) for the full alert runbook.
+
+## Step 5: Upgrading
+
+```sh
+# Bump image version
+kubectl -n confium-system set image statefulset/confium-signerd \
+    signerd=ghcr.io/confium/signerd:v0.4.0
+
+# Watch the rolling update
+kubectl -n confium-system rollout status statefulset/confium-signerd
+# statefulset rolling update successfully rolled out
+
+# Roll back if anything fails
+kubectl -n confium-system rollout undo statefulset/confium-signerd
+```
+
+The PDB (`minAvailable: 2`) ensures 2 signerd replicas stay available throughout the rollout — quorum preserved.
+
+## See also
+
+- [Production K8s manifest](https://github.com/confium/confium/blob/main/deploy/k8s/production/)
+- [Backup and restore shares](./backup-shares.mdx)
+- [Prometheus monitoring](./prometheus-monitoring.mdx)
+- [Reference deployments](https://github.com/confium/confium/blob/main/deploy/k8s/production/README.md)

@@ -1,0 +1,74 @@
+---
+title: Refresh shares without re-keying
+description: Herzberg proactive security — rotate shares without changing the public key
+audience: security-engineer
+---
+
+# Refresh shares without re-keying
+
+**Problem:** You have a 2-of-3 threshold key in production. Shares have been around long enough that you want to rotate them — but re-doing the DKG would change the public key, breaking every existing signature.
+
+## Solution
+
+**Herzberg proactive security** (a.k.a. share refresh) lets parties collaboratively compute new shares of the *same* secret. The public key doesn't change. Old shares become useless once the refresh completes.
+
+```sh
+# Existing shares
+ls shares/
+# party1.json  party2.json  party3.json
+
+# Run refresh ceremony (all N parties must participate)
+confium threshold refresh \
+    --shares shares/party1.json shares/party2.json shares/party3.json \
+    --threshold 2 \
+    --parties 3 \
+    --scheme cmp20 \
+    --out-dir shares-refreshed/
+
+ls shares-refreshed/
+# party1.json  party2.json  party3.json
+```
+
+The output is a new set of share files. Verify the public key didn't change:
+
+```sh
+jq -r '.public_key' shares/party1.json
+jq -r '.public_key' shares-refreshed/party1.json
+# Both should be identical.
+```
+
+## Why this matters
+
+Without refresh:
+- A slow-compromising adversary who collects T shares over time eventually forges signatures.
+- Compromise of one share per year → key compromised after T years.
+
+With refresh on a quarterly cadence:
+- The adversary must compromise T shares within a single quarter (3 months).
+- Compromise across quarters yields nothing — old shares don't combine with new ones.
+
+## Ceremony
+
+In production, refresh is a multi-party ceremony:
+
+1. Each party generates a random polynomial `f_i(x)` of degree `T-1` where `f_i(0) = 0`.
+2. Each party privately sends `f_i(j)` to party `j`.
+3. Each party computes their new share: `x_j' = x_j + Σ_i f_i(j)`.
+4. The sum of new shares equals the sum of old shares (since `Σ f_i(0) = 0`), so the public key doesn't change.
+
+The CLI implements this in-process for testing. Production deployments use `confium-coordinator` to orchestrate.
+
+## Cadence recommendations
+
+| Use case | Refresh cadence |
+|----------|-----------------|
+| Internal CA root | Quarterly |
+| Production signing key | Monthly |
+| High-value custody | Weekly |
+| Development / test | Never (overhead > benefit) |
+
+## See also
+
+- [Threshold-sign-with-CMP20](./threshold-sign-with-cmp20.mdx)
+- [Large-quorum-ceremony](./large-quorum-ceremony.mdx)
+- [Backup-shares](./backup-shares.mdx)
