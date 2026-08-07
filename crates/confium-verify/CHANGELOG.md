@@ -9,6 +9,19 @@ For cross-product changes, see the workspace CHANGELOG at <https://github.com/co
 
 No unreleased changes yet.
 
+## [0.4.0] — 2026-08-07
+
+### Added
+- Real CLI implementations: `confium verify {dkg,sign,verify,psi,dp,...}` now wires to
+  underlying crates instead of printing "coming soon".
+- Cookbook recipes for verify flows.
+- Browser playground at <https://www.confium.org/playground/> for interactive demos.
+- Production deployment artifacts (K8s manifests, Docker Compose, Grafana dashboards).
+- Per-product CHANGELOG (this file).
+
+### Changed
+- Workspace version bumped to 0.4.0; all confium-* crates now require 0.4.0 deps.
+
 ## [0.3.0] — 2026-08-07
 
 ### Added
