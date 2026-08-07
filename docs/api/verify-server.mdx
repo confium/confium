@@ -1,0 +1,144 @@
+---
+title: verify-server HTTP API
+description: OpenAPI specification for confium-verify-server
+---
+
+# verify-server HTTP API
+
+The `confium-verify-server` exposes a stateless HTTP/JSON API for verifying Confium artifacts. This page summarizes the API; the authoritative source is the [OpenAPI spec](https://github.com/confium/confium/blob/main/docs/api/verify-server.openapi.yaml).
+
+## Base URL
+
+- Production (Confium-operated): `https://verify.confium.org`
+- Self-hosted: `http://your-verify-server:8080`
+
+## Versioning
+
+URL paths include the major version (`/v1`). Breaking changes ship as `/v2`; `/v1` is maintained for 12 months after `/v2` ships.
+
+## Endpoints
+
+| Method | Path | Body | Returns |
+|--------|------|------|---------|
+| POST | `/v1/composite/verify` | `{message, signature, components[]}` | `{valid, checked_components, components[]}` |
+| POST | `/v1/transparency/inclusion/verify` | `{proof, entry, root_hash}` | `{valid, sequence}` |
+| POST | `/v1/pki/cert-chain/verify` | `{leaf, anchor, intermediates[]}` | `{valid, path_length, errors[]}` |
+| POST | `/v1/batch/verify` | `[{...}, ...]` (max 1000) | `[{...}, ...]` (same order) |
+| GET | `/health/live` | — | `200 OK` |
+| GET | `/health/ready` | — | `200 OK` or `503` |
+| GET | `/metrics` | — | Prometheus format |
+
+## Authentication
+
+None. The verify-server is intentionally public — there's nothing to protect by authentication. Confidential artifacts are not stored; the service verifies and forgets.
+
+Rate limiting is the consumer's responsibility (Cloudflare, nginx, etc.).
+
+## TLS
+
+Production deployments MUST refuse plaintext HTTP. Use TLS termination at a reverse proxy (nginx, Caddy, Cloudflare) if you don't terminate TLS in the verify-server itself.
+
+## Caching
+
+In-memory LRU keyed by `hash(message || signature)`. Default size: 10,000 entries. Hit rate visible at `/metrics`.
+
+Cache is per-instance. For higher hit rates across replicas, put a shared cache (Redis) in front.
+
+## Examples
+
+### Verify a composite signature
+
+```sh
+curl -X POST https://verify.confium.org/v1/composite/verify \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "message": "aGVsbG8=",
+    "signature": "hex..."
+  }'
+```
+
+Response:
+```json
+{
+  "valid": true,
+  "checked_components": 2,
+  "components": [
+    {"algorithm": "Ed25519", "valid": true},
+    {"algorithm": "ECDSA-P256", "valid": true}
+  ],
+  "checked_at": "2026-08-08T12:34:56Z"
+}
+```
+
+### Verify a transparency inclusion proof
+
+```sh
+curl -X POST https://verify.confium.org/v1/transparency/inclusion/verify \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "proof": {"sequence": 42, "steps": [...]},
+    "entry": {"sequence": 42, "artifact_hash": "abc..."},
+    "root_hash": "def..."
+  }'
+```
+
+### Verify a certificate chain
+
+```sh
+curl -X POST https://verify.confium.org/v1/pki/cert-chain/verify \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "leaf": "base64-der...",
+    "anchor": "base64-der...",
+    "intermediates": ["base64-der..."]
+  }'
+```
+
+### Batch verify
+
+```sh
+curl -X POST https://verify.confium.org/v1/batch/verify \
+  -H 'Content-Type: application/json' \
+  -d '[
+    {"message": "aGVsbG8=", "signature": "..."},
+    {"proof": {...}, "entry": {...}, "root_hash": "..."}
+  ]'
+```
+
+## Client SDKs
+
+The HTTP API is plain JSON; any HTTP client works. First-party bindings:
+
+| Language | Package | Notes |
+|----------|---------|-------|
+| Rust | `confium-verify-server` crate | Native Rust client |
+| TypeScript | `@confium/verify-client` (planned) | Browser + Node |
+| Python | `confium.verify_client` (planned) | Sync + async |
+| Ruby | `Confium::Verify::Client` (planned) | Sync |
+| Go | `github.com/confium/confium-go/verify` (planned) | Stdlib-only |
+
+## Errors
+
+| HTTP | Cause | Body |
+|------|-------|------|
+| 400 | Invalid request shape | `{"error": "...", "detail": "..."}` |
+| 429 | Rate limited (if you add a rate limiter) | `{"error": "rate_limited"}` |
+| 500 | Internal verification error | `{"error": "internal"}` |
+
+## OpenAPI spec
+
+The full spec lives at [`docs/api/verify-server.openapi.yaml`](https://github.com/confium/confium/blob/main/docs/api/verify-server.openapi.yaml). Use it to generate client SDKs:
+
+```sh
+# Generate TypeScript client
+npx openapi-typescript-codegen --input verify-server.openapi.yaml --output ./generated
+
+# Generate Python client
+openapi-generator-cli generate -i verify-server.openapi.yaml -g python -o ./generated/python
+```
+
+## See also
+
+- [verify-server spec](https://www.confium.org/specs/62-http-verify)
+- [Public verify endpoint recipe](../cookbook/public-verify-endpoint.mdx)
+- [Verify product docs](https://www.confium.org/verify/)
