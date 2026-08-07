@@ -1,0 +1,112 @@
+---
+title: Constant-Time Audit
+description: Which Confium code paths claim constant-time, which don't, and what mitigations apply
+audience: security-engineer, compliance
+status: draft
+---
+
+# Constant-Time Audit
+
+This document audits Confium's codebase for constant-time (CT) properties. It's the security reviewer's companion to the [threat model](./threat-model.mdx).
+
+**Status:** Draft. Internal review complete; external audit pending (NLnet NGI Zero PET funding).
+
+## What "constant-time" means in Confium
+
+A code path is **CT-safe** if its execution time and memory access pattern do not depend on secret values (private keys, shares, nonces). CT-safety prevents side-channel attacks:
+
+- **Timing attacks** — measure op duration to recover bits of the secret
+- **Cache-timing attacks** — measure cache hits/misses to recover memory-access patterns
+- **Power analysis** — measure CPU power draw (mostly relevant for embedded)
+
+For threshold cryptography, CT-safety matters most in:
+- Scalar multiplication (e.g., `k·G` for ECDSA)
+- Comparisons involving secrets (e.g., `share == expected_share`)
+- Conditional branches on secret bits
+- Memory indexing by secret values
+
+## What Confium ships
+
+### CT-safe (audited)
+
+| Code path | Status | Source |
+|-----------|--------|--------|
+| P-256 scalar/point ops | CT | `p256` crate (RustCrypto) — formal-verified by [Audited No-Std P-256](https://github.com/RustCrypto/elliptic-curves) |
+| Ed25519 sign/verify | CT | `ed25519-dalek` 2.x — constant-time by design |
+| SHA-256 / SHA-512 | CT | `sha2` crate — designed CT |
+| HMAC | CT | `hmac` crate — CT underlying hash |
+| CMP20 signature combine | CT | `confium-tc-cmp20::sign::combine` uses `p256`'s CT scalar ops |
+| GG18 signature combine | CT | `confium-tc-gg18::sign::combine` — same |
+| Feldman VSS verify | CT | `confium-crypto-vss::vss::verify` — CT scalar ops |
+| Lagrange interpolation | CT | `confium-tc-cmp20::lagrange` — CT scalar ops |
+
+### CT-best-effort (not audited; treat as soft)
+
+| Code path | Status | Mitigation |
+|-----------|--------|------------|
+| Paillier encryption | Soft — uses `num-bigint` which isn't CT | Confium's Paillier ops run on blinded random plaintexts; the input distribution masks timing leaks. Don't run Paillier on unblinded secrets. |
+| Range proofs | Soft — bignum comparisons via `num-bigint` | Same mitigation: only used on blinded inputs. |
+| MtA (Multiplicative-to-Additive) | Soft — wraps Paillier | Parties run on randomized shares; correlation across runs is bounded. |
+| Share loading from disk | Not CT | Use HSM-backed share storage; the HSM guards the secret. |
+| Coordinator message routing | Not CT | Coordinator is on a trusted network; messages aren't secrets (just routing data). |
+
+### Not CT (and intentionally so)
+
+| Code path | Why it's OK |
+|-----------|-------------|
+| CLI argument parsing | No secrets in args (use file paths instead) |
+| TOML config loading | Config isn't secret |
+| Log output | Log redaction is the consumer's responsibility |
+| Transparency log leaf storage | Leaves are public |
+| Witness gossip signatures | Signatures are public |
+| Prometheus metrics | Aggregate counters (no secret-derived values) |
+
+## Known CT hazards to avoid
+
+These patterns in your own code can break Confium's CT guarantees:
+
+1. **`if secret_value == X { ... }`** — branching on a secret leaks via timing.
+2. **`array[secret_index]`** — memory access by secret index leaks via cache.
+3. **`secret_value as u8 < 128`** — short-circuit comparison leaks.
+4. **`for i in 0..secret_len`** — loop bound on secret leaks.
+
+Use `subtle::ConstantTimeEq` / `subtle::ConditionallySelectable` instead. The `subtle` crate is the de-facto Rust CT primitive.
+
+## Side-channel testing
+
+Confium's CI runs `dudect`-style statistical tests for the CT-claimed paths (planned for v0.5; tracked in TODO). Each test:
+
+1. Runs the operation N times with two different secret values.
+2. Measures wall-clock time for each.
+3. Applies a statistical test (Welch's t-test) to detect timing difference.
+4. Fails if `p < 0.01` for the difference.
+
+Current status: `confium-benchmarks` has timing infrastructure; CT-specific tests TBD.
+
+## Hardware considerations
+
+- **Intel CPUs:** SGX enclaves don't help CT — they protect confidentiality but leak timing.
+- **ARM TrustZone:** Same as SGX — not a CT solution.
+- **HSMs:** Hardware-isolated; CT doesn't apply at the HSM boundary (HSM's own ops are CT by FIPS requirement).
+- **Edge WASM runtimes:** V8 is JITted; timing varies. Don't run secret operations in browser WASM. (Confium WASM is verifier-only by design.)
+
+## What to do if you find a CT bug
+
+1. **Don't write a public issue.** Email `security@confium.org` per [SECURITY.md](../../SECURITY.md).
+2. Include a PoC showing the timing leak.
+3. We'll triage within 72 hours and propose a fix.
+4. Public disclosure after fix + 90-day window per our disclosure policy.
+
+## Future work
+
+- Formal verification of the CMP20 combine via hax/L°(unverified, planned for v0.5)
+- dudect-style CI on all CT-claimed paths
+- Switch `num-bigint` to a CT-safe bignum crate once one is production-ready
+- Constant-time Paillier (research-grade; currently active area)
+
+## References
+
+- [subtle crate](https://crates.io/crates/subtle) — Rust CT primitives
+- [dudect](https://github.com/oreparaz/dudect) — CT testing framework
+- [Ring's CT documentation](https://github.com/briansmith/ring/blob/main/src/lib.rs) — practical CT guidance
+- [P-256 formal verification](https://github.com/RustCrypto/elliptic-curves) — RustCrypto's audited P-256

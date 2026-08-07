@@ -34,6 +34,13 @@ jobs:
         with:
           targets: x86_64-unknown-linux-musl, aarch64-unknown-linux-musl
 
+      # musl-tools provides x86_64-linux-musl-gcc which the `ring`
+      # crate's build script needs for static Linux builds.
+      - name: Install musl toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+
       - name: Build x86_64 (musl, static)
         run: cargo build --release --target x86_64-unknown-linux-musl -p confium-cli
 
