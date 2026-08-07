@@ -1,0 +1,350 @@
+openapi: 3.1.0
+info:
+  title: Confium Verify Server
+  version: 1.0.0
+  summary: Stateless HTTP verification of Confium composite signatures, transparency proofs, and certificate chains.
+  description: |
+    `confium-verify-server` exposes a stateless HTTP/JSON API for verifying
+    artifacts produced by the Confium ecosystem.
+
+    ## Design
+
+    - **Stateless**: every request carries all data needed to verify. Server
+      holds no session state. Cache is optional (in-memory LRU).
+    - **Idempotent**: same input always produces same output.
+    - **Public**: the service is designed to be deployed without auth. Rate
+      limiting is the consumer's responsibility (Cloudflare / nginx / similar).
+    - **TLS-only**: refuses plaintext HTTP in production.
+
+    ## Versioning
+
+    URL path includes major version (`/v1`). Breaking changes ship as `/v2`,
+    with `/v1` maintained for at least 12 months after `/v2` ships.
+
+    ## Authentication
+
+    None. The verify-server is intentionally public — there's nothing to
+    protect by authentication. Confidential artifacts are not stored; the
+    service verifies and forgets.
+
+  license:
+    name: BSD-2-Clause
+    url: https://github.com/confium/confium/blob/main/LICENSE
+  contact:
+    name: Confium Project
+    url: https://www.confium.org/
+    email: security@confium.org
+
+servers:
+  - url: https://verify.confium.org
+    description: Public Confium-operated instance
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: composite
+    description: Composite signature verification
+  - name: transparency
+    description: Transparency log proof verification
+  - name: pki
+    description: Certificate chain verification
+  - name: batch
+    description: Batch verification (multiple inputs)
+  - name: health
+    description: Health checks
+  - name: metrics
+    description: Prometheus metrics
+
+paths:
+  /v1/composite/verify:
+    post:
+      tags: [composite]
+      summary: Verify a composite signature
+      description: |
+        Verifies each component of a composite signature against the
+        corresponding public key. Default policy: all components must
+        verify (strict). Looser policies (e.g., N-of-M) are configurable
+        per-deployment.
+      operationId: verifyComposite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompositeVerifyRequest'
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompositeVerifyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/transparency/inclusion/verify:
+    post:
+      tags: [transparency]
+      summary: Verify a transparency log inclusion proof
+      description: |
+        Verifies that an entry is in the Merkle tree at the claimed root.
+        Caller supplies the proof, the entry, and the trusted root hash.
+      operationId: verifyInclusion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InclusionVerifyRequest'
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InclusionVerifyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v1/pki/cert-chain/verify:
+    post:
+      tags: [pki]
+      summary: Verify an X.509 certificate chain
+      description: |
+        Verifies the chain from leaf to anchor through any intermediates.
+        Each cert is provided as DER bytes (base64 in JSON).
+      operationId: verifyCertChain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CertChainVerifyRequest'
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CertChainVerifyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v1/batch/verify:
+    post:
+      tags: [batch]
+      summary: Verify multiple artifacts in one request
+      description: |
+        Accepts an array of any of the above request shapes. Returns an
+        array of corresponding response shapes (same order). Useful for
+        reducing HTTP round-trips when verifying many signatures at once.
+      operationId: verifyBatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              maxItems: 1000
+              items:
+                oneOf:
+                  - $ref: '#/components/schemas/CompositeVerifyRequest'
+                  - $ref: '#/components/schemas/InclusionVerifyRequest'
+                  - $ref: '#/components/schemas/CertChainVerifyRequest'
+      responses:
+        '200':
+          description: Per-request verification results (same order as input)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - $ref: '#/components/schemas/CompositeVerifyResponse'
+                    - $ref: '#/components/schemas/InclusionVerifyResponse'
+                    - $ref: '#/components/schemas/CertChainVerifyResponse'
+
+  /health/live:
+    get:
+      tags: [health]
+      summary: Liveness probe
+      description: Returns 200 if the process is running.
+      operationId: live
+      responses:
+        '200':
+          description: Process is alive
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+
+  /health/ready:
+    get:
+      tags: [health]
+      summary: Readiness probe
+      description: Returns 200 if the process is ready to serve requests.
+      operationId: ready
+      responses:
+        '200':
+          description: Ready
+        '503':
+          description: Not ready
+
+  /metrics:
+    get:
+      tags: [metrics]
+      summary: Prometheus metrics
+      description: |
+        Exposes Prometheus-format metrics. Key counters/gauges:
+
+        - `confium_verify_requests_total{algorithm,valid}` — verification requests
+        - `confium_verify_request_duration_seconds{algorithm}` — verification latency
+        - `confium_verify_cache_hits_total` — LRU cache hits
+        - `confium_verify_cache_misses_total` — LRU cache misses
+      operationId: metrics
+      responses:
+        '200':
+          description: Prometheus format
+          content:
+            text/plain:
+              schema:
+                type: string
+
+components:
+  schemas:
+    CompositeVerifyRequest:
+      type: object
+      required: [message, signature, components]
+      properties:
+        message:
+          type: string
+          format: byte
+          description: Base64-encoded message bytes that were signed.
+        signature:
+          type: string
+          description: |
+            Composite signature, hex-encoded JSON of the shape
+            `{"components":[{"algorithm","public_key","signature"}, ...]}`.
+            Same format produced by `confium pki composite-sign`.
+        components:
+          type: array
+          description: Optional explicit per-component public keys. If omitted, the public keys embedded in the signature envelope are used.
+          items:
+            type: object
+            properties:
+              algorithm:
+                type: string
+                enum: [Ed25519, ECDSA-P256, ML-DSA-65, SLH-DSA-SHA2-256]
+              public_key:
+                type: string
+                format: byte
+
+    CompositeVerifyResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          description: True if all components verified (strict policy).
+        checked_components:
+          type: integer
+          description: Number of components checked.
+        components:
+          type: array
+          items:
+            type: object
+            properties:
+              algorithm:
+                type: string
+              valid:
+                type: boolean
+        checked_at:
+          type: string
+          format: date-time
+
+    InclusionVerifyRequest:
+      type: object
+      required: [proof, entry, root_hash]
+      properties:
+        proof:
+          type: object
+          description: Inclusion proof (JSON shape from `confium transparency prove`).
+        entry:
+          type: object
+          description: MerkleEntry (JSON shape).
+        root_hash:
+          type: string
+          description: Trusted tree head root hash (hex).
+
+    InclusionVerifyResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        sequence:
+          type: integer
+
+    CertChainVerifyRequest:
+      type: object
+      required: [leaf, anchor]
+      properties:
+        leaf:
+          type: string
+          format: byte
+          description: Leaf cert (base64-encoded DER).
+        anchor:
+          type: string
+          format: byte
+          description: Anchor (root CA) cert (base64-encoded DER).
+        intermediates:
+          type: array
+          items:
+            type: string
+            format: byte
+          description: Intermediates in order (leaf-adjacent first).
+
+    CertChainVerifyResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        path_length:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request shape
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    RateLimited:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: Internal verification error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        detail:
+          type: string
