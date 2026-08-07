@@ -1,0 +1,160 @@
+---
+title: "WASM binding guide"
+description: Installation, feature flags, and end-to-end usage of @confium/confium-wasm in browser and Node.js.
+---
+
+# WASM binding guide
+
+`@confium/confium-wasm` is the browser/Node.js verifier package for
+Confium. It targets `wasm32-unknown-unknown` and is verifier-only by
+design — see [WASM verifier-only explainer](./wasm-verifier-only.mdx)
+for the threat model.
+
+## Install
+
+```bash
+npm install @confium/confium-wasm
+# or
+yarn add @confium/confium-wasm
+# or
+pnpm add @confium/confium-wasm
+```
+
+Pre-built wheels are published for:
+
+- Browsers (ESM, `<script type="module">`)
+- Node.js 18+ (CommonJS + ESM)
+- Bundlers (Vite, Rollup, esbuild, webpack 5+)
+
+## Feature flags
+
+Each subsystem is gated so consumers can tree-shake aggressively.
+All flags default to on.
+
+| Flag | What it enables |
+|---|---|
+| `verify-composite` (default) | `CompositeSignature` (Ed25519 + ECDSA-P256 verifiers) |
+| `verify-transparency` (default) | `MerkleTree`, `InclusionProof`, `compute_leaf_hash`, `verify_inclusion_with_head` |
+| `verify-attributes` (default) | `Predicate` (attribute-based threshold DSL) |
+| `verify-pki` (default) | `Certificate`, `SignedData` |
+
+Disable a flag in `Cargo.toml` (for re-builds) or via the
+`--no-default-features` flag when consuming the crate directly. The
+npm package ships with all features on.
+
+## Quickstart: verify a composite signature
+
+```typescript
+import { CompositeSignature } from "@confium/confium-wasm";
+
+const json = await (await fetch("/api/sig.json")).text();
+const sig = new CompositeSignature(json);
+
+const message = new Uint8Array(/* the signed bytes */);
+const result = sig.verify(message);
+
+if (result.all_verified) {
+  console.log("OK — every component verified");
+} else {
+  for (const [alg, ok] of result.per_component_entries()) {
+    if (!ok) console.error(`${alg} failed`);
+  }
+}
+```
+
+## Quickstart: verify a transparency-log inclusion proof
+
+```typescript
+import {
+  MerkleTree,
+  InclusionProof,
+  verify_inclusion_with_head,
+} from "@confium/confium-wasm";
+
+// Server-provided proof + tree head.
+const proofJson = await (await fetch("/api/proof.json")).text();
+const proof = InclusionProof.from_json(proofJson);
+
+const leafHash = new Uint8Array(32);  // client-computed artifact hash
+const root = new Uint8Array(32);      // server-published tree root
+const treeSize = 12345n;              // server-published tree size
+
+const ok = verify_inclusion_with_head(leafHash, proof, root, treeSize);
+if (!ok) throw new Error("inclusion proof failed");
+```
+
+## Quickstart: evaluate an attribute predicate
+
+```typescript
+import { Predicate } from "@confium/confium-wasm";
+
+const pred = new Predicate(
+  'and(min_count("role:director", 3), min_distinct("region", 2))',
+);
+
+const signers = JSON.stringify([
+  { "role:director": ["yes"], "region": ["europe"] },
+  { "role:director": ["yes"], "region": ["americas"] },
+  { "role:director": ["yes"], "region": ["asia"] },
+]);
+
+const ok = pred.satisfied_by(signers);
+```
+
+## TypeScript types
+
+The package ships with auto-generated `.d.ts` files. Every public
+method has a TypeScript signature. The Rust doc comments surface as
+JSDoc in your IDE.
+
+```typescript
+import type { CompositeSignature as ICompositeSignature } from "@confium/confium-wasm";
+
+const sig: ICompositeSignature = new CompositeSignature(json);
+//        ^? CompositeSignature with full method type info
+```
+
+## Bundler notes
+
+### Vite
+
+Works out of the box. No special config needed.
+
+### webpack 5
+
+Add `experiments.asyncWebAssembly = true` to your `webpack.config.js`:
+
+```javascript
+module.exports = {
+  experiments: { asyncWebAssembly: true },
+};
+```
+
+### Rollup
+
+Install `@rollup/plugin-wasm` and add it to your plugins:
+
+```javascript
+import wasm from "@rollup/plugin-wasm";
+
+export default {
+  plugins: [wasm()],
+};
+```
+
+## Browser support
+
+Tested in:
+
+- Chrome / Edge 110+
+- Firefox 110+
+- Safari 16.4+
+
+Older browsers may need a `WebAssembly.instantiateStreaming` polyfill.
+
+## See also
+
+- [WASM verifier-only explainer](./wasm-verifier-only.mdx) — why
+  no signing in browsers.
+- [Parity matrix](./parity.mdx) — every binding at a glance.
+- [Composite signatures](../crates/composite.mdx) — what browsers verify.

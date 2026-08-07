@@ -1,0 +1,29 @@
+[package]
+name = "confium-tc-keys"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories = ["cryptography"]
+description = "Key lifecycle, HSM protection, production hardening for threshold keys"
+documentation = "https://docs.rs/confium-tc-keys"
+keywords = ["crypto", "threshold", "keys", "hsm", "confium"]
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+confium-tc-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+sha2 = { workspace = true }
+hmac = { workspace = true }
+p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
+hex = { workspace = true }
+rand_core = { workspace = true }
+subtle = { workspace = true }

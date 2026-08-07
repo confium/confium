@@ -1,0 +1,44 @@
+[package]
+name = "confium-tc-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories.workspace = true
+readme = "README.md"
+description = "Core threshold cryptography session primitives — the minimal interface for scheme plugins"
+documentation = "https://docs.rs/confium-tc-core"
+keywords = ["crypto", "threshold", "session", "confium"]
+
+[lib]
+crate-type = ["rlib"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+confium-api = { workspace = true }
+confium-net = { workspace = true }
+confium-store = { workspace = true }
+hmac = { workspace = true }
+sha2 = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+zeroize = { workspace = true, features = ["zeroize_derive"] }
+p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
+subtle = { workspace = true }
+rand_core = { workspace = true }
+hex = { workspace = true }
+inventory = { workspace = true }
+snafu = { workspace = true }
+data-encoding = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }

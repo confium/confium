@@ -1,0 +1,86 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: confiumsigningceremonies.confium.org
+spec:
+  group: confium.org
+  names:
+    kind: ConfiumSigningCeremony
+    listKind: ConfiumSigningCeremonyList
+    plural: confiumsigningceremonies
+    singular: confiumsigningceremony
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required: [scheme, threshold, partyCount]
+              properties:
+                scheme:
+                  type: string
+                  enum: [cmp20, gg18]
+                threshold:
+                  type: integer
+                  minimum: 1
+                partyCount:
+                  type: integer
+                  minimum: 1
+                messageRef:
+                  type: object
+                  properties:
+                    configMap: { type: string }
+                    key: { type: string }
+                outputRef:
+                  type: object
+                  properties:
+                    secret: { type: string }
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum: [pending, keygenrunning, signing, completed, failed]
+                startedAt: { type: string }
+                completedAt: { type: string }
+                signatureSecret: { type: string }
+                error: { type: string }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: confium-operator
+  namespace: confium-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: confium-operator
+  namespace: confium-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: confium-operator
+  template:
+    metadata:
+      labels:
+        app: confium-operator
+    spec:
+      serviceAccountName: confium-operator
+      containers:
+        - name: operator
+          image: confium/operator:latest
+          args: ["--namespace", ""]
+          resources:
+            requests:
+              memory: 128Mi
+              cpu: 100m
+            limits:
+              memory: 512Mi
+              cpu: 500m

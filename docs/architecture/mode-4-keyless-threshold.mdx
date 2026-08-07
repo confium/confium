@@ -1,0 +1,219 @@
+---
+title: "Mode 4 — Keyless Threshold"
+description: Combining Confium threshold signing with Sigstore-style keyless signing. OIDC-verified ephemeral quorums, Fulcio-style short-lived certs, Rekor-style transparency log. No persistent shares, no key management, no share-rotation ops.
+---
+
+# Mode 4 — Keyless Threshold
+
+Confium's existing three deployment modes all share one
+characteristic: the threshold keyset is **persistent**. Shares are
+generated once, distributed to N custodians, and used for every
+signing ceremony until rotated. This is the right model for
+high-stakes long-lived keys (CA keys, government archive keys,
+long-term custody keys).
+
+But for many real-world signing workflows — CI/CD, package
+publishing, daily document signing — persistent threshold keys are
+overkill. The operational cost of share management, rotation,
+auditing, and storage dominates.
+
+**Mode 4 (Keyless Threshold)** combines Confium's threshold signing
+with the Sigstore keyless pattern:
+
+| Property | Source |
+|---|---|
+| Threshold signing (T-of-N) | Confium |
+| OIDC identity verification | Sigstore pattern |
+| Short-lived ceremony-bound certs | Fulcio pattern |
+| Transparency-log anchoring | Rekor pattern (= `log.confium.org`) |
+
+The result: **threshold signatures with zero persistent keys**.
+
+## When to use Mode 4
+
+Use Mode 4 when:
+
+- **No single party should sign alone**, but no one wants to operate
+  persistent share storage.
+- **Signer identity is the trust anchor**, not a long-lived key
+  ("this release was signed by 3-of-5 directors" not "signed by key 0xABC").
+- **Per-ceremony auditability** is sufficient; you don't need to
+  re-sign future artifacts with the same key.
+- **CI/CD release pipelines** want threshold guarantees without
+  long-lived HSM-managed keys.
+
+Don't use Mode 4 when:
+
+- **Long-term archival** is required (the OIDC-issued cert expires
+  in ~10 minutes; signatures remain valid but the cert path doesn't).
+  Use Mode 3 (Sovereign PKI) instead.
+- **Regulatory key escrow** is required (you need to be able to
+  re-sign with the same key years from now).
+- **The same key must sign many artifacts** over a long period
+  (use Mode 2 — PKI Drop-in).
+
+## How it works
+
+```
+                       OIDC token from
+                       GitHub Actions / Google / Okta
+                              │
+   ┌──────────────────────────┼──────────────────────────┐
+   │  ┌───────────────────────▼───────────────────────┐  │
+   │  │ Signer 1: ephemeral keypair + OIDC identity   │  │
+   │  └───────────────────────┬───────────────────────┘  │
+   │  ┌───────────────────────▼───────────────────────┐  │
+   │  │ Signer 2: ephemeral keypair + OIDC identity   │  │
+   │  └───────────────────────┬───────────────────────┘  │
+   │  ┌───────────────────────▼───────────────────────┐  │
+   │  │ Signer 3: ephemeral keypair + OIDC identity   │  │
+   │  └───────────────────────┬───────────────────────┘  │
+   │                          │                          │
+   │            ┌─────────────▼─────────────┐            │
+   │            │ Coordinator (Confium)     │            │
+   │            │ ───────────────────────── │            │
+   │            │ 1. verify each OIDC token │            │
+   │            │ 2. ephemeral DKG          │            │
+   │            │    → joint ephemeral key  │            │
+   │            │ 3. Fulcio issues cert     │            │
+   │            │    binding OIDC identities│            │
+   │            │    to joint key           │            │
+   │            │ 4. threshold sign message │            │
+   │            │ 5. anchor cert + sig to   │            │
+   │            │    log.confium.org        │            │
+   │            │ 6. destroy ephemeral keys │            │
+   │            └───────────────────────────┘            │
+   └─────────────────────────────────────────────────────┘
+```
+
+### Step-by-step
+
+1. **Each signer authenticates via OIDC** (GitHub Actions,
+   Google, Okta, Azure AD, etc.) and receives an OIDC token
+   identifying themselves.
+2. **Each signer generates a fresh ephemeral keypair** just for
+   this ceremony. The private key never leaves their process.
+3. **Coordinator verifies each OIDC token** against the issuer's
+   JWKS, extracts the identity claims (email, repo, job URL, etc.).
+4. **Coordinator runs ephemeral DKG** across the N ephemeral
+   public keys, producing a joint ephemeral public key.
+5. **Fulcio-style CA** (could be operated by Confium, OpenSSF, or
+   self-hosted) issues a short-lived cert (~10 minutes validity)
+   binding the OIDC identities + the joint ephemeral public key.
+6. **Threshold sign the artifact** with the joint ephemeral key.
+   T-of-N signers must participate.
+7. **Anchor the Fulcio cert + signature + OIDC identities** to
+   `log.confium.org` (or any RFC 6962 transparency log).
+8. **All ephemeral keys destroyed** at end of ceremony.
+
+### What verifiers see
+
+A verifier (downstream consumer, auditor, compliance system)
+sees:
+
+- The signed artifact
+- The signature (standard ECDSA-P256 — verifies under any RFC 3279
+  verifier)
+- The Fulcio-issued short-lived cert (containing OIDC identities +
+  joint public key + validity window)
+- The transparency log inclusion proof (cert + signature are in
+  the log)
+
+The verifier:
+
+1. Recovers the joint public key from the Fulcio cert.
+2. Verifies the signature under that key.
+3. Verifies the Fulcio cert chain (issued by the Fulcio CA, within
+   validity window).
+4. Verifies the transparency log inclusion proof.
+5. Inspects the OIDC identities in the Fulcio cert to decide
+   whether to trust the signature.
+
+The verifier never had to know any long-lived publisher key. The
+trust anchor is: **(Fulcio CA + transparency log + OIDC identity)**.
+
+## Comparison with Modes 1–3
+
+| Property | Mode 1: P2P TC | Mode 2: PKI Drop-in | Mode 3: Sovereign PKI | **Mode 4: Keyless Threshold** |
+|---|---|---|---|---|
+| Persistent key | Yes | Yes | Yes | **No** |
+| Share management | Required | Required | Required | **Not needed** |
+| Identity-bound | No | No | No | **Yes (OIDC)** |
+| Long-term archival | Possible | Possible | Possible | **No (cert expires)** |
+| PKI integration | None | Drop-in | Custom format | **Fulcio-style short-lived** |
+| Transparency log | Optional | Optional | Optional | **Required** |
+| Operational cost | High (share ops) | High (share ops + PKI) | Very high (custom PKI) | **Low (ephemeral)** |
+
+## What this unlocks
+
+### CI/CD without key management
+
+A release pipeline can require 3-of-5 maintainer signatures per
+release, with each maintainer authenticating via their GitHub
+identity. No long-lived signing key, no HSM, no share-rotation
+ops. Every release produces a fresh threshold ceremony.
+
+### Cross-organization threshold signing
+
+Two organizations can require joint signing on a contract without
+either ever holding the other's signing key. Each org authenticates
+its signers via their own OIDC provider; the Fulcio cert binds
+identities from both orgs to the joint ephemeral key.
+
+### Compliance with "no single party" rules
+
+SOC 2, NIST 800-53, and similar frameworks require "no single party
+can issue credentials alone". Mode 4 satisfies this by construction
+— the threshold protocol enforces it at sign time. And because the
+keyset is per-ceremony ephemeral, there's nothing to lose or
+rotate.
+
+### Audit-friendly
+
+Every signing ceremony produces:
+
+- A Fulcio cert listing who signed (OIDC identities).
+- A transparency log entry proving when they signed.
+- A standard signature anyone can verify.
+
+Auditors get everything they need without contacting the signer.
+
+## What's NOT solved by Mode 4
+
+- **Long-term non-repudiation**: the Fulcio cert expires in ~10
+  minutes. After expiry, the cert path is broken; the signature
+  still verifies cryptographically, but the "who signed" claim is
+  only as durable as the transparency log entry (which is, in
+  practice, very durable — Bitcoin-anchored).
+- **Re-signing with the same key**: the key is destroyed. Can't
+  re-sign a new artifact with the same key.
+- **Performance**: ephemeral DKG adds ~10ms per ceremony vs. ~3ms
+  for a pre-provisioned threshold sign. Fine for release
+  pipelines; not fine for high-throughput signing.
+
+## Implementation status
+
+| Component | Status |
+|---|---|
+| Threshold DKG (CMP20, GG18) | ✅ shipped (TODOs 067–091) |
+| Transparency log server | ✅ shipped (TODO 102) |
+| Transparency log monitor | ✅ shipped (TODO 103) |
+| OIDC token verifier | ✅ scaffold (TODO 193) |
+| Fulcio-style CA scaffold | ⏳ planned |
+| Keyless signing coordinator | ⏳ planned |
+| Keyless CI signing example | ✅ (TODO 194) |
+
+The full Mode 4 production stack builds on existing Confium
+components. The new work is: OIDC verifier + Fulcio-style CA +
+coordinator that orchestrates the full ceremony.
+
+## See also
+
+- [Sigstore](https://www.sigstore.dev/) — the project whose keyless
+  pattern Mode 4 generalizes to threshold signing.
+- [Fulcio](https://github.com/sigstore/fulcio) — Sigstore's
+  OIDC-bound short-lived cert CA.
+- [Rekor](https://github.com/sigstore/rekor) — Sigstore's
+  transparency log; `log.confium.org` is the Confium equivalent.
+- [Confium Modes 1–3](../architecture/three-modes.mdx) — the
+  persistent-key modes Mode 4 complements.

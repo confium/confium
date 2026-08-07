@@ -1,0 +1,59 @@
+# Confium install — all the ways
+
+| Method | Command | Use when |
+|---|---|---|
+| **Ruby gem** | `gem install confium` | You're in Ruby. Includes CMP20, GG18, FROST-P256, transparency, audit, all examples. |
+| **Python wheel** | `pip install confium` | You're in Python. Same surface as Ruby. |
+| **Node.js package** | `npm install @confium/confium-node` | You're in Node. Server-side signing. |
+| **WASM (browser)** | `npm install @confium/confium-wasm` | Browser verifier. No signing surface. |
+| **WASM (WASI)** | `npm install @confium/confium-wasm` + build with `--features sign` for `wasm32-wasip1` | Edge compute (Cloudflare Workers, Fastly, Vercel Edge, Deno, Bun). |
+| **Homebrew (macOS)** | `brew install confium/tap/confium` | You want the CLI on macOS without installing Rust. |
+| **Nix** | `nix profile install github:confium/confium#confium` | You're in Nix. Single static binary. |
+| **Cargo (Rust)** | `cargo install confium-cli` | You're already in Rust. |
+| **Docker** | `docker pull confium/signer:latest` | You want a container. |
+| **Source** | `git clone https://github.com/confium/confium && cargo build --release` | You want to hack on Confium itself. |
+
+## CLI binaries
+
+Pre-built static binaries for Linux x86_64 + aarch64, macOS x86_64 +
+arm64, Windows x86_64 ship with every release:
+[github.com/confium/confium/releases](https://github.com/confium/confium/releases).
+
+Download the matching archive, extract, and put the `confium` binary
+on your `PATH`. No runtime dependencies.
+
+## Verifying downloads
+
+Every release artifact ships with:
+
+- A SHA-256 checksum file (`confium-X.Y.Z-linux-x86_64.tar.gz.sha256`)
+- A Confium signature over the checksum file (produced via Confium's
+  own release-engineering key, which is itself threshold-signed)
+
+Verify with:
+
+```sh
+sha256sum -c confium-X.Y.Z-linux-x86_64.tar.gz.sha256
+confium verify --signature checksum.sig --public-key release-pubkey.pem checksum.sha256
+```
+
+The release pubkey is published in the repo's `SECURITY.md` and
+anchored to Bitcoin via OTS so its existence is independently
+verifiable.
+
+## Troubleshooting
+
+**`error: failed to build gem native extension`** (Ruby)
+Ensure Rust is installed: `rustup show`. The gem requires Rust
+1.85+ (edition 2024).
+
+**`linking with cc failed`** (macOS / Linux)
+Install Xcode CLT (`xcode-select --install`) or `build-essential`
+(`apt install build-essential`).
+
+**`cargo: command not found`** (any)
+Install Rust via [rustup](https://rustup.rs/).
+
+**`cannot find module '@confium/confium-wasm'`** (Node)
+The npm package is published as `@confium/confium-wasm`, not
+`confium-wasm`. Make sure your `package.json` uses the scoped name.

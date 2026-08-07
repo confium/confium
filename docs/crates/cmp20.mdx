@@ -1,0 +1,108 @@
+---
+title: "confium-tc-cmp20 — CMP20 threshold ECDSA on P-256"
+description: Real CMP20 (Canetti–Makriyannis–Peled 2020) threshold ECDSA with non-interactive DKG and three-round signing.
+---
+
+# `confium-tc-cmp20` — CMP20 threshold ECDSA on P-256
+
+Real CMP20 threshold ECDSA over P-256. CMP20's headline improvements
+over GG18 are non-interactive DKG (single broadcast round) and
+three-round signing (down from GG18's four).
+
+## When to use this crate
+
+Use `confium-tc-cmp20` when:
+
+- You need true threshold ECDSA — the joint secret is never
+  reconstructed in one place, even during signing.
+- You want the most efficient threshold-ECDSA protocol shipped in
+  Confium (CMP20 beats GG18 on round count).
+- You're building a Mode 2 PKI drop-in where multiple stakeholders
+  must jointly produce a single P-256 signature.
+
+## Architecture
+
+Two registered schemes (one crate, two names so the framework's
+single-name/single-kind `TcScheme` trait can route each):
+
+| Name                    | Kind        | Produces                          |
+|-------------------------|-------------|-----------------------------------|
+| `CMP20-ECDSA-P256`      | `Dkg`       | per-party `Cmp20Share` + pubkey   |
+| `CMP20-ECDSA-P256-SIGN` | `Signature` | 64-byte `(r, s)` ECDSA signature  |
+
+## Public API
+
+### Multi-round session API (advanced)
+
+```rust
+use confium_tc::session::{Session, SessionParams};
+use confium_tc::party::{Party, PartyList};
+
+let parties = PartyList::from_parties(vec![
+    Party::inproc("p0"),
+    Party::inproc("p1"),
+    Party::inproc("p2"),
+]);
+let params = SessionParams {
+    scheme: "CMP20-ECDSA-P256".to_string(),
+    parties: parties.clone(),
+    threshold: 2,
+    this_party_idx: 0,
+    local_share: None,
+    message: None,
+};
+let mut session = Session::create(&params)?;
+// Drive rounds via session.round_step(incoming) — see the framework docs.
+```
+
+### In-process driver (recommended for bindings + tests)
+
+```rust
+use confium_tc_cmp20::inprocess;
+
+let kg = inprocess::keygen(2, 3)?;
+assert_eq!(kg.shares.len(), 3);
+assert_eq!(kg.public_key.len(), 33);
+
+let sig = inprocess::sign(&kg.shares[..2], 2, b"hello cmp20")?;
+assert_eq!(sig.len(), 64);
+```
+
+## Share wire format
+
+Each share blob is 71 bytes:
+
+```
+magic[4]      = b"CMP2"
+version[1]    = 1
+x_i[32]       = Shamir share scalar (big-endian)
+X[33]         = joint public key (SEC1 compressed)
+idx[1]        = 1-based DKG roster index
+```
+
+The joint public key is replicated in every share so a signer can
+recover it without an out-of-band channel. The magic + version
+together form a self-identifying envelope.
+
+## Security notes
+
+- **Real Feldman VSS**, real Lagrange interpolation, real
+  threshold-ECDSA combine. The arithmetic matches a production CMP20
+  run for honest coalitions.
+- **MtA is a simplified in-clear stub.** Nonces are revealed in the
+  clear during signing. This leaks the joint nonce `k`, which is safe
+  for a single signature but would be catastrophic across multiple
+  signatures over the same secret. Production CMP20 hides `k` via
+  Paillier-based MtA — see `mta.rs` for the gap and the planned work.
+- **`#![forbid(unsafe_code)]`** — no unsafe blocks anywhere in the
+  crate.
+- **Zeroize-on-drop** for share scalars. The `Cmp20Share::Drop` impl
+  clears the scalar bytes before releasing the memory.
+
+## Related
+
+- [GG18 crate](./gg18.mdx) — older four-round protocol, same surface.
+- [FROST-P256 crate](./frost-p256.mdx) — Shamir + single-party sign
+  (no DKG).
+- [In-process driver](./tc-inprocess.mdx) — generic driver for any
+  registered scheme.

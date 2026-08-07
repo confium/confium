@@ -33,6 +33,7 @@ members = [
     "crates/confium-tc",
     "crates/confium-tc-bls",
     "crates/confium-tc-cmp20",
+    "crates/confium-tc-core",
     "crates/confium-tc-ecies-p256",
     "crates/confium-tc-elgamal-p256",
     "crates/confium-tc-fhe-bfv",
@@ -40,12 +41,30 @@ members = [
     "crates/confium-tc-frost-ml-dsa-65",
     "crates/confium-tc-frost-p256",
     "crates/confium-tc-gg18",
+    "crates/confium-tc-keys",
     "crates/confium-tc-ml-kem",
     "crates/confium-test-harness",
     "crates/confium-tls-signer",
     "crates/confium-transparency",
     "crates/confium-wasm",
     "crates/confium-benchmarks",
+    # Layer 0: Shared crypto (publishable).
+    "crates/confium-crypto-vss",
+    "crates/confium-crypto-zk",
+    "crates/confium-privacy",
+    "crates/confium-observability",
+    # Layer 3: Product components.
+    "crates/confium-coordinator",
+    "crates/confium-pki-tc",
+    # Deployable surfaces.
+    "crates/confium-signerd",
+    "crates/confium-log-server",
+    "crates/confium-log-monitor",
+    "crates/confium-verify-server",
+    "crates/confium-operator",
+    "crates/confium-oidc",
+    "crates/confium-node",
+    "crates/confium-fuzz",
 ]
 
 [workspace.package]
@@ -100,6 +119,25 @@ confium-test-harness = { path = "crates/confium-test-harness", version = "0.3.0"
 confium-tls-signer = { path = "crates/confium-tls-signer", version = "0.3.0" }
 confium-transparency = { path = "crates/confium-transparency", version = "0.4.0" }
 confium-wasm = { path = "crates/confium-wasm", version = "0.3.0" }
+# Layer 0: Shared crypto (publishable).
+confium-crypto-vss = { path = "crates/confium-crypto-vss", version = "0.3.0" }
+confium-crypto-zk = { path = "crates/confium-crypto-zk", version = "0.3.0" }
+confium-privacy = { path = "crates/confium-privacy", version = "0.3.0" }
+confium-observability = { path = "crates/confium-observability", version = "0.3.0" }
+# Layer 3: Threshold core + components.
+confium-tc-core = { path = "crates/confium-tc-core", version = "0.3.0" }
+confium-tc-keys = { path = "crates/confium-tc-keys", version = "0.3.0" }
+confium-coordinator = { path = "crates/confium-coordinator", version = "0.3.0" }
+confium-pki-tc = { path = "crates/confium-pki-tc", version = "0.3.0" }
+# Deployable surfaces.
+confium-signerd = { path = "crates/confium-signerd", version = "0.3.0" }
+confium-log-server = { path = "crates/confium-log-server", version = "0.3.0" }
+confium-log-monitor = { path = "crates/confium-log-monitor", version = "0.3.0" }
+confium-verify-server = { path = "crates/confium-verify-server", version = "0.3.0" }
+confium-operator = { path = "crates/confium-operator", version = "0.3.0" }
+confium-oidc = { path = "crates/confium-oidc", version = "0.3.0" }
+confium-node = { path = "crates/confium-node", version = "0.3.0" }
+confium-fuzz = { path = "crates/confium-fuzz", version = "0.3.0" }
 
 libloading = "0.8"
 snafu = "0.8"
@@ -123,6 +161,12 @@ tokio = { version = "1", features = ["rt", "rt-multi-thread", "net", "sync", "ma
 criterion = { version = "0.5", default-features = false, features = ["plotters", "cargo_bench_support"] }
 tungstenite = { version = "0.30", default-features = false, features = ["handshake", "url", "rustls-tls-native-roots"] }
 wasmtime = "27"
+# Shared by extracted crates (Layer 0/3).
+subtle = "2"
+num-bigint = { version = "0.4", features = ["rand"] }
+num-integer = "0.1"
+num-traits = "0.2"
+proptest = "1"
 cryptoki = "0.12"
 curve25519-dalek = { version = "4", features = ["rand_core"] }
 # rnp-rs: idiomatic Rust binding to librnp (OpenPGP C FFI). Published on
@@ -137,7 +181,7 @@ tokio-util = { version = "0.7", features = ["codec"] }
 x509-cert = { version = "0.2", features = ["builder"] }
 der = "0.7"
 spki = "0.7"
-p256 = { version = "0.13", features = ["ecdsa", "pem"] }
+p256 = { version = "0.13", features = ["ecdsa", "pem", "arithmetic"] }
 p384 = "0.13"
 ecdsa = "0.16"
 signature = "2"

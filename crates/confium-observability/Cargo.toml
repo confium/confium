@@ -1,0 +1,25 @@
+[package]
+name = "confium-observability"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories = ["cryptography"]
+description = "Enterprise observability: structured logging, trace correlation, metrics, syslog"
+documentation = "https://docs.rs/confium-observability"
+keywords = ["crypto", "observability", "metrics", "confium"]
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+hmac = { workspace = true }
+chrono = { workspace = true }
+rand_core = { workspace = true }
+hex = { workspace = true }

@@ -1,0 +1,90 @@
+# FIPS 140-3 preparation
+
+Confium targets eventual FIPS 140-3 validation. This document
+covers the preparation work — boundary documentation, approved
+algorithm inventory, self-test design — that must be complete
+before the formal validation process begins.
+
+## Logical boundary
+
+The FIPS module boundary encompasses:
+
+| Crate | Role |
+|---|---|
+| `confium-core` | Engine: plugin loader, registry, FFI |
+| `confium-tc-cmp20` | CMP20 threshold ECDSA-P256 |
+| `confium-tc-gg18` | GG18 threshold ECDSA-P256 |
+| `confium-tc-frost-p256` | Shamir + ECDSA-P256 primitives |
+| `confium-composite` | Composite signature verification |
+
+Crates OUTSIDE the boundary:
+- All language bindings (Ruby, Python, Node, WASM, Go) — they're
+  API layers over the FIPS module, not part of it.
+- `confium-attributes`, `confium-deployment`, `confium-pki` —
+  application-level, not cryptographic primitives.
+- `confium-log-server`, `confium-log-monitor` — infrastructure,
+  not crypto.
+
+## Approved algorithms
+
+| Algorithm | Standard | Implementation |
+|---|---|---|
+| ECDSA-P256 | FIPS 186-5 | `p256` crate (RustCrypto) |
+| SHA-256 | FIPS 180-4 | `sha2` crate (RustCrypto) |
+| HMAC-SHA-256 | FIPS 198-1 | `hmac` crate (RustCrypto) |
+| Shamir Secret Sharing | Not FIPS-regulated | `confium-tc-frost-p256::shamir` |
+
+## Self-tests
+
+FIPS 140-3 requires conditional and start-up self-tests:
+
+1. **ECDSA known-answer test** — sign a known message with a known
+   key, verify the signature matches the expected output.
+2. **SHA-256 known-answer test** — hash a known input, verify the
+   digest matches.
+3. **Integrity test** — HMAC-SHA-256 over the module binary, compared
+   to the stored HMAC at install time.
+
+These run at module load time (when `confium-core` initializes) and
+fail closed — the module refuses to operate if any self-test fails.
+
+## Critical security parameters
+
+| CSP | Storage | Zeroization |
+|---|---|---|
+| Threshold share scalars | `Cmp20Share::x_i` | `Drop` impl calls `zeroize` |
+| Shamir polynomial coefficients | `Vec<Scalar>` (local) | `Drop` via `Scalar`'s own zeroize |
+| Signing nonces | `k_i` (per-session) | `Session::destroy()` clears all nonces |
+| Encapsulated shared secrets | `Vec<u8>` | `DecryptionShare::Drop` calls `zeroize` |
+
+## SP 800-140C alignment
+
+FIPS 140-3 references NIST SP 800-140C for validation requirements.
+Confium's preparation covers:
+
+- **CMT**: Cryptographic Module Type — software module, multi-chip
+  standalone embodiment.
+- **APP**: Approved Algorithms — see table above.
+- **SDP**: Sensitive Security Parameter Protection — see CSP table.
+- **AST**: Approved Self-Tests — see self-test section above.
+
+## Path to validation
+
+1. **Preparation** (this document) — boundary, algorithms, self-tests
+   defined. ✅
+2. **ACVP testing** — submit approved algorithms to NIST's ACVP
+   (Automated Cryptographic Validation Protocol) server for known-answer
+   testing. ⏳
+3. **CMVP submission** — submit the module to the Cryptographic Module
+   Validation Program. ⏳
+4. **Laboratory testing** — a NIST-accredited lab (e.g., atsec,
+   UL) tests the module. ⏳
+5. **Certificate** — FIPS 140-3 certificate issued. ⏳
+
+Steps 2-5 are 6-18 months of operational work.
+
+## See also
+
+- [FIPS 140-3 standard](https://csrc.nist.gov/publications/detail/fips/140/3/final)
+- [NIST SP 800-140C](https://csrc.nist.gov/publications/detail/sp/800-140c/final)
+- [RustCrypto FIPS readiness](https://github.com/RustCrypto/meta/blob/master/FIPS.md)

@@ -1,0 +1,29 @@
+[package]
+name = "confium-operator"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories = ["cryptography", "authentication"]
+keywords = ["crypto", "kubernetes", "operator", "threshold", "confium"]
+description = "Kubernetes operator for Confium threshold signing ceremonies"
+readme = "README.md"
+
+[[bin]]
+name = "confium-operator"
+path = "src/main.rs"
+
+[dependencies]
+confium-tc-cmp20 = { workspace = true }
+confium-tc-gg18 = { workspace = true }
+anyhow = "1"
+tokio = { version = "1", features = ["full"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = "0.9"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+clap = { workspace = true }

@@ -1,0 +1,54 @@
+# Cloudflare Workers + D1 + Durable Objects configuration.
+#
+# Deploy with:
+#   npx wrangler deploy
+#
+# Required secrets (set via `wrangler secret put`):
+#   API_TOKEN_SALT  — random 32-byte hex string for API token hashing
+#
+# D1 database created via:
+#   npx wrangler d1 create confium-log
+#   (paste the database_id below)
+
+name = "confium-log"
+main = "src/worker.js"
+compatibility_date = "2026-07-01"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 database. Each region has its own replica; Cloudflare handles
+# replication automatically.
+[[d1_databases]]
+binding = "DB"
+database_name = "confium-log"
+database_id = "REPLACE_WITH_WRANGLER_D1_CREATE_OUTPUT"
+
+# Workers KV — read cache for tree heads + proofs.
+[[kv_namespaces]]
+binding = "CACHE"
+id = "REPLACE_WITH_WRANGLER_KV_NAMESPACE_CREATE_OUTPUT"
+
+# Durable Objects — the global-merger singleton.
+[[durable_objects.bindings]]
+name = "MERGER"
+class_name = "GlobalMerger"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["GlobalMerger"]
+
+# Per-region API token allow-list. Real deployments use a separate
+# auth service; this is the dev-mode allow-list.
+[vars]
+DEFAULT_ACTIVATION_DELAY_SECONDS = 3600  # 1 hour
+MAX_PROOF_BATCH_SIZE = 1000
+DEFAULT_PAGE_SIZE = 1000
+
+# Per-environment overrides.
+[env.staging]
+name = "confium-log-staging"
+
+[env.production]
+name = "confium-log"
+routes = [
+  { pattern = "log.confium.org/*", zone_name = "confium.org" },
+]

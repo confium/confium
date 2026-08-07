@@ -1,0 +1,207 @@
+# Cross-binding examples
+
+The same operation in every binding. Pick the language that matches your
+stack; the underlying Rust crate is identical across all four.
+
+## Composite signature verify (Ed25519)
+
+What it does: build a one-component composite with one Ed25519 signature,
+verify it against a message.
+
+**Rust** (workspace):
+
+```rust
+use confium_composite::{build_ed25519_component, CompositeSignature};
+
+let signing = ed25519_dalek::SigningKey::generate(&mut OsRng);
+let message = b"hello confium";
+let component = build_ed25519_component(&signing, message)?;
+let composite = CompositeSignature::new(vec![component]);
+
+let result = composite.verify(message, |alg, pk, msg, sig| {
+    confium_composite::ed25519_verifier(alg, pk, msg, sig)
+});
+assert!(result.all_verified);
+```
+
+**Ruby** (gem):
+
+```ruby
+require "confium"
+
+signing = Confium::Composite.generate_ed25519_keypair
+message = "hello confium"
+sig = Confium::Composite.sign_ed25519(signing["private_key"], message)
+composite = Confium::PKI::CMS::SignedData.from_json(
+  JSON.generate(
+    "components" => [{
+      "algorithm"   => "Ed25519",
+      "public_key"  => signing["public_key"].bytes,
+      "signature"   => sig["signature"].bytes,
+    }]
+  )
+)
+result = composite.verify_signatures(message)
+result.all_verified? # => true
+```
+
+**Python** (PyO3):
+
+```python
+from confium import composite
+
+seed = b"\x42" * 32
+message = b"hello confium"
+cs = composite.CompositeSignature.sign_ed25519(seed, message)
+result = cs.verify(message)
+assert result.all_verified is True
+```
+
+**WASM** (`@confium/confium-wasm`):
+
+```js
+import { CompositeSignature, ED25519 } from "@confium/confium-wasm";
+
+const seed = new Uint8Array(32).fill(0x42);
+const message = new TextEncoder().encode("hello confium");
+const cs = CompositeSignature.signEd25519(seed, message);
+const result = cs.verify(message);
+console.log(result.allVerified); // true
+```
+
+## Transparency log inclusion proof
+
+What it does: append a 32-byte hash to a Merkle tree, generate the
+RFC 6962 §2.1.1 inclusion proof for the new entry, verify it
+externally.
+
+**Rust** (workspace):
+
+```rust
+use confium_transparency::{MerkleEntry, MerkleTree, ArtifactType};
+
+let mut tree = MerkleTree::new();
+let artifact_hash = [0u8; 32];
+let seq = tree.append(MerkleEntry::new(0, ArtifactType::CertificateIssuance, artifact_hash));
+let root = tree.root();
+let proof = tree.inclusion_proof(seq).unwrap();
+
+// External auditor (doesn't have the tree, just the published fields).
+let entry = MerkleEntry::new(seq, ArtifactType::CertificateIssuance, artifact_hash);
+confium_transparency::MerkleTree::verify_inclusion(&entry, &proof, root).unwrap();
+```
+
+**Ruby** (gem):
+
+```ruby
+tree = Confium::Transparency::MerkleTree.new
+seq = tree.append(
+  artifact_type: :certificate_issuance,
+  artifact_hash: "\x00".b * 32,
+)
+root = tree.root
+proof = tree.inclusion_proof(seq)
+Confium::Transparency::MerkleTree.verify_inclusion(
+  entry: "\x00".b * 32,
+  proof: proof,
+  root: root,
+)
+```
+
+**Python** (PyO3):
+
+```python
+import hashlib
+from confium import transparency
+
+tree = transparency.MerkleTree()
+artifact_hash = hashlib.sha256(b"my artifact").digest()
+seq = tree.append("certificate_issuance", artifact_hash)
+root = tree.root
+proof = tree.inclusion_proof(seq)
+tree.verify_inclusion(seq, proof, root)
+```
+
+**WASM** (`@confium/confium-wasm`):
+
+```js
+import { MerkleTree, ARTIFACT_TYPES } from "@confium/confium-wasm";
+
+const tree = new MerkleTree();
+const hash = new Uint8Array(32);
+const seq = tree.append("certificate_issuance", hash);
+const root = tree.root;
+const proof = tree.inclusionProof(seq);
+tree.verifyInclusion(seq, proof, root);
+```
+
+## Attribute-based threshold predicate
+
+What it does: parse a DSL expression that requires 3 directors from at
+least 3 distinct regions, then evaluate it against a list of signer
+attribute maps.
+
+**Rust** (workspace):
+
+```rust
+use confium_attributes::{parse, evaluate, SignerAttributes};
+
+let pred = parse(r#"and(min_count("role:director", 3), min_distinct("region", 3))"#).unwrap();
+let alice = SignerAttributes::new(); alice.add("role:director", "yes"); alice.add("region", "europe");
+let bob   = SignerAttributes::new(); bob.add("role:director", "yes");   bob.add("region", "americas");
+let carol = SignerAttributes::new(); carol.add("role:director", "yes"); carol.add("region", "asia-pacific");
+assert!(evaluate(&pred, &[&alice, &bob, &carol]));
+```
+
+**Ruby** (gem):
+
+```ruby
+pred = Confium::Attributes::Predicate.parse(
+  'and(min_count("role:director", 3), min_distinct("region", 3))'
+)
+alice = Confium::Attributes::SignerAttributes.new
+  .add("role:director", "yes").add("region", "europe")
+bob = Confium::Attributes::SignerAttributes.new
+  .add("role:director", "yes").add("region", "americas")
+carol = Confium::Attributes::SignerAttributes.new
+  .add("role:director", "yes").add("region", "asia-pacific")
+pred.evaluate([alice, bob, carol]) # => true
+```
+
+**Python** (PyO3):
+
+```python
+from confium import attributes
+
+pred = attributes.Predicate.parse(
+    'and(min_count("role:director", 3), min_distinct("region", 3))'
+)
+signers = [
+    attributes.SignerAttributes({"role:director": ["yes"], "region": ["europe"]}),
+    attributes.SignerAttributes({"role:director": ["yes"], "region": ["americas"]}),
+    attributes.SignerAttributes({"role:director": ["yes"], "region": ["asia-pacific"]}),
+]
+assert pred.evaluate(signers) is True
+```
+
+**WASM** (`@confium/confium-wasm`):
+
+```js
+import { Predicate } from "@confium/confium-wasm";
+
+const pred = new Predicate(
+  'and(min_count("role:director", 3), min_distinct("region", 3))'
+);
+const result = pred.satisfiedBy(JSON.stringify([
+  { "role:director": ["yes"], "region": ["europe"] },
+  { "role:director": ["yes"], "region": ["americas"] },
+  { "role:director": ["yes"], "region": ["asia-pacific"] },
+]));
+console.log(result); // true
+```
+
+## See also
+
+- [Bindings parity matrix](parity.mdx) — full feature-by-feature
+  coverage across all bindings.
+- [Python binding guide](python.md).

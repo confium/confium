@@ -1,0 +1,243 @@
+---
+title: "Public Confium Transparency Log — architecture"
+description: Design for a free, hosted, Bitcoin-anchored Merkle transparency log service for Confium users. Modeled on Certificate Transparency (RFC 6962) with Bitcoin OTS anchoring for cross-ecosystem verifiability.
+---
+
+# Public Confium Transparency Log — architecture
+
+## Why a public log?
+
+A local transparency log is good. A **public** transparency log is
+transformative. The web's experience with Certificate Transparency
+proves it: before CT, CA misissuance was discovered only when
+someone happened to notice a bogus cert in the wild. After CT,
+monitoring services flag misissuance within hours. The same
+pattern applies to code signing, document signing, threshold
+cryptocurrency custody — every Confium use case.
+
+This document proposes a free, hosted, Bitcoin-anchored Merkle
+transparency log service for Confium users: **`log.confium.org`**.
+
+## Design constraints
+
+| Constraint | Implication |
+|---|---|
+| **Free at point of use** | No payment gateway; one log per registered organization; per-org rate limits. |
+| **Verifiable end-to-end** | Anyone can verify the log is consistent without trusting Confium. Bitcoin anchoring + witness gossip. |
+| **Append-only** | The log MUST never rewrite history. Bitcoin anchoring makes this cryptographically enforceable. |
+| **Multi-tenant** | Each organization gets a separate sub-log; cross-tenant entries are still in the same Merkle tree for cross-audit. |
+| **GDPR-friendly** | Entries are SHA-256 hashes, not plaintext. PII never enters the log. |
+| **Operable 24/7** | Multi-region deployment; hot failover; SLO of 99.95%. |
+
+## Architecture
+
+```
+                    ┌─────────────────────────────┐
+                    │   log.confium.org (this)    │
+                    │                             │
+   Publisher  ─────►│  POST /v1/append            │
+   (Confium         │  ─────────────────────────  │
+    signing op)     │  • verify API token         │
+                    │  • rate-limit per token     │
+                    │  • hash + append to Merkle  │
+                    │  • return inclusion proof   │
+                    └─────────────┬───────────────┘
+                                  │
+                                  ▼
+                    ┌─────────────────────────────┐
+                    │   Bitcoin OTS anchor         │
+                    │   (every 10 minutes)        │
+                    │   ─────────────────────────  │
+                    │   • batch current root       │
+                    │   • submit to 3+ calendars   │
+                    │   • publish OTS proof to     │
+                    │     /v1/head/<N>/ots         │
+                    └─────────────┬───────────────┘
+                                  │
+                                  ▼
+                    ┌─────────────────────────────┐
+                    │   Bitcoin blockchain         │
+                    │   (independent anchor)       │
+                    └─────────────────────────────┘
+
+   Monitor (anyone) ──► GET /v1/head                ◄── published tree head
+                       GET /v1/proof/<seq>          ◄── inclusion proof
+                       GET /v1/consistency/<old>    ◄── consistency proof
+                       GET /v1/head/<N>/ots         ◄── Bitcoin anchor proof
+```
+
+## API
+
+### `POST /v1/append`
+
+Append a single entry to the log.
+
+**Auth**: `Authorization: Bearer <api-token>` (issued per organization).
+
+**Request body**:
+```json
+{
+  "artifact_type": "code_signing",
+  "artifact_hash": "<64-hex-char SHA-256>"
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "sequence": 1234567,
+  "tree_size": 10000000,
+  "root": "<64-hex-char SHA-256>",
+  "timestamp": "2026-07-31T12:34:56Z"
+}
+```
+
+### `GET /v1/head`
+
+Current tree head.
+
+```json
+{
+  "tree_size": 10000000,
+  "root": "<64-hex-char SHA-256>",
+  "timestamp": "2026-07-31T12:34:56Z",
+  "signature": "<ECDSA-P256 over (root || tree_size || timestamp)>"
+}
+```
+
+The signature is from Confium's operational keypair. Witness
+services countersign independently so this signature alone isn't
+sufficient — monitors check witness signatures too.
+
+### `GET /v1/proof/<sequence>`
+
+Inclusion proof for a specific entry.
+
+```json
+{
+  "sequence": 1234567,
+  "steps": [
+    {"sibling": "<64-hex>", "side": "left"},
+    {"sibling": "<64-hex>", "side": "right"},
+    ...
+  ],
+  "root": "<64-hex>",
+  "tree_size": 10000000
+}
+```
+
+### `GET /v1/consistency/<old_size>`
+
+Consistency proof between tree at `old_size` and current head.
+
+### `GET /v1/head/<N>/ots`
+
+Bitcoin OTS proof for the tree head at sequence N. Verifiable
+independently via the OpenTimestamps client — no Confium code
+required.
+
+## Trust model
+
+The log operator (Confium project) cannot retroactively rewrite
+history because every tree head is anchored to Bitcoin within 10
+minutes. The full history is verifiable from:
+
+1. **The published tree heads** (signed by Confium + witnesses).
+2. **The Bitcoin blockchain** (independent proof-of-work anchor).
+3. **Witness signatures** (third-party witnesses countersign tree
+   heads; running your own witness is encouraged).
+
+A monitor that watches the log + the Bitcoin chain + at least one
+independent witness can detect any retroactive history rewrite.
+
+## Deployment
+
+Three-region deployment (us-east, eu-west, ap-southeast):
+
+- **Append path**: low-latency regional frontends + a single
+  primary backend (strong consistency for append).
+- **Read path**: cached read replicas per region.
+- **Bitcoin anchor**: runs on a dedicated host in us-east; submits
+  to calendar servers every 10 minutes.
+- **Witnesses**: Confium operates two witnesses (us-east, eu-west).
+  Third-party witnesses are encouraged; the API is documented.
+
+Storage:
+- **Live log**: PostgreSQL with append-only table. Indexed by
+  sequence.
+- **Cold archive**: nightly snapshot to S3 + IA-class Glacier for
+  100-year retention (compliance archive use case).
+- **Merkle tree state**: PostgreSQL row per append, root recomputed
+  incrementally.
+
+## Operational concerns
+
+### Rate limiting
+
+Each organization gets:
+- **10 appends/sec** sustained, **100/sec** burst.
+- **1000 reads/sec** sustained, **10k/sec** burst.
+
+Higher limits via paid plan (future work; not blocking launch).
+
+### Data retention
+
+- **Live log**: forever (the log is append-only; entries never expire).
+- **Cold archive**: forever.
+- **OTS proofs**: forever.
+
+### Abuse handling
+
+- Per-organization rate limits.
+- Per-entry size limit (32 bytes — only SHA-256 hashes accepted;
+  no plaintext).
+- Abusive tokens revoked at the API gateway.
+
+## Privacy
+
+The log stores only SHA-256 hashes — no plaintext, no metadata
+beyond `(organization, artifact_type, hash, sequence, timestamp)`.
+The hash itself reveals nothing about what was signed.
+
+Cross-tenant analysis is possible (e.g. "org X is producing N
+signatures per hour") but reveals only operational cadence, not
+content. This trade-off is documented in the privacy policy.
+
+## Future work
+
+- **Witness gossip**: gossip protocol between independent witnesses
+  so they detect divergent tree heads (Confium can't present
+  different tree heads to different witnesses without being caught).
+- **Multi-log sharding**: per-industry sub-logs (gov-log.confium.org,
+  finance-log.confium.org) for regulatory isolation.
+- **Cross-log consistency**: monitors can verify the sub-logs are
+  consistent with the parent log via Merkle aggregation.
+- **Paid tier**: higher rate limits, dedicated sub-logs, custom
+  witnesses. Subscription funds the free tier.
+
+## Open questions
+
+1. **Operation cost** — at scale (1B entries/year), what's the
+   hosting cost? Initial estimate: ~$10k/month at 100M entries,
+   ~$100k/month at 1B entries. Funded by NLnet + Mozilla MOSS
+   grants initially; paid tier required at scale.
+
+2. **Governance** — who controls the operational keypair? Initial
+   answer: Confium project board. Long-term: rotate to a
+   multi-stakeholder quorum of project maintainers + independent
+   advisors.
+
+3. **Witness incentive** — why would a third party run a witness?
+   Initial answer: large consumers (governments, financial
+   institutions) run their own for self-protection. Long-term: paid
+   witness-as-a-service offerings.
+
+## See also
+
+- [RFC 6962 — Certificate Transparency](https://www.rfc-editor.org/rfc/rfc6962)
+- [RFC 6962-bis](https://www.rfc-editor.org/rfc/rfc9162) — the
+  updated spec Confium targets.
+- [OpenTimestamps](https://opentimestamps.org/) — the Bitcoin
+  anchoring layer.
+- [Confium transparency log crate](https://www.confium.org/crates/transparency)
+  — the Rust crate this service is built on.

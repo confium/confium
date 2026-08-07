@@ -1,0 +1,112 @@
+---
+title: Product Architecture
+description: How Confium's 6 products map to crates, features, and audiences
+---
+
+# Confium Product Architecture
+
+## Overview
+
+Confium is organized into **6 products**, each serving a distinct audience and use case.
+All products share a common cryptographic foundation published as independent crates
+on crates.io.
+
+## Product Matrix
+
+| Product | Tagline | Audience | Minisite |
+|---------|---------|----------|----------|
+| **Threshold** | Eliminate single points of failure | Security engineers | `/threshold/` |
+| **Transparency** | Tamper-evident audit trails | Compliance teams | `/transparency/` |
+| **PKI** | Run a CA without a single trusted key | CA operators | `/pki/` |
+| **Keyless** | Sign releases without managing keys | OSS maintainers | `/keyless/` |
+| **Privacy** | Privacy-preserving crypto toolkit | Privacy developers | `/privacy/` |
+| **Verify** | Verify threshold signatures anywhere | Web developers | `/verify/` |
+
+## Brand Colors
+
+Each product has a distinct accent color while sharing the Confium wordmark:
+
+| Product | Color | Hex | Logo Concept |
+|---------|-------|-----|-------------|
+| Threshold | Deep Blue | `#1E40AF` | T-of-N shield segments |
+| Transparency | Emerald | `#059669` | Merkle tree leaf |
+| PKI | Amber Gold | `#D97706` | Certificate chain |
+| Keyless | Violet | `#7C3AED` | Cloud dissolving key |
+| Privacy | Teal | `#0D9488` | Overlapping ZK shields |
+| Verify | Cyan | `#0891B2` | Hexagonal checkmark |
+
+## Crate Architecture
+
+### Layer 0: Shared Crypto (publishable to crates.io)
+
+| Crate | Modules | Purpose |
+|-------|---------|---------|
+| `confium-crypto-vss` | Feldman VSS, Pedersen VSS, Paillier, Schnorr, range proofs, NIZK | Verifiable secret sharing primitives |
+| `confium-crypto-zk` | ZK set membership, ZK signature possession, accumulator, threshold ABS | Zero-knowledge proof systems |
+| `confium-privacy` | PSI, PIR, differential privacy, OT, MPC, ring sigs, blind/adaptor sigs, VRF, VDF | Privacy-preserving computation |
+| `confium-observability` | Structured logging, trace correlation, metric cardinality, data structures | Enterprise observability |
+
+### Layer 3: Threshold Core
+
+| Crate | Modules | Purpose |
+|-------|---------|---------|
+| `confium-tc-core` | Session, share, registry, party, message, error, schemes | Irreducible session interface for scheme plugins |
+| `confium-coordinator` | 40+ modules: TCP server, multi-round orchestration, policy, rate limiting, metrics | Distributed signing coordinator |
+| `confium-tc-keys` | Key lifecycle, HSM protection, production hardening, BIP-32 | Threshold key management |
+| `confium-pki-tc` | CT log, OCSP, ACME, ABE | Threshold PKI integration |
+
+### Scheme Plugins
+
+| Crate | Algorithm | Depends on |
+|-------|-----------|-----------|
+| `confium-tc-cmp20` | CMP20 threshold ECDSA | `confium-tc-core` |
+| `confium-tc-gg18` | GG18 threshold ECDSA | `confium-tc-core` |
+| `confium-tc-frost-p256` | FROST over P-256 | (standalone) |
+| `confium-tc-frost-ed25519` | FROST over Ed25519 | `confium-tc-core` |
+| `confium-tc-elgamal-p256` | Threshold ElGamal encryption | (standalone) |
+
+### Facade
+
+`confium-tc` remains as a compatibility facade with product-aligned Cargo features:
+
+```toml
+[features]
+default = ["threshold"]
+threshold = ["dep:confium-coordinator", "dep:confium-tc-keys"]
+transparency = []
+pki = ["dep:confium-pki-tc"]
+keyless = ["dep:confium-tc-keys"]
+privacy = ["dep:confium-privacy", "dep:confium-crypto-zk"]
+verify = []
+full = ["threshold", "pki", "keyless", "privacy"]
+```
+
+## Audience → Product → Use Case
+
+### Security Engineer (Enterprise)
+- **Products:** Threshold + PKI
+- **Use cases:** HSM replacement, threshold CA, automated key rotation, sovereign PKI
+
+### DevSecOps / Platform Engineer
+- **Products:** Threshold
+- **Use cases:** Deploy signing infra, monitor operations, policy enforcement, graceful shutdown
+
+### Open Source Maintainer
+- **Products:** Keyless + Verify
+- **Use cases:** Release signing, provenance, browser verification
+
+### Blockchain Protocol Developer
+- **Products:** Threshold + Privacy
+- **Use cases:** Bridge signing, atomic swaps (adaptor sigs), MPC DKG, VRF randomness
+
+### Privacy Application Developer
+- **Products:** Privacy
+- **Use cases:** Private analytics (DP), private matching (PSI), ZK proofs, anonymous credentials
+
+### CA Operator
+- **Products:** PKI + Transparency
+- **Use cases:** Threshold root key, certificate transparency, OCSP/CRL, ACME automation
+
+### Compliance / Audit
+- **Products:** Transparency
+- **Use cases:** Tamper-evident logs, inclusion proofs, long-term archival, witness gossip

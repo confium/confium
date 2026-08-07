@@ -1,0 +1,91 @@
+name: "Confium Threshold Sign"
+description: "Threshold-sign artifacts in CI using Confium's CMP20 / GG18 in-process DKG + sign. Produces standard P-256 signatures verifiable by OpenSSL, npm, cosign, etc."
+author: "Confium Project"
+branding:
+  icon: "lock"
+  color: "orange"
+inputs:
+  shares:
+    description: >
+      Path to a JSON share file produced by `confium tc keygen`.
+      The file is read from disk; in production, fetch from a
+      secret store (HashiCorp Vault, AWS Secrets Manager) via
+      a step that runs before this action.
+    required: true
+  threshold:
+    description: "Threshold T (must match the keygen threshold)."
+    required: true
+  message:
+    description: >
+      Path to the file containing the message to sign. Reads from
+      stdin if omitted.
+    required: false
+    default: ""
+  scheme:
+    description: "Threshold scheme: cmp20 or gg18."
+    required: false
+    default: "cmp20"
+  out:
+    description: "Path to write the 64-byte (r||s) signature. Default: stdout."
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - name: Install Confium CLI
+      shell: bash
+      run: |
+        # Install the confium-cli Rust binary from crates.io.
+        # CI runs typically cache this; a typical install takes ~30s.
+        if ! command -v confium >/dev/null 2>&1; then
+          cargo install confium-cli --locked --quiet || {
+            echo "::error::failed to install confium-cli"
+            exit 1
+          }
+        fi
+
+    - name: Verify share file format
+      shell: bash
+      env:
+        SHARES_PATH: ${{ inputs.shares }}
+      run: |
+        if [ ! -f "$SHARES_PATH" ]; then
+          echo "::error::share file not found: $SHARES_PATH"
+          exit 1
+        fi
+        # Sanity-check the JSON envelope shape.
+        if ! jq -e '.shares and .public_key' "$SHARES_PATH" >/dev/null; then
+          echo "::error::share file is malformed — expected {shares: [...], public_key: ...}"
+          exit 1
+        fi
+        share_count=$(jq '.shares | length' "$SHARES_PATH")
+        echo "::debug::share count: $share_count"
+
+    - name: Threshold-sign
+      shell: bash
+      env:
+        SHARES_PATH: ${{ inputs.shares }}
+        THRESHOLD: ${{ inputs.threshold }}
+        MESSAGE: ${{ inputs.message }}
+        SCHEME: ${{ inputs.scheme }}
+        OUT_PATH: ${{ inputs.out }}
+      run: |
+        args=(tc sign --scheme "$SCHEME" --shares "$SHARES_PATH" --threshold "$THRESHOLD")
+        if [ -n "$MESSAGE" ]; then
+          args+=(--message "$MESSAGE")
+        fi
+        if [ -n "$OUT_PATH" ]; then
+          args+=(--out "$OUT_PATH")
+        fi
+
+        if [ -n "$MESSAGE" ]; then
+          confium "${args[@]}"
+        else
+          # Read message from stdin so callers can pipe inputs.
+          cat | confium "${args[@]}"
+        fi
+
+        echo "::debug::signature produced"
+        if [ -n "$OUT_PATH" ]; then
+          echo "::set-output name=signature-path::$OUT_PATH"
+        fi
