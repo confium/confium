@@ -1,0 +1,61 @@
+---
+title: Two-party PSI
+description: Compute the intersection of two private sets without revealing them
+audience: privacy-dev
+---
+
+# Two-party Private Set Intersection (PSI)
+
+**Problem:** Two parties each have a list of identifiers (e.g., email addresses, customer IDs). They want to compute the intersection without revealing anything beyond it.
+
+## Solution
+
+```sh
+# Party A's set
+cat > set_a.txt <<EOF
+alice@example.com
+bob@example.com
+carol@example.com
+EOF
+
+# Party B's set
+cat > set_b.txt <<EOF
+bob@example.com
+carol@example.com
+dave@example.com
+EOF
+
+# Compute intersection (both parties see the result)
+confium privacy psi \
+    --set-a set_a.txt \
+    --set-b set_b.txt \
+    --salt /dev/urandom
+# bob@example.com
+# carol@example.com
+
+# Or just count:
+confium privacy psi \
+    --set-a set_a.txt \
+    --set-b set_b.txt \
+    --salt /dev/urandom \
+    --cardinality-only
+# 2
+```
+
+## What's happening
+
+The current CLI implements **hash-based PSI**: each element is blinded via `H(element || salt)` and the intersection of blinded elements is computed. Both parties must use the **same salt**.
+
+This is a semi-honest secure variant — it doesn't defend against malicious parties that lie about their sets. For malicious-secure PSI (with ECDH blinding), use the `confium-privacy` crate's `psi::EcdhPsi` API directly; the CLI variant is for demos and quick exploration.
+
+## Production caveats
+
+- **Salt handling:** In production, the salt should be a session-specific random value agreed out-of-band. Using `/dev/urandom` here means the salt is fresh per invocation — both parties must coordinate.
+- **Network transport:** The CLI takes file inputs. Real deployments exchange blinded sets over a network (HTTP, gRPC, or WASM-over-WebSocket). The `confium-privacy` crate exposes the primitive directly for that wiring.
+- **Set size:** Hash-based PSI works to ~10M elements; above that, switch to circuit-PSI or ECDH-PSI with bloom-filter optimization.
+
+## See also
+
+- [PSI spec](https://www.confium.org/specs/31-psi)
+- [Privacy product docs](https://www.confium.org/privacy/)
+- [Differential privacy recipe](./dp-aggregation.mdx)

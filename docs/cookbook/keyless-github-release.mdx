@@ -1,0 +1,81 @@
+---
+title: Sign a GitHub release keylessly
+description: OIDC-based keyless signing — no signing key to manage
+audience: oss-maintainer
+---
+
+# Sign a GitHub release keylessly
+
+**Problem:** You want to sign GitHub release artifacts without managing a long-lived signing key.
+
+## Solution
+
+Add the Confium GitHub Action to your release workflow:
+
+```yaml
+# .github/workflows/release.yml
+on:
+  release:
+    types: [created]
+
+permissions:
+  id-token: write       # required for OIDC
+  contents: write       # to upload signed artifacts
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build artifact
+        run: |
+          tar -czf release.tar.gz dist/
+
+      - name: Sign with Confium
+        uses: confium/action@v1
+        with:
+          artifact: release.tar.gz
+          # The action will print:
+          #   ✅ Signed release.tar.gz
+          #   Signature: https://confium.org/attestations/<id>/sig.bin
+          #   Certificate: https://confium.org/attestations/<id>/cert.pem
+          #   Transparency log: appended at seq 4823, root sha256:abc...
+```
+
+When the workflow runs (on release tag push), the action:
+
+1. Requests a GitHub Actions OIDC JWT.
+2. Submits the JWT + artifact hash to Confium's keyless endpoint.
+3. Confium verifies the OIDC JWT, issues a short-lived (10 min) cert binding the GitHub repo + workflow + ref to an ephemeral public key.
+4. The action signs the artifact locally with the ephemeral private key, uploads `(signature, cert, transparency log entry)` to Confium.
+5. The ephemeral private key is destroyed at the end of the run.
+
+No signing key ever persisted. No key rotation. No compromise window.
+
+## Verifying
+
+End users verify by:
+
+1. Fetching `(artifact, signature, cert, transparency log entry)` from the release page.
+2. Running `confium keyless verify --artifact release.tar.gz --signature sig.bin --cert cert.pem`.
+3. Confium checks: cert chain valid, OIDC subject matches expected repo/workflow/ref, transparency log inclusion proof valid, signature valid.
+
+Or in a browser: visit `https://verify.confium.org/?artifact=...` which runs the same flow via WASM.
+
+## Trust model
+
+- **OIDC provider (GitHub)** must be honest. If GitHub Actions' OIDC issuer is compromised, Confium accepts the resulting keyless certs. Mitigation: pin specific GitHub workflows in your Confium verifier policy.
+- **Confium keyless CA** runs under threshold keys; T parties required to issue. Compromise of < T operators doesn't compromise the CA.
+- **Transparency log** records every issued cert. Mis-issuance is publicly detectable.
+
+## Adding new OIDC providers
+
+Confium supports GitHub Actions, Google, GitLab, Azure AD, Okta out of the box. See [keyless-new-oidc-provider.mdx](./keyless-new-oidc-provider.mdx) for adding a new one.
+
+## See also
+
+- [Keyless product docs](https://www.confium.org/keyless/)
+- [OIDC binding spec](https://www.confium.org/specs/90-oidc-binding)
+- [Short-lived cert spec](https://www.confium.org/specs/92-short-lived-cert)
+- [Confium Action repo](https://github.com/confium/action)

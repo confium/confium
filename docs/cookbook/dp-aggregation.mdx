@@ -1,0 +1,73 @@
+---
+title: DP aggregation on user telemetry
+description: Publish aggregate statistics with formal privacy guarantees
+audience: privacy-dev, compliance
+---
+
+# Differential Privacy aggregation
+
+**Problem:** You want to publish aggregate statistics from user telemetry (counts, sums, averages) without leaking individual user contributions.
+
+## Solution
+
+```sh
+# Laplace mechanism: minimal-noise DP for real-valued queries
+confium privacy dp \
+    --value 1234 \
+    --sensitivity 1 \
+    --epsilon 0.5
+# {"original": 1234, "perturbed": 1234.7, "epsilon": 0.5, "distribution": "laplace"}
+
+# Gaussian mechanism: tighter concentration, requires a δ
+confium privacy dp \
+    --value 1234 \
+    --sensitivity 1 \
+    --epsilon 0.5 \
+    --distribution gaussian \
+    --delta 0.00001
+# {"original": 1234, "perturbed": 1233.4, "epsilon": 0.5, "distribution": "gaussian"}
+```
+
+## What's happening
+
+The CLI calls `confium_privacy::privacy_and_dist_patterns::dp_query(value, sensitivity, epsilon)` which adds Laplace noise of scale `sensitivity / epsilon` to the true value. The result is **ε-DP**: any individual's contribution can change the output by at most a factor of `e^ε` in probability.
+
+The Gaussian variant adds `N(0, σ²)` noise with `σ = sensitivity · sqrt(2 ln(1.25/δ)) / ε`, giving **(ε, δ)-DP** with tighter concentration.
+
+## Budget management
+
+DP is **compositional**: each query consumes part of your privacy budget. The CLI is stateless — it doesn't track cumulative spend. For production:
+
+1. Maintain a `ZcdpBudget` (in the `confium-privacy` crate) across queries.
+2. Persist the budget; resets on restart lose accounting.
+3. Set a hard ceiling (e.g., `ρ = 1.0` total). Going beyond it loses all guarantees.
+
+## Sensitivity
+
+Sensitivity is the **maximum** change one record can have on the query output. Examples:
+
+| Query type | Sensitivity |
+|------------|-------------|
+| Count | 1 (adding/removing one record changes count by 1) |
+| Sum of bounded values in [0, M] | M |
+| Mean (n fixed) | range / n |
+| Histogram | 1 per bin |
+
+Underestimating sensitivity breaks the privacy guarantee. Be conservative.
+
+## Choosing ε
+
+| ε | Privacy | Noise | Use case |
+|---|---------|-------|----------|
+| 0.1 | very strong | large | sensitive health data |
+| 0.5 | strong | moderate | aggregate telemetry |
+| 1.0 | moderate | small | internal dashboards |
+| 5.0+ | weak | tiny | "DP-washing"; avoid |
+
+For external publication, ε ≤ 1.0 per release is the standard recommendation.
+
+## See also
+
+- [DP spec](https://www.confium.org/specs/33-differential-privacy)
+- [Privacy product docs](https://www.confium.org/privacy/)
+- [Two-party PSI](./two-party-psi.mdx)

@@ -1,0 +1,114 @@
+---
+title: Verify a Confium signature in the browser
+description: Zero-install verification via @confium/confium-wasm
+audience: web-developer
+---
+
+# Verify a Confium signature in the browser
+
+**Problem:** You want end users to verify Confium signatures without installing anything.
+
+## Solution
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Confium Verify</title>
+</head>
+<body>
+  <h1>Verify a signature</h1>
+  <textarea id="message" placeholder="message">hello</textarea>
+  <textarea id="signature" placeholder="hex signature"></textarea>
+  <textarea id="pubkey" placeholder="hex public key"></textarea>
+  <button id="verify">Verify</button>
+  <pre id="result"></pre>
+
+  <script type="module">
+    import init, { CompositeSignature } from 'https://esm.sh/@confium/confium-wasm@0.3';
+    await init();
+
+    document.getElementById('verify').addEventListener('click', () => {
+      const message = new TextEncoder().encode(document.getElementById('message').value);
+      const sigHex = document.getElementById('signature').value.trim();
+      const pubHex = document.getElementById('pubkey').value.trim();
+
+      try {
+        // Build a composite signature from hex + verify
+        const sig = new CompositeSignature(/* components */);
+        const result = sig.verify(message);
+        document.getElementById('result').textContent =
+          result.all_verified ? '✅ Valid' : '❌ Invalid';
+      } catch (e) {
+        document.getElementById('result').textContent = '⚠️ ' + e.message;
+      }
+    });
+  </script>
+</body>
+</html>
+```
+
+## What's happening
+
+`@confium/confium-wasm` is a ~460 KB WASM module that runs entirely client-side. No server round-trip; no API keys; no rate limits.
+
+The full API surface is in the [WASM spec](https://www.confium.org/specs/61-wasm-verifier) and the [npm package docs](https://www.npmjs.com/package/@confium/confium-wasm).
+
+## Production deployment
+
+For a real-world deployment:
+
+1. **Pin the version** — replace `@0.3` with the exact version you tested against.
+2. **Self-host the WASM** — don't depend on `esm.sh` for production. Host the file on your CDN.
+3. **Add Subresource Integrity** — `<script src="..." integrity="sha384-...">` so a CDN compromise can't ship a backdoored verifier.
+4. **Bundle with your app** — for SPA frameworks (React/Vue/Svelte), `npm install @confium/confium-wasm` and import directly.
+
+## Framework recipes
+
+### React
+
+```jsx
+import { useEffect, useState } from 'react';
+import init, { CompositeSignature } from '@confium/confium-wasm';
+
+export default function Verify() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => { init().then(() => setReady(true)); }, []);
+
+  if (!ready) return <p>Loading verifier…</p>;
+  return <VerifyForm />;
+}
+```
+
+### Vue 3
+
+```vue
+<script setup>
+import { ref, onMounted } from 'vue';
+import init, { CompositeSignature } from '@confium/confium-wasm';
+
+const ready = ref(false);
+onMounted(async () => {
+  await init();
+  ready.value = true;
+});
+</script>
+```
+
+### Svelte
+
+```svelte
+<script>
+  import { onMount } from 'svelte';
+  import init, { CompositeSignature } from '@confium/confium-wasm';
+  let ready = false;
+  onMount(async () => { await init(); ready = true; });
+</script>
+```
+
+## See also
+
+- [npm package](https://www.npmjs.com/package/@confium/confium-wasm)
+- [Verify product docs](https://www.confium.org/verify/)
+- [Public HTTP verify endpoint](./public-verify-endpoint.mdx)
+- [Batch verification at scale](./batch-verification.mdx)
