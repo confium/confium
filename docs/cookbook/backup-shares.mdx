@@ -1,0 +1,131 @@
+---
+title: Backup and restore shares
+description: Don't lose your shares — backup strategy and recovery procedures
+audience: security-engineer, devsecops
+---
+
+# Backup and restore shares
+
+**Problem:** A signerd replica's host crashes. The share on its PVC is gone. Now what?
+
+## TL;DR
+
+- **Back up** the share file to an encrypted, offsite location after the DKG ceremony and after every refresh.
+- **Restore** by mounting the backup as a new PVC and pointing signerd at it.
+- **Never** store plaintext shares on shared infrastructure.
+
+## Backup strategies
+
+### Option A: KMS-encrypted object storage (recommended)
+
+```sh
+# On the signerd pod, dump the share to stdout in encrypted form
+kubectl -n confium-system exec confium-signerd-0 -- \
+    confium threshold share-export \
+        --share /etc/confium/shares/party1.json \
+        --kms aws-kms://alias/confium-share-encryption \
+    > backups/party1.json.enc
+
+# Upload to S3 (versioned bucket)
+aws s3 cp backups/party1.json.enc \
+    s3://confium-share-backups/confium-signerd-0/$(date +%Y%m%d)/party1.json.enc
+```
+
+The `--kms` flag tells Confium to encrypt the share with the KMS key before writing to stdout. The bucket sees ciphertext only.
+
+### Option B: Volume snapshots
+
+If your storage class supports snapshots (e.g., EBS, GCE PD, Azure Disk):
+
+```sh
+# Take a snapshot
+kubectl -n confium-system create volume snapshot signerd-0-snap \
+    --source=pvc/confium-signerd-0-shares
+
+# Verify
+kubectl -n confium-system get volumesnapshot signerd-0-snap
+```
+
+Snapshots are point-in-time. Use these for short-term recovery; long-term backups should be KMS-encrypted to object storage.
+
+### Option C: HSM-stored shares (best)
+
+If shares live in an HSM (recommended for production), there's no "share file" to back up. The HSM provides its own redundancy. Backup becomes:
+
+- HSM configuration (partitions, roles, policies)
+- HSM vendor-specific backup (e.g., Luna `vsp backup`, YubiHSM `yhsm-yubihsm-shell`)
+
+See your HSM vendor's docs for their backup procedure.
+
+## Restore procedure
+
+### From KMS-encrypted backup
+
+```sh
+# Download the backup
+aws s3 cp s3://confium-share-backups/confium-signerd-0/20260807/party1.json.enc .
+
+# Decrypt to a new PVC
+kubectl -n confium-system exec confium-signerd-0 -- \
+    confium threshold share-import \
+        --encrypted-share /dev/stdin \
+        --kms aws-kms://alias/confium-share-encryption \
+        --out /etc/confium/shares/party1.json \
+    < party1.json.enc
+```
+
+### From volume snapshot
+
+```sh
+# Restore PVC from snapshot
+kubectl -n confium-system apply -f - <<EOF
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: confium-signerd-0-shares-restored
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests: { storage: 1Gi }
+  dataSource:
+    name: signerd-0-snap
+    kind: VolumeSnapshot
+    apiGroup: snapshot.storage.k8s.io
+EOF
+
+# Swap the PVC in the StatefulSet
+kubectl -n confium-system patch statefulset confium-signerd \
+    --type=json \
+    -p='[{"op":"replace","path":"/spec/volumeClaimTemplates/0/metadata/name","value":"confium-signerd-0-shares-restored"}]'
+```
+
+## Verification
+
+After restore:
+
+```sh
+# Verify the share parses
+kubectl -n confium-system exec confium-signerd-0 -- \
+    confium threshold share-verify \
+        --share /etc/confium/shares/party1.json
+
+# Verify the public key still matches
+kubectl -n confium-system exec confium-signerd-0 -- \
+    cat /etc/confium/shares/party1.json | jq -r '.public_key'
+# Should match what's in your cert / transparency log
+```
+
+## Post-restore refresh
+
+After a restore, run a refresh ceremony to "rotate" the recovered share. This protects against the scenario where the backup was also compromised.
+
+```sh
+# All parties refresh
+confium threshold refresh --shares ... --out-dir ...
+```
+
+## See also
+
+- [Refresh shares without re-keying](./refresh-shares.mdx)
+- [Production K8s deployment](https://github.com/confium/confium/blob/main/deploy/k8s/production/README.md)
+- [Threat model](../security/threat-model.mdx)

@@ -1,0 +1,105 @@
+---
+title: OTS anchoring to Bitcoin
+description: Anchor transparency log heads to Bitcoin for crypto-economic immutability
+audience: compliance, ca-operator
+---
+
+# Anchor transparency log heads to Bitcoin via OTS
+
+**Problem:** Your transparency log is append-only by social contract. How do you make it cryptographically immutable — so retroactive modification requires breaking Bitcoin?
+
+## Solution
+
+Use **OpenTimestamps (OTS)** to anchor each tree head to a Bitcoin transaction. Once anchored, modifying log history requires rewriting Bitcoin — economically infeasible.
+
+## How it works
+
+1. Log server computes the latest tree head every N minutes (default: 60).
+2. Log server submits the head's hash to an OTS calendar API.
+3. The calendar aggregates many hashes into a single Bitcoin transaction (paid by the calendar operator).
+4. Calendar returns a `.ots` proof file pointing to the Bitcoin block that commits to the hash.
+5. Verifier downloads the proof and checks it against the Bitcoin header chain.
+
+## Quickstart
+
+The log-server ships with OTS anchoring built-in. Enable via config:
+
+```toml
+# log-server.toml
+[log]
+identity = "confium-prod"
+data_path = "/var/lib/confium/log.db"
+
+[anchor]
+cadence_minutes = 60
+calendar_url = "https://a.pool.opentimestamps.org"
+```
+
+Run:
+
+```sh
+docker run -d \
+    -p 7878:7878 \
+    -v $(pwd)/log-server.toml:/etc/confium/log-server.toml \
+    -v log-data:/var/lib/confium \
+    ghcr.io/confium/log-server:latest
+```
+
+Every 60 minutes, the server will:
+- Compute the current tree head
+- Submit it to the OTS calendar
+- Store the resulting `.ots` proof alongside the log
+
+## Verification
+
+```sh
+# Get the head at a specific sequence
+confium transparency head --seq 1000 --db log.db --out head.json
+
+# Get the OTS proof for that head
+confium transparency ots --seq 1000 --db log.db --out head.ots
+
+# Verify against Bitcoin headers (requires Bitcoin Core or a header service)
+ots verify head.ots
+# Success! Bitcoin block 856123 commits to sha256:abc...
+```
+
+## Tradeoffs
+
+| Setting | Pros | Cons |
+|---------|------|------|
+| `cadence_minutes = 60` (default) | Low BTC fees | 1hr "vulnerable window" where a rewrite is undetectable |
+| `cadence_minutes = 10` | Small window | 6× more calendar API calls + BTC fees |
+| `cadence_minutes = 240` | Very low fees | 4hr vulnerable window |
+
+For most use cases 60 minutes is a reasonable balance. For high-value logs (e.g., root CA logs), 10 minutes is worth the cost.
+
+## Calendar services
+
+The default calendar (`https://a.pool.opentimestamps.org`) is a free public service. For production:
+
+- **Run your own calendar** — pays BTC fees yourself, fully under your control. See [opentimestamps-calendar-server](https://github.com/opentimestamps/calendar-server).
+- **Use a paid calendar** — better SLAs. List at <https://opentimestamps.org/>.
+
+## Bitcoin verification
+
+To verify an OTS proof, the client needs Bitcoin headers:
+
+- **Run a full node** (~500 GB) — most secure
+- **Run a pruned node** (~10 GB) — same security, less history
+- **Use a header service** (Blockstream, Blockchair, etc.) — convenient but trusted
+
+For high-value verification (e.g., a regulator auditing a CA), use a full node.
+
+## Limitations
+
+- **Anchoring doesn't prevent** a determined adversary from double-anchoring — but they can't rewrite history without rewriting Bitcoin.
+- **Calendar availability** — if your calendar goes down, you can't anchor until it's back. Mitigation: use multiple calendars.
+- **Proof size** — `.ots` files are typically 1-3 KB but can be larger if the calendar delayed inclusion.
+
+## See also
+
+- [OTS anchoring spec](https://www.confium.org/specs/44-ots-anchoring)
+- [Local transparency log](./local-transparency-log.mdx)
+- [Run a witness](./run-a-witness.mdx)
+- [OpenTimestamps](https://opentimestamps.org/)

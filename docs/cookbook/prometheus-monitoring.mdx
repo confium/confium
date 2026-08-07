@@ -1,0 +1,104 @@
+---
+title: Monitor Confium with Prometheus
+description: Scrape metrics from signerd, coordinator, log-server, and verify-server
+audience: devsecops
+---
+
+# Monitor Confium with Prometheus
+
+**Problem:** You've deployed Confium in production. How do you know it's healthy?
+
+## Solution
+
+Every Confium service exposes a `/metrics` endpoint in Prometheus format. Scrape them with your existing Prometheus instance; dashboards ship in [`deploy/grafana/`](https://github.com/confium/confium/tree/main/deploy/grafana).
+
+## Service-by-service metrics
+
+### `confium-signerd`
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `confium_signerd_sessions_total{scheme,status}` | counter | Sessions started/completed/failed |
+| `confium_signerd_active_sessions` | gauge | Currently in-flight sessions |
+| `confium_signerd_session_duration_seconds{scheme}` | histogram | Per-scheme signing latency |
+| `confium_signerd_share_load_errors_total` | counter | Failed to load share from HSM |
+| `confium_signerd_coordinator_reconnects_total` | counter | Times reconnected to coordinator |
+
+### `confium-coordinator`
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `confium_coordinator_sessions_total{scheme,status}` | counter | Sessions orchestrated |
+| `confium_coordinator_parties_registered` | gauge | Currently-registered signerd parties |
+| `confium_coordinator_round_duration_seconds{scheme}` | histogram | Per-round latency |
+| `confium_coordinator_policy_rejections_total{reason}` | counter | Sessions rejected by policy |
+
+### `confium-log-server`
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `confium_log_appends_total` | counter | Log entries appended |
+| `confium_log_tree_size` | gauge | Current tree size |
+| `confium_log_proof_requests_total` | counter | Inclusion proof requests |
+| `confium_log_anchor_total{status}` | counter | OTS anchoring attempts |
+| `confium_log_anchor_success_total` | counter | OTS anchoring successes |
+| `confium_log_gossip_failures_total{witness}` | counter | Witness gossip failures |
+
+### `confium-verify-server`
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `confium_verify_requests_total{algorithm,valid}` | counter | Verification requests |
+| `confium_verify_request_duration_seconds{algorithm}` | histogram | Verification latency |
+| `confium_verify_cache_hits_total` | counter | LRU cache hits |
+| `confium_verify_cache_misses_total` | counter | LRU cache misses |
+
+## Prometheus scrape config
+
+See [`deploy/docker-compose/prometheus.yml`](https://github.com/confium/confium/blob/main/deploy/docker-compose/prometheus.yml) for a complete example. Key parts:
+
+```yaml
+scrape_configs:
+  - job_name: 'signerd'
+    static_configs:
+      - targets:
+          - 'signerd-1:7000'
+          - 'signerd-2:7000'
+          - 'signerd-3:7000'
+    metrics_path: /metrics
+
+  - job_name: 'log-server'
+    static_configs:
+      - targets: ['log-server:7878']
+    metrics_path: /metrics
+```
+
+## Grafana dashboards
+
+Pre-built dashboards ship in [`deploy/grafana/`](https://github.com/confium/confium/blob/main/deploy/grafana/):
+
+- `confium-coordinator.json` — orchestration health
+- `confium-signerd.json` — signing sessions
+- `confium-log-server.json` — transparency log
+
+Import via:
+```sh
+kubectl -n monitoring create cm confium-dashboards \
+    --from-file=deploy/grafana/
+kubectl -n monitoring label cm confium-dashboards grafana_dashboard=1
+```
+
+## Alerting recommendations
+
+| Alert | Trigger | Runbook |
+|-------|---------|---------|
+| Signing session failure rate > 5% | `rate(confium_signerd_sessions_total{status="failed"}[5m]) / rate(confium_signerd_sessions_total[5m]) > 0.05` | Check HSM connectivity, share validity |
+| Signerd quorum at risk | `count(confium_signerd_active_sessions == 0) >= N - T + 1` | Quorum minimum violated; investigate down signers |
+| Log anchor failure | `rate(confium_log_anchor_success_total[1h]) / rate(confium_log_anchor_total[1h]) < 0.95` | OTS calendar outage; check network |
+| Witness gossip failure | `rate(confium_log_gossip_failures_total[10m]) > 0.1` | Witness offline; check witness health |
+
+## See also
+
+- [Production K8s deployment](https://github.com/confium/confium/blob/main/deploy/k8s/production/README.md)
+- [Deploy signerd on Kubernetes](./deploy-signerd-k8s.mdx)
+- [Backup shares](./backup-shares.mdx)

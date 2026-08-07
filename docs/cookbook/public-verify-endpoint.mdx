@@ -1,0 +1,74 @@
+---
+title: Public HTTP verification endpoint
+description: Deploy a stateless HTTP verify service for non-WASM clients
+audience: web-developer, devsecops
+---
+
+# Public HTTP verification endpoint
+
+**Problem:** You want to let clients (curl, server-to-server, IoT) verify Confium signatures without running WASM.
+
+## Solution
+
+Deploy `confium-verify-server` as a stateless HTTP service.
+
+### Quickstart via Docker
+
+```sh
+docker pull ghcr.io/confium/verify-server:latest
+docker run -p 8080:8080 ghcr.io/confium/verify-server:latest
+
+# Verify a composite signature
+curl -X POST http://localhost:8080/v1/composite/verify \
+    -H 'Content-Type: application/json' \
+    -d '{
+      "message": "aGVsbG8=",
+      "signature": "hex...",
+      "public_key": "hex..."
+    }'
+
+# {
+#   "valid": true,
+#   "checked_components": 1,
+#   "algorithm": "ed25519"
+# }
+```
+
+### Endpoints
+
+| Path | Method | Body | Returns |
+|------|--------|------|---------|
+| `/v1/composite/verify` | POST | `{message, signature, public_key}` | `{valid, checked_components, algorithm}` |
+| `/v1/transparency/inclusion/verify` | POST | `{proof, entry}` | `{valid, sequence}` |
+| `/v1/pki/cert-chain/verify` | POST | `{leaf, intermediates[], anchor}` | `{valid, path_length}` |
+| `/v1/batch/verify` | POST | `[{...}, {...}, ...]` | `[{...}, {...}, ...]` |
+| `/health/live` | GET | — | `200 OK` |
+| `/health/ready` | GET | — | `200 OK` |
+| `/metrics` | GET | — | Prometheus format |
+
+### Production deployment
+
+See [`deploy/k8s/production/00-confium.yaml`](https://github.com/confium/confium/blob/main/deploy/k8s/production/00-confium.yaml) for a complete Kubernetes deployment with:
+- Multi-replica Deployment
+- Service + Ingress
+- NetworkPolicy (allow ingress from anywhere)
+- HPA (scale on RPS)
+- TLS via cert-manager
+- Prometheus scrape annotations
+
+### Caching
+
+`verify-server` keeps an in-memory LRU cache of `(hash(message||signature), result)` keyed by SHA-256. Default size: 10,000 entries. Hit rate visible in `/metrics`.
+
+Cache is per-instance; if you scale horizontally, identical requests may hit different instances. For higher hit rates, put a shared cache (Redis) in front.
+
+### Rate limiting
+
+The service itself doesn't rate-limit; it's designed to sit behind Cloudflare / nginx / similar. A single instance handles ~10K req/sec on a 2-vCPU instance for Ed25519 verifications; slower for ECDSA-P256.
+
+## See also
+
+- [Verify in browser](./verify-in-browser.mdx) — for clients that CAN run WASM
+- [Batch verification at scale](./batch-verification.mdx) — for high-throughput use cases
+- [Verify product docs](https://www.confium.org/verify/)
+- [HTTP verify spec](https://www.confium.org/specs/62-http-verify)

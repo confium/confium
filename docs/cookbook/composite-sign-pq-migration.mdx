@@ -1,0 +1,141 @@
+---
+title: Composite sign for PQ migration
+description: Hybrid classical + PQ signatures to bridge the post-quantum transition
+audience: security-engineer, ca-operator
+---
+
+# Composite sign for PQ migration
+
+**Problem:** You're issuing signatures today that need to remain valid for 10+ years. ECDSA might be broken by quantum computers in that window. You want to start signing with BOTH classical and post-quantum algorithms so the signature stays valid if EITHER algorithm holds.
+
+## Solution
+
+Composite signatures (IETF draft) bundle multiple per-algorithm signatures into one envelope. Verifiers check all components; the signature is valid if all pass.
+
+## Current state
+
+Confium's composite signatures support:
+
+- **Ed25519** (classical) — `confium_composite::build_ed25519_component`
+- **ECDSA-P256** (classical) — `confium_composite::build_p256_component`
+
+PQ algorithms (ML-DSA-65, SLH-DSA) land when the underlying FIPS 204/205 crates ship. Today you can deploy hybrid classical-classical (Ed25519 + P256) to bridge between systems that only support one.
+
+## Quickstart
+
+### Generate keys (one of each algorithm)
+
+```sh
+# Generate an Ed25519 keypair
+openssl genpkey -algorithm ed25519 -out ed25519.key
+openssl pkey -in ed25519.key -pubout -out ed25519.pub
+
+# Generate an ECDSA-P256 keypair
+openssl genpkey -algorithm ec -pkeyopt ec_paramgen_curve:P-256 -out p256.key
+openssl pkey -in p256.key -pubout -out p256.pub
+```
+
+### Composite-sign via CLI
+
+```sh
+# Extract raw key bytes for the CLI (in production, keep keys in HSM)
+openssl pkey -in ed25519.key -outform DER 2>/dev/null | tail -c 32 > ed25519.key.bin
+openssl ec -in p256.key -outform DER 2>/dev/null | tail -c 32 > p256.key.bin
+
+confium pki composite-sign \
+    --message "release-v1.0.0.tar.gz" \
+    --ed25519-key ed25519.key.bin \
+    --p256-key p256.key.bin \
+    --out composite-sig.hex
+```
+
+### Verify
+
+```sh
+# Verify the Ed25519 component
+confium verify composite \
+    --signature composite-sig.hex \
+    --algorithm ed25519 \
+    --message "release-v1.0.0.tar.gz" \
+    --public-key ed25519.pub
+
+# Verify the ECDSA-P256 component
+confium verify composite \
+    --signature composite-sig.hex \
+    --algorithm ecdsa-p256 \
+    --message "release-v1.0.0.tar.gz" \
+    --public-key p256.pub
+```
+
+Both components must verify for the composite to be considered valid.
+
+## When to use composite
+
+| Scenario | Use composite? |
+|----------|----------------|
+| Long-lived signatures (5+ years) | Yes — PQ migration insurance |
+| Short-lived signatures (minutes) | No — overhead not worth it |
+| Cross-system interop | Yes — bridge old + new systems |
+| Performance-critical | No — composites are 2×+ larger |
+
+## Verifier policy
+
+By default, verifiers require ALL components to pass (strict). For migration scenarios where you want to accept EITHER component, you can configure the verifier:
+
+```rust
+// Rust: relaxed policy (either component verifies = overall valid)
+use confium_composite::CompositeSignature;
+
+let result = sig.verify(&message, |alg, pk, msg, sig| {
+    // Try Ed25519 first, fall back to P256
+    if confium_composite::ed25519_verifier(alg, pk, msg, sig).is_ok() {
+        return Ok(());
+    }
+    confium_composite::p256_verifier(alg, pk, msg, sig)
+});
+```
+
+This is **less secure** — only use it for transitional scenarios where one algorithm might be deprecated soon.
+
+## Storage
+
+Composite signatures are JSON-serialized for portability:
+
+```json
+{
+  "components": [
+    {
+      "algorithm": "Ed25519",
+      "public_key": "hex...",
+      "signature": "hex..."
+    },
+    {
+      "algorithm": "ECDSA-P256",
+      "public_key": "hex...",
+      "signature": "hex..."
+    }
+  ]
+}
+```
+
+Each component carries its own public key. Verifiers don't need to know which key belongs to which algorithm in advance.
+
+## Future: ML-DSA composites
+
+When FIPS 204 (ML-DSA) crates ship, the API will extend to:
+
+```rust
+let composite = CompositeSignature::new(vec![
+    build_ed25519_component(&classical_key, &message)?,
+    build_ml_dsa_65_component(&pq_key, &message)?,
+]);
+```
+
+The verifier API stays the same. Your existing composite-sign tooling will work unchanged — just add the PQ component.
+
+## See also
+
+- [Composite signatures spec](https://www.confium.org/specs/82-composite-signatures)
+- [Threshold CA issue](./threshold-ca-issue.mdx)
+- [PKI product docs](https://www.confium.org/pki/)
+- [NIST PQC standardization](https://csrc.nist.gov/projects/post-quantum-cryptography)
