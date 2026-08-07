@@ -1,25 +1,22 @@
 # Build and publish `@confium/confium-wasm` to npm via **trusted publishing**.
 #
-# npm's modern publishing model uses OIDC-based trusted publishing: no
-# long-lived NPM_TOKEN secret. The flow is:
+# npm trusted publishing uses OIDC: no long-lived NPM_TOKEN secret.
+# Setup per https://docs.npmjs.com/trusted-publishers:
 #
 #   1. **First publish** is done manually by the package owner:
 #        - `wasm-pack build crates/confium-wasm --target bundler --release --scope confium`
 #        - `cd crates/confium-wasm/pkg && npm publish --access public`
-#      This creates the package on the npm registry and lets the owner
-#      configure trusted publishing for the GitHub repo.
 #
-#   2. **Trusted publishing setup** (one-time, on npm side):
-#        - Visit https://www.npmjs.com/package/@confium/confium-wasm/access
-#        - Under "Configured GitHub Actions" add:
-#            repository: confium/confium
-#            workflow:   wasm.yml
+#   2. **Trusted publishing setup** (one-time, on npm side) at
+#      https://www.npmjs.com/package/@confium/confium-wasm/access:
+#        - Organization/user: confium
+#        - Repository: confium
+#        - Workflow filename: wasm.yml
+#        - Environment: (none)
 #
-#   3. **Subsequent publishes** run from this workflow on tag push. The
-#      `id-token: write` permission lets npm verify the workflow's OIDC
-#      identity and accept the publish without a token. Requires
-#      Node.js 22+ (npm 10.9+) — earlier npm versions sign provenance
-#      but cannot authenticate the PUT via OIDC alone.
+#   3. **Subsequent publishes** run from this workflow on tag push.
+#      Requires Node 22.14+ / npm 11.5.1+ for trusted-publishing auth.
+#      Provenance is generated automatically — do NOT pass --provenance.
 #
 # Triggered on release tags (v*.*.*) and via workflow_dispatch.
 
@@ -86,22 +83,10 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          # Node 22 LTS ships with npm 10.9+, the first npm release
-          # supporting trusted publishing end-to-end. npm 10.8 (bundled
-          # with Node 20) signs provenance via OIDC but still requires
-          # a token for the PUT itself.
-          node-version: "22"
+          # Trusted publishing requires Node 22.14+ / npm 11.5.1+.
+          node-version: "24"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Drop empty auth from .npmrc (force OIDC for the PUT)
-        run: |
-          NPMRC="${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}"
-          echo "Before:"
-          [ -f "$NPMRC" ] && cat "$NPMRC" || echo "(no npmrc at $NPMRC)"
-          [ -f "$NPMRC" ] && sed -i -E '/_authToken=/d; /^[[:space:]]*$/d' "$NPMRC" || true
-          echo "After:"
-          [ -f "$NPMRC" ] && cat "$NPMRC" || echo "(no npmrc at $NPMRC)"
-
-      - name: Publish via trusted publishing (OIDC, no NPM_TOKEN)
-        run: npm publish --access public --provenance
+      - name: Publish to npm
+        run: npm publish --access public
         working-directory: pkg/
