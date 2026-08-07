@@ -1,0 +1,65 @@
+---
+title: Branch Protection
+description: What's enforced on the main branch and why
+---
+
+# Branch Protection
+
+The `main` branch is protected. This document explains what's enforced and why.
+
+## Current settings (as of 2026-08-07)
+
+| Setting | Value | Why |
+|---------|-------|-----|
+| Require pull request before merging | ✅ | No direct commits to main; everything is reviewed |
+| Required approving reviews | 1 | One maintainer approval gates merge; CODEOWNERS adds auto-routing |
+| Dismiss stale pull request reviews when new commits are pushed | ✅ | Approvals don't persist across changes; reviewer must re-approve |
+| Require status checks to pass before merging | ✅ | CI failures block merge |
+| Require branches to be up to date before merging | ✅ | PRs must rebase on latest main before merging |
+| Required status checks | `Spell Check`, `Security Audit`, `Format and Lint` | The fast subset; full suite runs on the PR before merge but these are the gating set |
+| Allow force pushes | ❌ | No history rewrites on main |
+| Allow deletions | ❌ | Main cannot be deleted |
+| Enforce for admins | ❌ | Admins can override in emergencies (e.g., revert a bad merge) |
+
+## How to verify
+
+```sh
+gh api repos/confium/confium/branches/main/protection
+```
+
+## How to update
+
+Branch protection changes require maintainer consensus per [GOVERNANCE.md](../../GOVERNANCE.md). To propose a change:
+
+1. Open an issue tagged `governance`.
+2. Propose the change with rationale.
+3. Maintainers vote (lazy consensus: 7-day quiet period).
+
+The change is then applied via `gh api -X PUT repos/confium/confium/branches/main/protection ...`.
+
+## Why we don't enforce admins
+
+Admin override is intentionally kept for emergencies:
+
+- Reverting a bad merge that broke main
+- Force-pushing to fix a corrupted ref
+- Recovering from a security incident where CI is the attacker
+
+These are exceptional; they're logged and reviewed.
+
+## Why CODEOWNERS isn't required-review enforcement
+
+CODEOWNERS currently routes reviews but doesn't *require* them (no `require_code_owner_reviews` on the protection rule). This keeps the merge friction low while the team is small. Once the maintainer count exceeds 3, this setting will be flipped to ON.
+
+## Status check list
+
+The 3 required checks (`Spell Check`, `Security Audit`, `Format and Lint`) run quickly and catch the most common issues. Adding more gates slows merge cadence without proportional benefit. As we grow:
+
+- `Multi-platform Rust tests` will be added once CI is consistently fast
+- `Cargo deny` may be added if license/advisory issues start landing
+
+## Out of scope
+
+- Tag protection rules (planned post-1.0)
+- Signed commits requirement (planned post-1.0)
+- Linear history requirement (we rebase-merge by default, so this is implicit)

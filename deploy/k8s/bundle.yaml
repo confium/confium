@@ -1,0 +1,98 @@
+# Confium — one-shot Kubernetes deployment.
+#
+# Brings up:
+#   - namespace: confium-system
+#   - threshold-operator (CRD + deployment + RBAC)
+#   - default ThresholdKey CR (2-of-3 CMP20)
+#
+# Usage:
+#   kubectl apply -f https://confium.org/deploy/k8s/bundle.yaml
+#
+# This is the bundle form of what deploy/helm/confium/ produces.
+# For production use the Helm chart so you can tune replicas,
+# resources, and storage classes per environment.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: confium-system
+  labels:
+    name: confium-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: confium-operator
+rules:
+  - apiGroups: ["confium.org"]
+    resources: ["thresholdkeys", "transparencylogs"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["secrets", "configmaps", "pods", "services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: confium-operator
+subjects:
+  - kind: ServiceAccount
+    name: confium-operator
+    namespace: confium-system
+roleRef:
+  kind: ClusterRole
+  name: confium-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: confium-operator
+  namespace: confium-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: confium-operator
+  namespace: confium-system
+  labels:
+    app: confium-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: confium-operator
+  template:
+    metadata:
+      labels:
+        app: confium-operator
+    spec:
+      serviceAccountName: confium-operator
+      containers:
+        - name: operator
+          image: ghcr.io/confium/operator:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: RUST_LOG
+              value: info
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+# Default 2-of-3 CMP20 threshold key. Edit party_count / threshold / scheme
+# for your deployment.
+apiVersion: confium.org/v1
+kind: ThresholdKey
+metadata:
+  name: default-threshold-key
+  namespace: confium-system
+spec:
+  threshold: 2
+  party_count: 3
+  scheme: cmp20
+  share_storage:
+    backend: kubernetes-secret
