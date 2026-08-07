@@ -1,0 +1,216 @@
+---
+title: Confium for TypeScript / WASM Developers
+description: Idiomatic TypeScript usage of @confium/confium-wasm
+audience: developers
+---
+
+# Confium for TypeScript / WASM Developers
+
+`@confium/confium-wasm` is the WASM-compiled Confium verifier. Targets browser, Node.js, and edge runtimes (Cloudflare Workers, Vercel Edge, Deno, Bun). **Verifier-only by design.**
+
+## Install
+
+```sh
+npm install @confium/confium-wasm
+```
+
+Or via any package manager:
+
+```sh
+pnpm add @confium/confium-wasm
+yarn add @confium/confium-wasm
+bun add @confium/confium-wasm
+```
+
+## Hello, verify (browser)
+
+```html
+<script type="module">
+  import init, { CompositeSignature } from '@confium/confium-wasm';
+
+  // One-time WASM bootstrap (~460 KB)
+  await init();
+
+  const sig = new CompositeSignature(components);
+  const message = new TextEncoder().encode('hello, threshold world');
+  const result = sig.verify(message);
+
+  console.log('valid:', result.all_verified);
+  for (const c of result.per_component) {
+    console.log(`  ${c.algorithm}: ${c.valid}`);
+  }
+</script>
+```
+
+## Hello, verify (Node.js)
+
+```typescript
+import init, { CompositeSignature } from '@confium/confium-wasm';
+import { readFileSync } from 'node:fs';
+
+await init();  // One-time bootstrap
+
+const sigJson = readFileSync('sig.json', 'utf8');
+const sig = CompositeSignature.from_json(sigJson);
+const message = Buffer.from('hello, threshold world');
+
+const result = sig.verify(message);
+console.log('valid:', result.all_verified);
+```
+
+## Hello, verify (Cloudflare Workers)
+
+```typescript
+// worker.ts
+import init, { CompositeSignature } from '@confium/confium-wasm';
+
+export default {
+  async fetch(req: Request): Promise<Response> {
+    await init();  // Loads WASM from the bundler
+
+    const body = await req.json();
+    const sig = CompositeSignature.from_json(body.signature);
+    const message = new TextEncoder().encode(body.message);
+
+    const result = sig.verify(message);
+    return Response.json({
+      valid: result.all_verified,
+      components: result.per_component,
+    });
+  },
+};
+```
+
+Build with the `sign` feature only if you need server-side signing (Cloudflare Workers, Fastly Compute@Edge):
+
+```sh
+rustup target add wasm32-wasip1
+cargo build --target wasm32-wasip1 --features sign --release
+```
+
+## Framework integrations
+
+### React
+
+```tsx
+import { useEffect, useState } from 'react';
+import init, { CompositeSignature } from '@confium/confium-wasm';
+
+export function VerifyForm() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => { init().then(() => setReady(true)); }, []);
+
+  if (!ready) return <p>Loading verifier…</p>;
+
+  const handleVerify = async () => {
+    const sig = new CompositeSignature(/* ... */);
+    const result = sig.verify(message);
+    // ...
+  };
+
+  return <button onClick={handleVerify}>Verify</button>;
+}
+```
+
+### Vue 3
+
+```vue
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import init, { CompositeSignature } from '@confium/confium-wasm';
+
+const ready = ref(false);
+onMounted(async () => { await init(); ready.value = true; });
+</script>
+```
+
+### Svelte
+
+```svelte
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import init, { CompositeSignature } from '@confium/confium-wasm';
+
+  let ready = false;
+  onMount(async () => { await init(); ready = true; });
+</script>
+```
+
+### Astro
+
+```astro
+---
+// Server-side import is fine in Astro
+import init, { CompositeSignature } from '@confium/confium-wasm';
+await init();
+---
+
+<script>
+  // Client-side: re-init then verify
+  import('@confium/confium-wasm').then(async ({ init, CompositeSignature }) => {
+    await init();
+    // ...
+  });
+</script>
+```
+
+## Feature flags (build from source)
+
+The WASM package is shipped with these features on by default:
+
+- `verify-composite`
+- `verify-transparency`
+- `verify-pki`
+- `verify-attributes`
+
+To shrink the bundle, build with a subset:
+
+```sh
+wasm-pack build crates/confium-wasm \
+    --target web \
+    --release \
+    --scope confium \
+    --no-default-features \
+    --features verify-transparency
+```
+
+This produces a ~180 KB package instead of the default ~460 KB.
+
+## Subresource Integrity (SRI)
+
+For CDN-served WASM, add SRI to detect CDN compromise:
+
+```html
+<script type="module"
+        src="https://cdn.example.com/@confium/confium-wasm@0.4.0/confium_wasm.js"
+        integrity="sha384-..."
+        crossorigin="anonymous">
+</script>
+```
+
+Generate the hash:
+
+```sh
+curl -s https://cdn.example.com/@confium/confium-wasm@0.4.0/confium_wasm.js | \
+    openssl dgst -sha384 -binary | base64
+```
+
+## Performance
+
+| Operation | Latency (Chrome on M1) |
+|-----------|------------------------|
+| `init()` (one-time) | ~50 ms |
+| Composite verify (Ed25519) | ~0.2 ms |
+| Composite verify (Ed25519 + ECDSA-P256) | ~0.5 ms |
+| Transparency inclusion proof verify | ~0.1 ms |
+| Cert chain verify (1 intermediate) | ~1 ms |
+
+Bundle size: ~460 KB minified (default features). Use feature flags to shrink.
+
+## See also
+
+- [npm: @confium/confium-wasm](https://www.npmjs.com/package/@confium/confium-wasm)
+- [WASM verifier spec](https://www.confium.org/specs/61-wasm-verifier)
+- [Browser playground](https://www.confium.org/playground/)
+- [Verify-in-browser cookbook](../cookbook/verify-in-browser.mdx)
+- [Cookbook](../cookbook/) — task-focused recipes
