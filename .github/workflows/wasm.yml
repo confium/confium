@@ -13,11 +13,13 @@
 #        - Visit https://www.npmjs.com/package/@confium/confium-wasm/access
 #        - Under "Configured GitHub Actions" add:
 #            repository: confium/confium
-#            workflow:   .github/workflows/wasm.yml
+#            workflow:   wasm.yml
 #
 #   3. **Subsequent publishes** run from this workflow on tag push. The
 #      `id-token: write` permission lets npm verify the workflow's OIDC
-#      identity and accept the publish without a token.
+#      identity and accept the publish without a token. Requires
+#      Node.js 22+ (npm 10.9+) — earlier npm versions sign provenance
+#      but cannot authenticate the PUT via OIDC alone.
 #
 # Triggered on release tags (v*.*.*) and via workflow_dispatch.
 
@@ -84,11 +86,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "20"
-        # No `registry-url` here: setting it causes setup-node to write
-        # an `.npmrc` with `_authToken=${NODE_AUTH_TOKEN}`, which (without
-        # a NODE_AUTH_TOKEN env var) sends an empty bearer token and npm
-        # prefers that over the OIDC claim, producing a 404 on PUT.
+          # Node 22 LTS ships with npm 10.9+, the first npm release
+          # supporting trusted publishing end-to-end. npm 10.8 (bundled
+          # with Node 20) signs provenance via OIDC but still requires
+          # a token for the PUT itself.
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+          # No NODE_AUTH_TOKEN — trusted publishing authenticates via OIDC.
 
       - name: Publish via trusted publishing (OIDC, no NPM_TOKEN)
         run: npm publish --access public --provenance
