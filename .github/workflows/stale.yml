@@ -1,0 +1,49 @@
+# Mark stale issues and PRs after a period of inactivity.
+#
+# Issue policy:
+#   - Mark stale after 60 days of inactivity
+#   - Close after another 14 days
+#   - Exempt: security issues, PRs, anything labeled 'pinned' or 'security'
+#
+# PR policy: same cadence so contributors get a clear signal.
+
+name: Stale bot
+
+on:
+  schedule:
+    - cron: "30 4 * * *"  # Daily at 04:30 UTC
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          # Issues
+          days-before-issue-stale: 60
+          days-before-issue-close: 14
+          stale-issue-label: stale
+          stale-issue-message: |
+            This issue has been inactive for 60 days and is being marked
+            stale. It will be closed in 14 days unless there's new
+            activity or the `keep-open` label is applied.
+          close-issue-message: |
+            Closed as stale. Reopen or open a new issue with fresh context
+            if this is still relevant.
+          # PRs
+          days-before-pr-stale: 60
+          days-before-pr-close: 14
+          stale-pr-label: stale
+          stale-pr-message: |
+            This PR has been inactive for 60 days. It will be closed in
+            14 days unless the author rebases or comments.
+          # Exemptions
+          exempt-issue-labels: pinned,security,roadmap
+          exempt-pr-labels: pinned,security,do-not-merge
+          operations-per-run: 50
