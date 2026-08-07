@@ -116,17 +116,6 @@ jobs:
         with:
           path: dist/
 
-      # Generate a CycloneDX SBOM from the workspace Cargo.lock. This is
-      # the canonical record of every transitive dependency shipped in
-      # the binaries. Uploads alongside the binaries as a release asset.
-      - name: Generate SBOM (CycloneDX)
-        run: |
-          cargo install cargo-cyclonedx --locked --quiet
-          cargo cyclonedx --format json --output-directory dist/
-          # Flatten the per-crate SBOMs into one rollup that consumers can verify.
-          jq -s 'map(.components) | {components: add, bomFormat: "CycloneDX", specVersion: "1.5", version: 1}' \
-            dist/*.cdx.json > dist/confium-sbom.cdx.json
-
       # Generate SLSA build provenance attestation for every release
       # artifact. The attestation is recorded in the repo's
       # "Attestations" tab and verifiable via `gh attestation verify`.
@@ -145,7 +134,6 @@ jobs:
             dist/confium-linux/*.tar.gz
             dist/confium-macos/*.tar.gz
             dist/confium-windows/*.zip
-            dist/confium-sbom.cdx.json
           generate_release_notes: true
           fail_on_unmatched_files: true
 
