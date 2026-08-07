@@ -4,6 +4,8 @@
 # Uploads binaries to the corresponding GitHub Release.
 #
 # Uses a fully-static musl build on Linux for maximum portability.
+# Generates SBOM (CycloneDX) and SLSA build provenance attestations
+# so consumers can verify the supply chain of each artifact.
 
 name: Release Binaries
 
@@ -15,6 +17,10 @@ on:
 
 permissions:
   contents: write
+  # Required for SLSA build provenance attestation (actions/attest-build-provenance).
+  id-token: write
+  # Required for attestation upload.
+  attestations: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -107,6 +113,28 @@ jobs:
         with:
           path: dist/
 
+      # Generate a CycloneDX SBOM from the workspace Cargo.lock. This is
+      # the canonical record of every transitive dependency shipped in
+      # the binaries. Uploads alongside the binaries as a release asset.
+      - name: Generate SBOM (CycloneDX)
+        run: |
+          cargo install cargo-cyclonedx --locked --quiet
+          cargo cyclonedx --format json --output-pattern package --output-directory dist/
+          # Flatten the per-crate SBOMs into one rollup that consumers can verify.
+          jq -s 'map(.components) | {components: add, bomFormat: "CycloneDX", specVersion: "1.5", version: 1}' \
+            dist/*.cdx.json > dist/confium-sbom.cdx.json
+
+      # Generate SLSA build provenance attestation for every release
+      # artifact. The attestation is recorded in the repo's
+      # "Attestations" tab and verifiable via `gh attestation verify`.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: |
+            dist/confium-linux/*.tar.gz
+            dist/confium-macos/*.tar.gz
+            dist/confium-windows/*.zip
+
       - name: Upload to release
         uses: softprops/action-gh-release@v3
         with:
@@ -114,5 +142,7 @@ jobs:
             dist/confium-linux/*.tar.gz
             dist/confium-macos/*.tar.gz
             dist/confium-windows/*.zip
+            dist/confium-sbom.cdx.json
           generate_release_notes: true
           fail_on_unmatched_files: true
+

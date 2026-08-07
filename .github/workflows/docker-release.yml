@@ -1,0 +1,116 @@
+# Build and publish multi-arch Docker images for Confium deployable
+# services to ghcr.io on every release tag.
+#
+# Services:
+#   - ghcr.io/confium/signerd      (threshold signing daemon)
+#   - ghcr.io/confium/log-server   (RFC 6962 transparency log server)
+#   - ghcr.io/confium/verify-server (HTTP verification service)
+#
+# For each service:
+#   1. Build linux/amd64 + linux/arm64 images via QEMU emulation
+#   2. Push manifest list with both architectures
+#   3. Generate SLSA provenance attestation
+#   4. Scan with Trivy; fail on CRITICAL findings
+#   5. Generate SBOM and attach to image
+
+name: Release Docker Images
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      services:
+        description: "Comma-separated subset of services to build (default: all)"
+        required: false
+        default: "signerd,log-server,verify-server"
+
+permissions:
+  contents: read
+  packages: write
+  # Required for SLSA build provenance attestation.
+  id-token: write
+  attestations: write
+
+env:
+  REGISTRY: ghcr.io
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(format('["{0}"]', join(split(github.event.inputs.services || 'signerd,log-server,verify-server', ','), '","'))) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Derive tags
+        id: tags
+        run: |
+          # Strip the leading 'v' from the tag, derive semver pieces.
+          VERSION="${GITHUB_REF##*/}"
+          VERSION="${VERSION#v}"
+          IMAGE="${{ env.REGISTRY }}/${{ github.repository_owner }}/confium-${{ matrix.service }}"
+          {
+            echo "image=${IMAGE}"
+            echo "tags=${IMAGE}:latest,${IMAGE}:${VERSION},${IMAGE}:$(echo "${VERSION}" | cut -d. -f1)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build and push (multi-arch)
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: crates/confium-${{ matrix.service }}/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          # Mark as provenance-having; buildx attaches a buildx SBOM + SLSA provenance.
+          provenance: true
+          sbom: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Trivy vuln scan. CRITICAL findings fail the workflow; HIGH gets
+      # reported but does not block the push (which already happened).
+      - name: Trivy vuln scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ steps.tags.outputs.image }}:latest
+          format: sarif
+          output: trivy-results.sarif
+          exit-code: '1'
+          severity: CRITICAL
+          ignore-unfixed: true
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: docker-${{ matrix.service }}
+
+      # Attest build provenance via GitHub's attestation service.
+      # Verifiable by consumers via:
+      #   gh attestation verify <image> --repo confium/confium
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ${{ steps.tags.outputs.image }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
