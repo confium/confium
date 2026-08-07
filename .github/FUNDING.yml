@@ -1,0 +1,16 @@
+# Funding sources for the Confium project.
+#
+# Shows the "Sponsor" button on the GitHub repo page.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+
+# NLnet Foundation — primary funder via NGI Zero PET grant.
+custom: ["https://nlnet.nl/project/Confium/"]
+
+# Mozilla MOSS — Open Source Support program.
+custom: ["https://www.mozilla.org/en-US/moss/open-source/"]
+
+# GitHub Sponsors — individual maintainer sponsorship.
+github: [ronaldtse]
+
+# Open Collective — project-level funding transparency.
+open_collective: confium

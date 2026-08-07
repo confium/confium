@@ -1,0 +1,81 @@
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Code review routing. Each path's PRs auto-request review from the listed
+# team or user. Add yourself to a section if you want to be auto-requested.
+#
+# Order matters: later entries do NOT override earlier ones; GitHub uses
+# the LAST matching entry. Keep sections in dependency direction (engine
+# before plugins, plugin SDK before scheme plugins, etc.).
+
+# Default fallback: every PR not matched below.
+*                                @ronaldtse
+
+# Engine and plugin SDK — the foundation everything else builds on.
+/crates/confium-core/            @ronaldtse
+/crates/confium-api/             @ronaldtse
+/crates/confium-macros/          @ronaldtse
+
+# Threshold product (cmp20 / gg18 / frost / coordinator / keys / signerd).
+/crates/confium-tc-core/         @ronaldtse
+/crates/confium-tc-keys/         @ronaldtse
+/crates/confium-coordinator/     @ronaldtse
+/crates/confium-tc-cmp20/        @ronaldtse
+/crates/confium-tc-gg18/         @ronaldtse
+/crates/confium-tc-frost-p256/   @ronaldtse
+/crates/confium-tc-frost-ed25519/ @ronaldtse
+/crates/confium-tc-bls/          @ronaldtse
+/crates/confium-tc-elgamal-p256/ @ronaldtse
+/crates/confium-signerd/         @ronaldtse
+/crates/confium-threshold/       @ronaldtse
+
+# Transparency product (RFC 6962 + witnesses + OTS + ERS).
+/crates/confium-transparency/    @ronaldtse
+/crates/confium-log-server/      @ronaldtse
+/crates/confium-log-monitor/     @ronaldtse
+/crates/confium-log-edge/        @ronaldtse
+
+# PKI product (X.509 + adapters + composite + attributes).
+/crates/confium-pki/             @ronaldtse
+/crates/confium-composite/       @ronaldtse
+/crates/confium-attributes/      @ronaldtse
+/crates/confium-pkcs11-server/   @ronaldtse
+/crates/confium-openssl-provider/ @ronaldtse
+/crates/confium-jce-provider/    @ronaldtse
+/crates/confium-tls-signer/      @ronaldtse
+
+# Keyless product.
+/crates/confium-keyless/         @ronaldtse
+/crates/confium-oidc/            @ronaldtse
+
+# Privacy product.
+/crates/confium-privacy/         @ronaldtse
+/crates/confium-crypto-vss/      @ronaldtse
+/crates/confium-crypto-zk/       @ronaldtse
+/crates/confium-ring/            @ronaldtse
+
+# Verify product.
+/crates/confium-verify/          @ronaldtse
+/crates/confium-verify-server/   @ronaldtse
+/crates/confium-wasm/            @ronaldtse
+/crates/confium-python/          @ronaldtse
+/crates/confium-node/            @ronaldtse
+/crates/confium-go/              @ronaldtse
+
+# CI / release / infra.
+/.github/                        @ronaldtse
+/.githooks/                      @ronaldtse
+/.pre-commit-config.yaml         @ronaldtse
+/rust-toolchain.toml             @ronaldtse
+/flake.nix                       @ronaldtse
+/Cargo.toml                      @ronaldtse
+/deploy/                         @ronaldtse
+
+# Docs + specs.
+/docs/                           @ronaldtse
+/README.md                       @ronaldtse
+/CONTRIBUTING.md                 @ronaldtse
+/SECURITY.md                     @ronaldtse
+/GOVERNANCE.md                   @ronaldtse
+/CODE_OF_CONDUCT.md              @ronaldtse
+/ADOPTERS.md                     @ronaldtse
+/ROADMAP.md                      @ronaldtse

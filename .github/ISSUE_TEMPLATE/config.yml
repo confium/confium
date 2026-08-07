@@ -1,0 +1,16 @@
+# See: https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository#configuring-template-chooser
+#
+# Disables the "blank issue" option so contributors pick a template or
+# open a discussion instead. Reduces the noise of empty issues.
+
+blank_issues_enabled: false
+contact_links:
+  - name: Question / discussion
+    url: https://github.com/confium/confium/discussions
+    about: Ask questions and discuss ideas in GitHub Discussions before opening an issue.
+  - name: Security report
+    url: https://github.com/confium/confium/security/policy
+    about: Found a vulnerability? Follow the SECURITY.md disclosure process — do NOT open a public issue.
+  - name: Confium website
+    url: https://www.confium.org/
+    about: Public website with product pages, docs, and use case library.
