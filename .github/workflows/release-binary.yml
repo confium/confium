@@ -36,10 +36,19 @@ jobs:
 
       # musl-tools provides x86_64-linux-musl-gcc which the `ring`
       # crate's build script needs for static Linux builds.
-      - name: Install musl toolchain
+      # gcc-aarch64-linux-gnu + rustup target add gives us aarch64
+      # cross-compile capability for arm64 static binaries.
+      - name: Install musl + aarch64 cross toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y musl-tools
+          sudo apt-get install -y musl-tools gcc-aarch64-linux-gnu
+          # Install the aarch64 musl toolchain via the rust-musl-cross project's prebuilt
+          # The simplest path: use the musl.cc prebuilt cross-compiler
+          curl -L https://musl.cc/aarch64-linux-musl-cross.tgz | tar xz -C /tmp
+          echo "/tmp/aarch64-linux-musl-cross/bin" >> $GITHUB_PATH
+          # Tell cargo/cc-rs where to find the linker for aarch64 musl
+          echo "CC_aarch64_unknown_linux_musl=aarch64-linux-musl-gcc" >> $GITHUB_ENV
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-musl-gcc" >> $GITHUB_ENV
 
       - name: Build x86_64 (musl, static)
         run: cargo build --release --target x86_64-unknown-linux-musl -p confium-cli
