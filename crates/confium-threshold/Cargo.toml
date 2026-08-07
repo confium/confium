@@ -1,0 +1,44 @@
+[package]
+name = "confium-threshold"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories.workspace = true
+readme = "README.md"
+description = "Confium Threshold product facade — T-of-N distributed signing (CMP20, GG18, FROST)"
+documentation = "https://docs.rs/confium-threshold"
+keywords = ["crypto", "threshold", "cmp20", "frost", "confium"]
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+default = ["cmp20", "frost-p256", "frost-ed25519", "coordinator", "keys"]
+cmp20 = ["dep:confium-tc-cmp20"]
+gg18 = ["dep:confium-tc-gg18"]
+frost-p256 = ["dep:confium-tc-frost-p256"]
+frost-ed25519 = ["dep:confium-tc-frost-ed25519"]
+bls = ["dep:confium-tc-bls"]
+elgamal-p256 = ["dep:confium-tc-elgamal-p256"]
+coordinator = ["dep:confium-coordinator"]
+keys = ["dep:confium-tc-keys"]
+full = ["cmp20", "gg18", "frost-p256", "frost-ed25519", "bls", "elgamal-p256", "coordinator", "keys"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+confium-tc-core = { workspace = true }
+confium-tc-cmp20 = { workspace = true, optional = true }
+confium-tc-gg18 = { workspace = true, optional = true }
+confium-tc-frost-p256 = { workspace = true, optional = true }
+confium-tc-frost-ed25519 = { workspace = true, optional = true }
+confium-tc-bls = { workspace = true, optional = true }
+confium-tc-elgamal-p256 = { workspace = true, optional = true }
+confium-coordinator = { workspace = true, optional = true }
+confium-tc-keys = { workspace = true, optional = true }

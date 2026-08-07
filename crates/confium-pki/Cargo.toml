@@ -19,6 +19,14 @@ parsing = []
 delegation = []
 cms = []
 xmldsig = []
+# Product-surface expansions (optional adapters).
+pkcs11-server = ["dep:confium-pkcs11-server"]
+openssl-provider = ["dep:confium-openssl-provider"]
+jce-provider = ["dep:confium-jce-provider"]
+tls-signer = ["dep:confium-tls-signer"]
+composite = ["dep:confium-composite"]
+attributes = ["dep:confium-attributes"]
+full = ["pkcs11-server", "openssl-provider", "jce-provider", "tls-signer", "composite", "attributes"]
 
 
 [package.metadata.docs.rs]
@@ -36,6 +44,14 @@ spki = { workspace = true }
 chrono = { workspace = true }
 data-encoding = { workspace = true }
 sha2 = { workspace = true }
+
+confium-pkcs11-server = { workspace = true, optional = true }
+confium-openssl-provider = { workspace = true, optional = true }
+confium-jce-provider = { workspace = true, optional = true }
+confium-tls-signer = { workspace = true, optional = true }
+confium-composite = { workspace = true, optional = true }
+confium-attributes = { workspace = true, optional = true }
+
 
 [lib]
 crate-type = ["rlib"]
