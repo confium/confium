@@ -43,7 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: ${{ fromJSON(format('["{0}"]', join(split(github.event.inputs.services || 'signerd,log-server,verify-server', ','), '","'))) }}
+        service: [signerd, log-server, verify-server]
     steps:
       - uses: actions/checkout@v7
 
