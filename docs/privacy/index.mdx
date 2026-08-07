@@ -1,0 +1,49 @@
+---
+title: Confium Privacy
+description: PSI, PIR, DP, MPC, ring sigs, blind sigs, VRF, VDF
+product: privacy
+audience: privacy-dev, blockchain-dev
+---
+
+# Confium Privacy
+
+Confium Privacy is the **privacy-preserving-crypto** product: 15+
+standalone primitives for building applications that compute on
+shared data without revealing it.
+
+## Components
+
+- `confium-privacy` — PSI, PIR, DP, MPC, ring sigs, blind sigs, adaptor sigs, VRF, VDF, and more
+- `confium-crypto-zk` — ZK proofs of set membership, signature possession
+- `confium-crypto-vss` — Verifiable secret sharing, Paillier, Schnorr, range proofs
+- `confium-ring` — Threshold ring signatures
+
+## Concepts
+
+- [Private Set Intersection (PSI)](./concepts/psi.mdx)
+- [Private Information Retrieval (PIR)](./concepts/pir.mdx)
+- [Differential Privacy (DP)](./concepts/dp.mdx)
+- [Multi-party Computation (MPC / SPDZ)](./concepts/mpc.mdx)
+- [Ring signatures](./concepts/ring-sigs.mdx)
+- [Blind signatures](./concepts/blind-sigs.mdx)
+- [VRF + VDF](./concepts/vrf-vdf.mdx)
+
+## How-to
+
+- [Choose the right primitive](./how-to/choose-primitive.mdx)
+- [Two-party PSI](./how-to/two-party-psi.mdx)
+- [MPC cluster deployment](./how-to/mpc-cluster.mdx)
+- [Issue anonymous credentials](./how-to/anonymous-credentials.mdx)
+
+## Reference
+
+- [Rust API](https://docs.rs/confium-privacy)
+- [PSI spec](https://www.confium.org/specs/31-psi)
+- [MPC spec](https://www.confium.org/specs/32-mpc-spdz)
+- [DP spec](https://www.confium.org/specs/33-differential-privacy)
+- [Ring sigs spec](https://www.confium.org/specs/34-ring-sigs)
+
+## Cross-links
+
+- [Confium architecture](../architecture.mdx)
+- [Confium Privacy on the website](https://www.confium.org/privacy/)
