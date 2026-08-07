@@ -1,0 +1,138 @@
+---
+title: Getting Started with Confium
+description: 30-minute tour — install, run a threshold DKG, verify a signature in the browser
+audience: developers, security-engineer, devsecops
+---
+
+# Getting Started
+
+Welcome! This guide takes you from zero to a working Confium deployment in ~30 minutes. You'll install the CLI, run a real threshold DKG, sign a message with T-of-N shares, verify the signature, and stand up a local transparency log.
+
+## What you'll need
+
+- **Rust 1.85+** (for `cargo install` paths) — `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+- **5 minutes of terminal time**
+
+Or skip the install: use [Homebrew](https://github.com/confium/homebrew-confium), [Docker](https://www.confium.org/threshold/install/), or the [browser playground](https://www.confium.org/playground/).
+
+## 1. Install the CLI
+
+```sh
+cargo install --locked confium-cli
+confium --version
+```
+
+Or via Homebrew (after the next release tag):
+
+```sh
+brew tap confium/confium
+brew install confium
+```
+
+## 2. Run a threshold DKG
+
+Distributed Key Generation — 3 parties create shares of a single ECDSA-P256 key. No single party ever holds the full key.
+
+```sh
+confium threshold dkg \
+    --threshold 2 \
+    --parties 3 \
+    --scheme cmp20 \
+    --out shares.json
+
+cat shares.json | jq '.public_key'
+# "025c22f7ea409e492a6f90d8c00c06860d822eb45874a47ce44838e47eff5a36f2"
+```
+
+You now have 3 shares in `shares.json`. Any 2 of them can sign. The third is unnecessary for a 2-of-3 quorum.
+
+## 3. Sign a message with T shares
+
+```sh
+confium threshold sign \
+    --shares shares.json \
+    --message "hello, threshold world" \
+    --out signature.hex
+
+cat signature.hex
+# 9e713496fd6695f00326f14df958bb5b7ffe1b1af2f1c3582ef6f61b15fda9121f387be031ed59ec90f7c949baec21a84a4cf8b8c70bf9cc6989a129d32ef9b7
+```
+
+The signature is a standard 64-byte ECDSA-P256 `(r, s)` pair. Verify it with any standard ECDSA verifier (OpenSSL, `p256` crate, browser WASM).
+
+## 4. Verify the signature
+
+```sh
+# Extract the public key from the share envelope
+jq -r '.public_key' shares.json > pubkey.hex
+
+# Verify with OpenSSL (Confium produces standard ECDSA-P256 sigs)
+echo -n "hello, threshold world" > message.txt
+# (Decode the hex signature + SEC1 public key into DER format first;
+# see the cookbook recipe "verify-threshold-signature-with-openssl" for details.)
+```
+
+Or in the browser via WASM — visit the [playground](https://www.confium.org/playground/).
+
+## 5. Stand up a local transparency log
+
+```sh
+# Append an artifact hash
+confium transparency append \
+    --db ./log.db \
+    --artifact-hash sha256:$(printf "hello" | sha256sum | cut -d' ' -f1)
+# → 0
+
+# Generate an inclusion proof for sequence 0
+confium transparency prove --db ./log.db --seq 0 --out proof.json
+
+cat proof.json | jq
+# {
+#   "sequence": 0,
+#   ...
+# }
+```
+
+You now have an RFC 6962 inclusion proof. Anyone with the tree head can verify that the artifact was in the log.
+
+## 6. Apply differential privacy
+
+```sh
+confium privacy dp --value 42 --sensitivity 1 --epsilon 0.5
+# {"original": 42, "perturbed": 46.5, "epsilon": 0.5, "distribution": "laplace"}
+```
+
+The `perturbed` value is what you'd publish; the original stays private.
+
+## 7. Compute a private set intersection
+
+```sh
+echo -e "alice@example.com\nbob@example.com" > set_a.txt
+echo -e "bob@example.com\ncarol@example.com" > set_b.txt
+
+confium privacy psi \
+    --set-a set_a.txt \
+    --set-b set_b.txt \
+    --salt /dev/urandom
+# bob@example.com
+```
+
+Confium told you the intersection without revealing set_a to set_b's owner (or vice versa).
+
+## Where to go next
+
+| If you... | Read this |
+|-----------|-----------|
+| Want to deploy Confium in production | [Threshold deployment guide](../threshold/how-to/deploy-signerd.mdx) |
+| Want to verify signatures in a browser | [Verify quickstart](https://www.confium.org/verify/quickstart/) |
+| Are evaluating Confium vs alternatives | [Comparison doc](../comparisons/confium-vs-alternatives.mdx) |
+| Want the full architecture | [Architecture overview](../architecture.mdx) |
+| Need a specific recipe | [Cookbook](../cookbook/) |
+
+## Questions?
+
+- [GitHub Discussions](https://github.com/confium/confium/discussions) — ask anything
+- [FAQ](../faq/) — common questions
+- [Threat model](../security/threat-model.mdx) — security details
+
+Welcome to Confium!

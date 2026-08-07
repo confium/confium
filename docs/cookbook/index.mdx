@@ -1,0 +1,63 @@
+---
+title: Cookbook
+description: Practical recipes for common Confium tasks
+audience: developers, devsecops
+---
+
+# Confium Cookbook
+
+Practical recipes. Each recipe is focused, copy-paste-runnable, and answers a specific question. If you want a narrative tour instead, see [Getting Started](../getting-started/).
+
+## Threshold
+
+- [Threshold-sign-with-CMP20](./threshold-sign-with-cmp20.mdx) — 2-of-3 sign ceremony
+- [Verify-threshold-signature-with-OpenSSL](./verify-threshold-signature-with-openssl.mdx) — interop with the rest of the world
+- [Refresh shares without re-keying](./refresh-shares.mdx) — Herzberg proactive security
+- [Run a 5-of-7 DKG ceremony](./large-quorum-ceremony.mdx) — quorum at scale
+
+## Transparency
+
+- [Stand up a local transparency log](./local-transparency-log.mdx) — 5-minute setup
+- [Anchor tree heads to Bitcoin via OTS](./ots-bitcoin-anchoring.mdx)
+- [Run a third-party witness](./run-a-witness.mdx)
+
+## PKI
+
+- [Issue a cert from threshold keys](./threshold-ca-issue.mdx)
+- [Composite sign with classical + PQ](./composite-sign-pq-migration.mdx)
+- [Drop-in PKCS#11 HSM replacement](./pkcs11-hsm-replacement.mdx)
+
+## Keyless
+
+- [Sign a GitHub release keylessly](./keyless-github-release.mdx)
+- [Add Confium to an existing OIDC provider](./keyless-new-oidc-provider.mdx)
+
+## Privacy
+
+- [Two-party PSI](./two-party-psi.mdx)
+- [DP aggregation on user telemetry](./dp-aggregation.mdx)
+- [Anonymous credentials](./anonymous-credentials.mdx)
+
+## Verify
+
+- [Verify in the browser via WASM](./verify-in-browser.mdx)
+- [Deploy a public HTTP verify endpoint](./public-verify-endpoint.mdx)
+- [Batch verification at scale](./batch-verification.mdx)
+
+## Operations
+
+- [Deploy signerd on Kubernetes](./deploy-signerd-k8s.mdx)
+- [Monitor Confium with Prometheus](./prometheus-monitoring.mdx)
+- [Backup and restore shares](./backup-shares.mdx)
+
+## Contribute a recipe
+
+Open a PR adding `docs/cookbook/{slug}.mdx`. Each recipe should:
+
+1. State the problem in one sentence
+2. Show the minimum reproducible setup
+3. Show the solution with copy-paste-runnable code
+4. Note edge cases or pitfalls
+5. Link to deeper docs (specs, API reference)
+
+See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the contribution process.

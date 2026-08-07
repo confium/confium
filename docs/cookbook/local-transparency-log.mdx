@@ -1,0 +1,60 @@
+---
+title: Local transparency log
+description: Stand up a local RFC 6962 transparency log in 5 minutes
+audience: developers, compliance
+---
+
+# Stand up a local transparency log
+
+**Problem:** You want to play with RFC 6962 transparency logs locally without standing up the full `confium-log-server`.
+
+## Solution
+
+The `confium transparency` CLI ships with a flat-file mode that persists leaves to a local file. Production deployments use `confium-log-server` (see [public-verify-endpoint.mdx](./public-verify-endpoint.mdx)).
+
+```sh
+# 1. Append an entry — compute the sha256 hash of an artifact first
+HASH=$(printf "release-v1.0.0.tar.gz" | sha256sum | cut -d' ' -f1)
+confium transparency append --db ./log.db --artifact-hash sha256:$HASH
+# → 0
+
+# 2. Append more entries
+HASH2=$(printf "release-v1.1.0.tar.gz" | sha256sum | cut -d' ' -f1)
+confium transparency append --db ./log.db --artifact-hash sha256:$HASH2
+# → 1
+
+HASH3=$(printf "release-v2.0.0.tar.gz" | sha256sum | cut -d' ' -f1)
+confium transparency append --db ./log.db --artifact-hash sha256:$HASH3
+# → 2
+
+# 3. Generate an inclusion proof for entry 1
+confium transparency prove --db ./log.db --seq 1 --out proof.json
+
+cat proof.json | jq
+# {
+#   "sequence": 1,
+#   "leaf_hash": "...",
+#   "steps": [...]
+# }
+
+# 4. Verify the proof (against the entry)
+confium transparency verify --proof proof.json --head head.json
+# (Local CLI is a stub for verify; real verification against a remote
+# log head lives in confium-log-server.)
+```
+
+## What's happening
+
+The local CLI stores leaves as a flat text file (one hex hash per line). On each `append` / `prove` invocation, it rebuilds the in-memory `MerkleTree` from the file's leaves. This is fine for development; production uses `confium-log-server` which has a real persistent backend.
+
+## Going further
+
+- **Production log server:** `docker pull ghcr.io/confium/log-server:latest` then see [deploy-log-server docs](https://www.confium.org/transparency/docs/).
+- **Witness gossip:** deploy 3+ independent witnesses to make log forks detectable — see [run-a-witness.mdx](./run-a-witness.mdx).
+- **Bitcoin anchoring:** anchor tree heads to Bitcoin via OTS every hour so retroactive modification is impossible — see [ots-bitcoin-anchoring.mdx](./ots-bitcoin-anchoring.mdx).
+
+## See also
+
+- [Transparency log spec](https://www.confium.org/specs/42-transparency-log)
+- [Witness gossip spec](https://www.confium.org/specs/43-witness-gossip)
+- [ERS archival spec](https://www.confium.org/specs/45-ers-archival)

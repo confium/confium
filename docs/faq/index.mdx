@@ -1,0 +1,141 @@
+---
+title: Confium FAQ
+description: Common questions and answers
+audience: all
+---
+
+# FAQ
+
+Quick answers to questions we hear often. Open a [Discussion](https://github.com/confium/confium/discussions) if yours isn't here.
+
+## General
+
+### What is Confium?
+
+Confium is an open-source framework for multi-stakeholder threshold cryptography. It bundles 6 products: Threshold (signing), Transparency (audit logs), PKI (cert authorities), Keyless (OIDC-based signing), Privacy (PSI/MPC/DP), Verify (multi-language verification).
+
+### Why "Confium"?
+
+Latin for "trust". The framework is about distributing trust across multiple parties so no single party is a single point of failure.
+
+### Who owns Confium?
+
+The Confium project, stewarded by [Ribose](https://www.ribose.com/). BSD-2-Clause licensed; no CLA; no commercial edition. Sponsored by NLnet and Mozilla MOSS — see [`FUNDING.yml`](https://github.com/confium/confium/blob/main/.github/FUNDING.yml).
+
+### Is there a hosted / SaaS version?
+
+No. Confium is self-hosted only by design. The trust model requires that the operator of the threshold quorum is the consumer; a hosted threshold service re-introduces a single point of trust. See [GOVERNANCE.md](https://github.com/confium/confium/blob/main/GOVERNANCE.md) for the rationale.
+
+## Threshold
+
+### What's the difference between CMP20, GG18, FROST?
+
+- **GG18** (2018): 4-round threshold ECDSA. First practical protocol.
+- **CMP20** (2020): 3-round threshold ECDSA. Faster, simpler. **Preferred for new deployments.**
+- **FROST** (2020): 2-round threshold Schnorr/EdDSA. Different signature scheme (Schnorr vs ECDSA).
+
+See the [Threshold product docs](https://www.confium.org/threshold/) for the full matrix.
+
+### Can I use Confium with my existing HSM?
+
+Yes — via PKCS#11 v3.0. See the [PKCS#11 server spec](https://www.confium.org/specs/83-pkcs11-server). Supported HSMs: YubiHSM, Nitrokey HSM, Thales Luna, Utimaco, AWS CloudHSM, Azure Managed HSM, Google Cloud HSM.
+
+### What's the minimum T-of-N?
+
+T=2 (2-of-N). Below that you have a single-party signing scheme, which defeats the point.
+
+### What's the maximum T-of-N?
+
+Practical limit is ~50 parties for CMP20 / GG18 (network round overhead). FROST scales further (~100+).
+
+## Transparency
+
+### Is Confium's transparency log the same as Certificate Transparency?
+
+Conceptually yes — both implement RFC 6962. Operationally no — CT is operated by Google / Apple / Cloudflare as a public good; Confium's logs can be operated by anyone for any purpose (cert issuance, supply chain provenance, regulatory audit trails).
+
+### What happens if the log operator goes rogue?
+
+The log can silently rewrite history *only if* witnesses don't notice. Confium mitigates via witness gossip: independent witnesses sign observed tree heads, so any fork becomes publicly detectable. For high-assurance use, anchor tree heads to Bitcoin via OTS every hour — see [ots-bitcoin-anchoring.mdx](../cookbook/ots-bitcoin-anchoring.mdx).
+
+## PKI
+
+### Can Confium replace my existing CA?
+
+Yes, if you control the root. Confium becomes the threshold signing layer behind your root key — see [Threshold CA spec](https://www.confium.org/specs/81-threshold-ca). End-user certificates verify in any standard X.509 chain validator (OpenSSL, BoringSSL, system trust stores).
+
+### What about post-quantum?
+
+Composite signatures ship today (Ed25519 + ECDSA-P256). ML-DSA-65 / SLH-DSA composites land in v0.4 once the [FIPS 204](https://csrc.nist.gov/pubs/fips/204/final) crates are released. See [Composite signatures spec](https://www.confium.org/specs/82-composite-signatures).
+
+### Will Confium work with OpenSSL / Java / Go?
+
+- **OpenSSL 3.0:** Yes, via the Confium provider. See [`confium-openssl-provider`](https://docs.rs/confium-openssl-provider).
+- **Java (JCE):** Yes, via the Confium JCE provider. See [`confium-jce-provider`](https://docs.rs/confium-jce-provider).
+- **Go:** Yes, via standard `crypto/x509` — Confium-issued certs are vanilla X.509.
+
+## Keyless
+
+### What's "keyless"?
+
+Signing without the signer ever holding a long-lived key. Confium issues a short-lived (10 min) certificate to an ephemeral public key, anchored to an OIDC identity (GitHub Actions, Google, GitLab, etc.). The signer signs with the ephemeral key; the cert is published to a transparency log; the ephemeral private key is destroyed.
+
+### What if Confium's keyless CA goes down?
+
+Existing keyless signatures remain verifiable — the cert + signature + transparency log entry is all self-contained. New keyless signing stops until the CA recovers. For high-availability, run your own keyless CA via the [threshold CA guide](https://www.confium.org/pki/).
+
+### Does keyless signing work offline?
+
+No. OIDC JWT verification requires network access to the provider's JWKS, and the short-lived cert issuance requires network access to the Confium keyless endpoint. Once signed, verification works offline.
+
+## Privacy
+
+### Is Confium's PSI production-ready?
+
+For 2-party, semi-honest security, yes — up to ~10M element sets. For malicious security or N-party, use the `confium-privacy` crate APIs directly.
+
+### How is this different from FHE?
+
+Confium's privacy surface uses specific primitives (PSI, PIR, DP, MPC) that are dramatically faster than general FHE. FHE (`confium-tc-fhe-bfv`) is research-grade and out of scope for v1.0 — see the [roadmap](https://github.com/confium/confium/blob/main/ROADMAP.md).
+
+## Verify
+
+### Can I verify Confium signatures without installing anything?
+
+Yes — `@confium/confium-wasm` runs in any browser. See [verify-in-browser.mdx](../cookbook/verify-in-browser.mdx).
+
+### What languages are supported?
+
+Rust, Python, Ruby, Node.js, WASM/TypeScript, Go. See the [bindings parity matrix](../bindings/parity.mdx) for feature coverage.
+
+## Operations
+
+### How do I monitor a production Confium deployment?
+
+Prometheus exporter in `confium-signerd` and `confium-log-server`. Pre-built Grafana dashboard at `deploy/grafana/confium-coordinator.json`. See [prometheus-monitoring.mdx](../cookbook/prometheus-monitoring.mdx).
+
+### How do I back up shares?
+
+Each share lives under HSM protection in production. The share file (when stored on disk) should be encrypted with the operator's KMS. Rotate via Herzberg refresh — see [refresh-shares.mdx](../cookbook/refresh-shares.mdx).
+
+### How do I upgrade without downtime?
+
+`confium-signerd` supports graceful shutdown (in-flight sessions complete; new sessions rejected). Rolling-update the replicas one at a time. See [deploy-signerd-k8s.mdx](../cookbook/deploy-signerd-k8s.mdx).
+
+## Licensing & contribution
+
+### License?
+
+BSD-2-Clause. No CLA. No commercial edition. Forever.
+
+### Can I use Confium in a closed-source commercial product?
+
+Yes. BSD-2-Clause permits this. Attribution requirements are minimal (preserve the copyright notice).
+
+### How do I contribute?
+
+See [CONTRIBUTING.md](https://github.com/confium/confium/blob/main/CONTRIBUTING.md). Small PRs welcome any time; large architectural changes should start as a Discussion or spec PR.
+
+## More
+
+Still have questions? [GitHub Discussions](https://github.com/confium/confium/discussions) is the right place.

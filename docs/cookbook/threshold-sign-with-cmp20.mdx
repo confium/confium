@@ -1,0 +1,54 @@
+---
+title: Threshold sign with CMP20
+description: 2-of-3 sign ceremony with CMP20 threshold ECDSA over P-256
+audience: developers, security-engineer
+---
+
+# Threshold sign with CMP20
+
+**Problem:** You want a 2-of-3 threshold ECDSA signature over P-256, where any 2 of 3 parties can sign and the 3rd party can be offline.
+
+## Solution
+
+```sh
+# 1. Generate 3 shares with threshold 2 via CMP20 DKG
+confium threshold dkg \
+    --threshold 2 \
+    --parties 3 \
+    --scheme cmp20 \
+    --out shares.json
+
+# 2. Sign a message with all 3 shares available
+#    (the threshold is 2, so any 2 of 3 would suffice; the CLI takes all)
+confium threshold sign \
+    --shares shares.json \
+    --message "payload to sign" \
+    --out signature.hex
+
+# 3. Verify
+confium verify ecdsa-p256 \
+    --message "payload to sign" \
+    --signature "$(cat signature.hex)" \
+    --public-key "$(jq -r .public_key shares.json)"
+```
+
+## What's happening
+
+1. **DKG** runs the CMP20 distributed key generation. Each party contributes randomness; the joint public key is `Y = Σ x_i · G`. No party ever holds the full secret `x = Σ x_i`.
+
+2. **Sign** runs the CMP20 signing protocol. Each signing party contributes a partial signature; the protocol combines them via Lagrange interpolation. The output is a standard ECDSA-P256 `(r, s)` pair.
+
+3. **Verify** is a standard ECDSA verification. Any verifier (OpenSSL, browser, the `p256` crate) accepts Confium signatures — they look identical to single-key ECDSA signatures from the verifier's perspective.
+
+## Edge cases
+
+- **Nonce reuse:** CMP20 nonces MUST be unique per signing session. Confium derives them deterministically per [RFC 8941](https://www.rfc-editor.org/rfc/rfc8941) so accidental reuse is impossible.
+- **Share theft:** If one party's share is stolen, the attacker still needs `T-1` more shares to forge. With T=2 and N=3, one stolen share doesn't compromise the key.
+- **Refresh:** Run `confium threshold refresh` periodically to redistribute shares without changing the public key. See [refresh-shares.mdx](./refresh-shares.mdx).
+
+## See also
+
+- [CMP20 spec](https://www.confium.org/specs/70-cmp20)
+- [Threshold session spec](https://www.confium.org/specs/22-threshold-session)
+- [Refresh shares](./refresh-shares.mdx)
+- [Verify with OpenSSL](./verify-threshold-signature-with-openssl.mdx)
