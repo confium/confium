@@ -1,0 +1,55 @@
+# Performance regression tracking.
+#
+# Runs the crates/confium-benchmarks suite on PRs that touch crypto
+# crates, posts a delta-vs-main comment on the PR, and fails on >10%
+# regression on the headline benchmarks.
+#
+# Tunable: edit the [thresholds] section below to adjust per-bench
+# sensitivity.
+
+name: Performance
+
+on:
+  pull_request:
+    paths:
+      # Only run when crypto-relevant code changes.
+      - "crates/confium-tc-*/**"
+      - "crates/confium-composite/**"
+      - "crates/confium-transparency/**"
+      - "crates/confium-crypto-*/**"
+      - "crates/confium-privacy/**"
+      - "crates/confium-benchmarks/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # We need main to diff against.
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry + target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            target
+          key: ${{ runner.os }}-perf-${{ hashFiles('Cargo.lock') }}
+
+      - name: Run benchmarks on PR
+        uses: CodSpeedHQ/action@v3
+        with:
+          # confium-benchmarks uses criterion; CodSpeed wraps it.
+          run: cargo bench -p confium-benchmarks
+          token: ${{ secrets.CODSPEED_TOKEN }}

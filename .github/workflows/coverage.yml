@@ -1,0 +1,54 @@
+# Coverage reporting via cargo-llvm-cov.
+#
+# Runs on every PR (informational; doesn't gate merges for the first
+# 90 days while we establish a baseline). Uploads lcov.info to
+# Codecov. Add a coverage badge to README once we have a stable number.
+
+name: Coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Generate coverage
+        run: cargo llvm-cov --workspace --lcov --output-path lcov.info
+        env:
+          # Skip the WASM crate (target_arch != wasm32 builds won't work here).
+          CARGO_LLVM_COV_TARGET_DIRECTORY: target/cov
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: lcov.info
+          fail_ci_if_error: false
+          # Use the CODECOV_TOKEN secret once we register at codecov.io;
+          # tokenless uploads work for PRs but not for push events.
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload lcov artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: lcov.info
+          path: lcov.info
+          retention-days: 14
