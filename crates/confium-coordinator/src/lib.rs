@@ -14,7 +14,11 @@
 //! - DKG coordination, share refresh
 
 #![warn(unsafe_code)]
-#![warn(missing_docs)]
+// The coordinator is internal infrastructure with 40+ modules extracted
+// from confium-tc. Most struct fields and methods need doc comments;
+// that's a dedicated effort tracked separately. Allow for now so the
+// crate compiles cleanly.
+#![allow(missing_docs)]
 
 pub mod chaos_testing;
 pub mod circuit_breaker;

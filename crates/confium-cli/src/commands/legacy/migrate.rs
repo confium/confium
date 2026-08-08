@@ -8,9 +8,12 @@ use serde_json::json;
 
 pub fn run(args: MigrateArgs) {
     let code = match args.action {
-        MigrateAction::SingleToThreshold(sub) => {
-            migrate_single_to_threshold(&sub.secret, sub.threshold, sub.party_count, sub.out.as_deref())
-        }
+        MigrateAction::SingleToThreshold(sub) => migrate_single_to_threshold(
+            &sub.secret,
+            sub.threshold,
+            sub.party_count,
+            sub.out.as_deref(),
+        ),
         MigrateAction::Inspect(sub) => inspect_secret(&sub.secret),
     };
     if code != 0 {

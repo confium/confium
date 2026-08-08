@@ -60,16 +60,15 @@ fn keygen(args: TcKeygenArgs) -> Result<(), String> {
         public_key: hex::encode(&public_key),
         shares: shares.iter().map(hex::encode).collect(),
     };
-    let json = serde_json::to_string_pretty(&envelope)
-        .map_err(|e| format!("serialize: {e}"))?;
+    let json = serde_json::to_string_pretty(&envelope).map_err(|e| format!("serialize: {e}"))?;
     write_output(&args.out, json.as_bytes())
 }
 
 fn sign(args: TcSignArgs) -> Result<(), String> {
-    let shares_json = std::fs::read_to_string(&args.shares)
-        .map_err(|e| format!("read {}: {e}", args.shares))?;
-    let envelope: ShareEnvelope = serde_json::from_str(&shares_json)
-        .map_err(|e| format!("parse {}: {e}", args.shares))?;
+    let shares_json =
+        std::fs::read_to_string(&args.shares).map_err(|e| format!("read {}: {e}", args.shares))?;
+    let envelope: ShareEnvelope =
+        serde_json::from_str(&shares_json).map_err(|e| format!("parse {}: {e}", args.shares))?;
 
     let share_blobs: Vec<Vec<u8>> = envelope
         .shares
@@ -99,23 +98,25 @@ fn keypair(args: TcKeypairArgs) -> Result<(), String> {
         "private_key": hex::encode(sk),
         "public_key": hex::encode(pk),
     });
-    let json = serde_json::to_string_pretty(&envelope)
-        .map_err(|e| format!("serialize: {e}"))?;
+    let json = serde_json::to_string_pretty(&envelope).map_err(|e| format!("serialize: {e}"))?;
     write_output(&args.out, json.as_bytes())
 }
 
 fn split(args: TcSplitArgs) -> Result<(), String> {
     use confium_tc_frost_p256::{
         scalar::{scalar_from_bytes, scalar_to_bytes},
-        shamir::{split_secret, Share},
+        shamir::{Share, split_secret},
     };
     let secret_bytes = read_hex_or_file(&args.secret)?;
     if secret_bytes.len() != 32 {
-        return Err(format!("secret must be 32 bytes, got {}", secret_bytes.len()));
+        return Err(format!(
+            "secret must be 32 bytes, got {}",
+            secret_bytes.len()
+        ));
     }
     let arr: [u8; 32] = secret_bytes.as_slice().try_into().unwrap();
-    let secret = scalar_from_bytes(&arr)
-        .ok_or_else(|| "secret is not a valid P-256 scalar".to_string())?;
+    let secret =
+        scalar_from_bytes(&arr).ok_or_else(|| "secret is not a valid P-256 scalar".to_string())?;
     let shares = split_secret(&secret, args.threshold, args.party_count);
     let envelope = serde_json::json!({
         "threshold": args.threshold,
@@ -125,13 +126,12 @@ fn split(args: TcSplitArgs) -> Result<(), String> {
             serde_json::json!({"x": s.x, "y_bytes": hex::encode(y_bytes)})
         }).collect::<Vec<_>>(),
     });
-    let json = serde_json::to_string_pretty(&envelope)
-        .map_err(|e| format!("serialize: {e}"))?;
+    let json = serde_json::to_string_pretty(&envelope).map_err(|e| format!("serialize: {e}"))?;
     write_output(&args.out, json.as_bytes())
 }
 
 fn encapsulate(args: TcEncapsulateArgs) -> Result<(), String> {
-    use confium_tc_elgamal_p256::{encapsulate, PublicKey};
+    use confium_tc_elgamal_p256::{PublicKey, encapsulate};
     let pk_bytes = read_hex_or_file(&args.public_key)?;
     let pk = PublicKey { bytes: pk_bytes };
     let (ct, ss) = encapsulate(&pk).map_err(|e| e.to_string())?;
@@ -142,8 +142,7 @@ fn encapsulate(args: TcEncapsulateArgs) -> Result<(), String> {
         },
         "shared_secret": hex::encode(ss),
     });
-    let json = serde_json::to_string_pretty(&envelope)
-        .map_err(|e| format!("serialize: {e}"))?;
+    let json = serde_json::to_string_pretty(&envelope).map_err(|e| format!("serialize: {e}"))?;
     write_output(&args.out, json.as_bytes())
 }
 
