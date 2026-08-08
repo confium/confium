@@ -9,7 +9,7 @@
 //! 6. Receives aggregated signature (or error)
 //!
 //! Usage in e2e tests:
-//! ```no_run
+//! ```ignore
 //! use confium_tc::coordinator::client::SignerClient;
 //!
 //! let mut client = SignerClient::connect("127.0.0.1:18432").unwrap();

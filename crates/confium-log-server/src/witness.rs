@@ -23,7 +23,7 @@ use sha2::{Digest, Sha256};
 /// Build the canonical signing message for a `(tree_size, root_hash)`
 /// pair. Witnesses sign this; monitors verify it.
 pub fn witness_signing_message(tree_size: u64, root_hash: &[u8; 32]) -> Vec<u8> {
-    let mut msg = Vec::with_capacity(20 + 8 + 32);
+    let mut msg = Vec::with_capacity(b"ConfiumWitness/v1".len() + 8 + 32);
     msg.extend_from_slice(b"ConfiumWitness/v1");
     msg.extend_from_slice(&tree_size.to_be_bytes());
     msg.extend_from_slice(root_hash);
@@ -47,11 +47,12 @@ mod tests {
     #[test]
     fn signing_message_has_fixed_shape() {
         let root = [0xaa; 32];
+        let prefix = b"ConfiumWitness/v1";
         let msg = witness_signing_message(42, &root);
-        assert_eq!(msg.len(), 20 + 8 + 32);
-        assert_eq!(&msg[..20], b"ConfiumWitness/v1");
-        assert_eq!(&msg[20..28], &42u64.to_be_bytes());
-        assert_eq!(&msg[28..], &root);
+        assert_eq!(msg.len(), prefix.len() + 8 + 32);
+        assert_eq!(&msg[..prefix.len()], prefix);
+        assert_eq!(&msg[prefix.len()..prefix.len() + 8], &42u64.to_be_bytes());
+        assert_eq!(&msg[prefix.len() + 8..], &root);
     }
 
     #[test]
