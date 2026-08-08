@@ -71,4 +71,4 @@ p256 = { version = "0.13", features = ["ecdsa"] }
 getrandom = { version = "0.2", features = ["js"] }
 
 [dev-dependencies]
-wasm-bindgen-test = "0.2"
+wasm-bindgen-test = "0.3"

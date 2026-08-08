@@ -147,28 +147,28 @@ confium-threshold = { path = "crates/confium-threshold", version = "0.4.0" }
 confium-keyless = { path = "crates/confium-keyless", version = "0.4.0" }
 confium-verify = { path = "crates/confium-verify", version = "0.4.0" }
 
-libloading = "0.8"
-snafu = "0.8"
+libloading = "0.9"
+snafu = "0.9"
 inventory = "0.3"
 zeroize = "1.8"
 url = "2.5"
 clap = { version = "4.5", features = ["derive"] }
-ureq = "2.12"
-toml = "0.8"
-toml_edit = "0.22"
+ureq = "3.3"
+toml = "1.1"
+toml_edit = "0.25"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 dirs = "5"
-sha2 = "0.10"
-hmac = "0.12"
+sha2 = "0.11"
+hmac = "0.13"
 tempfile = "3"
 quinn = "0.11"
 rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
-rcgen = "0.13"
+rcgen = "0.14"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "net", "sync", "macros", "time", "io-util"] }
-criterion = { version = "0.5", default-features = false, features = ["plotters", "cargo_bench_support"] }
+criterion = { version = "0.8", default-features = false, features = ["plotters", "cargo_bench_support"] }
 tungstenite = { version = "0.30", default-features = false, features = ["handshake", "url", "rustls-tls-native-roots"] }
-wasmtime = "27"
+wasmtime = "46"
 # Shared by extracted crates (Layer 0/3).
 subtle = "2"
 num-bigint = { version = "0.4", features = ["rand"] }
@@ -176,37 +176,37 @@ num-integer = "0.1"
 num-traits = "0.2"
 proptest = "1"
 cryptoki = "0.12"
-curve25519-dalek = { version = "4", features = ["rand_core"] }
+curve25519-dalek = { version = "5", features = ["rand_core"] }
 # rnp-rs: idiomatic Rust binding to librnp (OpenPGP C FFI). Published on
 # crates.io. We alias to `rnp` because the crate's lib name is `rnp`.
 rnp = { package = "rnp-rs", version = "0.1.10" }
-ed25519-dalek = "2"
+ed25519-dalek = "3"
 rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
-aes-gcm = "0.10"
+aes-gcm = "0.11"
 rand = { version = "0.8", default-features = false, features = ["std", "getrandom"] }
 hex = "0.4"
 tokio-util = { version = "0.7", features = ["codec"] }
-x509-cert = { version = "0.2", features = ["builder"] }
-der = "0.7"
-spki = "0.7"
+x509-cert = { version = "0.3", features = ["builder"] }
+der = "0.8"
+spki = "0.8"
 p256 = { version = "0.13", features = ["ecdsa", "pem", "arithmetic"] }
 p384 = "0.13"
 ecdsa = "0.16"
-signature = "2"
-elliptic-curve = "0.13"
+signature = "3"
+elliptic-curve = "0.14"
 openpgp-card = "0.5"
 card-backend-pcsc = "0.5"
 chrono = { version = "0.4", features = ["serde"] }
-axum = "0.7"
+axum = "0.8"
 tower = "0.5"
 tower-http = { version = "0.6", features = ["trace"] }
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 async-trait = "0.1"
 pyo3 = { version = "0.22", features = ["extension-module"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 data-encoding = "2"
-thiserror = "1"
+thiserror = "2"
 
 [profile.release]
 opt-level = 3

@@ -23,8 +23,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-tc = { workspace = true }
-crypto-bigint = "0.5"
-elliptic-curve = { version = "0.13", features = ["digest", "sec1"] }
+crypto-bigint = "0.7"
+elliptic-curve = { version = "0.14", features = ["digest", "sec1"] }
 hex = { version = "0.4" }
 inventory = { workspace = true }
 num-bigint = { workspace = true }
