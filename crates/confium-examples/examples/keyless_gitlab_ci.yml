@@ -1,0 +1,9 @@
+# .gitlab-ci.yml
+# Confium keyless signing for GitLab CI.
+keyless_sign:
+  stage: deploy
+  image: confium/cli:latest
+  script:
+    - confium keyless sign --artifact release.tar.gz
+  only:
+    - tags

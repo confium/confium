@@ -1,0 +1,12 @@
+# Docker Compose for confium-pkcs11-server.
+#
+#   docker compose -f pki_pkcs11_server.yaml up -d
+
+version: "3.9"
+services:
+  pkcs11-server:
+    image: ghcr.io/confium/confium-pkcs11-server:latest
+    ports: ["2345:2345"]
+    environment: { RUST_LOG: info }
+    volumes:
+      - ./pkcs11.toml:/etc/confium/pkcs11.toml:ro

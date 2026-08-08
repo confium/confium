@@ -1,0 +1,15 @@
+# Docker Compose deployment for confium-log-server.
+#
+#   docker compose -f transparency_log_server.yaml up -d
+
+version: "3.9"
+services:
+  log-server:
+    image: ghcr.io/confium/confium-log-server:latest
+    ports: ["7878:7878"]
+    environment: { RUST_LOG: info }
+    volumes:
+      - log-data:/var/lib/confium
+
+volumes:
+  log-data:

@@ -1,0 +1,31 @@
+# Docker Compose deployment for confium-signerd (3 replicas + coordinator).
+#
+#   docker compose -f threshold_signerd_deploy.yaml up -d
+
+version: "3.9"
+services:
+  coordinator:
+    image: ghcr.io/confium/confium-coordinator:latest
+    ports: ["7000:7000"]
+    environment: { RUST_LOG: info }
+
+  signerd-1:
+    image: ghcr.io/confium/confium-signerd:latest
+    depends_on: [coordinator]
+    environment:
+      COORDINATOR_URL: http://coordinator:7000
+      RUST_LOG: info
+
+  signerd-2:
+    image: ghcr.io/confium/confium-signerd:latest
+    depends_on: [coordinator]
+    environment:
+      COORDINATOR_URL: http://coordinator:7000
+      RUST_LOG: info
+
+  signerd-3:
+    image: ghcr.io/confium/confium-signerd:latest
+    depends_on: [coordinator]
+    environment:
+      COORDINATOR_URL: http://coordinator:7000
+      RUST_LOG: info
