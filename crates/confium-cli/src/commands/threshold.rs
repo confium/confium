@@ -5,7 +5,8 @@
 //! `confium-tc-frost-p256`, `confium-tc-frost-ed25519`, and the coordinator.
 
 use crate::cli::{
-    ThresholdCommand, ThresholdDkgArgs, ThresholdMigrateSharesArgs, ThresholdSignArgs,
+    ThresholdCommand, ThresholdDkgArgs, ThresholdMigrateSharesArgs, ThresholdRefreshArgs,
+    ThresholdSignArgs,
 };
 use serde::{Deserialize, Serialize};
 
@@ -26,6 +27,10 @@ pub fn run(cmd: ThresholdCommand) {
         }
         ThresholdCommand::Dkg(args) => dkg(args),
         ThresholdCommand::Sign(args) => sign(args),
+        ThresholdCommand::Refresh(args) => refresh(args),
+        ThresholdCommand::Recover => Err(
+            "confium threshold recover: recovery API is in development. See https://www.confium.org/threshold/".into(),
+        ),
         ThresholdCommand::MigrateShares(args) => migrate_shares(args),
     };
     if let Err(e) = result {
@@ -104,6 +109,64 @@ fn migrate_shares(args: ThresholdMigrateSharesArgs) -> Result<(), String> {
     std::fs::write(&args.out, json.as_bytes())
         .map_err(|e| format!("write {}: {e}", args.out.display()))?;
     eprintln!("migrated {} shares → {}", legacy_shares.len(), args.out.display());
+    Ok(())
+}
+
+fn refresh(args: ThresholdRefreshArgs) -> Result<(), String> {
+    let shares_json = std::fs::read_to_string(&args.shares)
+        .map_err(|e| format!("read {}: {e}", args.shares.display()))?;
+    let envelope: ShareEnvelope = serde_json::from_str(&shares_json)
+        .map_err(|e| format!("parse {}: {e}", args.shares.display()))?;
+
+    if envelope.scheme.to_uppercase() != "CMP20" {
+        return Err(format!(
+            "refresh only supports CMP20; got scheme '{}'",
+            envelope.scheme
+        ));
+    }
+
+    let share_blobs: Vec<Vec<u8>> = envelope
+        .shares
+        .iter()
+        .map(|h| hex::decode(h).map_err(|e| format!("share hex: {e}")))
+        .collect::<Result<_, _>>()?;
+
+    // Generate refresh contributions for each party.
+    let contributions =
+        confium_tc_cmp20::refresh::generate_refresh_contributions(envelope.threshold, envelope.party_count);
+
+    // Verify zero-sum invariant (sum of all contributions = 0).
+    if !confium_tc_cmp20::refresh::verify_zero_sum(&contributions) {
+        return Err("refresh contributions failed zero-sum verification".into());
+    }
+
+    // Apply each contribution to the corresponding share.
+    let refreshed: Vec<String> = share_blobs
+        .iter()
+        .enumerate()
+        .map(|(i, share)| {
+            let updated =
+                confium_tc_cmp20::refresh::apply_to_share(share, i as u32, &contributions);
+            hex::encode(&updated)
+        })
+        .collect();
+
+    let new_envelope = ShareEnvelope {
+        scheme: envelope.scheme,
+        threshold: envelope.threshold,
+        party_count: envelope.party_count,
+        public_key: envelope.public_key, // unchanged
+        shares: refreshed,
+    };
+    let json = serde_json::to_string_pretty(&new_envelope)
+        .map_err(|e| format!("serialize: {e}"))?;
+    std::fs::write(&args.out, json.as_bytes())
+        .map_err(|e| format!("write {}: {e}", args.out.display()))?;
+    eprintln!(
+        "refreshed {} shares → {} (public key unchanged)",
+        new_envelope.shares.len(),
+        args.out.display()
+    );
     Ok(())
 }
 

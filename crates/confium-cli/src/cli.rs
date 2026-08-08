@@ -94,10 +94,26 @@ pub enum ThresholdCommand {
     /// Threshold sign. Reads shares from --shares and signs --message;
     /// writes the signature to --out (default: stdout, hex).
     Sign(ThresholdSignArgs),
+    /// Refresh shares (Herzberg proactive security). Generates per-party
+    /// refresh contributions; each party applies its contribution to
+    /// produce a new share. The public key doesn't change.
+    Refresh(ThresholdRefreshArgs),
+    /// Recover a lost share (requires threshold+1 existing shares).
+    /// Placeholder — recovery API is in development.
+    Recover,
     /// Migrate a 0.2.x share file to the 0.3+ JSON envelope format.
-    /// Reads a flat {"x":..., "y":...} JSON, wraps it in the modern
-    /// envelope with scheme/threshold/party_count/public_key/shares[].
     MigrateShares(ThresholdMigrateSharesArgs),
+}
+
+/// `confium threshold refresh`
+#[derive(Args, Debug)]
+pub struct ThresholdRefreshArgs {
+    /// Path to the share envelope (JSON) to refresh.
+    #[arg(long)]
+    pub shares: std::path::PathBuf,
+    /// Write refreshed shares here (same envelope format).
+    #[arg(long)]
+    pub out: std::path::PathBuf,
 }
 
 /// `confium threshold migrate-shares`
