@@ -12,7 +12,7 @@
 //! `TODO.roadmap/34-identity-and-hardware.md` for full specs.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 pub mod identity;
 pub mod manifest;

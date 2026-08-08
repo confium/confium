@@ -22,6 +22,7 @@
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
+#![allow(ambiguous_glob_reexports)]
 
 pub mod cert;
 pub mod csr;

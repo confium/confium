@@ -4,7 +4,7 @@
 //! plugins (CMP20, FROST, GG18) compile against.
 
 #![deny(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 pub mod error;
 pub mod message;

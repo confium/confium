@@ -6,7 +6,7 @@
 use p256::elliptic_curve::subtle::CtOption;
 use p256::elliptic_curve::{Field, PrimeField};
 use p256::{FieldBytes, Scalar};
-use std::ops::{Add, Mul, Sub};
+use std::ops::Mul;
 
 /// Convert raw big-endian bytes (32 bytes) into a `Scalar`.
 /// Returns None if bytes are not 32 long or if the value is out of range.

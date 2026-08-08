@@ -161,7 +161,6 @@ fn hash_msg(msg: &[u8]) -> Scalar {
 }
 
 fn invert(s: &Scalar) -> Scalar {
-    use p256::elliptic_curve::ops::Invert;
     let ct = s.invert();
     Option::<Scalar>::from(ct).unwrap_or(Scalar::ZERO)
 }
