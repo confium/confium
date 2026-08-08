@@ -90,7 +90,6 @@ pub fn recover_share(
 }
 
 fn invert_scalar(s: &Scalar) -> Scalar {
-    use p256::elliptic_curve::ops::Invert;
     let ct: p256::elliptic_curve::subtle::CtOption<Scalar> = s.invert();
     Option::<Scalar>::from(ct).unwrap_or(Scalar::ZERO)
 }

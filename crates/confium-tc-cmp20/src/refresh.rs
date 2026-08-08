@@ -33,10 +33,7 @@
 
 use elliptic_curve::rand_core::OsRng;
 use elliptic_curve::rand_core::RngCore;
-use p256::{
-    FieldBytes, Scalar,
-    elliptic_curve::{Field, PrimeField, group::GroupEncoding},
-};
+use p256::{FieldBytes, Scalar, elliptic_curve::PrimeField};
 
 /// One party's refresh contribution: `(source_party_index, target_party_index, refresh_scalar_bytes)`.
 #[derive(Debug, Clone)]

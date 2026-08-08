@@ -58,6 +58,7 @@ pub fn canonicalize(xml: &str) -> Result<String, CanonicalizationError> {
 /// This is the variant typically used with XMLDSig. Same as `canonicalize`
 /// in this simplified impl; real Exclusive C14N has namespace visibility
 /// rules that require XML parsing.
+#[allow(dead_code)]
 pub fn canonicalize_exclusive(xml: &str) -> Result<String, CanonicalizationError> {
     canonicalize(xml)
 }
