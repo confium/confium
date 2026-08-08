@@ -139,16 +139,8 @@ mod tests {
     fn round_trip_wrap_unwrap() {
         let key = b"test-integrity-key-12345678901234";
         let share = vec![0xAA; 32];
-        let envelope = ShareEnvelope::wrap(
-            "CMP20",
-            "quorum-alpha",
-            3,
-            2,
-            5,
-            share.clone(),
-            key,
-        )
-        .unwrap();
+        let envelope =
+            ShareEnvelope::wrap("CMP20", "quorum-alpha", 3, 2, 5, share.clone(), key).unwrap();
 
         let recovered = envelope.unwrap(key).unwrap();
         assert_eq!(recovered, share);
@@ -157,16 +149,8 @@ mod tests {
     #[test]
     fn tampered_share_data_detected() {
         let key = b"test-integrity-key-12345678901234";
-        let mut envelope = ShareEnvelope::wrap(
-            "FROST-P256",
-            "quorum-beta",
-            1,
-            3,
-            5,
-            vec![0x11; 32],
-            key,
-        )
-        .unwrap();
+        let mut envelope =
+            ShareEnvelope::wrap("FROST-P256", "quorum-beta", 1, 3, 5, vec![0x11; 32], key).unwrap();
 
         envelope.share_data[0] ^= 0xFF;
         assert!(matches!(
@@ -178,16 +162,8 @@ mod tests {
     #[test]
     fn tampered_threshold_detected() {
         let key = b"test-integrity-key-12345678901234";
-        let mut envelope = ShareEnvelope::wrap(
-            "CMP20",
-            "quorum-gamma",
-            2,
-            3,
-            5,
-            vec![0x22; 32],
-            key,
-        )
-        .unwrap();
+        let mut envelope =
+            ShareEnvelope::wrap("CMP20", "quorum-gamma", 2, 3, 5, vec![0x22; 32], key).unwrap();
 
         envelope.threshold = 2;
         assert!(matches!(
@@ -200,16 +176,8 @@ mod tests {
     fn wrong_key_fails() {
         let key = b"correct-integrity-key-12345678901";
         let wrong_key = b"wrong-integrity-key-123456789012";
-        let envelope = ShareEnvelope::wrap(
-            "GG18",
-            "quorum-delta",
-            1,
-            2,
-            3,
-            vec![0x33; 32],
-            key,
-        )
-        .unwrap();
+        let envelope =
+            ShareEnvelope::wrap("GG18", "quorum-delta", 1, 2, 3, vec![0x33; 32], key).unwrap();
 
         assert!(envelope.verify(wrong_key).is_err());
         assert!(envelope.verify(key).is_ok());
@@ -218,16 +186,8 @@ mod tests {
     #[test]
     fn json_serialization_round_trip() {
         let key = b"json-test-key-123456789012345678";
-        let envelope = ShareEnvelope::wrap(
-            "CMP20",
-            "quorum-json",
-            5,
-            3,
-            7,
-            vec![0x44; 32],
-            key,
-        )
-        .unwrap();
+        let envelope =
+            ShareEnvelope::wrap("CMP20", "quorum-json", 5, 3, 7, vec![0x44; 32], key).unwrap();
 
         let json = envelope.to_bytes().unwrap();
         let recovered = ShareEnvelope::from_bytes(&json).unwrap();
@@ -246,16 +206,8 @@ mod tests {
     #[test]
     fn version_mismatch_rejected() {
         let key = b"version-test-key-12345678901234";
-        let mut envelope = ShareEnvelope::wrap(
-            "CMP20",
-            "quorum-version",
-            1,
-            2,
-            3,
-            vec![0x55; 32],
-            key,
-        )
-        .unwrap();
+        let mut envelope =
+            ShareEnvelope::wrap("CMP20", "quorum-version", 1, 2, 3, vec![0x55; 32], key).unwrap();
         envelope.version = 99;
         assert!(matches!(
             envelope.verify(key),

@@ -47,7 +47,13 @@ impl CeremonyController {
         party_count: u32,
         message: &[u8],
     ) -> anyhow::Result<Vec<u8>> {
-        tracing::info!(scheme, threshold, party_count, msg_len = message.len(), "executing ceremony");
+        tracing::info!(
+            scheme,
+            threshold,
+            party_count,
+            msg_len = message.len(),
+            "executing ceremony"
+        );
 
         let (public_key, shares) = match scheme {
             "cmp20" => {

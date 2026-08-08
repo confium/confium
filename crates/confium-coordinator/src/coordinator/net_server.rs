@@ -228,11 +228,7 @@ mod tests {
         let coordinator = server.shared_coordinator();
         let start_time = server.start_time;
 
-        let response = process_message(
-            ProtocolMessage::HealthCheck,
-            &coordinator,
-            start_time,
-        );
+        let response = process_message(ProtocolMessage::HealthCheck, &coordinator, start_time);
         match response {
             Some(ProtocolMessage::HealthStatus {
                 alive,
@@ -266,11 +262,7 @@ mod tests {
         };
         coordinator.lock().unwrap().create_session(req).unwrap();
 
-        let response = process_message(
-            ProtocolMessage::HealthCheck,
-            &coordinator,
-            start_time,
-        );
+        let response = process_message(ProtocolMessage::HealthCheck, &coordinator, start_time);
         match response {
             Some(ProtocolMessage::HealthStatus { session_count, .. }) => {
                 assert_eq!(session_count, 1);

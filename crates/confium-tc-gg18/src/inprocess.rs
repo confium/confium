@@ -84,7 +84,9 @@ pub fn sign_batch(
 pub fn decode_public_key(bytes: &[u8]) -> Result<AffinePoint> {
     use elliptic_curve::sec1::FromEncodedPoint;
     if bytes.len() != 33 {
-        return Err(crate::error::scheme_error(crate::error::Gg18ErrorCode::BAD_SHARE));
+        return Err(crate::error::scheme_error(
+            crate::error::Gg18ErrorCode::BAD_SHARE,
+        ));
     }
     let enc = elliptic_curve::sec1::EncodedPoint::<p256::NistP256>::from_bytes(bytes)
         .map_err(|_| crate::error::scheme_error(crate::error::Gg18ErrorCode::BAD_SHARE))?;
@@ -95,7 +97,7 @@ pub fn decode_public_key(bytes: &[u8]) -> Result<AffinePoint> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use p256::ecdsa::{signature::Verifier, Signature, VerifyingKey};
+    use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
 
     #[test]
     fn keygen_and_sign_round_trip() {

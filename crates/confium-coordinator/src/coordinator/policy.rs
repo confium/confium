@@ -226,9 +226,7 @@ mod tests {
         };
         let req = make_request(2, vec![0; 32]);
         let mut ctx = PolicyContext::default();
-        ctx.now = Utc::now()
-            .with_hour(12)
-            .unwrap();
+        ctx.now = Utc::now().with_hour(12).unwrap();
         assert!(rule.evaluate(&req, &ctx).is_ok());
     }
 
@@ -240,9 +238,7 @@ mod tests {
         };
         let req = make_request(2, vec![0; 32]);
         let mut ctx = PolicyContext::default();
-        ctx.now = Utc::now()
-            .with_hour(23)
-            .unwrap();
+        ctx.now = Utc::now().with_hour(23).unwrap();
         assert!(rule.evaluate(&req, &ctx).is_err());
     }
 

@@ -26,10 +26,9 @@ impl Container {
         T: Send + Sync + 'static,
         F: Fn() -> T + Send + Sync + 'static,
     {
-        let provider: BoxedProvider = Box::new(move |_container| {
-            Box::new(factory())
-        });
-        self.providers.insert(TypeId::of::<T>(), std::rc::Rc::new(provider));
+        let provider: BoxedProvider = Box::new(move |_container| Box::new(factory()));
+        self.providers
+            .insert(TypeId::of::<T>(), std::rc::Rc::new(provider));
     }
 
     /// Register a singleton (constructed once, reused).
@@ -38,10 +37,9 @@ impl Container {
         T: Send + Sync + 'static,
         F: Fn() -> T + Send + Sync + 'static,
     {
-        let provider: BoxedProvider = Box::new(move |_container| {
-            Box::new(factory())
-        });
-        self.providers.insert(TypeId::of::<T>(), std::rc::Rc::new(provider));
+        let provider: BoxedProvider = Box::new(move |_container| Box::new(factory()));
+        self.providers
+            .insert(TypeId::of::<T>(), std::rc::Rc::new(provider));
     }
 
     /// Resolve a type T from the container.
@@ -61,7 +59,9 @@ impl Container {
 }
 
 impl Default for Container {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[cfg(test)]
@@ -136,11 +136,20 @@ mod tests {
     #[test]
     fn struct_as_dependency() {
         #[derive(Debug, PartialEq)]
-        struct Database { url: String }
+        struct Database {
+            url: String,
+        }
 
         let mut container = Container::new();
-        container.register(|| Database { url: "postgres://localhost".into() });
+        container.register(|| Database {
+            url: "postgres://localhost".into(),
+        });
         let db: Option<Database> = container.resolve();
-        assert_eq!(db, Some(Database { url: "postgres://localhost".into() }));
+        assert_eq!(
+            db,
+            Some(Database {
+                url: "postgres://localhost".into()
+            })
+        );
     }
 }

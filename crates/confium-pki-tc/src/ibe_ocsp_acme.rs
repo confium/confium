@@ -26,7 +26,9 @@ pub fn ibe_encrypt(params: &IbeParams, identity: &str, data: &[u8]) -> IbeCipher
     h.update(&params.master_pubkey_hex);
     h.update(identity.as_bytes());
     let key = h.finalize();
-    let encrypted: Vec<u8> = data.iter().enumerate()
+    let encrypted: Vec<u8> = data
+        .iter()
+        .enumerate()
         .map(|(i, &b)| b ^ key[i % key.len()])
         .collect();
     IbeCiphertext {
@@ -43,7 +45,9 @@ pub fn ibe_decrypt(ciphertext: &IbeCiphertext, identity_key: &[u8]) -> Option<Ve
     h.update(ciphertext.identity.as_bytes());
     let key = h.finalize();
     let encrypted = hex::decode(&ciphertext.ciphertext_hex).ok()?;
-    let decrypted: Vec<u8> = encrypted.iter().enumerate()
+    let decrypted: Vec<u8> = encrypted
+        .iter()
+        .enumerate()
         .map(|(i, &b)| b ^ key[i % key.len()])
         .collect();
     Some(decrypted)
@@ -56,7 +60,10 @@ pub fn ibe_decrypt(ciphertext: &IbeCiphertext, identity_key: &[u8]) -> Option<Ve
 #[serde(rename_all = "snake_case")]
 pub enum OcspStatus {
     Good,
-    Revoked { revocation_time: chrono::DateTime<chrono::Utc>, reason: String },
+    Revoked {
+        revocation_time: chrono::DateTime<chrono::Utc>,
+        reason: String,
+    },
     Unknown,
 }
 
@@ -77,10 +84,15 @@ pub struct OcspResponder {
 }
 
 impl OcspResponder {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn set_good(&self, cert_id: &str) {
-        self.statuses.lock().unwrap().insert(cert_id.into(), OcspStatus::Good);
+        self.statuses
+            .lock()
+            .unwrap()
+            .insert(cert_id.into(), OcspStatus::Good);
     }
 
     pub fn revoke(&self, cert_id: &str, reason: &str) {
@@ -94,7 +106,10 @@ impl OcspResponder {
     }
 
     pub fn respond(&self, cert_id: &str) -> OcspResponse {
-        let status = self.statuses.lock().unwrap()
+        let status = self
+            .statuses
+            .lock()
+            .unwrap()
             .get(cert_id)
             .cloned()
             .unwrap_or(OcspStatus::Unknown);
@@ -148,7 +163,9 @@ pub struct AcmeClient {
 
 impl AcmeClient {
     pub fn new(directory_url: &str) -> Self {
-        Self { directory_url: directory_url.into() }
+        Self {
+            directory_url: directory_url.into(),
+        }
     }
 
     /// Create a new order for domain certificates.
@@ -184,7 +201,11 @@ impl AcmeClient {
     /// Mark order as ready (challenges verified).
     pub fn mark_ready(&self, mut order: AcmeOrder) -> AcmeOrder {
         order.status = "ready".into();
-        order.certificate_url = Some(format!("{}/cert/{}", self.directory_url, order.identifiers.first().unwrap_or(&"".to_string())));
+        order.certificate_url = Some(format!(
+            "{}/cert/{}",
+            self.directory_url,
+            order.identifiers.first().unwrap_or(&"".to_string())
+        ));
         order
     }
 }
@@ -197,7 +218,9 @@ mod tests {
 
     #[test]
     fn ibe_encrypt_decrypt_round_trips() {
-        let params = IbeParams { master_pubkey_hex: "mpk-123".into() };
+        let params = IbeParams {
+            master_pubkey_hex: "mpk-123".into(),
+        };
         let ct = ibe_encrypt(&params, "alice@example.com", b"hello");
         let identity_key = {
             let mut h = Sha256::new();
@@ -213,7 +236,9 @@ mod tests {
 
     #[test]
     fn ibe_different_identities_different_ciphertexts() {
-        let params = IbeParams { master_pubkey_hex: "mpk".into() };
+        let params = IbeParams {
+            master_pubkey_hex: "mpk".into(),
+        };
         let ct1 = ibe_encrypt(&params, "alice", b"data");
         let ct2 = ibe_encrypt(&params, "bob", b"data");
         assert_ne!(ct1.ciphertext_hex, ct2.ciphertext_hex);

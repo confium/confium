@@ -5,7 +5,7 @@
 
 use p256::elliptic_curve::rand_core::OsRng;
 use p256::elliptic_curve::{Field, PrimeField};
-use p256::{AffinePoint, ProjectivePoint, Scalar, FieldBytes};
+use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -69,9 +69,7 @@ pub fn generate_contribution(
     party_count: u32,
 ) -> (DkgContribution, Scalar) {
     // Random polynomial: f(0) = secret, f(x) for x in 1..N
-    let coeffs: Vec<Scalar> = (0..threshold)
-        .map(|_| Scalar::random(&mut OsRng))
-        .collect();
+    let coeffs: Vec<Scalar> = (0..threshold).map(|_| Scalar::random(&mut OsRng)).collect();
 
     let secret = coeffs[0];
 
@@ -99,10 +97,7 @@ pub fn generate_contribution(
 }
 
 /// Compute party i's aggregate share from all contributions.
-pub fn compute_aggregate_share(
-    session: &DkgSession,
-    party_idx: u32,
-) -> Result<Scalar, String> {
+pub fn compute_aggregate_share(session: &DkgSession, party_idx: u32) -> Result<Scalar, String> {
     if !session.is_complete() {
         return Err("DKG not complete".into());
     }
@@ -134,8 +129,7 @@ pub fn compute_joint_public_key(session: &DkgSession) -> Result<AffinePoint, Str
     let mut sum = ProjectivePoint::IDENTITY;
     for contrib in session.contributions.values() {
         let bytes = hex::decode(&contrib.commitment_hex).map_err(|e| e.to_string())?;
-        let encoded = p256::EncodedPoint::from_bytes(&bytes)
-            .map_err(|e| e.to_string())?;
+        let encoded = p256::EncodedPoint::from_bytes(&bytes).map_err(|e| e.to_string())?;
         let point = Option::<AffinePoint>::from(AffinePoint::from_encoded_point(&encoded))
             .ok_or_else(|| "invalid commitment point".to_string())?;
         sum += ProjectivePoint::from(point);

@@ -2,16 +2,23 @@
 //!
 //! Production key management + advanced protocol primitives.
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Mutex;
-use chrono::{DateTime, Utc};
 
 // === Key Lifecycle Manager ===
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
-pub enum KeyState { Generated, Active, Suspended, Rotating, Archived, Destroyed }
+pub enum KeyState {
+    Generated,
+    Active,
+    Suspended,
+    Rotating,
+    Archived,
+    Destroyed,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KeyRecord {
@@ -39,16 +46,27 @@ pub struct KeyAuditEntry {
 }
 
 impl KeyLifecycleManager {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn generate(&self, key_id: &str, quorum_id: &str, actor: &str) -> Result<(), String> {
         let mut keys = self.keys.lock().unwrap();
-        if keys.contains_key(key_id) { return Err("key already exists".into()); }
-        keys.insert(key_id.into(), KeyRecord {
-            key_id: key_id.into(), quorum_id: quorum_id.into(),
-            state: KeyState::Generated, created_at: Utc::now(),
-            rotated_at: None, destroyed_at: None, version: 1,
-        });
+        if keys.contains_key(key_id) {
+            return Err("key already exists".into());
+        }
+        keys.insert(
+            key_id.into(),
+            KeyRecord {
+                key_id: key_id.into(),
+                quorum_id: quorum_id.into(),
+                state: KeyState::Generated,
+                created_at: Utc::now(),
+                rotated_at: None,
+                destroyed_at: None,
+                version: 1,
+            },
+        );
         self.audit(key_id, "generate", actor);
         Ok(())
     }
@@ -64,7 +82,9 @@ impl KeyLifecycleManager {
     pub fn rotate(&self, key_id: &str, actor: &str) -> Result<(), String> {
         let mut keys = self.keys.lock().unwrap();
         let key = keys.get_mut(key_id).ok_or("key not found")?;
-        if key.state != KeyState::Active { return Err("key not active".into()); }
+        if key.state != KeyState::Active {
+            return Err("key not active".into());
+        }
         key.state = KeyState::Rotating;
         drop(keys);
         self.audit(key_id, "rotate_start", actor);
@@ -86,7 +106,9 @@ impl KeyLifecycleManager {
     pub fn destroy(&self, key_id: &str, actor: &str) -> Result<(), String> {
         let mut keys = self.keys.lock().unwrap();
         let key = keys.get_mut(key_id).ok_or("key not found")?;
-        if key.state == KeyState::Destroyed { return Err("already destroyed".into()); }
+        if key.state == KeyState::Destroyed {
+            return Err("already destroyed".into());
+        }
         key.state = KeyState::Destroyed;
         key.destroyed_at = Some(Utc::now());
         drop(keys);
@@ -99,7 +121,11 @@ impl KeyLifecycleManager {
     }
 
     pub fn state(&self, key_id: &str) -> Option<KeyState> {
-        self.keys.lock().unwrap().get(key_id).map(|k| k.state.clone())
+        self.keys
+            .lock()
+            .unwrap()
+            .get(key_id)
+            .map(|k| k.state.clone())
     }
 
     pub fn version(&self, key_id: &str) -> Option<u32> {
@@ -111,12 +137,25 @@ impl KeyLifecycleManager {
     }
 
     pub fn count_by_state(&self, state: &KeyState) -> usize {
-        self.keys.lock().unwrap().values().filter(|k| &k.state == state).count()
+        self.keys
+            .lock()
+            .unwrap()
+            .values()
+            .filter(|k| &k.state == state)
+            .count()
     }
 
-    pub fn key_count(&self) -> usize { self.keys.lock().unwrap().len() }
+    pub fn key_count(&self) -> usize {
+        self.keys.lock().unwrap().len()
+    }
 
-    fn transition(&self, key_id: &str, new_state: KeyState, actor: &str, action: &str) -> Result<(), String> {
+    fn transition(
+        &self,
+        key_id: &str,
+        new_state: KeyState,
+        actor: &str,
+        action: &str,
+    ) -> Result<(), String> {
         let mut keys = self.keys.lock().unwrap();
         let key = keys.get_mut(key_id).ok_or("key not found")?;
         key.state = new_state;
@@ -127,8 +166,10 @@ impl KeyLifecycleManager {
 
     fn audit(&self, key_id: &str, action: &str, actor: &str) {
         self.audit_log.lock().unwrap().push(KeyAuditEntry {
-            key_id: key_id.into(), action: action.into(),
-            timestamp: Utc::now(), actor: actor.into(),
+            key_id: key_id.into(),
+            action: action.into(),
+            timestamp: Utc::now(),
+            actor: actor.into(),
         });
     }
 }
@@ -163,14 +204,28 @@ pub struct ThresholdCa {
 
 impl ThresholdCa {
     pub fn new(ca_name: &str) -> Self {
-        Self { certs: Mutex::new(Vec::new()), serial: Mutex::new(1), ca_name: ca_name.into() }
+        Self {
+            certs: Mutex::new(Vec::new()),
+            serial: Mutex::new(1),
+            ca_name: ca_name.into(),
+        }
     }
 
-    pub fn issue(&self, csr: CertificateRequest, validity_days: u32) -> Result<IssuedCertificate, String> {
-        let serial = { let mut s = self.serial.lock().unwrap(); let v = *s; *s += 1; v };
+    pub fn issue(
+        &self,
+        csr: CertificateRequest,
+        validity_days: u32,
+    ) -> Result<IssuedCertificate, String> {
+        let serial = {
+            let mut s = self.serial.lock().unwrap();
+            let v = *s;
+            *s += 1;
+            v
+        };
         let now = Utc::now();
         let cert = IssuedCertificate {
-            serial, common_name: csr.common_name.clone(),
+            serial,
+            common_name: csr.common_name.clone(),
             public_key_hex: csr.public_key_hex,
             issued_at: now,
             expires_at: now + chrono::Duration::days(validity_days as i64),
@@ -184,30 +239,51 @@ impl ThresholdCa {
 
     pub fn revoke(&self, serial: u64) -> Result<(), String> {
         let mut certs = self.certs.lock().unwrap();
-        let cert = certs.iter_mut().find(|c| c.serial == serial).ok_or("cert not found")?;
+        let cert = certs
+            .iter_mut()
+            .find(|c| c.serial == serial)
+            .ok_or("cert not found")?;
         cert.revoked = true;
         Ok(())
     }
 
     pub fn get(&self, serial: u64) -> Option<IssuedCertificate> {
-        self.certs.lock().unwrap().iter().find(|c| c.serial == serial).cloned()
+        self.certs
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|c| c.serial == serial)
+            .cloned()
     }
 
     pub fn is_valid(&self, serial: u64) -> bool {
-        self.certs.lock().unwrap().iter()
+        self.certs
+            .lock()
+            .unwrap()
+            .iter()
             .find(|c| c.serial == serial)
             .map(|c| !c.revoked && c.expires_at > Utc::now())
             .unwrap_or(false)
     }
 
-    pub fn cert_count(&self) -> usize { self.certs.lock().unwrap().len() }
+    pub fn cert_count(&self) -> usize {
+        self.certs.lock().unwrap().len()
+    }
 
     pub fn revoked_count(&self) -> usize {
-        self.certs.lock().unwrap().iter().filter(|c| c.revoked).count()
+        self.certs
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|c| c.revoked)
+            .count()
     }
 
     pub fn generate_crl(&self) -> Vec<u64> {
-        self.certs.lock().unwrap().iter()
+        self.certs
+            .lock()
+            .unwrap()
+            .iter()
             .filter(|c| c.revoked)
             .map(|c| c.serial)
             .collect()
@@ -217,7 +293,10 @@ impl ThresholdCa {
 // === SPDZ-style MPC ===
 
 #[derive(Debug, Clone)]
-pub struct SpdzShare { pub value: i64, pub mac: i64 }
+pub struct SpdzShare {
+    pub value: i64,
+    pub mac: i64,
+}
 
 pub struct SpdzParty {
     pub id: u32,
@@ -225,7 +304,9 @@ pub struct SpdzParty {
 }
 
 impl SpdzParty {
-    pub fn new(id: u32, mac_key: i64) -> Self { Self { id, mac_key } }
+    pub fn new(id: u32, mac_key: i64) -> Self {
+        Self { id, mac_key }
+    }
 
     pub fn share(&self, secret: i64, n_parties: u32) -> Vec<SpdzShare> {
         use rand_core::{OsRng, RngCore};
@@ -234,10 +315,16 @@ impl SpdzParty {
         for i in 0..(n_parties - 1) {
             let val = (OsRng.next_u32() as i64) % 10000;
             sum += val;
-            shares.push(SpdzShare { value: val, mac: val * self.mac_key });
+            shares.push(SpdzShare {
+                value: val,
+                mac: val * self.mac_key,
+            });
         }
         let last = secret - sum;
-        shares.push(SpdzShare { value: last, mac: last * self.mac_key });
+        shares.push(SpdzShare {
+            value: last,
+            mac: last * self.mac_key,
+        });
         shares
     }
 
@@ -250,7 +337,8 @@ impl SpdzParty {
     }
 
     pub fn add(a: &[SpdzShare], b: &[SpdzShare]) -> Vec<SpdzShare> {
-        a.iter().zip(b.iter())
+        a.iter()
+            .zip(b.iter())
             .map(|(x, y)| SpdzShare {
                 value: x.value + y.value,
                 mac: x.mac + y.mac,
@@ -259,8 +347,12 @@ impl SpdzParty {
     }
 
     pub fn scalar_mul(shares: &[SpdzShare], c: i64) -> Vec<SpdzShare> {
-        shares.iter()
-            .map(|s| SpdzShare { value: s.value * c, mac: s.mac * c })
+        shares
+            .iter()
+            .map(|s| SpdzShare {
+                value: s.value * c,
+                mac: s.mac * c,
+            })
             .collect()
     }
 }
@@ -283,21 +375,39 @@ pub fn secure_sort_with_permutation(values: &[i64]) -> (Vec<i64>, Vec<usize>) {
 
 // === Threshold Statistics ===
 
-pub fn threshold_sum(shares: &[i64]) -> i64 { shares.iter().sum() }
+pub fn threshold_sum(shares: &[i64]) -> i64 {
+    shares.iter().sum()
+}
 pub fn threshold_mean(shares: &[i64]) -> f64 {
-    if shares.is_empty() { return 0.0; }
+    if shares.is_empty() {
+        return 0.0;
+    }
     threshold_sum(shares) as f64 / shares.len() as f64
 }
 pub fn threshold_variance(shares: &[i64]) -> f64 {
-    if shares.len() < 2 { return 0.0; }
+    if shares.len() < 2 {
+        return 0.0;
+    }
     let mean = threshold_mean(shares);
-    shares.iter().map(|&v| (v as f64 - mean).powi(2)).sum::<f64>() / (shares.len() - 1) as f64
+    shares
+        .iter()
+        .map(|&v| (v as f64 - mean).powi(2))
+        .sum::<f64>()
+        / (shares.len() - 1) as f64
 }
-pub fn threshold_count(shares: &[i64]) -> usize { shares.len() }
-pub fn threshold_min(shares: &[i64]) -> Option<i64> { shares.iter().copied().min() }
-pub fn threshold_max(shares: &[i64]) -> Option<i64> { shares.iter().copied().max() }
+pub fn threshold_count(shares: &[i64]) -> usize {
+    shares.len()
+}
+pub fn threshold_min(shares: &[i64]) -> Option<i64> {
+    shares.iter().copied().min()
+}
+pub fn threshold_max(shares: &[i64]) -> Option<i64> {
+    shares.iter().copied().max()
+}
 pub fn threshold_median(shares: &[i64]) -> Option<f64> {
-    if shares.is_empty() { return None; }
+    if shares.is_empty() {
+        return None;
+    }
     let mut sorted = shares.to_vec();
     sorted.sort();
     let mid = sorted.len() / 2;
@@ -311,10 +421,17 @@ pub fn threshold_median(shares: &[i64]) -> Option<f64> {
 // === Commitment-Based Voting ===
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct VoteCommitment { pub voter: String, pub commitment_hex: String }
+pub struct VoteCommitment {
+    pub voter: String,
+    pub commitment_hex: String,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct VoteReveal { pub voter: String, pub vote: String, pub nonce_hex: String }
+pub struct VoteReveal {
+    pub voter: String,
+    pub vote: String,
+    pub nonce_hex: String,
+}
 
 pub struct CommitRevealVote {
     commitments: Mutex<Vec<VoteCommitment>>,
@@ -332,12 +449,17 @@ impl CommitRevealVote {
     }
 
     pub fn commit(&self, voter: &str, commitment_hex: &str) -> Result<(), String> {
-        if *self.committed.lock().unwrap() { return Err("commit phase ended".into()); }
+        if *self.committed.lock().unwrap() {
+            return Err("commit phase ended".into());
+        }
         let commitments = self.commitments.lock().unwrap();
-        if commitments.iter().any(|c| c.voter == voter) { return Err("already committed".into()); }
+        if commitments.iter().any(|c| c.voter == voter) {
+            return Err("already committed".into());
+        }
         drop(commitments);
         self.commitments.lock().unwrap().push(VoteCommitment {
-            voter: voter.into(), commitment_hex: commitment_hex.into(),
+            voter: voter.into(),
+            commitment_hex: commitment_hex.into(),
         });
         Ok(())
     }
@@ -347,14 +469,22 @@ impl CommitRevealVote {
     }
 
     pub fn reveal(&self, voter: &str, vote: &str, nonce_hex: &str) -> Result<(), String> {
-        if !*self.committed.lock().unwrap() { return Err("commit phase not ended".into()); }
+        if !*self.committed.lock().unwrap() {
+            return Err("commit phase not ended".into());
+        }
         let commitments = self.commitments.lock().unwrap();
-        if !commitments.iter().any(|c| c.voter == voter) { return Err("not committed".into()); }
+        if !commitments.iter().any(|c| c.voter == voter) {
+            return Err("not committed".into());
+        }
         let reveals = self.reveals.lock().unwrap();
-        if reveals.iter().any(|r| r.voter == voter) { return Err("already revealed".into()); }
+        if reveals.iter().any(|r| r.voter == voter) {
+            return Err("already revealed".into());
+        }
         drop(reveals);
         self.reveals.lock().unwrap().push(VoteReveal {
-            voter: voter.into(), vote: vote.into(), nonce_hex: nonce_hex.into(),
+            voter: voter.into(),
+            vote: vote.into(),
+            nonce_hex: nonce_hex.into(),
         });
         Ok(())
     }
@@ -367,11 +497,19 @@ impl CommitRevealVote {
         counts
     }
 
-    pub fn voter_count(&self) -> usize { self.commitments.lock().unwrap().len() }
-    pub fn reveal_count(&self) -> usize { self.reveals.lock().unwrap().len() }
+    pub fn voter_count(&self) -> usize {
+        self.commitments.lock().unwrap().len()
+    }
+    pub fn reveal_count(&self) -> usize {
+        self.reveals.lock().unwrap().len()
+    }
 }
 
-impl Default for CommitRevealVote { fn default() -> Self { Self::new() } }
+impl Default for CommitRevealVote {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 // === Verifiable Shuffle ===
 
@@ -395,10 +533,19 @@ pub fn shuffle(elements: &[[u8; 32]]) -> (Vec<[u8; 32]>, ShuffleProof, Vec<usize
     use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     hasher.update(b"shuffle-proof");
-    for e in &permuted { hasher.update(e); }
+    for e in &permuted {
+        hasher.update(e);
+    }
     let proof = hex::encode(hasher.finalize());
     let original: Vec<[u8; 32]> = permuted.clone();
-    (permuted, ShuffleProof { permuted: original, proof_hex: proof }, perm)
+    (
+        permuted,
+        ShuffleProof {
+            permuted: original,
+            proof_hex: proof,
+        },
+        perm,
+    )
 }
 
 pub fn verify_shuffle(original: &[[u8; 32]], shuffled: &[[u8; 32]], proof: &ShuffleProof) -> bool {
@@ -407,12 +554,16 @@ pub fn verify_shuffle(original: &[[u8; 32]], shuffled: &[[u8; 32]], proof: &Shuf
     let mut shuf_sorted = shuffled.to_vec();
     orig_sorted.sort();
     shuf_sorted.sort();
-    if orig_sorted != shuf_sorted { return false; }
+    if orig_sorted != shuf_sorted {
+        return false;
+    }
     // Check proof consistency
     use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     hasher.update(b"shuffle-proof");
-    for e in shuffled { hasher.update(e); }
+    for e in shuffled {
+        hasher.update(e);
+    }
     hex::encode(hasher.finalize()) == proof.proof_hex
 }
 
@@ -426,7 +577,11 @@ pub struct ThresholdBeacon {
 
 impl ThresholdBeacon {
     pub fn new(threshold: u32) -> Self {
-        Self { round: Mutex::new(0), shares: Mutex::new(HashMap::new()), threshold }
+        Self {
+            round: Mutex::new(0),
+            shares: Mutex::new(HashMap::new()),
+            threshold,
+        }
     }
 
     pub fn next_round(&self) -> u64 {
@@ -444,13 +599,18 @@ impl ThresholdBeacon {
     }
 
     pub fn is_ready(&self, round: u64) -> bool {
-        self.shares.lock().unwrap().get(&round)
+        self.shares
+            .lock()
+            .unwrap()
+            .get(&round)
             .map(|s| s.len() >= self.threshold as usize)
             .unwrap_or(false)
     }
 
     pub fn produce_output(&self, round: u64) -> Option<[u8; 32]> {
-        if !self.is_ready(round) { return None; }
+        if !self.is_ready(round) {
+            return None;
+        }
         let shares = self.shares.lock().unwrap();
         let round_shares = shares.get(&round)?;
         use sha2::{Digest, Sha256};
@@ -466,7 +626,9 @@ impl ThresholdBeacon {
         Some(output)
     }
 
-    pub fn current_round(&self) -> u64 { *self.round.lock().unwrap() }
+    pub fn current_round(&self) -> u64 {
+        *self.round.lock().unwrap()
+    }
 }
 
 // === Multi-Party Key Refresh ===
@@ -479,7 +641,11 @@ pub struct KeyRefreshProtocol {
 
 impl KeyRefreshProtocol {
     pub fn new(threshold: u32, party_count: u32) -> Self {
-        Self { threshold, party_count, contributions: Mutex::new(HashMap::new()) }
+        Self {
+            threshold,
+            party_count,
+            contributions: Mutex::new(HashMap::new()),
+        }
     }
 
     pub fn submit_contribution(&self, party_idx: u32, contribution: Vec<u8>) -> Result<(), String> {
@@ -499,7 +665,9 @@ impl KeyRefreshProtocol {
     }
 
     pub fn compute_refresh_delta(&self) -> Option<Vec<u8>> {
-        if !self.is_complete() { return None; }
+        if !self.is_complete() {
+            return None;
+        }
         let contributions = self.contributions.lock().unwrap();
         let max_len = contributions.values().map(|c| c.len()).max()?;
         let mut delta = vec![0u8; max_len];
@@ -577,11 +745,16 @@ mod tests {
     #[test]
     fn ca_issue_cert() {
         let ca = ThresholdCa::new("Confium CA");
-        let cert = ca.issue(CertificateRequest {
-            common_name: "example.com".into(),
-            public_key_hex: "abcd".into(),
-            requested_by: "admin".into(),
-        }, 365).unwrap();
+        let cert = ca
+            .issue(
+                CertificateRequest {
+                    common_name: "example.com".into(),
+                    public_key_hex: "abcd".into(),
+                    requested_by: "admin".into(),
+                },
+                365,
+            )
+            .unwrap();
         assert_eq!(cert.serial, 1);
         assert!(ca.is_valid(1));
     }
@@ -589,9 +762,15 @@ mod tests {
     #[test]
     fn ca_revoke_cert() {
         let ca = ThresholdCa::new("CA");
-        ca.issue(CertificateRequest {
-            common_name: "x".into(), public_key_hex: "pk".into(), requested_by: "a".into(),
-        }, 30).unwrap();
+        ca.issue(
+            CertificateRequest {
+                common_name: "x".into(),
+                public_key_hex: "pk".into(),
+                requested_by: "a".into(),
+            },
+            30,
+        )
+        .unwrap();
         ca.revoke(1).unwrap();
         assert!(!ca.is_valid(1));
     }
@@ -600,9 +779,15 @@ mod tests {
     fn ca_generate_crl() {
         let ca = ThresholdCa::new("CA");
         for i in 1..=3 {
-            ca.issue(CertificateRequest {
-                common_name: format!("cn{i}"), public_key_hex: "pk".into(), requested_by: "a".into(),
-            }, 30).unwrap();
+            ca.issue(
+                CertificateRequest {
+                    common_name: format!("cn{i}"),
+                    public_key_hex: "pk".into(),
+                    requested_by: "a".into(),
+                },
+                30,
+            )
+            .unwrap();
         }
         ca.revoke(2).unwrap();
         let crl = ca.generate_crl();
@@ -621,7 +806,9 @@ mod tests {
     fn spdz_mac_verification() {
         let party = SpdzParty::new(1, 42);
         let shares = party.share(100, 3);
-        for s in &shares { assert!(party.verify_mac(s)); }
+        for s in &shares {
+            assert!(party.verify_mac(s));
+        }
     }
 
     #[test]
@@ -644,7 +831,10 @@ mod tests {
     // Secure sorting
     #[test]
     fn secure_sort_works() {
-        assert_eq!(secure_sort(&[3, 1, 4, 1, 5, 9, 2, 6]), vec![1, 1, 2, 3, 4, 5, 6, 9]);
+        assert_eq!(
+            secure_sort(&[3, 1, 4, 1, 5, 9, 2, 6]),
+            vec![1, 1, 2, 3, 4, 5, 6, 9]
+        );
     }
 
     #[test]

@@ -2,16 +2,16 @@
 
 use std::sync::Arc;
 
+use axum::Json;
 use axum::{
+    Router,
     extract::{Path, Query, State},
     http::StatusCode,
     response::{IntoResponse, Json as AxumJson},
     routing::{get, post},
-    Router,
 };
-use axum::Json;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::cert::{classify_cert, fingerprint, parse_der};
 use crate::db::{Database, Entry};
@@ -77,9 +77,8 @@ async fn append_hash(
     State(state): State<Arc<AppState>>,
     AxumJson(req): AxumJson<AppendRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
-    let hash_bytes = hex::decode(&req.artifact_hash).map_err(|e| {
-        ApiError::new(StatusCode::BAD_REQUEST, format!("bad hex: {e}"))
-    })?;
+    let hash_bytes = hex::decode(&req.artifact_hash)
+        .map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, format!("bad hex: {e}")))?;
     if hash_bytes.len() != 32 {
         return Err(ApiError::new(
             StatusCode::BAD_REQUEST,
@@ -266,10 +265,7 @@ async fn get_ots_proof(
     State(state): State<Arc<AppState>>,
     Path(sequence): Path<u64>,
 ) -> Result<impl IntoResponse, ApiError> {
-    let row = state
-        .db
-        .get_ots_proof(sequence)
-        .map_err(internal_error)?;
+    let row = state.db.get_ots_proof(sequence).map_err(internal_error)?;
     match row {
         Some((proof, height, anchor_time)) => Ok(AxumJson(json!({
             "tree_size": sequence,
@@ -291,11 +287,8 @@ async fn post_witness(
     Path(sequence): Path<u64>,
     AxumJson(req): AxumJson<WitnessRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
-    let sig = base64::Engine::decode(
-        &base64::engine::general_purpose::STANDARD,
-        req.signature,
-    )
-    .map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, format!("bad base64: {e}")))?;
+    let sig = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, req.signature)
+        .map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, format!("bad base64: {e}")))?;
 
     // Compute the root for this sequence (we trust the witness's
     // signature over `tree_size || root`; we look up the root we
@@ -308,7 +301,9 @@ async fn post_witness(
         .db
         .store_witness_sig(sequence, &root, &req.witness_id, &sig)
         .map_err(internal_error)?;
-    Ok(AxumJson(json!({"accepted": true, "witness_id": req.witness_id})))
+    Ok(AxumJson(
+        json!({"accepted": true, "witness_id": req.witness_id}),
+    ))
 }
 
 async fn list_witnesses(
@@ -372,7 +367,10 @@ async fn metrics(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     );
 
     (
-        [(axum::http::header::CONTENT_TYPE, "text/plain; version=0.0.4")],
+        [(
+            axum::http::header::CONTENT_TYPE,
+            "text/plain; version=0.0.4",
+        )],
         body,
     )
 }

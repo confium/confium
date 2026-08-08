@@ -81,11 +81,7 @@ pub fn verify(
     Ok(lhs == rhs)
 }
 
-fn fiat_shamir_challenge(
-    public: &AffinePoint,
-    r: &AffinePoint,
-    message: &[u8],
-) -> Scalar {
+fn fiat_shamir_challenge(public: &AffinePoint, r: &AffinePoint, message: &[u8]) -> Scalar {
     let public_encoded = public.to_encoded_point(true);
     let r_encoded = r.to_encoded_point(true);
 

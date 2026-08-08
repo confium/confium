@@ -133,7 +133,8 @@ spec:
                 completedAt: { type: string }
                 signatureSecret: { type: string }
                 error: { type: string }
-"#.to_string()
+"#
+    .to_string()
 }
 
 #[cfg(test)]

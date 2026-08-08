@@ -119,7 +119,10 @@ mod tests {
         let yaml = generate_alerts_yaml();
         let alert_count = yaml.matches("- alert:").count();
         let summary_count = yaml.matches("summary:").count();
-        assert_eq!(alert_count, summary_count, "each alert should have a summary");
+        assert_eq!(
+            alert_count, summary_count,
+            "each alert should have a summary"
+        );
     }
 
     #[test]
@@ -127,6 +130,9 @@ mod tests {
         let yaml = generate_alerts_yaml();
         let alert_count = yaml.matches("- alert:").count();
         let for_count = yaml.matches("for:").count();
-        assert_eq!(alert_count, for_count, "each alert should have a 'for' clause");
+        assert_eq!(
+            alert_count, for_count,
+            "each alert should have a 'for' clause"
+        );
     }
 }

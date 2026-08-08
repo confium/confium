@@ -41,7 +41,11 @@ impl MusigSession {
         if commit.party_idx as usize >= self.public_keys.len() {
             return Err("invalid party index".into());
         }
-        if self.nonce_commitments.iter().any(|c| c.party_idx == commit.party_idx) {
+        if self
+            .nonce_commitments
+            .iter()
+            .any(|c| c.party_idx == commit.party_idx)
+        {
             return Err("duplicate nonce".into());
         }
         self.nonce_commitments.push(commit);
@@ -85,11 +89,7 @@ impl MusigSession {
 }
 
 /// Party i computes their partial signature: s_i = k_i + c * x_i.
-pub fn compute_partial_sig(
-    k_i: &Scalar,
-    x_i: &Scalar,
-    challenge: &Scalar,
-) -> PartialSig {
+pub fn compute_partial_sig(k_i: &Scalar, x_i: &Scalar, challenge: &Scalar) -> PartialSig {
     PartialSig {
         party_idx: 0, // set by caller
         s_i: *k_i + *challenge * *x_i,
@@ -98,18 +98,14 @@ pub fn compute_partial_sig(
 
 /// Combine partial signatures into a full Schnorr signature.
 pub fn combine(partials: &[PartialSig]) -> Scalar {
-    partials.iter()
+    partials
+        .iter()
         .map(|p| p.s_i)
         .fold(Scalar::ZERO, |acc, s| acc + s)
 }
 
 /// Verify a MuSig signature: s * G == R + c * agg_pk.
-pub fn verify(
-    s: &Scalar,
-    r: &AffinePoint,
-    agg_pk: &AffinePoint,
-    challenge: &Scalar,
-) -> bool {
+pub fn verify(s: &Scalar, r: &AffinePoint, agg_pk: &AffinePoint, challenge: &Scalar) -> bool {
     let lhs = ProjectivePoint::GENERATOR * s;
     let rhs = ProjectivePoint::from(*r) + ProjectivePoint::from(*agg_pk) * challenge;
     lhs == rhs

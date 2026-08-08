@@ -1,9 +1,7 @@
 //! `confium pki` — PKI umbrella subcommands.
 
-use crate::cli::{
-    PkiCommand, PkiCompositeSignArgs, PkiParseCertArgs, PkiVerifyArgs,
-};
-use confium_pki::{path::CertPath, Certificate};
+use crate::cli::{PkiCommand, PkiCompositeSignArgs, PkiParseCertArgs, PkiVerifyArgs};
+use confium_pki::{Certificate, path::CertPath};
 
 pub fn run(cmd: PkiCommand) {
     let result: Result<(), String> = match cmd {
@@ -82,8 +80,8 @@ fn composite_sign(args: PkiCompositeSignArgs) -> Result<(), String> {
     let composite = confium_composite::CompositeSignature::new(vec![ed_component, p256_component]);
     // Serialize as JSON (CompositeSignature derives Serialize). Hex-encode
     // so the output is single-line, copy-pasteable.
-    let json = serde_json::to_string(&composite)
-        .map_err(|e| format!("serialize composite: {e}"))?;
+    let json =
+        serde_json::to_string(&composite).map_err(|e| format!("serialize composite: {e}"))?;
     let hex_out = hex::encode(json.as_bytes());
 
     match &args.out {
@@ -99,8 +97,7 @@ fn read_cert(path: &std::path::Path, format: &str) -> Result<Certificate, String
     match format {
         "der" => Certificate::from_der(&bytes).map_err(|e| format!("parse DER: {e}")),
         "pem" => {
-            let s = std::str::from_utf8(&bytes)
-                .map_err(|e| format!("PEM is not UTF-8: {e}"))?;
+            let s = std::str::from_utf8(&bytes).map_err(|e| format!("PEM is not UTF-8: {e}"))?;
             Certificate::from_pem(s).map_err(|e| format!("parse PEM: {e}"))
         }
         other => Err(format!("unknown format: {other} (try der or pem)")),

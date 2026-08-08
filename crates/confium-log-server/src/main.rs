@@ -43,14 +43,14 @@
 //! `POST /v1/head/<sequence>/witness` — submit a witness countersignature
 //! `GET /v1/head/<sequence>/witnesses` — list known witnesses for tree head
 
+mod api;
+mod cert;
 mod db;
 #[cfg(feature = "postgres")]
 mod db_pg;
 mod merkle;
-mod api;
-mod cert;
-mod witness;
 mod ots_anchor;
+mod witness;
 
 use clap::Parser;
 use std::path::PathBuf;
@@ -60,7 +60,11 @@ use api::AppState;
 
 /// Command-line arguments for the log server.
 #[derive(Parser, Debug)]
-#[command(name = "confium-log-server", version, about = "Public transparency log server for Confium")]
+#[command(
+    name = "confium-log-server",
+    version,
+    about = "Public transparency log server for Confium"
+)]
 pub struct Args {
     /// Path to the SQLite database file. Created if missing.
     #[arg(long, default_value = "confium-log.db")]
@@ -108,7 +112,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if !args.no_ots {
         let anchor_state = state.clone();
         tokio::spawn(async move {
-            ots_anchor::run_anchor_loop(anchor_state, std::time::Duration::from_secs(args.ots_interval_secs)).await;
+            ots_anchor::run_anchor_loop(
+                anchor_state,
+                std::time::Duration::from_secs(args.ots_interval_secs),
+            )
+            .await;
         });
     }
 

@@ -31,13 +31,13 @@
 //! let sig = inprocess::sign(&refreshed_shares[..2], 2, b"refreshed").unwrap();
 //! ```
 
-use p256::{
-    AffinePoint, FieldBytes, ProjectivePoint, Scalar,
-    elliptic_curve::{Field, PrimeField, group::GroupEncoding},
-    elliptic_curve::sec1::ToEncodedPoint,
-};
 use elliptic_curve::rand_core::OsRng;
 use elliptic_curve::rand_core::RngCore;
+use p256::{
+    AffinePoint, FieldBytes, ProjectivePoint, Scalar,
+    elliptic_curve::sec1::ToEncodedPoint,
+    elliptic_curve::{Field, PrimeField, group::GroupEncoding},
+};
 use zeroize::Zeroize;
 
 /// One party's refresh contribution: `(source_party_index, target_party_index, refresh_scalar_bytes)`.
@@ -57,7 +57,10 @@ pub struct RefreshContribution {
 /// The returned vector has N × N entries (including self-directed
 /// contributions, which parties apply to themselves). Sort by
 /// `(to_party, from_party)` to route to the right recipient.
-pub fn generate_refresh_contributions(threshold: u32, party_count: u32) -> Vec<RefreshContribution> {
+pub fn generate_refresh_contributions(
+    threshold: u32,
+    party_count: u32,
+) -> Vec<RefreshContribution> {
     let t = threshold as usize;
     let n = party_count as usize;
     let mut out = Vec::with_capacity(n * n);
@@ -233,7 +236,7 @@ mod tests {
         assert_eq!(sig.len(), 64);
 
         // Verify with the original public key.
-        use p256::ecdsa::{signature::Verifier, Signature, VerifyingKey};
+        use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
         let pk = inprocess::decode_public_key(&original_pk).expect("pk");
         let vk = VerifyingKey::from_affine(pk).expect("vk");
         let s = Signature::from_slice(&sig).expect("sig");
@@ -249,6 +252,9 @@ mod tests {
         let refreshed = apply_to_share(&kg.shares[0], 1, &contributions);
         let refreshed_scalar = &refreshed[5..37];
 
-        assert_ne!(original_scalar, refreshed_scalar, "scalar must change after refresh");
+        assert_ne!(
+            original_scalar, refreshed_scalar,
+            "scalar must change after refresh"
+        );
     }
 }

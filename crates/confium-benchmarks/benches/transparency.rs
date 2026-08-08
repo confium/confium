@@ -5,10 +5,8 @@
 //! - `MerkleTree::inclusion_proof(seq)` + verify round-trip
 //! - `MerkleTree::consistency_proof(old_size)` + verify round-trip
 
+use confium_transparency::{ArtifactType, Hash, MerkleEntry, MerkleTree};
 use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
-use confium_transparency::{
-    ArtifactType, Hash, MerkleEntry, MerkleTree,
-};
 
 fn build_tree(n: usize) -> MerkleTree {
     let mut tree = MerkleTree::new();
@@ -59,11 +57,15 @@ fn bench_inclusion_proof(c: &mut Criterion) {
             },
         );
 
-        group.bench_with_input(BenchmarkId::new("verify", size), &(entry, proof, root), |b, (e, p, r)| {
-            b.iter(|| {
-                MerkleTree::verify_inclusion(black_box(e), black_box(p), *r).unwrap();
-            })
-        });
+        group.bench_with_input(
+            BenchmarkId::new("verify", size),
+            &(entry, proof, root),
+            |b, (e, p, r)| {
+                b.iter(|| {
+                    MerkleTree::verify_inclusion(black_box(e), black_box(p), *r).unwrap();
+                })
+            },
+        );
     }
     group.finish();
 }
@@ -121,5 +123,10 @@ impl MerkleTreeBenchExt for MerkleTree {
     }
 }
 
-criterion_group!(benches, bench_root, bench_inclusion_proof, bench_consistency_proof);
+criterion_group!(
+    benches,
+    bench_root,
+    bench_inclusion_proof,
+    bench_consistency_proof
+);
 criterion_main!(benches);

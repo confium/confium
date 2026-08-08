@@ -154,10 +154,7 @@ mod tests {
         let result = gate.try_acquire();
         assert_eq!(
             result.unwrap_err(),
-            BackpressureError::AtCapacity {
-                active: 2,
-                max: 2
-            }
+            BackpressureError::AtCapacity { active: 2, max: 2 }
         );
     }
 

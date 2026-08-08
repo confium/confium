@@ -122,7 +122,11 @@ fn build_proof(leaves: &[[u8; 32]], index: usize) -> Vec<MerkleStep> {
         if sibling_idx < level.len() {
             proof.push(MerkleStep {
                 sibling: level[sibling_idx],
-                direction: if idx % 2 == 0 { Direction::Right } else { Direction::Left },
+                direction: if idx % 2 == 0 {
+                    Direction::Right
+                } else {
+                    Direction::Left
+                },
             });
         }
         let mut next = Vec::new();

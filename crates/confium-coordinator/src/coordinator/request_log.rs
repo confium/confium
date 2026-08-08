@@ -2,8 +2,8 @@
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
 use std::collections::VecDeque;
+use std::sync::Mutex;
 
 /// A single request log entry.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,7 +50,12 @@ impl RequestLog {
     }
 
     pub fn error_count(&self) -> usize {
-        self.entries.lock().unwrap().iter().filter(|e| !e.success).count()
+        self.entries
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|e| !e.success)
+            .count()
     }
 
     pub fn avg_duration_us(&self) -> f64 {
@@ -112,9 +117,13 @@ mod tests {
         log.log(RequestLogEntry {
             timestamp: Utc::now(),
             request_type: "test".into(),
-            session_id: None, signer_id: None,
-            duration_us: 100, success: true,
-            error: None, bytes_in: 10, bytes_out: 20,
+            session_id: None,
+            signer_id: None,
+            duration_us: 100,
+            success: true,
+            error: None,
+            bytes_in: 10,
+            bytes_out: 20,
         });
         assert_eq!(log.count(), 1);
     }
@@ -126,9 +135,13 @@ mod tests {
             log.log(RequestLogEntry {
                 timestamp: Utc::now(),
                 request_type: format!("req-{i}"),
-                session_id: None, signer_id: None,
-                duration_us: i * 100, success: true,
-                error: None, bytes_in: 0, bytes_out: 0,
+                session_id: None,
+                signer_id: None,
+                duration_us: i * 100,
+                success: true,
+                error: None,
+                bytes_in: 0,
+                bytes_out: 0,
             });
         }
         assert_eq!(log.count(), 3);
@@ -138,14 +151,26 @@ mod tests {
     fn error_count() {
         let log = RequestLog::new(100);
         log.log(RequestLogEntry {
-            timestamp: Utc::now(), request_type: "a".into(),
-            session_id: None, signer_id: None, duration_us: 1,
-            success: true, error: None, bytes_in: 0, bytes_out: 0,
+            timestamp: Utc::now(),
+            request_type: "a".into(),
+            session_id: None,
+            signer_id: None,
+            duration_us: 1,
+            success: true,
+            error: None,
+            bytes_in: 0,
+            bytes_out: 0,
         });
         log.log(RequestLogEntry {
-            timestamp: Utc::now(), request_type: "b".into(),
-            session_id: None, signer_id: None, duration_us: 1,
-            success: false, error: Some("fail".into()), bytes_in: 0, bytes_out: 0,
+            timestamp: Utc::now(),
+            request_type: "b".into(),
+            session_id: None,
+            signer_id: None,
+            duration_us: 1,
+            success: false,
+            error: Some("fail".into()),
+            bytes_in: 0,
+            bytes_out: 0,
         });
         assert_eq!(log.error_count(), 1);
     }
@@ -155,9 +180,15 @@ mod tests {
         let log = RequestLog::new(100);
         for d in [100u64, 200, 300] {
             log.log(RequestLogEntry {
-                timestamp: Utc::now(), request_type: "x".into(),
-                session_id: None, signer_id: None, duration_us: d,
-                success: true, error: None, bytes_in: 0, bytes_out: 0,
+                timestamp: Utc::now(),
+                request_type: "x".into(),
+                session_id: None,
+                signer_id: None,
+                duration_us: d,
+                success: true,
+                error: None,
+                bytes_in: 0,
+                bytes_out: 0,
             });
         }
         assert!((log.avg_duration_us() - 200.0).abs() < 0.1);
@@ -177,9 +208,15 @@ mod tests {
     fn clear_empties() {
         let log = RequestLog::new(100);
         log.log(RequestLogEntry {
-            timestamp: Utc::now(), request_type: "x".into(),
-            session_id: None, signer_id: None, duration_us: 1,
-            success: true, error: None, bytes_in: 0, bytes_out: 0,
+            timestamp: Utc::now(),
+            request_type: "x".into(),
+            session_id: None,
+            signer_id: None,
+            duration_us: 1,
+            success: true,
+            error: None,
+            bytes_in: 0,
+            bytes_out: 0,
         });
         log.clear();
         assert_eq!(log.count(), 0);
@@ -188,10 +225,15 @@ mod tests {
     #[test]
     fn entry_serializes() {
         let entry = RequestLogEntry {
-            timestamp: Utc::now(), request_type: "test".into(),
-            session_id: Some("s1".into()), signer_id: Some("a".into()),
-            duration_us: 42, success: true, error: None,
-            bytes_in: 10, bytes_out: 20,
+            timestamp: Utc::now(),
+            request_type: "test".into(),
+            session_id: Some("s1".into()),
+            signer_id: Some("a".into()),
+            duration_us: 42,
+            success: true,
+            error: None,
+            bytes_in: 10,
+            bytes_out: 20,
         };
         let json = serde_json::to_string(&entry).unwrap();
         assert!(json.contains("request_type"));

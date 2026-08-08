@@ -66,12 +66,7 @@ pub fn receiver_choose(b: bool, setup: &OtSetup) -> (OtChoice, OtReceiver) {
 }
 
 /// Phase 3: Sender encrypts both messages.
-pub fn sender_encrypt(
-    choice: &OtChoice,
-    setup: &OtSetup,
-    m0: &[u8],
-    m1: &[u8],
-) -> OtEncrypted {
+pub fn sender_encrypt(choice: &OtChoice, setup: &OtSetup, m0: &[u8], m1: &[u8]) -> OtEncrypted {
     // k0 = P, k1 = P - C
     // Derive encryption keys from points
     let k0_point = choice.p;

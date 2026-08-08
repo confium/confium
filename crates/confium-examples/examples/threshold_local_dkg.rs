@@ -24,5 +24,8 @@ fn main() {
     println!("Public key decoded as valid P-256 point.");
 
     println!("\n✅ DKG + sign complete. Verify with:");
-    println!("  confium verify composite --message hello --signature {} --algorithm ed25519 --public-key <pk-file>", hex::encode(&sig));
+    println!(
+        "  confium verify composite --message hello --signature {} --algorithm ed25519 --public-key <pk-file>",
+        hex::encode(&sig)
+    );
 }

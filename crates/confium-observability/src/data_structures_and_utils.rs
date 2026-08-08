@@ -3,8 +3,8 @@
 use hmac::{Hmac, Mac};
 use sha2::{Digest, Sha256};
 use std::collections::VecDeque;
-use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 
 // === Bloom Filter ===
 
@@ -17,12 +17,20 @@ pub struct BloomFilter {
 
 impl BloomFilter {
     pub fn new(expected_items: usize, false_positive_rate: f64) -> Self {
-        let num_bits = (-(expected_items as f64 * false_positive_rate.ln()) / (std::f64::consts::LN_2.powi(2))).ceil() as usize;
+        let num_bits = (-(expected_items as f64 * false_positive_rate.ln())
+            / (std::f64::consts::LN_2.powi(2)))
+        .ceil() as usize;
         let num_bits = num_bits.max(64);
-        let num_hashes = ((num_bits as f64 / expected_items as f64) * std::f64::consts::LN_2).ceil() as usize;
+        let num_hashes =
+            ((num_bits as f64 / expected_items as f64) * std::f64::consts::LN_2).ceil() as usize;
         let num_hashes = num_hashes.max(1);
         let words = (num_bits + 63) / 64;
-        Self { bits: vec![0u64; words], num_bits, num_hashes, count: AtomicU64::new(0) }
+        Self {
+            bits: vec![0u64; words],
+            num_bits,
+            num_hashes,
+            count: AtomicU64::new(0),
+        }
     }
 
     pub fn insert(&mut self, data: &[u8]) {
@@ -44,14 +52,22 @@ impl BloomFilter {
             let idx = (combined as usize) % self.num_bits;
             let word = idx / 64;
             let bit = idx % 64;
-            if self.bits[word] & (1u64 << bit) == 0 { return false; }
+            if self.bits[word] & (1u64 << bit) == 0 {
+                return false;
+            }
         }
         true
     }
 
-    pub fn estimated_count(&self) -> u64 { self.count.load(Ordering::SeqCst) }
-    pub fn num_bits(&self) -> usize { self.num_bits }
-    pub fn num_hashes(&self) -> usize { self.num_hashes }
+    pub fn estimated_count(&self) -> u64 {
+        self.count.load(Ordering::SeqCst)
+    }
+    pub fn num_bits(&self) -> usize {
+        self.num_bits
+    }
+    pub fn num_hashes(&self) -> usize {
+        self.num_hashes
+    }
 }
 
 fn double_hash(data: &[u8]) -> (u64, u64) {
@@ -63,7 +79,10 @@ fn double_hash(data: &[u8]) -> (u64, u64) {
     h2.update(b"h2");
     h2.update(data);
     let r2 = h2.finalize();
-    (u64::from_be_bytes(r1[..8].try_into().unwrap()), u64::from_be_bytes(r2[..8].try_into().unwrap()))
+    (
+        u64::from_be_bytes(r1[..8].try_into().unwrap()),
+        u64::from_be_bytes(r2[..8].try_into().unwrap()),
+    )
 }
 
 // === Count-Min Sketch ===
@@ -76,7 +95,13 @@ pub struct CountMinSketch {
 
 impl CountMinSketch {
     pub fn new(width: usize, depth: usize) -> Self {
-        Self { table: (0..depth).map(|_| (0..width).map(|_| AtomicU64::new(0)).collect()).collect(), width, depth }
+        Self {
+            table: (0..depth)
+                .map(|_| (0..width).map(|_| AtomicU64::new(0)).collect())
+                .collect(),
+            width,
+            depth,
+        }
     }
 
     pub fn add(&self, data: &[u8], count: u64) {
@@ -87,7 +112,9 @@ impl CountMinSketch {
     }
 
     pub fn estimate(&self, data: &[u8]) -> u64 {
-        self.table.iter().enumerate()
+        self.table
+            .iter()
+            .enumerate()
             .map(|(d, row)| {
                 let idx = hash_at_depth(data, d, self.width);
                 row[idx].load(Ordering::SeqCst)
@@ -113,20 +140,41 @@ pub struct RingBuffer<T: Clone> {
 }
 
 impl<T: Clone> RingBuffer<T> {
-    pub fn new(capacity: usize) -> Self { Self { data: VecDeque::with_capacity(capacity), capacity } }
+    pub fn new(capacity: usize) -> Self {
+        Self {
+            data: VecDeque::with_capacity(capacity),
+            capacity,
+        }
+    }
 
     pub fn push(&mut self, item: T) {
-        if self.data.len() >= self.capacity { self.data.pop_front(); }
+        if self.data.len() >= self.capacity {
+            self.data.pop_front();
+        }
         self.data.push_back(item);
     }
 
-    pub fn latest(&self) -> Option<&T> { self.data.back() }
-    pub fn oldest(&self) -> Option<&T> { self.data.front() }
-    pub fn len(&self) -> usize { self.data.len() }
-    pub fn is_full(&self) -> bool { self.data.len() == self.capacity }
-    pub fn iter(&self) -> impl Iterator<Item = &T> { self.data.iter() }
-    pub fn clear(&mut self) { self.data.clear(); }
-    pub fn as_vec(&self) -> Vec<T> { self.data.iter().cloned().collect() }
+    pub fn latest(&self) -> Option<&T> {
+        self.data.back()
+    }
+    pub fn oldest(&self) -> Option<&T> {
+        self.data.front()
+    }
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+    pub fn is_full(&self) -> bool {
+        self.data.len() == self.capacity
+    }
+    pub fn iter(&self) -> impl Iterator<Item = &T> {
+        self.data.iter()
+    }
+    pub fn clear(&mut self) {
+        self.data.clear();
+    }
+    pub fn as_vec(&self) -> Vec<T> {
+        self.data.iter().cloned().collect()
+    }
 }
 
 // === Test Fixture Factory ===
@@ -141,9 +189,13 @@ impl TestFixtures {
         buf
     }
 
-    pub fn random_hex(n: usize) -> String { hex::encode(Self::random_bytes(n)) }
+    pub fn random_hex(n: usize) -> String {
+        hex::encode(Self::random_bytes(n))
+    }
 
-    pub fn random_message() -> Vec<u8> { Self::random_bytes(32) }
+    pub fn random_message() -> Vec<u8> {
+        Self::random_bytes(32)
+    }
 
     pub fn random_session_id() -> String {
         format!("session-{}", hex::encode(&Self::random_bytes(4)))
@@ -157,25 +209,37 @@ impl TestFixtures {
         format!("quorum-{}", hex::encode(&Self::random_bytes(4)))
     }
 
-    pub fn fake_signature() -> Vec<u8> { Self::random_bytes(64) }
-    pub fn fake_share() -> Vec<u8> { Self::random_bytes(32) }
-    pub fn fake_public_key() -> Vec<u8> { Self::random_bytes(33) }
+    pub fn fake_signature() -> Vec<u8> {
+        Self::random_bytes(64)
+    }
+    pub fn fake_share() -> Vec<u8> {
+        Self::random_bytes(32)
+    }
+    pub fn fake_public_key() -> Vec<u8> {
+        Self::random_bytes(33)
+    }
 
     // make_session_request lives in confium-tc-core or confium-coordinator, not here.
 
     pub fn batch_messages(n: usize) -> Vec<Vec<u8>> {
-        (0..n).map(|i| {
-            let mut msg = vec![0u8; 32];
-            msg[0] = i as u8;
-            msg
-        }).collect()
+        (0..n)
+            .map(|i| {
+                let mut msg = vec![0u8; 32];
+                msg[0] = i as u8;
+                msg
+            })
+            .collect()
     }
 }
 
 // === HKDF (RFC 5869) ===
 
 pub fn hkdf_extract(salt: &[u8], ikm: &[u8]) -> [u8; 32] {
-    let salt = if salt.is_empty() { &[0u8; 32][..] } else { salt };
+    let salt = if salt.is_empty() {
+        &[0u8; 32][..]
+    } else {
+        salt
+    };
     let mut mac = Hmac::<Sha256>::new_from_slice(salt).expect("HMAC");
     mac.update(ikm);
     let result = mac.finalize().into_bytes();
@@ -222,22 +286,36 @@ pub fn key_wrap(kek: &[u8; 32], plaintext: &[u8]) -> Vec<u8> {
 }
 
 pub fn key_unwrap(kek: &[u8; 32], wrapped: &[u8]) -> Option<Vec<u8>> {
-    if wrapped.len() < 16 { return None; }
+    if wrapped.len() < 16 {
+        return None;
+    }
     let body = &wrapped[..wrapped.len() - 16];
     let tag = &wrapped[wrapped.len() - 16..];
-    let unwrapped: Vec<u8> = body.iter().enumerate().map(|(i, &b)| b ^ kek[i % 32]).collect();
+    let unwrapped: Vec<u8> = body
+        .iter()
+        .enumerate()
+        .map(|(i, &b)| b ^ kek[i % 32])
+        .collect();
     let mut mac = Hmac::<Sha256>::new_from_slice(kek).expect("HMAC");
     mac.update(&unwrapped);
     let expected = &mac.finalize().into_bytes()[..16];
-    if tag == expected { Some(unwrapped) } else { None }
+    if tag == expected {
+        Some(unwrapped)
+    } else {
+        None
+    }
 }
 
 // === Secure File Deletion ===
 
 pub fn secure_overwrite(data: &mut [u8]) {
     // Multi-pass overwrite: zeros, ones, random
-    for b in data.iter_mut() { *b = 0x00; }
-    for b in data.iter_mut() { *b = 0xFF; }
+    for b in data.iter_mut() {
+        *b = 0x00;
+    }
+    for b in data.iter_mut() {
+        *b = 0xFF;
+    }
     use rand_core::{OsRng, RngCore};
     for chunk in data.chunks_mut(1) {
         let mut buf = [0u8; 1];
@@ -252,10 +330,21 @@ pub struct SecureBuffer {
 }
 
 impl SecureBuffer {
-    pub fn new(data: Vec<u8>) -> Self { Self { data, zeroized: false } }
-    pub fn as_slice(&self) -> &[u8] { &self.data }
-    pub fn len(&self) -> usize { self.data.len() }
-    pub fn is_empty(&self) -> bool { self.data.is_empty() }
+    pub fn new(data: Vec<u8>) -> Self {
+        Self {
+            data,
+            zeroized: false,
+        }
+    }
+    pub fn as_slice(&self) -> &[u8] {
+        &self.data
+    }
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
 
     pub fn zeroize(&mut self) {
         if !self.zeroized {
@@ -264,7 +353,9 @@ impl SecureBuffer {
         }
     }
 
-    pub fn is_zeroized(&self) -> bool { self.zeroized }
+    pub fn is_zeroized(&self) -> bool {
+        self.zeroized
+    }
 }
 
 impl Drop for SecureBuffer {
@@ -286,31 +377,49 @@ pub struct EntropyMonitor {
 
 impl EntropyMonitor {
     pub fn new(max_samples: usize, min_threshold: u32) -> Self {
-        Self { samples: Mutex::new(VecDeque::with_capacity(max_samples)),
-               max_samples, min_threshold, alerts: AtomicU64::new(0) }
+        Self {
+            samples: Mutex::new(VecDeque::with_capacity(max_samples)),
+            max_samples,
+            min_threshold,
+            alerts: AtomicU64::new(0),
+        }
     }
 
     pub fn record(&self, entropy_bits: u32) {
         let mut samples = self.samples.lock().unwrap();
-        if samples.len() >= self.max_samples { samples.pop_front(); }
+        if samples.len() >= self.max_samples {
+            samples.pop_front();
+        }
         samples.push_back(entropy_bits);
         if entropy_bits < self.min_threshold {
             self.alerts.fetch_add(1, Ordering::SeqCst);
         }
     }
 
-    pub fn latest(&self) -> Option<u32> { self.samples.lock().unwrap().back().copied() }
+    pub fn latest(&self) -> Option<u32> {
+        self.samples.lock().unwrap().back().copied()
+    }
     pub fn average(&self) -> f64 {
         let s = self.samples.lock().unwrap();
-        if s.is_empty() { return 0.0; }
+        if s.is_empty() {
+            return 0.0;
+        }
         s.iter().sum::<u32>() as f64 / s.len() as f64
     }
-    pub fn min(&self) -> Option<u32> { self.samples.lock().unwrap().iter().copied().min() }
-    pub fn alert_count(&self) -> u64 { self.alerts.load(Ordering::SeqCst) }
-    pub fn is_low(&self) -> bool {
-        self.latest().map(|e| e < self.min_threshold).unwrap_or(false)
+    pub fn min(&self) -> Option<u32> {
+        self.samples.lock().unwrap().iter().copied().min()
     }
-    pub fn sample_count(&self) -> usize { self.samples.lock().unwrap().len() }
+    pub fn alert_count(&self) -> u64 {
+        self.alerts.load(Ordering::SeqCst)
+    }
+    pub fn is_low(&self) -> bool {
+        self.latest()
+            .map(|e| e < self.min_threshold)
+            .unwrap_or(false)
+    }
+    pub fn sample_count(&self) -> usize {
+        self.samples.lock().unwrap().len()
+    }
 }
 
 // === Burst Token Bucket ===
@@ -327,8 +436,10 @@ impl BurstTokenBucket {
     pub fn new(sustained_rate: f64, burst_multiplier: f64) -> Self {
         let capacity = sustained_rate * burst_multiplier;
         Self {
-            tokens: Mutex::new(capacity), capacity,
-            refill_rate: sustained_rate, burst_capacity: capacity,
+            tokens: Mutex::new(capacity),
+            capacity,
+            refill_rate: sustained_rate,
+            burst_capacity: capacity,
             last_refill: Mutex::new(std::time::Instant::now()),
         }
     }
@@ -357,8 +468,12 @@ impl BurstTokenBucket {
         *self.tokens.lock().unwrap()
     }
 
-    pub fn burst_capacity(&self) -> f64 { self.burst_capacity }
-    pub fn sustained_rate(&self) -> f64 { self.refill_rate }
+    pub fn burst_capacity(&self) -> f64 {
+        self.burst_capacity
+    }
+    pub fn sustained_rate(&self) -> f64 {
+        self.refill_rate
+    }
 }
 
 // === Concurrent Test Runner ===
@@ -375,22 +490,30 @@ pub struct ConcTestResult {
 }
 
 impl ConcurrentTestRunner {
-    pub fn new() -> Self { Self { results: Mutex::new(Vec::new()) } }
+    pub fn new() -> Self {
+        Self {
+            results: Mutex::new(Vec::new()),
+        }
+    }
 
     pub fn run<F>(&self, name: &str, test_fn: F) -> bool
-    where F: FnOnce() -> bool + Send + 'static
+    where
+        F: FnOnce() -> bool + Send + 'static,
     {
         let start = std::time::Instant::now();
         let passed = test_fn();
         let duration = start.elapsed().as_micros() as u64;
         self.results.lock().unwrap().push(ConcTestResult {
-            name: name.into(), passed, duration_micros: duration,
+            name: name.into(),
+            passed,
+            duration_micros: duration,
         });
         passed
     }
 
     pub fn run_concurrent<F>(&self, tests: Vec<(&str, F)>) -> usize
-    where F: Fn() -> bool + Send + Sync + 'static
+    where
+        F: Fn() -> bool + Send + Sync + 'static,
     {
         let passed_count = std::sync::Arc::new(AtomicU64::new(0));
         let mut handles = Vec::new();
@@ -403,32 +526,63 @@ impl ConcurrentTestRunner {
                 let start = std::time::Instant::now();
                 let passed = test_fn();
                 let duration = start.elapsed().as_micros() as u64;
-                r2.lock().unwrap().push(ConcTestResult { name, passed, duration_micros: duration });
-                if passed { pc.fetch_add(1, Ordering::SeqCst); }
+                r2.lock().unwrap().push(ConcTestResult {
+                    name,
+                    passed,
+                    duration_micros: duration,
+                });
+                if passed {
+                    pc.fetch_add(1, Ordering::SeqCst);
+                }
             }));
         }
         let total = handles.len();
-        for h in handles { let _ = h.join(); }
+        for h in handles {
+            let _ = h.join();
+        }
         passed_count.load(Ordering::SeqCst) as usize
     }
 
-    pub fn results(&self) -> Vec<ConcTestResult> { self.results.lock().unwrap().clone() }
-    pub fn total(&self) -> usize { self.results.lock().unwrap().len() }
-    pub fn passed(&self) -> usize { self.results.lock().unwrap().iter().filter(|r| r.passed).count() }
-    pub fn failed(&self) -> usize { self.total() - self.passed() }
+    pub fn results(&self) -> Vec<ConcTestResult> {
+        self.results.lock().unwrap().clone()
+    }
+    pub fn total(&self) -> usize {
+        self.results.lock().unwrap().len()
+    }
+    pub fn passed(&self) -> usize {
+        self.results
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|r| r.passed)
+            .count()
+    }
+    pub fn failed(&self) -> usize {
+        self.total() - self.passed()
+    }
     pub fn avg_duration_micros(&self) -> f64 {
         let r = self.results.lock().unwrap();
-        if r.is_empty() { return 0.0; }
+        if r.is_empty() {
+            return 0.0;
+        }
         r.iter().map(|r| r.duration_micros as f64).sum::<f64>() / r.len() as f64
     }
 }
 
-impl Default for ConcurrentTestRunner { fn default() -> Self { Self::new() } }
+impl Default for ConcurrentTestRunner {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 // === SPSC Channel ===
 
-pub struct SpscSender<T> { shared: std::sync::Arc<SpscShared<T>> }
-pub struct SpscReceiver<T> { shared: std::sync::Arc<SpscShared<T>> }
+pub struct SpscSender<T> {
+    shared: std::sync::Arc<SpscShared<T>>,
+}
+pub struct SpscReceiver<T> {
+    shared: std::sync::Arc<SpscShared<T>>,
+}
 
 struct SpscShared<T> {
     buffer: Mutex<VecDeque<T>>,
@@ -440,31 +594,50 @@ struct SpscShared<T> {
 pub fn spsc_channel<T>(capacity: usize) -> (SpscSender<T>, SpscReceiver<T>) {
     let shared = std::sync::Arc::new(SpscShared {
         buffer: Mutex::new(VecDeque::with_capacity(capacity)),
-        capacity, total_sent: AtomicU64::new(0), total_received: AtomicU64::new(0),
+        capacity,
+        total_sent: AtomicU64::new(0),
+        total_received: AtomicU64::new(0),
     });
-    (SpscSender { shared: std::sync::Arc::clone(&shared) }, SpscReceiver { shared })
+    (
+        SpscSender {
+            shared: std::sync::Arc::clone(&shared),
+        },
+        SpscReceiver { shared },
+    )
 }
 
 impl<T> SpscSender<T> {
     pub fn send(&self, item: T) -> bool {
         let mut buf = self.shared.buffer.lock().unwrap();
-        if buf.len() >= self.shared.capacity { return false; }
+        if buf.len() >= self.shared.capacity {
+            return false;
+        }
         buf.push_back(item);
         self.shared.total_sent.fetch_add(1, Ordering::SeqCst);
         true
     }
-    pub fn total_sent(&self) -> u64 { self.shared.total_sent.load(Ordering::SeqCst) }
+    pub fn total_sent(&self) -> u64 {
+        self.shared.total_sent.load(Ordering::SeqCst)
+    }
 }
 
 impl<T> SpscReceiver<T> {
     pub fn recv(&self) -> Option<T> {
         let item = self.shared.buffer.lock().unwrap().pop_front();
-        if item.is_some() { self.shared.total_received.fetch_add(1, Ordering::SeqCst); }
+        if item.is_some() {
+            self.shared.total_received.fetch_add(1, Ordering::SeqCst);
+        }
         item
     }
-    pub fn len(&self) -> usize { self.shared.buffer.lock().unwrap().len() }
-    pub fn is_empty(&self) -> bool { self.len() == 0 }
-    pub fn total_received(&self) -> u64 { self.shared.total_received.load(Ordering::SeqCst) }
+    pub fn len(&self) -> usize {
+        self.shared.buffer.lock().unwrap().len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    pub fn total_received(&self) -> u64 {
+        self.shared.total_received.load(Ordering::SeqCst)
+    }
 }
 
 #[cfg(test)]
@@ -486,14 +659,18 @@ mod tests {
         let mut bf = BloomFilter::new(1000, 0.01);
         bf.insert(b"present");
         // With high probability, "absent" is not present
-        let false_positives = (0..100).filter(|i| bf.contains(format!("absent-{i}").as_bytes())).count();
+        let false_positives = (0..100)
+            .filter(|i| bf.contains(format!("absent-{i}").as_bytes()))
+            .count();
         assert!(false_positives < 10); // < 10% false positive rate
     }
 
     #[test]
     fn bloom_count() {
         let mut bf = BloomFilter::new(100, 0.05);
-        for i in 0..50 { bf.insert(format!("item-{i}").as_bytes()); }
+        for i in 0..50 {
+            bf.insert(format!("item-{i}").as_bytes());
+        }
         assert_eq!(bf.estimated_count(), 50);
     }
 
@@ -501,8 +678,12 @@ mod tests {
     #[test]
     fn cms_estimate_frequency() {
         let cms = CountMinSketch::new(1000, 5);
-        for _ in 0..10 { cms.add(b"popular", 1); }
-        for _ in 0..3 { cms.add(b"rare", 1); }
+        for _ in 0..10 {
+            cms.add(b"popular", 1);
+        }
+        for _ in 0..3 {
+            cms.add(b"rare", 1);
+        }
         assert!(cms.estimate(b"popular") >= 10);
         assert!(cms.estimate(b"rare") >= 3);
     }
@@ -518,7 +699,10 @@ mod tests {
     #[test]
     fn ring_buffer_evicts_oldest() {
         let mut rb = RingBuffer::new(3);
-        rb.push(1); rb.push(2); rb.push(3); rb.push(4);
+        rb.push(1);
+        rb.push(2);
+        rb.push(3);
+        rb.push(4);
         assert_eq!(rb.len(), 3);
         assert_eq!(*rb.oldest().unwrap(), 2);
         assert_eq!(*rb.latest().unwrap(), 4);
@@ -527,7 +711,9 @@ mod tests {
     #[test]
     fn ring_buffer_iter() {
         let mut rb = RingBuffer::new(5);
-        rb.push(1); rb.push(2); rb.push(3);
+        rb.push(1);
+        rb.push(2);
+        rb.push(3);
         let v: Vec<i32> = rb.iter().copied().collect();
         assert_eq!(v, vec![1, 2, 3]);
     }
@@ -670,7 +856,10 @@ mod tests {
     fn concurrent_runner_parallel() {
         let runner = ConcurrentTestRunner::new();
         let tests: Vec<(&str, fn() -> bool)> = vec![
-            ("t1", || true), ("t2", || true), ("t3", || true), ("t4", || false),
+            ("t1", || true),
+            ("t2", || true),
+            ("t3", || true),
+            ("t4", || false),
         ];
         let passed = runner.run_concurrent(tests);
         assert_eq!(passed, 3);
@@ -696,7 +885,9 @@ mod tests {
     #[test]
     fn spsc_ordering() {
         let (tx, rx) = spsc_channel::<i32>(10);
-        tx.send(1); tx.send(2); tx.send(3);
+        tx.send(1);
+        tx.send(2);
+        tx.send(3);
         assert_eq!(rx.recv(), Some(1));
         assert_eq!(rx.recv(), Some(2));
         assert_eq!(rx.recv(), Some(3));
@@ -705,7 +896,8 @@ mod tests {
     #[test]
     fn spsc_counters() {
         let (tx, rx) = spsc_channel::<i32>(10);
-        tx.send(1); tx.send(2);
+        tx.send(1);
+        tx.send(2);
         rx.recv();
         assert_eq!(tx.total_sent(), 2);
         assert_eq!(rx.total_received(), 1);

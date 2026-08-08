@@ -11,8 +11,8 @@
 //! for each coefficient. Each shareholder with index `j` receives
 //! share `f(j)`. They verify: `g^{f(j)} == product(C_i^{j^i})`.
 
-use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
 use p256::elliptic_curve::PrimeField;
+use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
 use p256::{AffinePoint, ProjectivePoint, Scalar};
 
 /// Public commitments from a Feldman VSS deal.
@@ -98,8 +98,8 @@ mod tests {
     use super::*;
 
     fn random_scalar() -> Scalar {
-        use p256::elliptic_curve::rand_core::OsRng;
         use p256::elliptic_curve::Field;
+        use p256::elliptic_curve::rand_core::OsRng;
         Scalar::random(&mut OsRng)
     }
 
@@ -174,7 +174,11 @@ mod tests {
 
         let decoded = VssCommitment::decode(&encoded).unwrap();
         assert_eq!(decoded.commitments.len(), commitment.commitments.len());
-        for (a, b) in commitment.commitments.iter().zip(decoded.commitments.iter()) {
+        for (a, b) in commitment
+            .commitments
+            .iter()
+            .zip(decoded.commitments.iter())
+        {
             assert_eq!(a, b);
         }
     }

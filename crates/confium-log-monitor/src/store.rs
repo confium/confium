@@ -46,9 +46,11 @@ impl StateStore {
     }
 
     pub fn put_head(&self, head: &TreeHead) -> Result<()> {
-        self.db.insert("last_size", head.tree_size.to_be_bytes().as_slice())?;
+        self.db
+            .insert("last_size", head.tree_size.to_be_bytes().as_slice())?;
         self.db.insert("last_root", head.root.as_bytes())?;
-        self.db.insert("last_timestamp", head.timestamp.as_bytes())?;
+        self.db
+            .insert("last_timestamp", head.timestamp.as_bytes())?;
         self.db.flush()?;
         Ok(())
     }

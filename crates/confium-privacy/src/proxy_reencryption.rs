@@ -11,8 +11,8 @@
 //! 3. Bob decrypts with his secret key
 
 use p256::elliptic_curve::PrimeField;
-use p256::{AffinePoint, ProjectivePoint, Scalar, FieldBytes};
 use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
+use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
 
 /// ElGamal ciphertext: (ephemeral point, encrypted point).

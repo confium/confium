@@ -59,7 +59,10 @@ impl DiagnosticsReport {
 
         let mut warnings = Vec::new();
         if success_rate < 0.95 {
-            warnings.push(format!("Success rate {:.1}% is below 95%", success_rate * 100.0));
+            warnings.push(format!(
+                "Success rate {:.1}% is below 95%",
+                success_rate * 100.0
+            ));
         }
         if active_sessions > 50 {
             warnings.push(format!("{active_sessions} active sessions (high)"));
@@ -70,7 +73,10 @@ impl DiagnosticsReport {
         if uptime > Duration::zero() && total_created > 0 {
             let sessions_per_hour = total_created as f64 / (uptime.num_seconds() as f64 / 3600.0);
             if sessions_per_hour > 1000.0 {
-                warnings.push(format!("{:.0} sessions/hour (high load)", sessions_per_hour));
+                warnings.push(format!(
+                    "{:.0} sessions/hour (high load)",
+                    sessions_per_hour
+                ));
             }
         }
 
@@ -149,13 +155,23 @@ mod tests {
     #[test]
     fn many_sessions_warns() {
         let report = make_report(60, 100, 40, 5, 100, 5);
-        assert!(report.warnings.iter().any(|w| w.contains("active sessions")));
+        assert!(
+            report
+                .warnings
+                .iter()
+                .any(|w| w.contains("active sessions"))
+        );
     }
 
     #[test]
     fn no_signers_with_sessions_warns() {
         let report = make_report(5, 10, 5, 0, 10, 0);
-        assert!(report.warnings.iter().any(|w| w.contains("No registered signers")));
+        assert!(
+            report
+                .warnings
+                .iter()
+                .any(|w| w.contains("No registered signers"))
+        );
     }
 
     #[test]

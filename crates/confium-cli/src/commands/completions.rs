@@ -6,7 +6,7 @@
 
 use crate::cli::CompletionsArgs;
 use clap::CommandFactory;
-use clap_complete::{generate, Shell};
+use clap_complete::{Shell, generate};
 
 pub fn run(args: CompletionsArgs) {
     let mut cmd = crate::cli::Cli::command();

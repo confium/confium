@@ -30,11 +30,11 @@ pub struct PlaintextTransport {
 
 impl PlaintextTransport {
     pub fn new(stream: std::net::TcpStream) -> Self {
-        let peer = stream
-            .peer_addr()
-            .ok()
-            .map(|a| a.to_string());
-        Self { inner: stream, peer }
+        let peer = stream.peer_addr().ok().map(|a| a.to_string());
+        Self {
+            inner: stream,
+            peer,
+        }
     }
 }
 

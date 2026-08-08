@@ -41,7 +41,9 @@ pub fn encrypt(policy: AccessPolicy, data: &[u8]) -> AbeCiphertext {
     h.update(b"abe-encrypt");
     h.update(&key_material);
     let key = h.finalize();
-    let encrypted: Vec<u8> = data.iter().enumerate()
+    let encrypted: Vec<u8> = data
+        .iter()
+        .enumerate()
         .map(|(i, &b)| b ^ key[i % key.len()])
         .collect();
     AbeCiphertext {
@@ -53,7 +55,9 @@ pub fn encrypt(policy: AccessPolicy, data: &[u8]) -> AbeCiphertext {
 
 /// Check if a set of attributes satisfies the policy.
 pub fn satisfies(attributes: &[String], policy: &AccessPolicy) -> bool {
-    let matching = policy.required_attributes.iter()
+    let matching = policy
+        .required_attributes
+        .iter()
         .filter(|req| attributes.contains(req))
         .count();
     matching >= policy.min_attributes as usize
@@ -74,7 +78,9 @@ pub fn decrypt(ciphertext: &AbeCiphertext, attributes: &[String]) -> Option<Vec<
     h.update(&key_material);
     let key = h.finalize();
     let encrypted = hex::decode(&ciphertext.encrypted_data_hex).ok()?;
-    let decrypted: Vec<u8> = encrypted.iter().enumerate()
+    let decrypted: Vec<u8> = encrypted
+        .iter()
+        .enumerate()
         .map(|(i, &b)| b ^ key[i % key.len()])
         .collect();
     Some(decrypted)
@@ -99,10 +105,15 @@ pub struct TenantManager {
 }
 
 impl TenantManager {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn register(&self, tenant: Tenant) {
-        self.tenants.lock().unwrap().insert(tenant.quorum_id.clone(), tenant);
+        self.tenants
+            .lock()
+            .unwrap()
+            .insert(tenant.quorum_id.clone(), tenant);
     }
 
     pub fn get(&self, quorum_id: &str) -> Option<Tenant> {
@@ -110,7 +121,9 @@ impl TenantManager {
     }
 
     pub fn can_create_session(&self, quorum_id: &str) -> bool {
-        self.tenants.lock().unwrap()
+        self.tenants
+            .lock()
+            .unwrap()
             .get(quorum_id)
             .map(|t| t.active_sessions < t.max_sessions)
             .unwrap_or(false)
@@ -136,7 +149,9 @@ impl TenantManager {
     }
 
     pub fn is_scheme_allowed(&self, quorum_id: &str, scheme: &str) -> bool {
-        self.tenants.lock().unwrap()
+        self.tenants
+            .lock()
+            .unwrap()
             .get(quorum_id)
             .map(|t| t.allowed_schemes.iter().any(|s| s == scheme))
             .unwrap_or(false)

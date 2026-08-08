@@ -84,9 +84,8 @@ pub fn recover_share(
     // If so, the NonZeroScalar conversion fails. Fall back to
     // Scalar::ONE as a degenerate case — this shouldn't happen in
     // practice but we handle it gracefully.
-    let x_i = p256::NonZeroScalar::new(scalar).unwrap_or_else(|| {
-        p256::NonZeroScalar::new(Scalar::ONE).unwrap()
-    });
+    let x_i = p256::NonZeroScalar::new(scalar)
+        .unwrap_or_else(|| p256::NonZeroScalar::new(Scalar::ONE).unwrap());
     Ok(Cmp20Share::from_parts(x_i, pk, lost_party_idx))
 }
 
@@ -120,7 +119,7 @@ impl std::error::Error for RecoverError {}
 mod tests {
     use super::*;
     use crate::inprocess;
-    use p256::ecdsa::{signature::Verifier, Signature, VerifyingKey};
+    use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
 
     #[test]
     fn recovered_share_produces_valid_signatures() {
@@ -137,7 +136,8 @@ mod tests {
         let surviving: Vec<&Cmp20Share> = original_shares.iter().take(4).collect();
 
         // 3. Recover party 5's share using any T=3 of the 4 survivors.
-        let surviving_cloned: Vec<Cmp20Share> = surviving.iter().map(|s| (*s).clone()).take(3).collect();
+        let surviving_cloned: Vec<Cmp20Share> =
+            surviving.iter().map(|s| (*s).clone()).take(3).collect();
         let recovered = recover_share(&surviving_cloned, 5).expect("recover");
 
         // 4. The recovered share has the same scalar as the original.
@@ -146,7 +146,11 @@ mod tests {
 
         // 5. The recovered share + 2 others should produce a valid
         //    signature under the joint public key.
-        let mut signing_shares = vec![original_shares[0].clone(), original_shares[1].clone(), recovered];
+        let mut signing_shares = vec![
+            original_shares[0].clone(),
+            original_shares[1].clone(),
+            recovered,
+        ];
         signing_shares.sort_by_key(|s| s.party_idx);
         let share_blobs: Vec<Vec<u8>> = signing_shares.iter().map(|s| s.to_bytes()).collect();
         let sig = inprocess::sign(&share_blobs, 3, b"recovery test").expect("sign");
@@ -176,9 +180,6 @@ mod tests {
 
     #[test]
     fn empty_shares_errors() {
-        assert!(matches!(
-            recover_share(&[], 1),
-            Err(RecoverError::NoShares)
-        ));
+        assert!(matches!(recover_share(&[], 1), Err(RecoverError::NoShares)));
     }
 }

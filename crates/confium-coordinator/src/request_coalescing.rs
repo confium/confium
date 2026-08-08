@@ -14,7 +14,9 @@ struct CoalescedRequest<T> {
 
 impl<T: Clone + Send + Sync + 'static> RequestCoalescer<T> {
     pub fn new() -> Self {
-        Self { pending: Mutex::new(HashMap::new()) }
+        Self {
+            pending: Mutex::new(HashMap::new()),
+        }
     }
 
     pub fn begin(&self, key: &str) -> bool {
@@ -23,7 +25,13 @@ impl<T: Clone + Send + Sync + 'static> RequestCoalescer<T> {
             req.waiters += 1;
             false // already in progress
         } else {
-            pending.insert(key.into(), CoalescedRequest { waiters: 1, result: None });
+            pending.insert(
+                key.into(),
+                CoalescedRequest {
+                    waiters: 1,
+                    result: None,
+                },
+            );
             true // this caller should execute
         }
     }
@@ -54,12 +62,19 @@ impl<T: Clone + Send + Sync + 'static> RequestCoalescer<T> {
     }
 
     pub fn waiters_for(&self, key: &str) -> usize {
-        self.pending.lock().unwrap().get(key).map(|r| r.waiters).unwrap_or(0)
+        self.pending
+            .lock()
+            .unwrap()
+            .get(key)
+            .map(|r| r.waiters)
+            .unwrap_or(0)
     }
 }
 
 impl<T: Clone + Send + Sync + 'static> Default for RequestCoalescer<T> {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[cfg(test)]

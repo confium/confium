@@ -152,9 +152,15 @@ mod tests {
         let mut state = ElectionState::new("node-1".into(), 5);
         state.become_candidate();
         // Need 3 of 5 votes (self + 2)
-        let resp1 = VoteResponse { term: 1, vote_granted: true };
+        let resp1 = VoteResponse {
+            term: 1,
+            vote_granted: true,
+        };
         assert!(!state.handle_vote_response("node-2", resp1));
-        let resp2 = VoteResponse { term: 1, vote_granted: true };
+        let resp2 = VoteResponse {
+            term: 1,
+            vote_granted: true,
+        };
         assert!(state.handle_vote_response("node-3", resp2));
         assert_eq!(state.role, NodeRole::Leader);
     }
@@ -164,7 +170,10 @@ mod tests {
         let mut state = ElectionState::new("node-1".into(), 3);
         state.become_candidate();
         state.become_leader();
-        let resp = VoteResponse { term: 10, vote_granted: false };
+        let resp = VoteResponse {
+            term: 10,
+            vote_granted: false,
+        };
         state.handle_vote_response("node-2", resp);
         assert_eq!(state.role, NodeRole::Follower);
         assert_eq!(state.current_term, 10);
@@ -174,8 +183,10 @@ mod tests {
     fn vote_request_granted_when_not_voted() {
         let mut state = ElectionState::new("node-1".into(), 3);
         let req = VoteRequest {
-            term: 1, candidate_id: "node-2".into(),
-            last_log_index: 0, last_log_term: 0,
+            term: 1,
+            candidate_id: "node-2".into(),
+            last_log_index: 0,
+            last_log_term: 0,
         };
         let resp = state.handle_vote_request(&req);
         assert!(resp.vote_granted);
@@ -187,8 +198,10 @@ mod tests {
         let mut state = ElectionState::new("node-1".into(), 3);
         state.current_term = 5;
         let req = VoteRequest {
-            term: 3, candidate_id: "node-2".into(),
-            last_log_index: 0, last_log_term: 0,
+            term: 3,
+            candidate_id: "node-2".into(),
+            last_log_index: 0,
+            last_log_term: 0,
         };
         let resp = state.handle_vote_request(&req);
         assert!(!resp.vote_granted);
@@ -204,7 +217,10 @@ mod tests {
     #[test]
     fn vote_serializes() {
         let req = VoteRequest {
-            term: 1, candidate_id: "x".into(), last_log_index: 0, last_log_term: 0,
+            term: 1,
+            candidate_id: "x".into(),
+            last_log_index: 0,
+            last_log_term: 0,
         };
         let json = serde_json::to_string(&req).unwrap();
         assert!(json.contains("candidate_id"));
@@ -221,7 +237,10 @@ mod tests {
     fn denied_vote_does_not_elect() {
         let mut state = ElectionState::new("n1".into(), 3);
         state.become_candidate();
-        let resp = VoteResponse { term: 1, vote_granted: false };
+        let resp = VoteResponse {
+            term: 1,
+            vote_granted: false,
+        };
         assert!(!state.handle_vote_response("n2", resp));
         assert_eq!(state.role, NodeRole::Candidate);
     }

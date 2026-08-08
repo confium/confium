@@ -8,8 +8,8 @@
 //! Bulk signing pipeline — high-throughput batching.
 
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::{Duration, Instant};
 
 // === Connection Pool ===
@@ -30,14 +30,17 @@ impl ConnectionPool {
     pub fn new(max_per_host: usize, idle_timeout: Duration) -> Self {
         Self {
             pools: Mutex::new(HashMap::new()),
-            max_per_host, idle_timeout,
+            max_per_host,
+            idle_timeout,
         }
     }
 
     pub fn acquire(&self, host: &str) -> Option<PooledConn> {
         let mut pools = self.pools.lock().unwrap();
         let pool = pools.entry(host.into()).or_default();
-        let pos = pool.iter().position(|c| c.healthy && c.created_at.elapsed() < self.idle_timeout)?;
+        let pos = pool
+            .iter()
+            .position(|c| c.healthy && c.created_at.elapsed() < self.idle_timeout)?;
         Some(pool.remove(pos))
     }
 
@@ -50,11 +53,20 @@ impl ConnectionPool {
     }
 
     pub fn create(&self, host: &str) -> PooledConn {
-        PooledConn { host: host.into(), created_at: Instant::now(), healthy: true }
+        PooledConn {
+            host: host.into(),
+            created_at: Instant::now(),
+            healthy: true,
+        }
     }
 
     pub fn idle_count(&self, host: &str) -> usize {
-        self.pools.lock().unwrap().get(host).map(|v| v.len()).unwrap_or(0)
+        self.pools
+            .lock()
+            .unwrap()
+            .get(host)
+            .map(|v| v.len())
+            .unwrap_or(0)
     }
 
     pub fn evict_stale(&self) -> usize {
@@ -86,16 +98,23 @@ pub struct HealthLoadBalancer {
 
 impl HealthLoadBalancer {
     pub fn new(backends: Vec<Backend>) -> Self {
-        Self { backends: Mutex::new(backends), current: AtomicU32::new(0) }
+        Self {
+            backends: Mutex::new(backends),
+            current: AtomicU32::new(0),
+        }
     }
 
     pub fn select(&self) -> Option<Backend> {
         let backends = self.backends.lock().unwrap();
         let healthy: Vec<&Backend> = backends.iter().filter(|b| b.healthy).collect();
-        if healthy.is_empty() { return None; }
+        if healthy.is_empty() {
+            return None;
+        }
         // Weighted round-robin: pick by health score
         let total_score: u32 = healthy.iter().map(|b| b.health_score).sum();
-        if total_score == 0 { return Some(healthy[0].clone()); }
+        if total_score == 0 {
+            return Some(healthy[0].clone());
+        }
         let idx = self.current.fetch_add(1, Ordering::SeqCst) as usize % healthy.len();
         Some(healthy[idx].clone())
     }
@@ -109,7 +128,12 @@ impl HealthLoadBalancer {
     }
 
     pub fn healthy_count(&self) -> usize {
-        self.backends.lock().unwrap().iter().filter(|b| b.healthy).count()
+        self.backends
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|b| b.healthy)
+            .count()
     }
 
     pub fn total_count(&self) -> usize {
@@ -119,7 +143,11 @@ impl HealthLoadBalancer {
 
 // === Retry with Jitter ===
 
-pub enum JitterStrategy { Full, Equal, Decorrelated }
+pub enum JitterStrategy {
+    Full,
+    Equal,
+    Decorrelated,
+}
 
 pub fn backoff_with_jitter(
     attempt: u32,
@@ -133,7 +161,9 @@ pub fn backoff_with_jitter(
     OsRng.fill_bytes(&mut rng_bytes);
     let rand_val = u32::from_le_bytes(rng_bytes) as f64 / u32::MAX as f64;
     match strategy {
-        JitterStrategy::Full => Duration::from_nanos((rand_val * exponential.as_nanos() as f64) as u64),
+        JitterStrategy::Full => {
+            Duration::from_nanos((rand_val * exponential.as_nanos() as f64) as u64)
+        }
         JitterStrategy::Equal => {
             let half = exponential.as_nanos() as f64 / 2.0;
             Duration::from_nanos((half + rand_val * half) as u64)
@@ -153,16 +183,25 @@ pub struct DegradationCache<T: Clone> {
 
 impl<T: Clone> DegradationCache<T> {
     pub fn new(max_stale: Duration) -> Self {
-        Self { cache: Mutex::new(HashMap::new()), max_stale }
+        Self {
+            cache: Mutex::new(HashMap::new()),
+            max_stale,
+        }
     }
 
     pub fn store(&self, key: &str, value: T) {
-        self.cache.lock().unwrap().insert(key.into(), (value, Instant::now()));
+        self.cache
+            .lock()
+            .unwrap()
+            .insert(key.into(), (value, Instant::now()));
     }
 
     pub fn get_fresh(&self, key: &str) -> Option<T> {
         let cache = self.cache.lock().unwrap();
-        cache.get(key).filter(|(_, t)| t.elapsed() < self.max_stale).map(|(v, _)| v.clone())
+        cache
+            .get(key)
+            .filter(|(_, t)| t.elapsed() < self.max_stale)
+            .map(|(v, _)| v.clone())
     }
 
     pub fn get_stale(&self, key: &str) -> Option<T> {
@@ -171,7 +210,10 @@ impl<T: Clone> DegradationCache<T> {
 
     pub fn is_stale(&self, key: &str) -> bool {
         let cache = self.cache.lock().unwrap();
-        cache.get(key).map(|(_, t)| t.elapsed() >= self.max_stale).unwrap_or(true)
+        cache
+            .get(key)
+            .map(|(_, t)| t.elapsed() >= self.max_stale)
+            .unwrap_or(true)
     }
 
     pub fn entry_count(&self) -> usize {
@@ -201,16 +243,20 @@ pub struct WsCoordinator {
 
 impl WsCoordinator {
     pub fn new() -> Self {
-        Self { sessions: Mutex::new(HashMap::new()) }
+        Self {
+            sessions: Mutex::new(HashMap::new()),
+        }
     }
 
     pub fn subscribe(&self, session_id: &str, client_id: &str) {
         let mut sessions = self.sessions.lock().unwrap();
-        let session = sessions.entry(session_id.into()).or_insert_with(|| WsSession {
-            session_id: session_id.into(),
-            subscribers: Vec::new(),
-            last_update: chrono::Utc::now(),
-        });
+        let session = sessions
+            .entry(session_id.into())
+            .or_insert_with(|| WsSession {
+                session_id: session_id.into(),
+                subscribers: Vec::new(),
+                last_update: chrono::Utc::now(),
+            });
         if !session.subscribers.contains(&client_id.into()) {
             session.subscribers.push(client_id.into());
         }
@@ -236,7 +282,12 @@ impl WsCoordinator {
     }
 
     pub fn subscriber_count(&self, session_id: &str) -> usize {
-        self.sessions.lock().unwrap().get(session_id).map(|s| s.subscribers.len()).unwrap_or(0)
+        self.sessions
+            .lock()
+            .unwrap()
+            .get(session_id)
+            .map(|s| s.subscribers.len())
+            .unwrap_or(0)
     }
 
     pub fn active_sessions(&self) -> usize {
@@ -244,12 +295,19 @@ impl WsCoordinator {
     }
 }
 
-impl Default for WsCoordinator { fn default() -> Self { Self::new() } }
+impl Default for WsCoordinator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 // === Garbled Circuits ===
 
 #[derive(Debug, Clone)]
-pub struct WireLabel { pub zero: Vec<u8>, pub one: Vec<u8> }
+pub struct WireLabel {
+    pub zero: Vec<u8>,
+    pub one: Vec<u8>,
+}
 
 pub struct GarbledGate {
     pub input_a: WireLabel,
@@ -260,9 +318,18 @@ pub struct GarbledGate {
 
 pub fn garble_and_gate() -> GarbledGate {
     use sha2::{Digest, Sha256};
-    let a = WireLabel { zero: rand_bytes(16), one: rand_bytes(16) };
-    let b = WireLabel { zero: rand_bytes(16), one: rand_bytes(16) };
-    let output = WireLabel { zero: rand_bytes(16), one: rand_bytes(16) };
+    let a = WireLabel {
+        zero: rand_bytes(16),
+        one: rand_bytes(16),
+    };
+    let b = WireLabel {
+        zero: rand_bytes(16),
+        one: rand_bytes(16),
+    };
+    let output = WireLabel {
+        zero: rand_bytes(16),
+        one: rand_bytes(16),
+    };
 
     // AND gate: output = a AND b
     // Table[ai][bi] = encrypt(output_value, hash(a_label, b_label))
@@ -271,18 +338,26 @@ pub fn garble_and_gate() -> GarbledGate {
     let mut table = [[vec![], vec![]], [vec![], vec![]]];
     for (ai, &al) in a_labels.iter().enumerate() {
         for (bi, &bl) in b_labels.iter().enumerate() {
-            let out_val = if ai == 1 && bi == 1 { &output.one } else { &output.zero };
+            let out_val = if ai == 1 && bi == 1 {
+                &output.one
+            } else {
+                &output.zero
+            };
             let mut h = Sha256::new();
             h.update(b"garble");
             h.update(al);
             h.update(bl);
             let key = h.finalize();
-            let encrypted: Vec<u8> = out_val.iter().zip(key.iter())
-                .map(|(o, k)| o ^ k).collect();
+            let encrypted: Vec<u8> = out_val.iter().zip(key.iter()).map(|(o, k)| o ^ k).collect();
             table[ai][bi] = encrypted;
         }
     }
-    GarbledGate { input_a: a, input_b: b, output, table }
+    GarbledGate {
+        input_a: a,
+        input_b: b,
+        output,
+        table,
+    }
 }
 
 pub fn evaluate_gate(gate: &GarbledGate, a: &[u8], b: &[u8]) -> Option<Vec<u8>> {
@@ -294,8 +369,7 @@ pub fn evaluate_gate(gate: &GarbledGate, a: &[u8], b: &[u8]) -> Option<Vec<u8>> 
             h.update(a);
             h.update(b);
             let key = h.finalize();
-            let decrypted: Vec<u8> = cell.iter().zip(key.iter())
-                .map(|(c, k)| c ^ k).collect();
+            let decrypted: Vec<u8> = cell.iter().zip(key.iter()).map(|(c, k)| c ^ k).collect();
             if decrypted == gate.output.zero || decrypted == gate.output.one {
                 return Some(decrypted);
             }
@@ -325,7 +399,10 @@ pub struct BulkSignResult {
 
 impl BulkSignPipeline {
     pub fn new(batch_size: usize) -> Self {
-        Self { batch_size, pending: Mutex::new(Vec::new()) }
+        Self {
+            batch_size,
+            pending: Mutex::new(Vec::new()),
+        }
     }
 
     pub fn enqueue(&self, item: BulkSignItem) -> bool {
@@ -344,10 +421,15 @@ impl BulkSignPipeline {
     }
 
     pub fn batch_and_sign<F>(&self, sign_fn: F) -> BulkSignResult
-    where F: Fn(&[BulkSignItem]) -> Vec<Vec<u8>> {
+    where
+        F: Fn(&[BulkSignItem]) -> Vec<Vec<u8>>,
+    {
         let batch = self.flush();
         let sigs = sign_fn(&batch);
-        BulkSignResult { signatures: sigs, batch_count: batch.len() }
+        BulkSignResult {
+            signatures: sigs,
+            batch_count: batch.len(),
+        }
     }
 }
 
@@ -394,8 +476,18 @@ mod tests {
     #[test]
     fn lb_selects_healthy() {
         let lb = HealthLoadBalancer::new(vec![
-            Backend { id: "a".into(), address: "a:80".into(), health_score: 100, healthy: true },
-            Backend { id: "b".into(), address: "b:80".into(), health_score: 50, healthy: false },
+            Backend {
+                id: "a".into(),
+                address: "a:80".into(),
+                health_score: 100,
+                healthy: true,
+            },
+            Backend {
+                id: "b".into(),
+                address: "b:80".into(),
+                health_score: 50,
+                healthy: false,
+            },
         ]);
         let selected = lb.select().unwrap();
         assert_eq!(selected.id, "a");
@@ -403,17 +495,23 @@ mod tests {
 
     #[test]
     fn lb_no_healthy_returns_none() {
-        let lb = HealthLoadBalancer::new(vec![
-            Backend { id: "a".into(), address: "a:80".into(), health_score: 100, healthy: false },
-        ]);
+        let lb = HealthLoadBalancer::new(vec![Backend {
+            id: "a".into(),
+            address: "a:80".into(),
+            health_score: 100,
+            healthy: false,
+        }]);
         assert!(lb.select().is_none());
     }
 
     #[test]
     fn lb_update_health() {
-        let lb = HealthLoadBalancer::new(vec![
-            Backend { id: "a".into(), address: "a:80".into(), health_score: 100, healthy: true },
-        ]);
+        let lb = HealthLoadBalancer::new(vec![Backend {
+            id: "a".into(),
+            address: "a:80".into(),
+            health_score: 100,
+            healthy: true,
+        }]);
         lb.update_health("a", 50, false);
         assert_eq!(lb.healthy_count(), 0);
     }
@@ -421,13 +519,23 @@ mod tests {
     // Retry jitter
     #[test]
     fn backoff_returns_delay() {
-        let delay = backoff_with_jitter(0, Duration::from_millis(100), Duration::from_secs(10), JitterStrategy::Full);
+        let delay = backoff_with_jitter(
+            0,
+            Duration::from_millis(100),
+            Duration::from_secs(10),
+            JitterStrategy::Full,
+        );
         assert!(delay <= Duration::from_millis(100));
     }
 
     #[test]
     fn backoff_capped_at_max() {
-        let delay = backoff_with_jitter(20, Duration::from_millis(100), Duration::from_secs(1), JitterStrategy::Full);
+        let delay = backoff_with_jitter(
+            20,
+            Duration::from_millis(100),
+            Duration::from_secs(1),
+            JitterStrategy::Full,
+        );
         assert!(delay <= Duration::from_secs(1));
     }
 
@@ -486,9 +594,18 @@ mod tests {
     #[test]
     fn bulk_enqueue_and_flush() {
         let pipeline = BulkSignPipeline::new(3);
-        assert!(!pipeline.enqueue(BulkSignItem { message_hash: vec![1], quorum_id: "q".into() }));
-        assert!(!pipeline.enqueue(BulkSignItem { message_hash: vec![2], quorum_id: "q".into() }));
-        assert!(pipeline.enqueue(BulkSignItem { message_hash: vec![3], quorum_id: "q".into() }));
+        assert!(!pipeline.enqueue(BulkSignItem {
+            message_hash: vec![1],
+            quorum_id: "q".into()
+        }));
+        assert!(!pipeline.enqueue(BulkSignItem {
+            message_hash: vec![2],
+            quorum_id: "q".into()
+        }));
+        assert!(pipeline.enqueue(BulkSignItem {
+            message_hash: vec![3],
+            quorum_id: "q".into()
+        }));
         let batch = pipeline.flush();
         assert_eq!(batch.len(), 3);
     }
@@ -496,11 +613,16 @@ mod tests {
     #[test]
     fn bulk_batch_and_sign() {
         let pipeline = BulkSignPipeline::new(2);
-        pipeline.enqueue(BulkSignItem { message_hash: vec![1], quorum_id: "q".into() });
-        pipeline.enqueue(BulkSignItem { message_hash: vec![2], quorum_id: "q".into() });
-        let result = pipeline.batch_and_sign(|items| {
-            items.iter().map(|i| i.message_hash.clone()).collect()
+        pipeline.enqueue(BulkSignItem {
+            message_hash: vec![1],
+            quorum_id: "q".into(),
         });
+        pipeline.enqueue(BulkSignItem {
+            message_hash: vec![2],
+            quorum_id: "q".into(),
+        });
+        let result =
+            pipeline.batch_and_sign(|items| items.iter().map(|i| i.message_hash.clone()).collect());
         assert_eq!(result.batch_count, 2);
         assert_eq!(result.signatures.len(), 2);
     }

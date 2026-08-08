@@ -64,7 +64,10 @@ mod tests {
 
     #[test]
     fn matching_version_accepted() {
-        let hs = VersionHandshake { client_version: 1, min_supported: 1 };
+        let hs = VersionHandshake {
+            client_version: 1,
+            min_supported: 1,
+        };
         let resp = negotiate(&hs);
         assert!(resp.accepted);
         assert_eq!(resp.negotiated_version, 1);
@@ -72,7 +75,10 @@ mod tests {
 
     #[test]
     fn newer_client_downgrades() {
-        let hs = VersionHandshake { client_version: 5, min_supported: 1 };
+        let hs = VersionHandshake {
+            client_version: 5,
+            min_supported: 1,
+        };
         let resp = negotiate(&hs);
         assert!(resp.accepted);
         assert_eq!(resp.negotiated_version, PROTOCOL_VERSION);
@@ -80,21 +86,30 @@ mod tests {
 
     #[test]
     fn client_requires_newer_rejected() {
-        let hs = VersionHandshake { client_version: 5, min_supported: 5 };
+        let hs = VersionHandshake {
+            client_version: 5,
+            min_supported: 5,
+        };
         let resp = negotiate(&hs);
         assert!(!resp.accepted);
     }
 
     #[test]
     fn invalid_version_rejected() {
-        let hs = VersionHandshake { client_version: 0, min_supported: 0 };
+        let hs = VersionHandshake {
+            client_version: 0,
+            min_supported: 0,
+        };
         let resp = negotiate(&hs);
         assert!(!resp.accepted);
     }
 
     #[test]
     fn handshake_serializes() {
-        let hs = VersionHandshake { client_version: 1, min_supported: 1 };
+        let hs = VersionHandshake {
+            client_version: 1,
+            min_supported: 1,
+        };
         let json = serde_json::to_string(&hs).unwrap();
         assert!(json.contains("client_version"));
     }

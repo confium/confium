@@ -17,8 +17,8 @@
 //! }
 //! ```
 
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 /// A signal that tracks whether shutdown has been requested.
@@ -73,8 +73,7 @@ impl ShutdownSignal {
     }
 
     #[cfg(not(unix))]
-    pub fn install(&self, _drain_timeout: Duration) {
-    }
+    pub fn install(&self, _drain_timeout: Duration) {}
 
     /// Wait until triggered or timeout elapses. Returns `true` if
     /// triggered, `false` if timed out.
@@ -219,8 +218,15 @@ mod tests {
 
     #[test]
     fn drain_result_drained_variant() {
-        let r = DrainResult::Drained { sessions_completed: 5 };
-        assert_eq!(r, DrainResult::Drained { sessions_completed: 5 });
+        let r = DrainResult::Drained {
+            sessions_completed: 5,
+        };
+        assert_eq!(
+            r,
+            DrainResult::Drained {
+                sessions_completed: 5
+            }
+        );
     }
 
     #[test]

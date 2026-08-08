@@ -74,7 +74,8 @@ impl RotationScheduler {
 
     /// Start the scheduler in a background thread.
     pub fn start(&self) {
-        self.running.store(true, std::sync::atomic::Ordering::SeqCst);
+        self.running
+            .store(true, std::sync::atomic::Ordering::SeqCst);
         let config = Arc::clone(&self.config);
         let callback = Arc::clone(&self.callback);
         let running = Arc::clone(&self.running);
@@ -106,7 +107,8 @@ impl RotationScheduler {
 
     /// Stop the scheduler.
     pub fn stop(&self) {
-        self.running.store(false, std::sync::atomic::Ordering::SeqCst);
+        self.running
+            .store(false, std::sync::atomic::Ordering::SeqCst);
     }
 
     /// Trigger a manual refresh immediately (bypasses the schedule).

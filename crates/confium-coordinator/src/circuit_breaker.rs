@@ -4,7 +4,11 @@ use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CircuitState { Closed, Open, HalfOpen }
+pub enum CircuitState {
+    Closed,
+    Open,
+    HalfOpen,
+}
 
 pub struct CircuitBreaker {
     state: std::sync::Mutex<CircuitState>,
@@ -22,7 +26,9 @@ impl CircuitBreaker {
             state: std::sync::Mutex::new(CircuitState::Closed),
             failure_count: AtomicU32::new(0),
             success_count: AtomicU32::new(0),
-            failure_threshold, success_threshold, timeout,
+            failure_threshold,
+            success_threshold,
+            timeout,
             last_failure: std::sync::Mutex::new(None),
         }
     }

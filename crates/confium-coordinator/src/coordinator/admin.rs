@@ -112,12 +112,10 @@ pub fn execute_admin(
                 .collect();
             AdminResponse::SessionList { sessions }
         }
-        AdminRequest::PurgeQuorum { quorum_id: _ } => {
-            AdminResponse::QuorumPurged {
-                quorum_id: "placeholder".into(),
-                count: 0,
-            }
-        }
+        AdminRequest::PurgeQuorum { quorum_id: _ } => AdminResponse::QuorumPurged {
+            quorum_id: "placeholder".into(),
+            count: 0,
+        },
         AdminRequest::GetDiagnostics => AdminResponse::Diagnostics {
             report_json: "{}".into(),
         },
@@ -137,7 +135,9 @@ mod tests {
 
     #[test]
     fn force_expire_unknown_session_errors() {
-        let req = AdminRequest::ForceExpireSession { session_id: "x".into() };
+        let req = AdminRequest::ForceExpireSession {
+            session_id: "x".into(),
+        };
         let resp = execute_admin(&req, &[], &|_| None, &|_| None, &|_| None, &|_| None);
         match resp {
             AdminResponse::Error { .. } => {}
@@ -147,8 +147,17 @@ mod tests {
 
     #[test]
     fn force_expire_known_session() {
-        let req = AdminRequest::ForceExpireSession { session_id: "s1".into() };
-        let resp = execute_admin(&req, &["s1".into()], &|_| Some(SessionState::Pending), &|_| Some(2), &|_| Some(1), &|_| Some(0));
+        let req = AdminRequest::ForceExpireSession {
+            session_id: "s1".into(),
+        };
+        let resp = execute_admin(
+            &req,
+            &["s1".into()],
+            &|_| Some(SessionState::Pending),
+            &|_| Some(2),
+            &|_| Some(1),
+            &|_| Some(0),
+        );
         match resp {
             AdminResponse::SessionExpired { session_id } => assert_eq!(session_id, "s1"),
             _ => panic!("expected SessionExpired"),
@@ -159,9 +168,20 @@ mod tests {
     fn drain_counts_active() {
         let req = AdminRequest::Drain;
         let ids = vec!["s1".into(), "s2".into(), "s3".into()];
-        let resp = execute_admin(&req, &ids, &|sid| {
-            if sid == "s3" { Some(SessionState::Completed) } else { Some(SessionState::Pending) }
-        }, &|_| Some(2), &|_| Some(0), &|_| Some(0));
+        let resp = execute_admin(
+            &req,
+            &ids,
+            &|sid| {
+                if sid == "s3" {
+                    Some(SessionState::Completed)
+                } else {
+                    Some(SessionState::Pending)
+                }
+            },
+            &|_| Some(2),
+            &|_| Some(0),
+            &|_| Some(0),
+        );
         match resp {
             AdminResponse::Draining { active_sessions } => assert_eq!(active_sessions, 2),
             _ => panic!("expected Draining"),
@@ -172,7 +192,14 @@ mod tests {
     fn list_sessions_returns_summaries() {
         let req = AdminRequest::ListSessions;
         let ids = vec!["s1".into(), "s2".into()];
-        let resp = execute_admin(&req, &ids, &|_| Some(SessionState::Pending), &|_| Some(2), &|sid| if sid == "s1" { Some(1) } else { Some(0) }, &|_| Some(0));
+        let resp = execute_admin(
+            &req,
+            &ids,
+            &|_| Some(SessionState::Pending),
+            &|_| Some(2),
+            &|sid| if sid == "s1" { Some(1) } else { Some(0) },
+            &|_| Some(0),
+        );
         match resp {
             AdminResponse::SessionList { sessions } => {
                 assert_eq!(sessions.len(), 2);
@@ -184,14 +211,18 @@ mod tests {
 
     #[test]
     fn admin_request_serializes() {
-        let req = AdminRequest::ForceExpireSession { session_id: "s1".into() };
+        let req = AdminRequest::ForceExpireSession {
+            session_id: "s1".into(),
+        };
         let json = serde_json::to_string(&req).unwrap();
         assert!(json.contains("force_expire_session"));
     }
 
     #[test]
     fn admin_response_serializes() {
-        let resp = AdminResponse::Ok { message: "done".into() };
+        let resp = AdminResponse::Ok {
+            message: "done".into(),
+        };
         let json = serde_json::to_string(&resp).unwrap();
         assert!(json.contains("ok"));
     }

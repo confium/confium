@@ -5,8 +5,8 @@
 //! without reconstructing the underlying secret.
 
 use hmac::{Hmac, Mac};
-use sha2::Sha256;
 use serde::{Deserialize, Serialize};
+use sha2::Sha256;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -54,7 +54,9 @@ pub fn distribute(secret: &[u8], threshold: usize, party_count: usize) -> Vec<Pr
     }
 
     // Last share: ensures XOR of all shares equals secret
-    let last: Vec<u8> = secret.iter().zip(xor_accum.iter())
+    let last: Vec<u8> = secret
+        .iter()
+        .zip(xor_accum.iter())
         .map(|(s, x)| s ^ x)
         .collect();
     shares.push(PrfShare { key: last });
@@ -83,7 +85,8 @@ pub fn evaluate(
     if shares.len() < threshold {
         return Err(format!("need {threshold} shares, got {}", shares.len()));
     }
-    let partials: Vec<[u8; 32]> = shares[..threshold].iter()
+    let partials: Vec<[u8; 32]> = shares[..threshold]
+        .iter()
         .map(|s| s.evaluate(input))
         .collect();
     let output = combine(&partials);

@@ -46,11 +46,15 @@ pub fn deal(
 ) -> (PedersenCommitment, Vec<PedersenShare>) {
     // Two polynomials: f(x) for secret, r(x) for randomness
     let f_coeffs: Vec<Scalar> = (0..threshold)
-        .map(|i| if i == 0 { *secret } else { Scalar::random(&mut OsRng) })
+        .map(|i| {
+            if i == 0 {
+                *secret
+            } else {
+                Scalar::random(&mut OsRng)
+            }
+        })
         .collect();
-    let r_coeffs: Vec<Scalar> = (0..threshold)
-        .map(|_| Scalar::random(&mut OsRng))
-        .collect();
+    let r_coeffs: Vec<Scalar> = (0..threshold).map(|_| Scalar::random(&mut OsRng)).collect();
 
     // Commitments: C_i = g^{f_i} * h^{r_i}, D_i = h^{r_i}
     let mut c_points = Vec::with_capacity(threshold as usize);
@@ -66,16 +70,20 @@ pub fn deal(
 
     // Shares: f(j), r(j) for j = 1..=N
     let shares: Vec<PedersenShare> = (1..=party_count)
-        .map(|j| {
-            PedersenShare {
-                party_idx: j,
-                value: eval_poly(&f_coeffs, j),
-                randomness: eval_poly(&r_coeffs, j),
-            }
+        .map(|j| PedersenShare {
+            party_idx: j,
+            value: eval_poly(&f_coeffs, j),
+            randomness: eval_poly(&r_coeffs, j),
         })
         .collect();
 
-    (PedersenCommitment { c_points_hex: c_points, d_points_hex: d_points }, shares)
+    (
+        PedersenCommitment {
+            c_points_hex: c_points,
+            d_points_hex: d_points,
+        },
+        shares,
+    )
 }
 
 /// Verify a Pedersen share against commitments.
@@ -159,7 +167,11 @@ mod tests {
         let secret = Scalar::random(&mut OsRng);
         let (commitment, shares) = deal(&secret, 3, 5, &params);
         for share in &shares {
-            assert!(verify_share(share, &commitment, &params), "party {}", share.party_idx);
+            assert!(
+                verify_share(share, &commitment, &params),
+                "party {}",
+                share.party_idx
+            );
         }
     }
 

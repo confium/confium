@@ -36,10 +36,16 @@ pub struct OtlpStatus {
 
 impl OtlpStatus {
     pub fn ok() -> Self {
-        Self { code: "ok".into(), message: None }
+        Self {
+            code: "ok".into(),
+            message: None,
+        }
     }
     pub fn error(msg: &str) -> Self {
-        Self { code: "error".into(), message: Some(msg.into()) }
+        Self {
+            code: "error".into(),
+            message: Some(msg.into()),
+        }
     }
 }
 
@@ -147,8 +153,14 @@ mod tests {
 
     #[test]
     fn span_attributes_preserved() {
-        let span = build_span("t", "s", "n", Utc::now(), Utc::now(),
-            vec![("key1", "val1"), ("key2", "val2")]);
+        let span = build_span(
+            "t",
+            "s",
+            "n",
+            Utc::now(),
+            Utc::now(),
+            vec![("key1", "val1"), ("key2", "val2")],
+        );
         assert_eq!(span.attributes.len(), 2);
         assert_eq!(span.attributes[0].key, "key1");
     }
@@ -181,12 +193,23 @@ mod tests {
         let batch = build_export_batch("svc", "1.0", vec![]);
         assert_eq!(batch.resource_spans.len(), 1);
         let attrs = &batch.resource_spans[0].resource.attributes;
-        assert!(attrs.iter().any(|a| a.key == "service.name" && a.value == "svc"));
+        assert!(
+            attrs
+                .iter()
+                .any(|a| a.key == "service.name" && a.value == "svc")
+        );
     }
 
     #[test]
     fn span_round_trips_json() {
-        let span = build_span("t1", "s1", "operation", Utc::now(), Utc::now(), vec![("a", "b")]);
+        let span = build_span(
+            "t1",
+            "s1",
+            "operation",
+            Utc::now(),
+            Utc::now(),
+            vec![("a", "b")],
+        );
         let json = serde_json::to_string(&span).unwrap();
         let recovered: OtlpSpan = serde_json::from_str(&json).unwrap();
         assert_eq!(recovered.trace_id, "t1");

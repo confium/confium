@@ -150,10 +150,12 @@ mod tests {
     fn complete_when_all_contributed() {
         let mut session = RefreshSession::new("r1", 2, 3);
         for p in 1..=3 {
-            session.submit_contribution(RefreshContribution {
-                from_party: p,
-                refresh_shares: HashMap::new(),
-            }).unwrap();
+            session
+                .submit_contribution(RefreshContribution {
+                    from_party: p,
+                    refresh_shares: HashMap::new(),
+                })
+                .unwrap();
         }
         assert!(session.is_complete());
     }
@@ -185,18 +187,22 @@ mod tests {
         let mut shares1 = HashMap::new();
         shares1.insert(1u32, vec![0xFF]);
         shares1.insert(2u32, vec![0x0F]);
-        session.submit_contribution(RefreshContribution {
-            from_party: 1,
-            refresh_shares: shares1,
-        }).unwrap();
+        session
+            .submit_contribution(RefreshContribution {
+                from_party: 1,
+                refresh_shares: shares1,
+            })
+            .unwrap();
 
         let mut shares2 = HashMap::new();
         shares2.insert(1u32, vec![0xAA]);
         shares2.insert(2u32, vec![0x55]);
-        session.submit_contribution(RefreshContribution {
-            from_party: 2,
-            refresh_shares: shares2,
-        }).unwrap();
+        session
+            .submit_contribution(RefreshContribution {
+                from_party: 2,
+                refresh_shares: shares2,
+            })
+            .unwrap();
 
         let agg1 = session.aggregate_for_party(1).unwrap();
         // 0xFF XOR 0xAA = 0x55
@@ -219,14 +225,18 @@ mod tests {
     #[test]
     fn missing_parties_lists_gaps() {
         let mut session = RefreshSession::new("r1", 2, 5);
-        session.submit_contribution(RefreshContribution {
-            from_party: 1,
-            refresh_shares: HashMap::new(),
-        }).unwrap();
-        session.submit_contribution(RefreshContribution {
-            from_party: 3,
-            refresh_shares: HashMap::new(),
-        }).unwrap();
+        session
+            .submit_contribution(RefreshContribution {
+                from_party: 1,
+                refresh_shares: HashMap::new(),
+            })
+            .unwrap();
+        session
+            .submit_contribution(RefreshContribution {
+                from_party: 3,
+                refresh_shares: HashMap::new(),
+            })
+            .unwrap();
         let missing = session.missing_parties();
         assert_eq!(missing, vec![2, 4, 5]);
     }

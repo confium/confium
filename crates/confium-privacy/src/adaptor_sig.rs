@@ -5,10 +5,13 @@
 //! Revealing the completed signature also reveals `y`, enabling
 //! atomic swaps and payment channels.
 
+use p256::ecdsa::{
+    Signature, SigningKey, VerifyingKey,
+    signature::{Signer, Verifier},
+};
 use p256::elliptic_curve::rand_core::OsRng;
 use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
 use p256::elliptic_curve::{Field, PrimeField};
-use p256::ecdsa::{Signature, SigningKey, VerifyingKey, signature::{Signer, Verifier}};
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use sha2::{Digest, Sha256};
 
@@ -45,8 +48,8 @@ pub fn pre_sign(
     let k_point = (ProjectivePoint::GENERATOR * &k).to_affine();
 
     // R' = k*G + Y = (k+y)*G
-    let r_prime = (ProjectivePoint::from(k_point) + ProjectivePoint::from(witness.y_point))
-        .to_affine();
+    let r_prime =
+        (ProjectivePoint::from(k_point) + ProjectivePoint::from(witness.y_point)).to_affine();
 
     // r = x-coordinate of R'
     let r = x_coord(&r_prime);
@@ -56,9 +59,10 @@ pub fn pre_sign(
 
     // s' = k^{-1} * (e + r * x)  -- standard ECDSA with nonce k
     let e = hash_msg(message);
-    let x = Option::<Scalar>::from(Scalar::from_repr(
-        p256::FieldBytes::from(signing_key.to_bytes())
-    )).unwrap_or(Scalar::ZERO);
+    let x = Option::<Scalar>::from(Scalar::from_repr(p256::FieldBytes::from(
+        signing_key.to_bytes(),
+    )))
+    .unwrap_or(Scalar::ZERO);
     let k_inv = invert(&k);
     let s_prime = k_inv * (e + r * &x);
 
@@ -100,21 +104,14 @@ pub fn complete(pre_sig: &AdaptorPreSig, y: &Scalar) -> Result<Signature, String
 
 /// Extract the witness y from a completed signature and pre-signature.
 /// Anyone who sees both can recover y.
-pub fn extract_witness(
-    pre_sig: &AdaptorPreSig,
-    full_sig: &Signature,
-) -> Option<Scalar> {
+pub fn extract_witness(pre_sig: &AdaptorPreSig, full_sig: &Signature) -> Option<Scalar> {
     let (_, s_full) = full_sig.split_scalars();
     let s_full_scalar: Scalar = (*s_full).into();
 
     // y = s' / s (simplified)
     let s_inv = invert(&s_full_scalar);
     let y = pre_sig.s_prime * &s_inv;
-    if y == Scalar::ZERO {
-        None
-    } else {
-        Some(y)
-    }
+    if y == Scalar::ZERO { None } else { Some(y) }
 }
 
 /// Verify an adaptor pre-signature.
@@ -142,8 +139,8 @@ pub fn verify_pre_sig(
     let k_g = expected_k_g.to_affine();
 
     // R' should be k_g + Y
-    let expected_r_prime = (ProjectivePoint::from(k_g) + ProjectivePoint::from(witness.y_point))
-        .to_affine();
+    let expected_r_prime =
+        (ProjectivePoint::from(k_g) + ProjectivePoint::from(witness.y_point)).to_affine();
     expected_r_prime == pre_sig.r_prime
 }
 

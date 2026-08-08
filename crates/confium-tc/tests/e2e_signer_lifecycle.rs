@@ -6,9 +6,9 @@
 //! receive aggregated signature.
 
 use confium_tc::coordinator::client::SignerClient;
-use confium_tc::coordinator::net_server::CoordinatorServer;
 use confium_tc::coordinator::net::ProtocolMessage;
 use confium_tc::coordinator::net::{recv_message, send_message};
+use confium_tc::coordinator::net_server::CoordinatorServer;
 use std::net::TcpStream;
 use std::time::Duration;
 

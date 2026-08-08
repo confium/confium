@@ -5,8 +5,8 @@
 //! homomorphic MAC.
 
 use hmac::{Hmac, Mac};
-use sha2::{Digest, Sha256};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
@@ -17,10 +17,9 @@ type HmacSha256 = Hmac<Sha256>;
 
 /// Hash-based PSI: both parties hash their sets, compare hashes.
 pub fn psi_hash_based(set_a: &[Vec<u8>], set_b: &[Vec<u8>], salt: &[u8]) -> Vec<Vec<u8>> {
-    let hashes_b: HashSet<[u8; 32]> = set_b.iter()
-        .map(|e| hash_with_salt(e, salt))
-        .collect();
-    set_a.iter()
+    let hashes_b: HashSet<[u8; 32]> = set_b.iter().map(|e| hash_with_salt(e, salt)).collect();
+    set_a
+        .iter()
         .filter(|e| hashes_b.contains(&hash_with_salt(e, salt)))
         .cloned()
         .collect()
@@ -50,15 +49,20 @@ pub fn pir_trivial(database: &[Vec<u8>], _index: usize) -> Vec<Vec<u8>> {
 
 /// Batch PIR: retrieve multiple indices in one query.
 pub fn pir_batch(database: &[Vec<u8>], indices: &[usize]) -> Vec<Vec<u8>> {
-    indices.iter()
+    indices
+        .iter()
         .filter_map(|&i| database.get(i).cloned())
         .collect()
 }
 
 /// XOR-based PIR (2 servers): each server gets a random subset;
 /// XOR of responses gives the desired element.
-pub struct PirQuery { pub mask: Vec<bool> }
-pub struct PirResponse { pub data: Vec<u8> }
+pub struct PirQuery {
+    pub mask: Vec<bool>,
+}
+pub struct PirResponse {
+    pub data: Vec<u8>,
+}
 
 pub fn pir_create_query(index: usize, db_size: usize) -> (PirQuery, PirQuery) {
     use rand_core::{OsRng, RngCore};
@@ -79,7 +83,9 @@ pub fn pir_server_respond(database: &[Vec<u8>], query: &PirQuery) -> PirResponse
         if selected {
             if let Some(element) = database.get(i) {
                 for (j, &b) in element.iter().enumerate() {
-                    if j < result.len() { result[j] ^= b; }
+                    if j < result.len() {
+                        result[j] ^= b;
+                    }
                 }
             }
         }
@@ -88,7 +94,9 @@ pub fn pir_server_respond(database: &[Vec<u8>], query: &PirQuery) -> PirResponse
 }
 
 pub fn pir_decode(r1: &PirResponse, r2: &PirResponse) -> Vec<u8> {
-    r1.data.iter().zip(r2.data.iter())
+    r1.data
+        .iter()
+        .zip(r2.data.iter())
         .map(|(a, b)| a ^ b)
         .collect()
 }
@@ -144,18 +152,30 @@ pub struct FeatureFlags {
 }
 
 impl FeatureFlags {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn set(&self, name: &str, enabled: bool) {
-        self.flags.lock().unwrap().insert(name.into(), FeatureFlag {
-            name: name.into(), enabled, rollout_percentage: if enabled { 100 } else { 0 },
-        });
+        self.flags.lock().unwrap().insert(
+            name.into(),
+            FeatureFlag {
+                name: name.into(),
+                enabled,
+                rollout_percentage: if enabled { 100 } else { 0 },
+            },
+        );
     }
 
     pub fn set_rollout(&self, name: &str, percentage: u8) {
-        self.flags.lock().unwrap().insert(name.into(), FeatureFlag {
-            name: name.into(), enabled: percentage > 0, rollout_percentage: percentage,
-        });
+        self.flags.lock().unwrap().insert(
+            name.into(),
+            FeatureFlag {
+                name: name.into(),
+                enabled: percentage > 0,
+                rollout_percentage: percentage,
+            },
+        );
     }
 
     pub fn is_enabled(&self, name: &str) -> bool {
@@ -165,16 +185,27 @@ impl FeatureFlags {
 
     pub fn is_enabled_for(&self, name: &str, user_id: &str) -> bool {
         let flags = self.flags.lock().unwrap();
-        let flag = match flags.get(name) { Some(f) => f, None => return false };
-        if !flag.enabled { return false; }
-        if flag.rollout_percentage >= 100 { return true; }
+        let flag = match flags.get(name) {
+            Some(f) => f,
+            None => return false,
+        };
+        if !flag.enabled {
+            return false;
+        }
+        if flag.rollout_percentage >= 100 {
+            return true;
+        }
         let hash = hash_with_salt(user_id.as_bytes(), name.as_bytes());
         let bucket = (u32::from_be_bytes([hash[0], hash[1], hash[2], hash[3]]) % 100) as u8;
         bucket < flag.rollout_percentage
     }
 
-    pub fn count(&self) -> usize { self.flags.lock().unwrap().len() }
-    pub fn remove(&self, name: &str) { self.flags.lock().unwrap().remove(name); }
+    pub fn count(&self) -> usize {
+        self.flags.lock().unwrap().len()
+    }
+    pub fn remove(&self, name: &str) {
+        self.flags.lock().unwrap().remove(name);
+    }
 }
 
 // === API Versioning ===
@@ -192,38 +223,60 @@ pub struct ApiVersionRegistry {
 }
 
 impl ApiVersionRegistry {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn register(&self, version: u32, min_compatible: u32) {
         self.versions.lock().unwrap().push(ApiVersion {
-            version, deprecated: false, min_compatible,
+            version,
+            deprecated: false,
+            min_compatible,
         });
     }
 
     pub fn deprecate(&self, version: u32) {
-        if let Some(v) = self.versions.lock().unwrap().iter_mut().find(|v| v.version == version) {
+        if let Some(v) = self
+            .versions
+            .lock()
+            .unwrap()
+            .iter_mut()
+            .find(|v| v.version == version)
+        {
             v.deprecated = true;
         }
     }
 
     pub fn is_compatible(&self, client_version: u32) -> bool {
         let versions = self.versions.lock().unwrap();
-        versions.iter().any(|v| v.version >= client_version && v.version >= v.min_compatible)
+        versions
+            .iter()
+            .any(|v| v.version >= client_version && v.version >= v.min_compatible)
     }
 
     pub fn latest(&self) -> Option<u32> {
-        self.versions.lock().unwrap().iter().map(|v| v.version).max()
+        self.versions
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|v| v.version)
+            .max()
     }
 
     pub fn negotiate(&self, client_version: u32) -> Option<u32> {
         let versions = self.versions.lock().unwrap();
-        versions.iter()
-            .filter(|v| !v.deprecated && v.version >= v.min_compatible && v.version >= client_version)
+        versions
+            .iter()
+            .filter(|v| {
+                !v.deprecated && v.version >= v.min_compatible && v.version >= client_version
+            })
             .map(|v| v.version)
             .min()
     }
 
-    pub fn count(&self) -> usize { self.versions.lock().unwrap().len() }
+    pub fn count(&self) -> usize {
+        self.versions.lock().unwrap().len()
+    }
 }
 
 // === Schema Registry ===
@@ -241,41 +294,63 @@ pub struct SchemaRegistry {
 }
 
 impl SchemaRegistry {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn register(&self, schema: Schema) {
-        self.schemas.lock().unwrap()
+        self.schemas
+            .lock()
+            .unwrap()
             .entry(schema.name.clone())
             .or_default()
             .push(schema);
     }
 
     pub fn latest(&self, name: &str) -> Option<Schema> {
-        self.schemas.lock().unwrap()
+        self.schemas
+            .lock()
+            .unwrap()
             .get(name)
             .and_then(|versions| versions.last().cloned())
     }
 
     pub fn get(&self, name: &str, version: u32) -> Option<Schema> {
-        self.schemas.lock().unwrap()
+        self.schemas
+            .lock()
+            .unwrap()
             .get(name)
             .and_then(|versions| versions.iter().find(|s| s.version == version).cloned())
     }
 
     pub fn is_backward_compatible(&self, name: &str, new_version: u32) -> bool {
         let schemas = self.schemas.lock().unwrap();
-        let versions = match schemas.get(name) { Some(v) => v, None => return true };
-        let old = match versions.iter().filter(|s| s.version < new_version).max_by_key(|s| s.version) {
-            Some(s) => s, None => return true,
+        let versions = match schemas.get(name) {
+            Some(v) => v,
+            None => return true,
+        };
+        let old = match versions
+            .iter()
+            .filter(|s| s.version < new_version)
+            .max_by_key(|s| s.version)
+        {
+            Some(s) => s,
+            None => return true,
         };
         let new = match versions.iter().find(|s| s.version == new_version) {
-            Some(s) => s, None => return true,
+            Some(s) => s,
+            None => return true,
         };
         old.fields.iter().all(|f| new.fields.contains(f))
     }
 
     pub fn version_count(&self, name: &str) -> usize {
-        self.schemas.lock().unwrap().get(name).map(|v| v.len()).unwrap_or(0)
+        self.schemas
+            .lock()
+            .unwrap()
+            .get(name)
+            .map(|v| v.len())
+            .unwrap_or(0)
     }
 }
 
@@ -283,7 +358,12 @@ impl SchemaRegistry {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum TwoPcState { Init, Prepared, Committed, Aborted }
+pub enum TwoPcState {
+    Init,
+    Prepared,
+    Committed,
+    Aborted,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TwoPcParticipant {
@@ -298,8 +378,12 @@ pub struct TwoPcCoordinator {
 
 impl TwoPcCoordinator {
     pub fn new(participant_ids: &[&str]) -> Self {
-        let participants = participant_ids.iter()
-            .map(|id| TwoPcParticipant { id: id.to_string(), state: TwoPcState::Init })
+        let participants = participant_ids
+            .iter()
+            .map(|id| TwoPcParticipant {
+                id: id.to_string(),
+                state: TwoPcState::Init,
+            })
             .collect();
         Self {
             participants: Mutex::new(participants),
@@ -309,21 +393,33 @@ impl TwoPcCoordinator {
 
     pub fn prepare(&self, participant_id: &str) -> Result<(), String> {
         let mut participants = self.participants.lock().unwrap();
-        let p = participants.iter_mut().find(|p| p.id == participant_id)
+        let p = participants
+            .iter_mut()
+            .find(|p| p.id == participant_id)
             .ok_or("unknown participant")?;
-        if p.state != TwoPcState::Init { return Err("not in init state".into()); }
+        if p.state != TwoPcState::Init {
+            return Err("not in init state".into());
+        }
         p.state = TwoPcState::Prepared;
         Ok(())
     }
 
     pub fn all_prepared(&self) -> bool {
-        self.participants.lock().unwrap().iter().all(|p| p.state == TwoPcState::Prepared)
+        self.participants
+            .lock()
+            .unwrap()
+            .iter()
+            .all(|p| p.state == TwoPcState::Prepared)
     }
 
     pub fn commit(&self) -> Result<(), String> {
-        if !self.all_prepared() { return Err("not all prepared".into()); }
+        if !self.all_prepared() {
+            return Err("not all prepared".into());
+        }
         let mut participants = self.participants.lock().unwrap();
-        for p in participants.iter_mut() { p.state = TwoPcState::Committed; }
+        for p in participants.iter_mut() {
+            p.state = TwoPcState::Committed;
+        }
         *self.global_state.lock().unwrap() = TwoPcState::Committed;
         Ok(())
     }
@@ -331,7 +427,9 @@ impl TwoPcCoordinator {
     pub fn abort(&self) {
         let mut participants = self.participants.lock().unwrap();
         for p in participants.iter_mut() {
-            if p.state != TwoPcState::Committed { p.state = TwoPcState::Aborted; }
+            if p.state != TwoPcState::Committed {
+                p.state = TwoPcState::Aborted;
+            }
         }
         *self.global_state.lock().unwrap() = TwoPcState::Aborted;
     }
@@ -369,23 +467,42 @@ impl WalStreamer {
     }
 
     pub fn append(&self, data: &[u8]) -> u64 {
-        let seq = { let mut s = self.next_seq.lock().unwrap(); let v = *s; *s += 1; v };
+        let seq = {
+            let mut s = self.next_seq.lock().unwrap();
+            let v = *s;
+            *s += 1;
+            v
+        };
         self.entries.lock().unwrap().push(WalStreamEntry {
-            sequence: seq, data_hex: hex::encode(data),
+            sequence: seq,
+            data_hex: hex::encode(data),
         });
         seq
     }
 
     pub fn subscribe(&self) -> usize {
-        let last_seq = self.entries.lock().unwrap().last().map(|e| e.sequence).unwrap_or(0);
+        let last_seq = self
+            .entries
+            .lock()
+            .unwrap()
+            .last()
+            .map(|e| e.sequence)
+            .unwrap_or(0);
         self.subscribers.lock().unwrap().push(last_seq);
         self.subscribers.lock().unwrap().len() - 1
     }
 
     pub fn stream_since(&self, subscriber_id: usize) -> Vec<WalStreamEntry> {
-        let last_seen = self.subscribers.lock().unwrap().get(subscriber_id).copied().unwrap_or(0);
+        let last_seen = self
+            .subscribers
+            .lock()
+            .unwrap()
+            .get(subscriber_id)
+            .copied()
+            .unwrap_or(0);
         let entries = self.entries.lock().unwrap();
-        let new_entries: Vec<WalStreamEntry> = entries.iter()
+        let new_entries: Vec<WalStreamEntry> = entries
+            .iter()
             .filter(|e| e.sequence > last_seen)
             .cloned()
             .collect();
@@ -397,11 +514,19 @@ impl WalStreamer {
         new_entries
     }
 
-    pub fn entry_count(&self) -> usize { self.entries.lock().unwrap().len() }
-    pub fn subscriber_count(&self) -> usize { self.subscribers.lock().unwrap().len() }
+    pub fn entry_count(&self) -> usize {
+        self.entries.lock().unwrap().len()
+    }
+    pub fn subscriber_count(&self) -> usize {
+        self.subscribers.lock().unwrap().len()
+    }
 }
 
-impl Default for WalStreamer { fn default() -> Self { Self::new() } }
+impl Default for WalStreamer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 // === Snapshot Isolation ===
 
@@ -429,11 +554,18 @@ impl<T: Clone> SnapshotStore<T> {
 
     pub fn write(&self, data: T) -> u64 {
         let mut current = self.current.lock().unwrap();
-        let v = { let mut ver = self.version.lock().unwrap(); let old = *ver; *ver += 1; old };
+        let v = {
+            let mut ver = self.version.lock().unwrap();
+            let old = *ver;
+            *ver += 1;
+            old
+        };
         let old_data = current.clone();
         *current = data;
         self.snapshots.lock().unwrap().push(Snapshot {
-            data: old_data, version: v, timestamp: Instant::now(),
+            data: old_data,
+            version: v,
+            timestamp: Instant::now(),
         });
         v + 1
     }
@@ -447,19 +579,26 @@ impl<T: Clone> SnapshotStore<T> {
         if version >= *self.version.lock().unwrap() {
             return Some(self.current.lock().unwrap().clone());
         }
-        snapshots.iter()
+        snapshots
+            .iter()
             .filter(|s| s.version <= version)
             .max_by_key(|s| s.version)
             .map(|s| s.data.clone())
     }
 
-    pub fn current_version(&self) -> u64 { *self.version.lock().unwrap() }
-    pub fn snapshot_count(&self) -> usize { self.snapshots.lock().unwrap().len() }
+    pub fn current_version(&self) -> u64 {
+        *self.version.lock().unwrap()
+    }
+    pub fn snapshot_count(&self) -> usize {
+        self.snapshots.lock().unwrap().len()
+    }
 
     pub fn prune_older_than(&self, max_versions: usize) -> usize {
         let mut snapshots = self.snapshots.lock().unwrap();
         let total = snapshots.len();
-        if total <= max_versions { return 0; }
+        if total <= max_versions {
+            return 0;
+        }
         let to_remove = total - max_versions;
         snapshots.drain(..to_remove);
         to_remove
@@ -474,10 +613,14 @@ pub struct HomomorphicMac {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct MacTag { pub tag: [u8; 32] }
+pub struct MacTag {
+    pub tag: [u8; 32],
+}
 
 impl HomomorphicMac {
-    pub fn new(key: [u8; 32]) -> Self { Self { key } }
+    pub fn new(key: [u8; 32]) -> Self {
+        Self { key }
+    }
 
     pub fn mac(&self, message: &[u8]) -> MacTag {
         let mut mac = HmacSha256::new_from_slice(&self.key).expect("HMAC");
@@ -496,7 +639,9 @@ impl HomomorphicMac {
     /// Homomorphically combine two MAC tags (XOR).
     pub fn combine(a: &MacTag, b: &MacTag) -> MacTag {
         let mut combined = [0u8; 32];
-        for i in 0..32 { combined[i] = a.tag[i] ^ b.tag[i]; }
+        for i in 0..32 {
+            combined[i] = a.tag[i] ^ b.tag[i];
+        }
         MacTag { tag: combined }
     }
 
@@ -652,8 +797,16 @@ mod tests {
     #[test]
     fn schema_register_and_get() {
         let reg = SchemaRegistry::new();
-        reg.register(Schema { name: "user".into(), version: 1, fields: vec!["id".into(), "name".into()] });
-        reg.register(Schema { name: "user".into(), version: 2, fields: vec!["id".into(), "name".into(), "email".into()] });
+        reg.register(Schema {
+            name: "user".into(),
+            version: 1,
+            fields: vec!["id".into(), "name".into()],
+        });
+        reg.register(Schema {
+            name: "user".into(),
+            version: 2,
+            fields: vec!["id".into(), "name".into(), "email".into()],
+        });
         assert_eq!(reg.version_count("user"), 2);
         let latest = reg.latest("user").unwrap();
         assert_eq!(latest.version, 2);
@@ -663,10 +816,22 @@ mod tests {
     #[test]
     fn schema_backward_compat() {
         let reg = SchemaRegistry::new();
-        reg.register(Schema { name: "event".into(), version: 1, fields: vec!["id".into()] });
-        reg.register(Schema { name: "event".into(), version: 2, fields: vec!["id".into(), "ts".into()] });
+        reg.register(Schema {
+            name: "event".into(),
+            version: 1,
+            fields: vec!["id".into()],
+        });
+        reg.register(Schema {
+            name: "event".into(),
+            version: 2,
+            fields: vec!["id".into(), "ts".into()],
+        });
         assert!(reg.is_backward_compatible("event", 2));
-        reg.register(Schema { name: "event".into(), version: 3, fields: vec!["ts".into()] }); // removed "id"
+        reg.register(Schema {
+            name: "event".into(),
+            version: 3,
+            fields: vec!["ts".into()],
+        }); // removed "id"
         assert!(!reg.is_backward_compatible("event", 3));
     }
 
@@ -745,7 +910,9 @@ mod tests {
     #[test]
     fn snapshot_prune() {
         let store = SnapshotStore::new(0);
-        for i in 1..=10 { store.write(i); }
+        for i in 1..=10 {
+            store.write(i);
+        }
         assert_eq!(store.snapshot_count(), 10);
         store.prune_older_than(3);
         assert!(store.snapshot_count() <= 3);

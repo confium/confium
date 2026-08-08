@@ -69,8 +69,7 @@ pub fn save_baseline(baseline: &Baseline, path: &Path) -> std::io::Result<()> {
 /// Load a baseline from a JSON file.
 pub fn load_baseline(path: &Path) -> std::io::Result<Baseline> {
     let json = std::fs::read_to_string(path)?;
-    serde_json::from_str(&json)
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+    serde_json::from_str(&json).map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
 }
 
 /// Create a baseline from benchmark results.
@@ -158,10 +157,8 @@ mod tests {
 
     #[test]
     fn multiple_benchmarks_compared() {
-        let baseline = create_baseline("v1", vec![
-            make_result("a", 100.0),
-            make_result("b", 200.0),
-        ]);
+        let baseline =
+            create_baseline("v1", vec![make_result("a", 100.0), make_result("b", 200.0)]);
         let current = vec![
             make_result("a", 150.0), // 50% regression
             make_result("b", 190.0), // 5% improvement

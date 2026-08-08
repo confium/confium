@@ -9,9 +9,9 @@ use std::collections::HashSet;
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
 
-use confium_attributes::{evaluate, parse as dsl_parse, SignerAttributes};
 use crate::error::RpcError;
 use crate::server::SharedConfium;
+use confium_attributes::{SignerAttributes, evaluate, parse as dsl_parse};
 
 /// Request body for `attributes_evaluate`.
 #[derive(Debug, Deserialize)]
@@ -53,11 +53,10 @@ pub async fn attributes_evaluate(
     _cfm: SharedConfium,
     params: Value,
 ) -> std::result::Result<Value, RpcError> {
-    let req: AttributesEvaluateRequest = serde_json::from_value(params).map_err(|e| {
-        RpcError::InvalidParams {
+    let req: AttributesEvaluateRequest =
+        serde_json::from_value(params).map_err(|e| RpcError::InvalidParams {
             detail: format!("attributes_evaluate params: {e}"),
-        }
-    })?;
+        })?;
 
     let predicate = dsl_parse(&req.predicate).map_err(|e| RpcError::InvalidParams {
         detail: format!("predicate parse error: {e}"),
@@ -145,4 +144,3 @@ mod tests {
         assert!(result.is_err());
     }
 }
-

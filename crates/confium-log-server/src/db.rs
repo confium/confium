@@ -21,7 +21,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{Context, Result, anyhow};
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
 
 /// Wrapper around the SQLite connection. Cheaply clonable because
@@ -232,9 +232,7 @@ impl Database {
     /// Merkle tree on startup.
     pub fn all_leaf_hashes(&self) -> Result<Vec<[u8; 32]>> {
         let conn = self.conn.lock();
-        let mut stmt = conn.prepare(
-            "SELECT artifact_hash FROM entries ORDER BY sequence ASC",
-        )?;
+        let mut stmt = conn.prepare("SELECT artifact_hash FROM entries ORDER BY sequence ASC")?;
         let rows = stmt.query_map([], |row| {
             let h: String = row.get(0)?;
             Ok(h)
@@ -319,10 +317,7 @@ impl Database {
         Ok(())
     }
 
-    pub fn witness_sigs_for_size(
-        &self,
-        tree_size: u64,
-    ) -> Result<Vec<(String, Vec<u8>, String)>> {
+    pub fn witness_sigs_for_size(&self, tree_size: u64) -> Result<Vec<(String, Vec<u8>, String)>> {
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(
             "SELECT witness_id, signature, timestamp

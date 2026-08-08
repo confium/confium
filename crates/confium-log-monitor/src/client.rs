@@ -36,16 +36,28 @@ impl LogClient {
 
     pub async fn fetch_head(&self) -> Result<TreeHead> {
         let url = format!("{}/v1/head", self.base_url);
-        let head = self.http.get(&url).send().await?.error_for_status()?
-            .json::<TreeHead>().await
+        let head = self
+            .http
+            .get(&url)
+            .send()
+            .await?
+            .error_for_status()?
+            .json::<TreeHead>()
+            .await
             .context("decoding /v1/head response")?;
         Ok(head)
     }
 
     pub async fn fetch_consistency(&self, old_size: u64) -> Result<ConsistencyProof> {
         let url = format!("{}/v1/consistency/{}", self.base_url, old_size);
-        let proof = self.http.get(&url).send().await?.error_for_status()?
-            .json::<ConsistencyProof>().await
+        let proof = self
+            .http
+            .get(&url)
+            .send()
+            .await?
+            .error_for_status()?
+            .json::<ConsistencyProof>()
+            .await
             .context("decoding /v1/consistency response")?;
         Ok(proof)
     }

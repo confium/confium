@@ -478,11 +478,8 @@ mod consistency_tests {
         let old_root = tree.root_at_size(4);
         // Grow to 12 by appending more entries.
         for i in 8..12 {
-            let entry = MerkleEntry::new(
-                i as u64,
-                ArtifactType::CertificateIssuance,
-                [i as u8; 32],
-            );
+            let entry =
+                MerkleEntry::new(i as u64, ArtifactType::CertificateIssuance, [i as u8; 32]);
             tree.append(entry);
         }
         let new_root = tree.root();
@@ -496,11 +493,8 @@ mod consistency_tests {
         let mut tree = build_tree(5);
         let old_root = tree.root_at_size(3);
         for i in 5..11 {
-            let entry = MerkleEntry::new(
-                i as u64,
-                ArtifactType::CertificateIssuance,
-                [i as u8; 32],
-            );
+            let entry =
+                MerkleEntry::new(i as u64, ArtifactType::CertificateIssuance, [i as u8; 32]);
             tree.append(entry);
         }
         let new_root = tree.root();
@@ -513,11 +507,8 @@ mod consistency_tests {
     fn verify_consistency_detects_tampered_old_root() {
         let mut tree = build_tree(8);
         for i in 8..12 {
-            let entry = MerkleEntry::new(
-                i as u64,
-                ArtifactType::CertificateIssuance,
-                [i as u8; 32],
-            );
+            let entry =
+                MerkleEntry::new(i as u64, ArtifactType::CertificateIssuance, [i as u8; 32]);
             tree.append(entry);
         }
         let new_root = tree.root();
@@ -532,11 +523,8 @@ mod consistency_tests {
         let mut tree = build_tree(8);
         let old_root = tree.root_at_size(4);
         for i in 8..12 {
-            let entry = MerkleEntry::new(
-                i as u64,
-                ArtifactType::CertificateIssuance,
-                [i as u8; 32],
-            );
+            let entry =
+                MerkleEntry::new(i as u64, ArtifactType::CertificateIssuance, [i as u8; 32]);
             tree.append(entry);
         }
         let proof = tree.consistency_proof(4).unwrap();
@@ -552,11 +540,7 @@ mod consistency_tests {
         let mut tree = MerkleTree::new();
         let mut roots: Vec<Hash> = Vec::new();
         for i in 0..16u64 {
-            let entry = MerkleEntry::new(
-                i,
-                ArtifactType::CertificateIssuance,
-                [i as u8; 32],
-            );
+            let entry = MerkleEntry::new(i, ArtifactType::CertificateIssuance, [i as u8; 32]);
             tree.append(entry);
             roots.push(tree.root());
         }
@@ -566,9 +550,9 @@ mod consistency_tests {
             let new_root = roots[final_size - 1];
             let proof = tree.consistency_proof(old_size).unwrap();
             tree.verify_consistency(old_root, new_root, old_size, final_size, &proof)
-                .unwrap_or_else(|e| panic!(
-                    "verify_consistency failed for old_size={old_size}: {e:?}"
-                ));
+                .unwrap_or_else(|e| {
+                    panic!("verify_consistency failed for old_size={old_size}: {e:?}")
+                });
         }
     }
 }

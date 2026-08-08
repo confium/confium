@@ -14,7 +14,11 @@ fn inclusion_proof_target(data: &[u8]) {
     let mut root: Hash = [0u8; 32];
     root.copy_from_slice(root_bytes);
 
-    let entry = MerkleEntry::new(0, ArtifactType::ThresholdSignature, [rest.first().copied().unwrap_or(0); 32]);
+    let entry = MerkleEntry::new(
+        0,
+        ArtifactType::ThresholdSignature,
+        [rest.first().copied().unwrap_or(0); 32],
+    );
 
     let steps: Vec<ProofStep> = rest
         .chunks(33)
@@ -23,8 +27,15 @@ fn inclusion_proof_target(data: &[u8]) {
         .map(|c| {
             let mut hash = [0u8; 32];
             hash.copy_from_slice(&c[0..32]);
-            let side = if c[32] & 1 == 0 { Side::Left } else { Side::Right };
-            ProofStep { sibling: hash, side }
+            let side = if c[32] & 1 == 0 {
+                Side::Left
+            } else {
+                Side::Right
+            };
+            ProofStep {
+                sibling: hash,
+                side,
+            }
         })
         .collect();
 
@@ -57,7 +68,10 @@ mod tests {
         let mut root = [0u8; 32];
         root.copy_from_slice(&[0xFF; 32]);
         let entry = MerkleEntry::new(0, ArtifactType::ThresholdSignature, [0; 32]);
-        let proof = InclusionProof { sequence: 0, steps: vec![] };
+        let proof = InclusionProof {
+            sequence: 0,
+            steps: vec![],
+        };
         let _ = MerkleTree::verify_inclusion(&entry, &proof, root);
     }
 

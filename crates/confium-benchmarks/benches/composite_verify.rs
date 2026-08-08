@@ -5,11 +5,11 @@
 //! - `CompositeSignature::verify` with one ECDSA-P256 component
 //! - `CompositeSignature::verify` with a hybrid Ed25519+ECDSA-P256 envelope
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 use confium_composite::{
     ComponentSignature, CompositeSignature, ECDSA_P256, ED25519, build_ed25519_component,
     build_p256_component, ed25519_verifier, p256_verifier,
 };
+use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 use ed25519_dalek::SigningKey;
 use p256::ecdsa::SigningKey as P256SigningKey;
 use rand_core::OsRng;
@@ -39,27 +39,33 @@ fn bench_composite_verify(c: &mut Criterion) {
 
     group.bench_function(BenchmarkId::new("ed25519", "1_component"), |b| {
         b.iter(|| {
-            black_box(&ed_only).verify(black_box(message), |alg, pk, m, sig| {
-                ed25519_verifier(alg, pk, m, sig)
-            }).unwrap();
+            black_box(&ed_only)
+                .verify(black_box(message), |alg, pk, m, sig| {
+                    ed25519_verifier(alg, pk, m, sig)
+                })
+                .unwrap();
         })
     });
 
     group.bench_function(BenchmarkId::new("ecdsa_p256", "1_component"), |b| {
         b.iter(|| {
-            black_box(&p256_only).verify(black_box(message), |alg, pk, m, sig| {
-                p256_verifier(alg, pk, m, sig)
-            }).unwrap();
+            black_box(&p256_only)
+                .verify(black_box(message), |alg, pk, m, sig| {
+                    p256_verifier(alg, pk, m, sig)
+                })
+                .unwrap();
         })
     });
 
     group.bench_function(BenchmarkId::new("hybrid", "2_components"), |b| {
         b.iter(|| {
-            black_box(&hybrid).verify(black_box(message), |alg, pk, m, sig| match alg {
-                ED25519 => ed25519_verifier(alg, pk, m, sig),
-                ECDSA_P256 => p256_verifier(alg, pk, m, sig),
-                _ => unreachable!(),
-            }).unwrap();
+            black_box(&hybrid)
+                .verify(black_box(message), |alg, pk, m, sig| match alg {
+                    ED25519 => ed25519_verifier(alg, pk, m, sig),
+                    ECDSA_P256 => p256_verifier(alg, pk, m, sig),
+                    _ => unreachable!(),
+                })
+                .unwrap();
         })
     });
 

@@ -159,11 +159,7 @@ impl PostgresBackend {
         rows.into_iter().map(pg_row_to_entry).collect()
     }
 
-    pub async fn entries_by_issuer(
-        &self,
-        issuer_dn: &str,
-        limit: usize,
-    ) -> Result<Vec<Entry>> {
+    pub async fn entries_by_issuer(&self, issuer_dn: &str, limit: usize) -> Result<Vec<Entry>> {
         let rows = self
             .client
             .query(

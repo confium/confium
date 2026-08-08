@@ -111,7 +111,11 @@ pub fn timing_ratio(group_a: &[TimingSample], group_b: &[TimingSample]) -> f64 {
 }
 
 /// Check if two groups have consistent timing (ratio < threshold).
-pub fn is_constant_time(group_a: &[TimingSample], group_b: &[TimingSample], threshold: f64) -> bool {
+pub fn is_constant_time(
+    group_a: &[TimingSample],
+    group_b: &[TimingSample],
+    threshold: f64,
+) -> bool {
     timing_ratio(group_a, group_b) < threshold
 }
 
@@ -144,9 +148,18 @@ mod tests {
     #[test]
     fn stats_computes_min_max() {
         let samples = vec![
-            TimingSample { label: "x".into(), duration: Duration::from_nanos(100) },
-            TimingSample { label: "x".into(), duration: Duration::from_nanos(300) },
-            TimingSample { label: "x".into(), duration: Duration::from_nanos(200) },
+            TimingSample {
+                label: "x".into(),
+                duration: Duration::from_nanos(100),
+            },
+            TimingSample {
+                label: "x".into(),
+                duration: Duration::from_nanos(300),
+            },
+            TimingSample {
+                label: "x".into(),
+                duration: Duration::from_nanos(200),
+            },
         ];
         let s = stats(&samples);
         assert_eq!(s.min, Duration::from_nanos(100));
@@ -156,9 +169,18 @@ mod tests {
     #[test]
     fn stats_computes_mean() {
         let samples = vec![
-            TimingSample { label: "x".into(), duration: Duration::from_nanos(100) },
-            TimingSample { label: "x".into(), duration: Duration::from_nanos(200) },
-            TimingSample { label: "x".into(), duration: Duration::from_nanos(300) },
+            TimingSample {
+                label: "x".into(),
+                duration: Duration::from_nanos(100),
+            },
+            TimingSample {
+                label: "x".into(),
+                duration: Duration::from_nanos(200),
+            },
+            TimingSample {
+                label: "x".into(),
+                duration: Duration::from_nanos(300),
+            },
         ];
         let s = stats(&samples);
         assert_eq!(s.mean, Duration::from_nanos(200));
@@ -167,11 +189,26 @@ mod tests {
     #[test]
     fn stats_computes_median() {
         let samples = vec![
-            TimingSample { label: "x".into(), duration: Duration::from_nanos(100) },
-            TimingSample { label: "x".into(), duration: Duration::from_nanos(200) },
-            TimingSample { label: "x".into(), duration: Duration::from_nanos(300) },
-            TimingSample { label: "x".into(), duration: Duration::from_nanos(400) },
-            TimingSample { label: "x".into(), duration: Duration::from_nanos(500) },
+            TimingSample {
+                label: "x".into(),
+                duration: Duration::from_nanos(100),
+            },
+            TimingSample {
+                label: "x".into(),
+                duration: Duration::from_nanos(200),
+            },
+            TimingSample {
+                label: "x".into(),
+                duration: Duration::from_nanos(300),
+            },
+            TimingSample {
+                label: "x".into(),
+                duration: Duration::from_nanos(400),
+            },
+            TimingSample {
+                label: "x".into(),
+                duration: Duration::from_nanos(500),
+            },
         ];
         let s = stats(&samples);
         assert_eq!(s.median, Duration::from_nanos(300));
@@ -179,29 +216,53 @@ mod tests {
 
     #[test]
     fn timing_ratio_equal_groups() {
-        let a = vec![TimingSample { label: "a".into(), duration: Duration::from_nanos(100) }];
-        let b = vec![TimingSample { label: "b".into(), duration: Duration::from_nanos(100) }];
+        let a = vec![TimingSample {
+            label: "a".into(),
+            duration: Duration::from_nanos(100),
+        }];
+        let b = vec![TimingSample {
+            label: "b".into(),
+            duration: Duration::from_nanos(100),
+        }];
         assert!((timing_ratio(&a, &b) - 1.0).abs() < 0.01);
     }
 
     #[test]
     fn timing_ratio_different_groups() {
-        let a = vec![TimingSample { label: "a".into(), duration: Duration::from_nanos(100) }];
-        let b = vec![TimingSample { label: "b".into(), duration: Duration::from_nanos(200) }];
+        let a = vec![TimingSample {
+            label: "a".into(),
+            duration: Duration::from_nanos(100),
+        }];
+        let b = vec![TimingSample {
+            label: "b".into(),
+            duration: Duration::from_nanos(200),
+        }];
         assert!((timing_ratio(&a, &b) - 2.0).abs() < 0.01);
     }
 
     #[test]
     fn is_constant_time_passes_for_equal() {
-        let a = vec![TimingSample { label: "a".into(), duration: Duration::from_nanos(100) }];
-        let b = vec![TimingSample { label: "b".into(), duration: Duration::from_nanos(105) }];
+        let a = vec![TimingSample {
+            label: "a".into(),
+            duration: Duration::from_nanos(100),
+        }];
+        let b = vec![TimingSample {
+            label: "b".into(),
+            duration: Duration::from_nanos(105),
+        }];
         assert!(is_constant_time(&a, &b, 1.5));
     }
 
     #[test]
     fn is_constant_time_fails_for_different() {
-        let a = vec![TimingSample { label: "a".into(), duration: Duration::from_nanos(100) }];
-        let b = vec![TimingSample { label: "b".into(), duration: Duration::from_nanos(500) }];
+        let a = vec![TimingSample {
+            label: "a".into(),
+            duration: Duration::from_nanos(100),
+        }];
+        let b = vec![TimingSample {
+            label: "b".into(),
+            duration: Duration::from_nanos(500),
+        }];
         assert!(!is_constant_time(&a, &b, 1.5));
     }
 }

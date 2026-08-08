@@ -36,22 +36,7 @@ p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
 chrono = { workspace = true }
 elliptic-curve = { workspace = true }
 
-[[example]]
-name = "threshold_signing"
-path = "src/bin/threshold_signing.rs"
 
-[[example]]
-name = "p256_threshold_signing"
-path = "src/bin/p256_threshold_signing.rs"
 
-[[example]]
-name = "transparency_log_demo"
-path = "src/bin/transparency_log_demo.rs"
 
-[[example]]
-name = "pkcs11_server_demo"
-path = "src/bin/pkcs11_server_demo.rs"
 
-[[example]]
-name = "mini_cnml_demo"
-path = "src/bin/mini_cnml_demo.rs"

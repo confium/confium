@@ -6,6 +6,18 @@
 
 use crate::pending_method;
 
-pending_method!(cipher_create, "cipher_create", "requires per-connection handle management (pending)");
-pending_method!(cipher_update, "cipher_update", "requires per-connection handle management (pending)");
-pending_method!(cipher_finalize, "cipher_finalize", "requires per-connection handle management (pending)");
+pending_method!(
+    cipher_create,
+    "cipher_create",
+    "requires per-connection handle management (pending)"
+);
+pending_method!(
+    cipher_update,
+    "cipher_update",
+    "requires per-connection handle management (pending)"
+);
+pending_method!(
+    cipher_finalize,
+    "cipher_finalize",
+    "requires per-connection handle management (pending)"
+);

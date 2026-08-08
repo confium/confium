@@ -26,7 +26,10 @@ impl SessionTimeoutManager {
     /// Set a deadline for a session.
     pub fn set_deadline(&self, session_id: &str, timeout: Duration) {
         let deadline = Utc::now() + timeout;
-        self.deadlines.lock().unwrap().insert(session_id.into(), deadline);
+        self.deadlines
+            .lock()
+            .unwrap()
+            .insert(session_id.into(), deadline);
     }
 
     /// Remove a session's deadline (session completed).

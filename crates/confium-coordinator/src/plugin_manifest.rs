@@ -55,13 +55,20 @@ impl PluginManifest {
         if self.name.is_empty() {
             errors.push("name must not be empty".into());
         }
-        if !self.name.chars().all(|c| c.is_ascii_lowercase() || c == '-' || c.is_ascii_digit()) {
+        if !self
+            .name
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c == '-' || c.is_ascii_digit())
+        {
             errors.push("name must be kebab-case (lowercase, digits, hyphens)".into());
         }
         if self.version.is_empty() {
             errors.push("version must not be empty".into());
         } else if parse_version(&self.version).is_none() {
-            errors.push(format!("version '{}' is not valid semver (X.Y.Z)", self.version));
+            errors.push(format!(
+                "version '{}' is not valid semver (X.Y.Z)",
+                self.version
+            ));
         }
         if self.description.is_empty() {
             errors.push("description must not be empty".into());

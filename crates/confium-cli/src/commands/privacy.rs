@@ -26,14 +26,12 @@ fn psi(args: PrivacyPsiArgs) -> Result<(), String> {
     let salt = read_salt(&args.salt)?;
 
     if args.cardinality_only {
-        let count = confium_privacy::privacy_and_dist_patterns::psi_cardinality(
-            &set_a, &set_b, &salt,
-        );
+        let count =
+            confium_privacy::privacy_and_dist_patterns::psi_cardinality(&set_a, &set_b, &salt);
         println!("{count}");
     } else {
-        let intersection = confium_privacy::privacy_and_dist_patterns::psi_hash_based(
-            &set_a, &set_b, &salt,
-        );
+        let intersection =
+            confium_privacy::privacy_and_dist_patterns::psi_hash_based(&set_a, &set_b, &salt);
         for item in intersection {
             if let Ok(s) = std::str::from_utf8(&item) {
                 println!("{s}");
@@ -60,7 +58,11 @@ fn dp(args: PrivacyDpArgs) -> Result<(), String> {
             );
             args.value + noise
         }
-        other => return Err(format!("unknown distribution: {other} (try laplace or gaussian)")),
+        other => {
+            return Err(format!(
+                "unknown distribution: {other} (try laplace or gaussian)"
+            ));
+        }
     };
     println!(
         "{{\"original\": {}, \"perturbed\": {}, \"epsilon\": {}, \"distribution\": \"{}\"}}",
@@ -70,8 +72,8 @@ fn dp(args: PrivacyDpArgs) -> Result<(), String> {
 }
 
 fn read_set(path: &std::path::Path) -> Result<Vec<Vec<u8>>, String> {
-    let text = std::fs::read_to_string(path)
-        .map_err(|e| format!("read {}: {e}", path.display()))?;
+    let text =
+        std::fs::read_to_string(path).map_err(|e| format!("read {}: {e}", path.display()))?;
     Ok(text
         .lines()
         .filter(|l| !l.is_empty())
@@ -84,8 +86,8 @@ fn read_salt(path: &std::path::Path) -> Result<Vec<u8>, String> {
         // 16 bytes of fresh randomness for the demo.
         let mut buf = vec![0u8; 16];
         use std::io::Read;
-        let mut f = std::fs::File::open("/dev/urandom")
-            .map_err(|e| format!("open /dev/urandom: {e}"))?;
+        let mut f =
+            std::fs::File::open("/dev/urandom").map_err(|e| format!("open /dev/urandom: {e}"))?;
         f.read_exact(&mut buf)
             .map_err(|e| format!("read /dev/urandom: {e}"))?;
         return Ok(buf);

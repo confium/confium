@@ -33,8 +33,13 @@ pub struct Saga {
 
 impl Saga {
     pub fn new(saga_id: &str, step_names: &[&str]) -> Self {
-        let steps = step_names.iter()
-            .map(|name| SagaStep { name: name.to_string(), completed: false, failed: false })
+        let steps = step_names
+            .iter()
+            .map(|name| SagaStep {
+                name: name.to_string(),
+                completed: false,
+                failed: false,
+            })
             .collect();
         Self {
             saga_id: saga_id.into(),
@@ -76,7 +81,9 @@ impl Saga {
         F: FnMut(&str) -> Result<(), String>,
     {
         self.state = SagaState::Compensating;
-        let mut completed_indices: Vec<usize> = self.steps.iter()
+        let mut completed_indices: Vec<usize> = self
+            .steps
+            .iter()
             .enumerate()
             .filter(|(_, s)| s.completed)
             .map(|(i, _)| i)
@@ -102,7 +109,8 @@ impl Saga {
     }
 
     pub fn completed_steps(&self) -> Vec<&str> {
-        self.steps.iter()
+        self.steps
+            .iter()
             .filter(|s| s.completed)
             .map(|s| s.name.as_str())
             .collect()
@@ -152,7 +160,8 @@ mod tests {
             } else {
                 Ok("ok".into())
             }
-        }).unwrap_err();
+        })
+        .unwrap_err();
         saga.compensate(|_| Ok(())).unwrap();
         assert_eq!(saga.state, SagaState::Compensated);
         assert_eq!(saga.completed_steps().len(), 0);
@@ -175,7 +184,8 @@ mod tests {
             } else {
                 Ok("ok".into())
             }
-        }).unwrap_err();
+        })
+        .unwrap_err();
         assert!((saga.progress() - 0.5).abs() < 0.01);
     }
 
@@ -198,11 +208,21 @@ mod tests {
     fn compensation_failure_marks_failed() {
         let mut saga = Saga::new("s1", &["step1", "step2"]);
         saga.execute(|name| {
-            if name == "step2" { Err("fail".into()) } else { Ok("ok".into()) }
-        }).unwrap_err();
+            if name == "step2" {
+                Err("fail".into())
+            } else {
+                Ok("ok".into())
+            }
+        })
+        .unwrap_err();
         saga.compensate(|name| {
-            if name == "step1" { Err("compensation failed".into()) } else { Ok(()) }
-        }).unwrap_err();
+            if name == "step1" {
+                Err("compensation failed".into())
+            } else {
+                Ok(())
+            }
+        })
+        .unwrap_err();
         assert_eq!(saga.state, SagaState::Failed);
     }
 

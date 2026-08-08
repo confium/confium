@@ -145,16 +145,7 @@ mod tests {
     use super::*;
 
     fn make_valid_share() -> NormalizedShare {
-        NormalizedShare::new(
-            "CMP20",
-            "quorum-1",
-            2,
-            3,
-            5,
-            &[0x42; 32],
-            &[0x04; 65],
-        )
-        .unwrap()
+        NormalizedShare::new("CMP20", "quorum-1", 2, 3, 5, &[0x42; 32], &[0x04; 65]).unwrap()
     }
 
     #[test]
@@ -169,7 +160,9 @@ mod tests {
         let mut share = make_valid_share();
         share.scalar_hex = hex::encode(&[0u8; 32]);
         let result = check_share(&share);
-        assert!(matches!(result, IntegrityResult::Invalid(issues) if issues.contains(&IntegrityIssue::ZeroScalar)));
+        assert!(
+            matches!(result, IntegrityResult::Invalid(issues) if issues.contains(&IntegrityIssue::ZeroScalar))
+        );
     }
 
     #[test]
@@ -177,7 +170,9 @@ mod tests {
         let mut share = make_valid_share();
         share.threshold = 0;
         let result = check_share(&share);
-        assert!(matches!(result, IntegrityResult::Invalid(issues) if issues.contains(&IntegrityIssue::ZeroThreshold)));
+        assert!(
+            matches!(result, IntegrityResult::Invalid(issues) if issues.contains(&IntegrityIssue::ZeroThreshold))
+        );
     }
 
     #[test]
@@ -186,7 +181,9 @@ mod tests {
         share.threshold = 10;
         share.party_count = 5;
         let result = check_share(&share);
-        assert!(matches!(result, IntegrityResult::Invalid(issues) if issues.iter().any(|i| matches!(i, IntegrityIssue::ThresholdExceedsCount { .. }))));
+        assert!(
+            matches!(result, IntegrityResult::Invalid(issues) if issues.iter().any(|i| matches!(i, IntegrityIssue::ThresholdExceedsCount { .. })))
+        );
     }
 
     #[test]
@@ -194,7 +191,9 @@ mod tests {
         let mut share = make_valid_share();
         share.party_idx = 0;
         let result = check_share(&share);
-        assert!(matches!(result, IntegrityResult::Invalid(issues) if issues.contains(&IntegrityIssue::PartyIdxZero)));
+        assert!(
+            matches!(result, IntegrityResult::Invalid(issues) if issues.contains(&IntegrityIssue::PartyIdxZero))
+        );
     }
 
     #[test]
@@ -203,7 +202,9 @@ mod tests {
         share.party_idx = 10;
         share.party_count = 5;
         let result = check_share(&share);
-        assert!(matches!(result, IntegrityResult::Invalid(issues) if issues.iter().any(|i| matches!(i, IntegrityIssue::PartyIdxExceedsCount { .. }))));
+        assert!(
+            matches!(result, IntegrityResult::Invalid(issues) if issues.iter().any(|i| matches!(i, IntegrityIssue::PartyIdxExceedsCount { .. })))
+        );
     }
 
     #[test]
@@ -218,7 +219,9 @@ mod tests {
         let mut share = make_valid_share();
         share.public_key_hex = hex::encode(&[0x04; 10]);
         let result = check_share(&share);
-        assert!(matches!(result, IntegrityResult::Invalid(issues) if issues.iter().any(|i| matches!(i, IntegrityIssue::PublicKeyLength { .. }))));
+        assert!(
+            matches!(result, IntegrityResult::Invalid(issues) if issues.iter().any(|i| matches!(i, IntegrityIssue::PublicKeyLength { .. })))
+        );
     }
 
     #[test]

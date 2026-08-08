@@ -54,13 +54,11 @@ pub fn core_version() -> String {
 /// Canonicalize XML per RFC 3076 (Canonical XML 1.0).
 #[wasm_bindgen]
 pub fn canonicalize_xml(xml: &str) -> Result<String, JsValue> {
-    confium_pki::xmldsig::canonicalize(xml)
-        .map_err(|e| JsValue::from_str(&e.to_string()))
+    confium_pki::xmldsig::canonicalize(xml).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 /// Canonicalize XML per Exclusive C14N (RFC 3741).
 #[wasm_bindgen]
 pub fn canonicalize_exclusive_xml(xml: &str) -> Result<String, JsValue> {
-    confium_pki::xmldsig::canonicalize_exclusive(xml)
-        .map_err(|e| JsValue::from_str(&e.to_string()))
+    confium_pki::xmldsig::canonicalize_exclusive(xml).map_err(|e| JsValue::from_str(&e.to_string()))
 }

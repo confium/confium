@@ -110,10 +110,8 @@ mod tests {
 
     #[test]
     fn matching_implementations() {
-        let inputs: Vec<(String, Vec<u8>)> = vec![
-            ("a".into(), vec![1, 2, 3]),
-            ("b".into(), vec![4, 5, 6]),
-        ];
+        let inputs: Vec<(String, Vec<u8>)> =
+            vec![("a".into(), vec![1, 2, 3]), ("b".into(), vec![4, 5, 6])];
         let results = differential_test(
             &inputs,
             |input: &[u8]| input.len(),
@@ -126,10 +124,7 @@ mod tests {
 
     #[test]
     fn mismatching_implementations() {
-        let inputs: Vec<(String, Vec<u8>)> = vec![
-            ("a".into(), vec![1]),
-            ("b".into(), vec![2]),
-        ];
+        let inputs: Vec<(String, Vec<u8>)> = vec![("a".into(), vec![1]), ("b".into(), vec![2])];
         let results = differential_test(
             &inputs,
             |input: &[u8]| input[0] as u32 * 2,
@@ -143,11 +138,7 @@ mod tests {
     #[test]
     fn empty_inputs() {
         let inputs: Vec<(String, Vec<u8>)> = vec![];
-        let results = differential_test(
-            &inputs,
-            |_: &[u8]| 0u32,
-            |_: &[u8]| 0u32,
-        );
+        let results = differential_test(&inputs, |_: &[u8]| 0u32, |_: &[u8]| 0u32);
         let summary = DiffSummary::from_results(&results);
         assert_eq!(summary.total, 0);
         assert_eq!(summary.match_rate(), 1.0);
@@ -155,10 +146,7 @@ mod tests {
 
     #[test]
     fn partial_match() {
-        let inputs: Vec<(String, Vec<u8>)> = vec![
-            ("a".into(), vec![0]),
-            ("b".into(), vec![1]),
-        ];
+        let inputs: Vec<(String, Vec<u8>)> = vec![("a".into(), vec![0]), ("b".into(), vec![1])];
         let results = differential_test(
             &inputs,
             |input: &[u8]| input[0],
@@ -185,15 +173,9 @@ mod tests {
 
     #[test]
     fn mismatch_labels_recorded() {
-        let inputs: Vec<(String, Vec<u8>)> = vec![
-            ("first".into(), vec![1]),
-            ("second".into(), vec![2]),
-        ];
-        let results = differential_test(
-            &inputs,
-            |input: &[u8]| input[0],
-            |_: &[u8]| 99u8,
-        );
+        let inputs: Vec<(String, Vec<u8>)> =
+            vec![("first".into(), vec![1]), ("second".into(), vec![2])];
+        let results = differential_test(&inputs, |input: &[u8]| input[0], |_: &[u8]| 99u8);
         let summary = DiffSummary::from_results(&results);
         assert!(summary.mismatches.contains(&"first".to_string()));
         assert!(summary.mismatches.contains(&"second".to_string()));
