@@ -7,10 +7,7 @@
 //! Uses the multiplicative blinding technique adapted for ECDSA.
 
 use p256::Scalar;
-use p256::ecdsa::{
-    Signature, SigningKey,
-    signature::{Signer, Verifier},
-};
+use p256::ecdsa::{Signature, SigningKey, signature::Signer};
 use p256::elliptic_curve::{Field, PrimeField, rand_core::OsRng};
 use serde::{Deserialize, Serialize};
 
@@ -89,6 +86,7 @@ fn bytes_to_scalar(bytes: &[u8; 32]) -> Scalar {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use p256::ecdsa::signature::Verifier;
 
     #[test]
     fn blind_sign_produces_valid_sig_on_blinded_hash() {

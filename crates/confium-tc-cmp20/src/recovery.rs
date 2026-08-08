@@ -145,7 +145,7 @@ mod tests {
 
         // 5. The recovered share + 2 others should produce a valid
         //    signature under the joint public key.
-        let mut signing_shares = vec![
+        let mut signing_shares = [
             original_shares[0].clone(),
             original_shares[1].clone(),
             recovered,

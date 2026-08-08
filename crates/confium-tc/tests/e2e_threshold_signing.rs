@@ -92,7 +92,7 @@ fn e2e_full_threshold_signing_ceremony_3_of_5() {
     // Phase 1: Setup — generate keypair, split into shares
     // ================================================================
     let keypair = keys::generate_keypair();
-    let pk_bytes = keys::public_key_sec1(&keypair.public_key);
+    let _pk_bytes = keys::public_key_sec1(&keypair.public_key);
     let shares = shamir::split_secret(&keypair.secret_scalar, 3, 5);
     assert_eq!(shares.len(), 5);
 

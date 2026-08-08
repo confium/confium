@@ -158,7 +158,7 @@ mod tests {
     #[test]
     fn zero_scalar_rejected() {
         let mut share = make_valid_share();
-        share.scalar_hex = hex::encode(&[0u8; 32]);
+        share.scalar_hex = hex::encode([0u8; 32]);
         let result = check_share(&share);
         assert!(
             matches!(result, IntegrityResult::Invalid(issues) if issues.contains(&IntegrityIssue::ZeroScalar))
@@ -210,14 +210,14 @@ mod tests {
     #[test]
     fn compressed_pubkey_accepted() {
         let mut share = make_valid_share();
-        share.public_key_hex = hex::encode(&[0x02; 33]);
+        share.public_key_hex = hex::encode([0x02; 33]);
         assert!(is_valid(&share));
     }
 
     #[test]
     fn wrong_pubkey_length_rejected() {
         let mut share = make_valid_share();
-        share.public_key_hex = hex::encode(&[0x04; 10]);
+        share.public_key_hex = hex::encode([0x04; 10]);
         let result = check_share(&share);
         assert!(
             matches!(result, IntegrityResult::Invalid(issues) if issues.iter().any(|i| matches!(i, IntegrityIssue::PublicKeyLength { .. })))

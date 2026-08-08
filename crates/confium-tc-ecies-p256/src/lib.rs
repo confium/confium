@@ -261,7 +261,7 @@ pub fn aggregate_partials(
             }
             let x_j = party_to_scalar(p_j.party_index);
             numerator *= negate(&x_j);
-            denominator *= (x_i.sub(&x_j));
+            denominator *= x_i.sub(&x_j);
         }
         let denom_inv = invert(&denominator);
         let lagrange = numerator * denom_inv;
@@ -409,7 +409,7 @@ mod tests {
         // Aggregate with random unrelated partials should fail AEAD.
         let keypair = generate_keypair();
         let pk = PublicKey::from_affine(keypair.public_key);
-        let shares = split_secret(&keypair.secret_scalar, 2, 3);
+        let _shares = split_secret(&keypair.secret_scalar, 2, 3);
         let blob = encrypt(&pk, b"secret").unwrap();
 
         // Use shares from a DIFFERENT keypair to produce wrong partials.

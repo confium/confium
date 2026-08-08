@@ -214,7 +214,7 @@ mod tests {
         let contrib = generate_contribution(1, 3, 32);
         // XOR all shares should give zero
         let mut xored = vec![0u8; 32];
-        for (_, share) in &contrib.refresh_shares {
+        for share in contrib.refresh_shares.values() {
             for (i, &b) in share.iter().enumerate() {
                 xored[i] ^= b;
             }

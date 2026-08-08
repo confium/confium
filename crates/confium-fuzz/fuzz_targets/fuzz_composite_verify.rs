@@ -27,7 +27,7 @@ fn composite_verify_target(data: &[u8]) {
     };
     let composite = CompositeSignature::new(vec![component]);
 
-    let _ = composite.verify(msg, |alg, pk, m, sig| ed25519_verifier(alg, pk, m, sig));
+    let _ = composite.verify(msg, ed25519_verifier);
 }
 
 fn main() {
