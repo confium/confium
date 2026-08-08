@@ -43,7 +43,7 @@ pub fn prove(secret: &Scalar, public: &AffinePoint, message: &[u8]) -> SchnorrPr
     let k_ct = Scalar::from_repr(k_fb);
     let k = Option::<Scalar>::from(k_ct).unwrap_or_else(|| Scalar::random(&mut OsRng));
 
-    let r_point = ProjectivePoint::GENERATOR * &k;
+    let r_point = ProjectivePoint::GENERATOR * k;
     let r_affine = r_point.to_affine();
 
     let c = fiat_shamir_challenge(public, &r_affine, message);
@@ -75,8 +75,8 @@ pub fn verify(
 
     let c = fiat_shamir_challenge(public, &r_point, message);
 
-    let lhs = ProjectivePoint::GENERATOR * &z_scalar;
-    let rhs = ProjectivePoint::from(r_point) + ProjectivePoint::from(*public) * &c;
+    let lhs = ProjectivePoint::GENERATOR * z_scalar;
+    let rhs = ProjectivePoint::from(r_point) + ProjectivePoint::from(*public) * c;
 
     Ok(lhs == rhs)
 }

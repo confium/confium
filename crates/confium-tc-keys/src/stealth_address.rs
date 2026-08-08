@@ -31,14 +31,14 @@ pub struct StealthAddress {
 /// Generate a spending keypair.
 pub fn generate_spend_keypair() -> SpendKeypair {
     let secret = Scalar::random(&mut OsRng);
-    let public = (ProjectivePoint::GENERATOR * &secret).to_affine();
+    let public = (ProjectivePoint::GENERATOR * secret).to_affine();
     SpendKeypair { secret, public }
 }
 
 /// Generate a scanning keypair.
 pub fn generate_scan_keypair() -> (Scalar, ScanPubkey) {
     let secret = Scalar::random(&mut OsRng);
-    let public = (ProjectivePoint::GENERATOR * &secret).to_affine();
+    let public = (ProjectivePoint::GENERATOR * secret).to_affine();
     (secret, ScanPubkey { point: public })
 }
 
@@ -50,17 +50,17 @@ pub fn create_stealth_address(
 ) -> (StealthAddress, Scalar) {
     // Sender picks ephemeral key r
     let r = Scalar::random(&mut OsRng);
-    let ephemeral = (ProjectivePoint::GENERATOR * &r).to_affine();
+    let ephemeral = (ProjectivePoint::GENERATOR * r).to_affine();
 
     // Shared secret: r * scan_pubkey = scan_secret * ephemeral
-    let shared_point = (ProjectivePoint::from(scan_pubkey.point) * &r).to_affine();
+    let shared_point = (ProjectivePoint::from(scan_pubkey.point) * r).to_affine();
 
     // Derive one-time key adjustment: hash(shared)
     let adjustment = hash_to_scalar(&shared_point);
 
     // One-time public key: spend_pubkey + adjustment * G
     let one_time_pubkey = (ProjectivePoint::from(*spend_pubkey)
-        + ProjectivePoint::GENERATOR * &adjustment)
+        + ProjectivePoint::GENERATOR * adjustment)
         .to_affine();
 
     (
@@ -87,7 +87,7 @@ pub fn scan_stealth_address(
     let one_time_secret = spend_secret + &adjustment;
 
     // Verify: one_time_secret * G == one_time_pubkey
-    let expected_pubkey = (ProjectivePoint::GENERATOR * &one_time_secret).to_affine();
+    let expected_pubkey = (ProjectivePoint::GENERATOR * one_time_secret).to_affine();
     if expected_pubkey == address.one_time_pubkey {
         Some(one_time_secret)
     } else {

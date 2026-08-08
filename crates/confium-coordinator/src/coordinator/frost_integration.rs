@@ -1,7 +1,7 @@
 //! FROST coordinator integration — wire FROST into the coordinator.
 
 use crate::coordinator::coordinator::Coordinator;
-use crate::coordinator::session::{SessionId, SessionRequest, SessionState};
+use crate::coordinator::session::{SessionId, SessionRequest};
 use serde::{Deserialize, Serialize};
 
 /// FROST signing scheme type.

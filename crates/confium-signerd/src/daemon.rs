@@ -143,7 +143,7 @@ impl SignerDaemon {
         let mut hasher = Sha256::new();
         hasher.update(share_bytes);
         hasher.update(self.config.signer_id.as_bytes());
-        hasher.update(&[0u8; 8]);
+        hasher.update([0u8; 8]);
         hasher.finalize().to_vec()
     }
 

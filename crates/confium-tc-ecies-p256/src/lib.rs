@@ -182,11 +182,11 @@ pub fn encrypt(recipient: &PublicKey, plaintext: &[u8]) -> Result<EncryptedBlob,
     };
 
     // Ephemeral public R = r*G
-    let r_point = ProjectivePoint::GENERATOR * &r;
+    let r_point = ProjectivePoint::GENERATOR * r;
     let ephemeral_public = encode_point(&r_point);
 
     // Shared secret K = r * recipient_pubkey
-    let shared_point = recipient_pt * &r;
+    let shared_point = recipient_pt * r;
     let shared = x_coordinate(&shared_point);
 
     // Derive AEAD key
@@ -201,7 +201,7 @@ pub fn encrypt(recipient: &PublicKey, plaintext: &[u8]) -> Result<EncryptedBlob,
     // Encrypt
     let mut buffer = plaintext.to_vec();
     let tag = cipher
-        .encrypt_in_place_detached(&nonce, b"", &mut buffer)
+        .encrypt_in_place_detached(nonce, b"", &mut buffer)
         .map_err(|e| EciesError::Aead(e.to_string()))?;
 
     Ok(EncryptedBlob {
@@ -219,7 +219,7 @@ pub fn partial_decrypt(
 ) -> Result<PartialDecryption, EciesError> {
     let s = decode_scalar(&share.bytes)?;
     let r_point = decode_point(&blob.ephemeral_public)?;
-    let partial = r_point * &s;
+    let partial = r_point * s;
     Ok(PartialDecryption {
         party_index: share.party_index,
         bytes: encode_point(&partial),
@@ -260,14 +260,14 @@ pub fn aggregate_partials(
                 continue;
             }
             let x_j = party_to_scalar(p_j.party_index);
-            numerator = numerator * &negate(&x_j);
-            denominator = denominator * &(x_i.sub(&x_j));
+            numerator *= negate(&x_j);
+            denominator *= (x_i.sub(&x_j));
         }
         let denom_inv = invert(&denominator);
         let lagrange = numerator * denom_inv;
 
         let partial_point = decode_point(&p_i.bytes)?;
-        let weighted = partial_point * &lagrange;
+        let weighted = partial_point * lagrange;
         combined = combined.add(&weighted);
     }
 

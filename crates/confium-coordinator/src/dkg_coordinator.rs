@@ -82,7 +82,7 @@ pub fn generate_contribution(
     }
 
     // VSS commitment: g^{coeffs[0]}
-    let commitment = (ProjectivePoint::GENERATOR * &secret).to_affine();
+    let commitment = (ProjectivePoint::GENERATOR * secret).to_affine();
     use p256::elliptic_curve::sec1::ToEncodedPoint;
     let commitment_hex = hex::encode(commitment.to_encoded_point(true).as_bytes());
 
@@ -115,7 +115,7 @@ pub fn compute_aggregate_share(session: &DkgSession, party_idx: u32) -> Result<S
         let fb = FieldBytes::from(arr);
         let share = Option::<Scalar>::from(Scalar::from_repr(fb))
             .ok_or_else(|| "invalid scalar".to_string())?;
-        aggregate = aggregate + share;
+        aggregate += share;
     }
     Ok(aggregate)
 }
@@ -142,8 +142,8 @@ fn eval_polynomial(coeffs: &[Scalar], x: u32) -> Scalar {
     let mut result = Scalar::ZERO;
     let mut x_pow = Scalar::ONE;
     for c in coeffs {
-        result = result + c * &x_pow;
-        x_pow = x_pow * &x_scalar;
+        result += c * &x_pow;
+        x_pow *= x_scalar;
     }
     result
 }

@@ -1,7 +1,6 @@
 //! Multi-coordinator metrics aggregator.
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Metrics from a single coordinator instance.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -75,7 +74,7 @@ pub fn aggregate(instances: &[InstanceMetrics]) -> AggregatedMetrics {
         total_created,
         total_completed,
         total_expired,
-        total_signers: total_signers,
+        total_signers,
         total_aggregations: total_agg,
         total_failures: total_fail,
         overall_success_rate: success_rate,

@@ -39,7 +39,7 @@ fn main() {
     #[cfg(test)]
     let _ = subscriber.try_init();
     #[cfg(not(test))]
-    let _ = {
+    {
         use tracing_subscriber::util::SubscriberInitExt;
         subscriber.init()
     };

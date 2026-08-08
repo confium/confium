@@ -5,7 +5,7 @@
 
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
+use sha2::Digest;
 use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -18,6 +18,12 @@ pub struct TraceContext {
     pub span_id: String,
     pub parent_span_id: Option<String>,
     pub baggage: HashMap<String, String>,
+}
+
+impl Default for TraceContext {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TraceContext {
@@ -148,7 +154,7 @@ impl StructuredLogger {
         let levels = ["trace", "debug", "info", "warn", "error"];
         let min_idx = levels
             .iter()
-            .position(|&l| l == &*self.min_level.lock().unwrap())
+            .position(|&l| l == *self.min_level.lock().unwrap())
             .unwrap_or(2);
         let entry_idx = levels
             .iter()
@@ -582,7 +588,7 @@ impl ReplicationManager {
         if let Some(r) = replicas.get_mut(region) {
             r.last_seq = seq;
             r.last_sync = Utc::now();
-            let local = self.local_seq.load(Ordering::SeqCst);
+            let _local = self.local_seq.load(Ordering::SeqCst);
             r.lag_seconds = (Utc::now() - r.last_sync).num_seconds();
         }
     }

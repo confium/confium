@@ -341,19 +341,10 @@ impl SigningCondition {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct SigningContext {
     pub vote_count: usize,
     pub oracle_value: Option<f64>,
-}
-
-impl Default for SigningContext {
-    fn default() -> Self {
-        Self {
-            vote_count: 0,
-            oracle_value: None,
-        }
-    }
 }
 
 // === Cross-Quorum Signature Aggregation ===

@@ -36,7 +36,7 @@ pub fn build_merkle_tree(elements: &[Vec<u8>]) -> (Vec<[u8; 32]>, [u8; 32]) {
     if elements.is_empty() {
         return (vec![], [0u8; 32]);
     }
-    let mut leaves: Vec<[u8; 32]> = elements
+    let leaves: Vec<[u8; 32]> = elements
         .iter()
         .map(|e| {
             let mut h = Sha256::new();

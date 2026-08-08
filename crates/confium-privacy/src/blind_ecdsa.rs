@@ -7,10 +7,7 @@
 //! Uses the multiplicative blinding technique adapted for ECDSA.
 
 use p256::Scalar;
-use p256::ecdsa::{
-    Signature, SigningKey,
-    signature::{Signer, Verifier},
-};
+use p256::ecdsa::{Signature, SigningKey, signature::Signer};
 use p256::elliptic_curve::{Field, PrimeField, rand_core::OsRng};
 use serde::{Deserialize, Serialize};
 

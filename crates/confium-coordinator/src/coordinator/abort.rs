@@ -61,14 +61,12 @@ pub fn identify_bad_signer(
     // First, try the full set.
     let all_bytes: Vec<Vec<u8>> = shares.iter().map(|s| s.bytes.clone()).collect();
     match signer.sign(scheme, &all_bytes, threshold, message) {
-        Ok(_) => {
-            return BlameReport {
-                session_id: session_id.into(),
-                bad_signers: vec![],
-                all_individual_valid: true,
-                error: "aggregation succeeded — no bad signer".into(),
-            };
-        }
+        Ok(_) => BlameReport {
+            session_id: session_id.into(),
+            bad_signers: vec![],
+            all_individual_valid: true,
+            error: "aggregation succeeded — no bad signer".into(),
+        },
         Err(e) => {
             let error = format!("{e}");
             let mut bad_signers = Vec::new();

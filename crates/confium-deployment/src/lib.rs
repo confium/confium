@@ -20,5 +20,4 @@ pub mod mode;
 pub mod validate;
 
 pub use manifest::*;
-pub use mode::*;
 pub use validate::*;

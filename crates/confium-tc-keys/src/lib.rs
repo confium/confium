@@ -1,7 +1,7 @@
 //! Key lifecycle, HSM protection, and production hardening for threshold keys.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 pub mod hsm_protection;
 pub mod integrity;

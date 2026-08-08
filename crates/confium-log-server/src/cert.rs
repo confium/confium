@@ -4,7 +4,7 @@
 //! the cert-aware API endpoints need: issuer DN, subject DN,
 //! validity window, SHA-256 fingerprint.
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

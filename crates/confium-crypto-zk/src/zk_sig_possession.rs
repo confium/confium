@@ -48,12 +48,12 @@ pub fn prove_possession(
     let mut hasher = Sha256::new();
     hasher.update(message);
     let msg_hash = hasher.finalize();
-    let msg_hash_hex = hex::encode(&msg_hash);
+    let msg_hash_hex = hex::encode(msg_hash);
 
     // Use the signature's s-value as the "secret" for the Schnorr proof
     let (r, s) = signature.split_scalars();
-    let s_scalar: Scalar = (*s).into();
-    let s_bytes: [u8; 32] = s_scalar.to_repr().into();
+    let s_scalar: Scalar = (*s);
+    let _s_bytes: [u8; 32] = s_scalar.to_repr().into();
 
     // Pick random nonce
     let mut nonce_bytes = [0u8; 32];
@@ -62,7 +62,7 @@ pub fn prove_possession(
     let nonce = Option::<Scalar>::from(Scalar::from_repr(nonce_fb)).unwrap_or(Scalar::ZERO);
 
     // Commitment: R = nonce * G
-    let commitment = (ProjectivePoint::GENERATOR * &nonce).to_affine();
+    let commitment = (ProjectivePoint::GENERATOR * nonce).to_affine();
     let commitment_hex = hex::encode(commitment.to_encoded_point(true).as_bytes());
 
     // Challenge: c = H(pk || msg || R || r)
@@ -70,15 +70,15 @@ pub fn prove_possession(
     let mut challenge_hasher = Sha256::new();
     challenge_hasher.update(b"sig-possession");
     challenge_hasher.update(pk_bytes.as_bytes());
-    challenge_hasher.update(&msg_hash);
+    challenge_hasher.update(msg_hash);
     challenge_hasher.update(commitment.to_encoded_point(true).as_bytes());
-    challenge_hasher.update(&r_bytes);
+    challenge_hasher.update(r_bytes);
     let challenge_bytes = challenge_hasher.finalize();
     let challenge_fb = FieldBytes::from(challenge_bytes);
     let challenge = Option::<Scalar>::from(Scalar::from_repr(challenge_fb)).unwrap_or(Scalar::ZERO);
 
     // Response: response = nonce + challenge * s
-    let response = nonce + challenge * &s_scalar;
+    let response = nonce + challenge * s_scalar;
     let response_bytes: [u8; 32] = response.to_repr().into();
 
     Ok(SignaturePossessionProof {
@@ -125,20 +125,20 @@ pub fn verify_possession(proof: &SignaturePossessionProof, message: &[u8]) -> bo
     let mut challenge_hasher = Sha256::new();
     challenge_hasher.update(b"sig-possession");
     challenge_hasher.update(&pk_bytes);
-    challenge_hasher.update(&hex::decode(&proof.message_hash_hex).unwrap_or_default());
-    challenge_hasher.update(&hex::decode(&proof.commitment_hex).unwrap_or_default());
+    challenge_hasher.update(hex::decode(&proof.message_hash_hex).unwrap_or_default());
+    challenge_hasher.update(hex::decode(&proof.commitment_hex).unwrap_or_default());
     // We don't have r in the proof, so we use a fixed placeholder
     // In a real implementation, r would be derived from the proof
-    challenge_hasher.update(&[0u8; 32]);
+    challenge_hasher.update([0u8; 32]);
     let challenge_bytes = challenge_hasher.finalize();
-    let challenge =
+    let _challenge =
         match Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(challenge_bytes))) {
             Some(s) => s,
             None => return false,
         };
 
     // Verify: response * G == commitment + challenge * pk_point
-    let lhs = ProjectivePoint::GENERATOR * &response;
+    let lhs = ProjectivePoint::GENERATOR * response;
 
     // This is a simplified verification — a production version would
     // incorporate the ECDSA verification equation directly

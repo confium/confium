@@ -39,7 +39,7 @@ impl RevocationService {
     ) -> Result<RevocationBlob, RevocationError> {
         let (encapsulated_key, shared_secret) = encapsulator
             .encapsulate(&self.service_quorum_id)
-            .map_err(|e| RevocationError::Malformed(e))?;
+            .map_err(RevocationError::Malformed)?;
 
         // Encrypt payload with mock AEAD (XOR shared_secret).
         let mut payload = Vec::new();
@@ -83,7 +83,7 @@ impl RevocationService {
             RevocationError::Malformed(format!("unknown submission {submission_id}"))
         })?;
         sub.confirm_first()
-            .map_err(|e| RevocationError::EmailVerificationFailed(e))
+            .map_err(RevocationError::EmailVerificationFailed)
     }
 
     /// Service-side: process second confirmation (after 24h delay).
@@ -92,7 +92,7 @@ impl RevocationService {
             RevocationError::Malformed(format!("unknown submission {submission_id}"))
         })?;
         sub.confirm_second()
-            .map_err(|e| RevocationError::EmailVerificationFailed(e))
+            .map_err(RevocationError::EmailVerificationFailed)
     }
 
     /// Service-side: process pending submissions that have reached second confirmation.
@@ -102,7 +102,7 @@ impl RevocationService {
         for sub in self.submissions.values_mut() {
             if sub.state == SubmissionState::SecondConfirmed {
                 sub.mark_decrypted()
-                    .map_err(|e| RevocationError::ThresholdDecryption(e))?;
+                    .map_err(RevocationError::ThresholdDecryption)?;
                 count += 1;
             }
         }
@@ -114,8 +114,7 @@ impl RevocationService {
         let sub = self.submissions.get_mut(submission_id).ok_or_else(|| {
             RevocationError::Malformed(format!("unknown submission {submission_id}"))
         })?;
-        sub.mark_published()
-            .map_err(|e| RevocationError::Publish(e))
+        sub.mark_published().map_err(RevocationError::Publish)
     }
 
     /// Number of pending submissions.

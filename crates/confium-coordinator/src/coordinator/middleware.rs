@@ -1,7 +1,5 @@
 //! Middleware pipeline — unified request processing chain.
 
-use std::sync::Arc;
-
 /// A request context passed through the pipeline.
 #[derive(Debug, Clone)]
 pub struct RequestContext {

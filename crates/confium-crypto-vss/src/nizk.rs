@@ -21,7 +21,7 @@ pub fn prove_dlog(secret: &Scalar) -> NizkProof {
     let nonce = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(nonce_bytes)))
         .unwrap_or(Scalar::ZERO);
 
-    let commitment = (ProjectivePoint::GENERATOR * &nonce).to_affine();
+    let commitment = (ProjectivePoint::GENERATOR * nonce).to_affine();
     let public = (ProjectivePoint::GENERATOR * secret).to_affine();
 
     let challenge = fiat_shamir_challenge(&public, &commitment, b"dlog");
@@ -41,9 +41,9 @@ pub fn verify_dlog(public: &AffinePoint, proof: &NizkProof) -> bool {
         return false;
     }
     // Check: response * G == commitment + challenge * public
-    let lhs = ProjectivePoint::GENERATOR * &proof.response;
+    let lhs = ProjectivePoint::GENERATOR * proof.response;
     let rhs =
-        ProjectivePoint::from(proof.commitment) + ProjectivePoint::from(*public) * &proof.challenge;
+        ProjectivePoint::from(proof.commitment) + ProjectivePoint::from(*public) * proof.challenge;
     lhs == rhs
 }
 
@@ -58,8 +58,8 @@ pub fn prove_dlog_equality(
     let nonce = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(nonce_bytes)))
         .unwrap_or(Scalar::ZERO);
 
-    let commit1 = (ProjectivePoint::from(*g1) * &nonce).to_affine();
-    let commit2 = (ProjectivePoint::from(*g2) * &nonce).to_affine();
+    let commit1 = (ProjectivePoint::from(*g1) * nonce).to_affine();
+    let commit2 = (ProjectivePoint::from(*g2) * nonce).to_affine();
 
     let y1 = (ProjectivePoint::from(*g1) * secret).to_affine();
     let y2 = (ProjectivePoint::from(*g2) * secret).to_affine();
@@ -99,12 +99,12 @@ pub fn verify_dlog_equality(
         return false;
     }
     // Verify both equations
-    let lhs1 = ProjectivePoint::from(*g1) * &proof1.response;
+    let lhs1 = ProjectivePoint::from(*g1) * proof1.response;
     let rhs1 =
-        ProjectivePoint::from(proof1.commitment) + ProjectivePoint::from(*y1) * &proof1.challenge;
-    let lhs2 = ProjectivePoint::from(*g2) * &proof2.response;
+        ProjectivePoint::from(proof1.commitment) + ProjectivePoint::from(*y1) * proof1.challenge;
+    let lhs2 = ProjectivePoint::from(*g2) * proof2.response;
     let rhs2 =
-        ProjectivePoint::from(proof2.commitment) + ProjectivePoint::from(*y2) * &proof2.challenge;
+        ProjectivePoint::from(proof2.commitment) + ProjectivePoint::from(*y2) * proof2.challenge;
     lhs1 == rhs1 && lhs2 == rhs2
 }
 

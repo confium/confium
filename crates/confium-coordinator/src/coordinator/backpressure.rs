@@ -65,7 +65,7 @@ impl BackpressureGate {
     /// Try to acquire a slot. Returns `Ok(())` if a slot was acquired
     /// (active count incremented), or `Err(AtCapacity)` if the
     /// coordinator is full.
-    pub fn try_acquire(&self) -> Result<ActiveSlot, BackpressureError> {
+    pub fn try_acquire(&self) -> Result<ActiveSlot<'_>, BackpressureError> {
         let max = self.config.max_active_sessions;
         if max == 0 {
             return Ok(ActiveSlot {

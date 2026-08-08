@@ -7,7 +7,7 @@
 //! - Remove element (with trapdoor)
 
 use num_bigint::{BigUint, RandBigInt};
-use num_traits::{One, Zero};
+use num_traits::One;
 use rand_core::OsRng;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -51,7 +51,7 @@ impl Accumulator {
     pub fn witness(&self, element: &[u8]) -> Option<BigUint> {
         let target_prime = self.elements.get(element)?;
         let mut product = BigUint::one();
-        for (_, prime) in &self.elements {
+        for prime in self.elements.values() {
             if prime != target_prime {
                 product *= prime;
             }
@@ -72,7 +72,7 @@ impl Accumulator {
         if self.elements.remove(element).is_some() {
             let g = BigUint::from(2u32);
             let mut state = g;
-            for (_, prime) in &self.elements {
+            for prime in self.elements.values() {
                 state = state.modpow(prime, &self.modulus);
             }
             self.state = state;

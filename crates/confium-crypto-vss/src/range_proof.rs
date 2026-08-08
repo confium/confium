@@ -5,7 +5,7 @@
 //! combine to the original value.
 
 use num_bigint::BigUint;
-use num_traits::{One, Zero};
+use num_traits::One;
 use sha2::{Digest, Sha256};
 
 /// A range proof: commitments to each bit + sum proof.
@@ -35,7 +35,7 @@ pub fn prove(value: &BigUint, bits: u32) -> Option<RangeProof> {
 
         let mut h = Sha256::new();
         h.update(b"bit-commitment");
-        h.update(&i.to_be_bytes());
+        h.update(i.to_be_bytes());
         h.update(if is_one { &[1u8] } else { &[0u8] });
         h.update(value.to_bytes_be());
         let result = h.finalize();
@@ -43,7 +43,7 @@ pub fn prove(value: &BigUint, bits: u32) -> Option<RangeProof> {
         commitment.copy_from_slice(&result);
         bit_commitments.push(commitment);
 
-        hasher.update(&commitment);
+        hasher.update(commitment);
     }
 
     let sum_result = hasher.finalize();
