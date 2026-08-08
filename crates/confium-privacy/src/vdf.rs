@@ -120,8 +120,8 @@ mod tests {
         let params = make_params(100);
         let x = BigUint::from(42u32);
         let output = eval(&params, &x);
-        assert!(output.y > BigUint::zero());
-        assert!(output.proof > BigUint::zero());
+        assert!(output.y > BigUint::from(0u32));
+        assert!(output.proof > BigUint::from(0u32));
     }
 
     #[test]

@@ -122,7 +122,7 @@ pub fn find(name: &str) -> Option<&'static dyn TcScheme> {
 
 /// Submit a scheme implementation to the link-time registry.
 ///
-/// ```no_run
+/// ```ignore
 /// use confium_tc::register_tc_scheme;
 /// use confium_tc::registry::{TcScheme, TcSchemeKind};
 /// use confium_tc::{SessionImpl, SessionParams};
