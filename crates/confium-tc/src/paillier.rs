@@ -124,7 +124,7 @@ fn miller_rabin(n: &BigUint, rounds: u32) -> bool {
     if n == &two || n == &three {
         return true;
     }
-    if (n & &BigUint::one()) == BigUint::zero() || n < &three {
+    if (n & &BigUint::one()) == BigUint::from(0u32) || n < &three {
         return false;
     }
 
@@ -135,7 +135,7 @@ fn miller_rabin(n: &BigUint, rounds: u32) -> bool {
     let mut r: u32 = 0;
     loop {
         let test = &d & &one;
-        if test == BigUint::zero() {
+        if test == BigUint::from(0u32) {
             d >>= 1;
             r += 1;
         } else {
@@ -206,7 +206,7 @@ mod tests {
         let mut rng = OsRng;
         loop {
             let r = rng.gen_biguint(n.bits());
-            if r < *n && r > BigUint::zero() {
+            if r < *n && r > BigUint::from(0u32) {
                 return r;
             }
         }
@@ -215,7 +215,7 @@ mod tests {
     #[test]
     fn keypair_generates() {
         let kp = make_keypair();
-        assert!(kp.public.n > BigUint::zero());
+        assert!(kp.public.n > BigUint::from(0u32));
         assert_eq!(kp.public.g, &kp.public.n + &BigUint::one());
     }
 
@@ -284,9 +284,9 @@ mod tests {
         let kp = make_keypair();
         let m = BigUint::from(123u32);
         let c = encrypt(&kp.public, &m, &random_below(&kp.public.n)).unwrap();
-        let c0 = scalar_mul(&kp.public, &c, &BigUint::zero());
+        let c0 = scalar_mul(&kp.public, &c, &BigUint::from(0u32));
         let m0 = decrypt(&kp.private, &kp.public, &c0).unwrap();
-        assert_eq!(m0, BigUint::zero());
+        assert_eq!(m0, BigUint::from(0u32));
     }
 
     #[test]
