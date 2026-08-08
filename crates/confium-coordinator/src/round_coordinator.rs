@@ -88,7 +88,11 @@ impl RoundState {
 #[derive(Debug, thiserror::Error)]
 pub enum RoundError {
     /// Signer submitted in the wrong round.
-    #[error("signer {signer} submitted in round {:?}, expected {:?}", actual, expected)]
+    #[error(
+        "signer {signer} submitted in round {:?}, expected {:?}",
+        actual,
+        expected
+    )]
     WrongRound {
         /// Signer ID.
         signer: String,
@@ -241,7 +245,11 @@ mod tests {
     #[test]
     fn full_protocol_progression() {
         let mut rc = RoundCoordinator::new(2, 3);
-        for round in [SigningRound::Round1, SigningRound::Round2, SigningRound::Round3] {
+        for round in [
+            SigningRound::Round1,
+            SigningRound::Round2,
+            SigningRound::Round3,
+        ] {
             assert_eq!(rc.current_round(), round);
             rc.submit("alice", vec![0xAA]).unwrap();
             rc.submit("bob", vec![0xBB]).unwrap();

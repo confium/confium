@@ -131,7 +131,10 @@ mod tests {
 
     #[test]
     fn zero_failure_rate_no_injections() {
-        let config = ChaosConfig { failure_rate: 0.0, allowed_modes: vec![FailureMode::DropConnection] };
+        let config = ChaosConfig {
+            failure_rate: 0.0,
+            allowed_modes: vec![FailureMode::DropConnection],
+        };
         let mut tester = ChaosTester::new(config);
         for _ in 0..100 {
             let mode = tester.inject("test");
@@ -142,7 +145,10 @@ mod tests {
 
     #[test]
     fn full_failure_rate_injects() {
-        let config = ChaosConfig { failure_rate: 1.0, allowed_modes: vec![FailureMode::Timeout] };
+        let config = ChaosConfig {
+            failure_rate: 1.0,
+            allowed_modes: vec![FailureMode::Timeout],
+        };
         let mut tester = ChaosTester::new(config);
         let mut non_none = 0;
         for _ in 0..100 {
@@ -150,12 +156,19 @@ mod tests {
                 non_none += 1;
             }
         }
-        assert!(non_none > 50, "expected most to inject, got {} non-none", non_none);
+        assert!(
+            non_none > 50,
+            "expected most to inject, got {} non-none",
+            non_none
+        );
     }
 
     #[test]
     fn injections_recorded() {
-        let config = ChaosConfig { failure_rate: 1.0, allowed_modes: vec![FailureMode::Timeout] };
+        let config = ChaosConfig {
+            failure_rate: 1.0,
+            allowed_modes: vec![FailureMode::Timeout],
+        };
         let mut tester = ChaosTester::new(config);
         tester.inject("test1");
         tester.inject("test2");
@@ -164,9 +177,14 @@ mod tests {
 
     #[test]
     fn count_by_mode() {
-        let config = ChaosConfig { failure_rate: 1.0, allowed_modes: vec![FailureMode::DropConnection, FailureMode::Timeout] };
+        let config = ChaosConfig {
+            failure_rate: 1.0,
+            allowed_modes: vec![FailureMode::DropConnection, FailureMode::Timeout],
+        };
         let mut tester = ChaosTester::new(config);
-        for _ in 0..10 { tester.inject("op"); }
+        for _ in 0..10 {
+            tester.inject("op");
+        }
         let counts = tester.count_by_mode();
         let total: usize = counts.values().sum();
         assert_eq!(total, 10);
@@ -174,7 +192,10 @@ mod tests {
 
     #[test]
     fn simulate_success_without_chaos() {
-        let config = ChaosConfig { failure_rate: 0.0, allowed_modes: vec![] };
+        let config = ChaosConfig {
+            failure_rate: 0.0,
+            allowed_modes: vec![],
+        };
         let mut tester = ChaosTester::new(config);
         let result = simulate_operation(&mut tester, "op", "ok");
         assert!(result.is_ok());
@@ -182,7 +203,10 @@ mod tests {
 
     #[test]
     fn simulate_failure_with_chaos() {
-        let config = ChaosConfig { failure_rate: 1.0, allowed_modes: vec![FailureMode::DropConnection] };
+        let config = ChaosConfig {
+            failure_rate: 1.0,
+            allowed_modes: vec![FailureMode::DropConnection],
+        };
         let mut tester = ChaosTester::new(config);
         let result = simulate_operation(&mut tester, "op", "ok");
         assert!(result.is_err());
@@ -190,7 +214,10 @@ mod tests {
 
     #[test]
     fn reset_clears_history() {
-        let config = ChaosConfig { failure_rate: 1.0, allowed_modes: vec![FailureMode::Timeout] };
+        let config = ChaosConfig {
+            failure_rate: 1.0,
+            allowed_modes: vec![FailureMode::Timeout],
+        };
         let mut tester = ChaosTester::new(config);
         tester.inject("op1");
         tester.inject("op2");
@@ -201,8 +228,16 @@ mod tests {
 
     #[test]
     fn each_mode_unique_failure() {
-        for mode in [FailureMode::DropConnection, FailureMode::InvalidData, FailureMode::Timeout, FailureMode::BadSignature] {
-            let config = ChaosConfig { failure_rate: 1.0, allowed_modes: vec![mode] };
+        for mode in [
+            FailureMode::DropConnection,
+            FailureMode::InvalidData,
+            FailureMode::Timeout,
+            FailureMode::BadSignature,
+        ] {
+            let config = ChaosConfig {
+                failure_rate: 1.0,
+                allowed_modes: vec![mode],
+            };
             let mut tester = ChaosTester::new(config);
             let result = simulate_operation(&mut tester, "op", "ok");
             assert!(result.is_err(), "expected error for {:?}", mode);

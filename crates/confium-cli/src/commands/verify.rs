@@ -1,7 +1,7 @@
 //! `confium verify` — verification umbrella subcommands.
 
 use crate::cli::{VerifyCertChainArgs, VerifyCommand, VerifyCompositeArgs, VerifyInclusionArgs};
-use confium_pki::{path::CertPath, Certificate};
+use confium_pki::{Certificate, path::CertPath};
 
 pub fn run(cmd: VerifyCommand) {
     let result: Result<(), String> = match cmd {
@@ -34,14 +34,18 @@ fn verify_composite(args: VerifyCompositeArgs) -> Result<(), String> {
     let json_bytes = hex::decode(json_str.trim())
         .map_err(|e| format!("signature file is not valid hex: {e}"))?;
     let composite: confium_composite::CompositeSignature =
-        serde_json::from_slice(&json_bytes)
-            .map_err(|e| format!("parse composite JSON: {e}"))?;
+        serde_json::from_slice(&json_bytes).map_err(|e| format!("parse composite JSON: {e}"))?;
 
-    let verifier: fn(&str, &[u8], &[u8], &[u8]) -> Result<(), String> = match args.algorithm.as_str() {
-        "ed25519" => confium_composite::ed25519_verifier,
-        "ecdsa-p256" | "ecdsa" | "p256" => confium_composite::p256_verifier,
-        other => return Err(format!("unknown algorithm: {other} (try ed25519 or ecdsa-p256)")),
-    };
+    let verifier: fn(&str, &[u8], &[u8], &[u8]) -> Result<(), String> =
+        match args.algorithm.as_str() {
+            "ed25519" => confium_composite::ed25519_verifier,
+            "ecdsa-p256" | "ecdsa" | "p256" => confium_composite::p256_verifier,
+            other => {
+                return Err(format!(
+                    "unknown algorithm: {other} (try ed25519 or ecdsa-p256)"
+                ));
+            }
+        };
 
     // Verify each component that matches the requested algorithm. Components
     // for other algorithms are skipped (so a composite with both Ed25519 and
@@ -51,7 +55,14 @@ fn verify_composite(args: VerifyCompositeArgs) -> Result<(), String> {
     for component in &composite.components {
         if algorithm_matches(&args.algorithm, &component.algorithm) {
             checked += 1;
-            if verifier(&component.algorithm, &component.public_key, &message, &component.signature).is_err() {
+            if verifier(
+                &component.algorithm,
+                &component.public_key,
+                &message,
+                &component.signature,
+            )
+            .is_err()
+            {
                 all_ok = false;
             }
         }
@@ -71,10 +82,10 @@ fn verify_inclusion(args: VerifyInclusionArgs) -> Result<(), String> {
         .map_err(|e| format!("read {}: {e}", args.proof.display()))?;
     let entry_json = std::fs::read_to_string(&args.entry)
         .map_err(|e| format!("read {}: {e}", args.entry.display()))?;
-    let proof: confium_transparency::InclusionProof = serde_json::from_str(&proof_json)
-        .map_err(|e| format!("parse proof: {e}"))?;
-    let entry: confium_transparency::entry::MerkleEntry = serde_json::from_str(&entry_json)
-        .map_err(|e| format!("parse entry: {e}"))?;
+    let proof: confium_transparency::InclusionProof =
+        serde_json::from_str(&proof_json).map_err(|e| format!("parse proof: {e}"))?;
+    let entry: confium_transparency::entry::MerkleEntry =
+        serde_json::from_str(&entry_json).map_err(|e| format!("parse entry: {e}"))?;
     // Root hash: use entry's own hash for the demo. Real verification
     // passes the trusted root from a remote log head.
     let root = entry.entry_hash();
@@ -111,8 +122,7 @@ fn read_cert(path: &std::path::Path, format: &str) -> Result<Certificate, String
     match format {
         "der" => Certificate::from_der(&bytes).map_err(|e| format!("parse DER: {e}")),
         "pem" => {
-            let s = std::str::from_utf8(&bytes)
-                .map_err(|e| format!("PEM is not UTF-8: {e}"))?;
+            let s = std::str::from_utf8(&bytes).map_err(|e| format!("PEM is not UTF-8: {e}"))?;
             Certificate::from_pem(s).map_err(|e| format!("parse PEM: {e}"))
         }
         other => Err(format!("unknown format: {other} (try der or pem)")),

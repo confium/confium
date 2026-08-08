@@ -84,10 +84,7 @@ impl<'a> BatchSigner<'a> {
 
     /// Create a batch of sessions — one per message.
     /// Returns the batch ID and the list of session IDs.
-    pub fn create_batch(
-        &mut self,
-        request: BatchSessionRequest,
-    ) -> Result<String, BatchError> {
+    pub fn create_batch(&mut self, request: BatchSessionRequest) -> Result<String, BatchError> {
         if request.messages.is_empty() {
             return Err(BatchError::Empty);
         }
@@ -145,7 +142,7 @@ impl<'a> BatchSigner<'a> {
                     return Err(BatchError::SessionFailed {
                         session_id: sid,
                         error: format!("{e:?}"),
-                    })
+                    });
                 }
             }
         }

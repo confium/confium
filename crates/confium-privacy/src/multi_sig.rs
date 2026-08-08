@@ -5,9 +5,9 @@
 //! signers' public keys against the aggregate.
 
 use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
-use p256::{AffinePoint, ProjectivePoint, Scalar};
-use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
 use p256::elliptic_curve::PrimeField;
+use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
+use p256::{AffinePoint, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
 
 /// An aggregate of multiple signatures on the same message.
@@ -63,10 +63,7 @@ pub fn aggregate(
 
 /// Verify an aggregate signature against a message.
 /// Checks structural validity and that the aggregate key + signature are consistent.
-pub fn verify_aggregate(
-    agg: &AggregateSignature,
-    _message: &[u8],
-) -> bool {
+pub fn verify_aggregate(agg: &AggregateSignature, _message: &[u8]) -> bool {
     let r_bytes = match hex::decode(&agg.aggregate_r_hex) {
         Ok(b) => b,
         Err(_) => return false,

@@ -10,7 +10,7 @@
 //! a baseline (it's the same `p256::ecdsa::VerifyingKey::verify` call
 //! across all three protocols).
 
-use criterion::{BenchmarkId, criterion_group, criterion_main, Criterion};
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
 
 fn bench_dkg_and_sign_threshold_sweep(c: &mut Criterion) {
@@ -25,7 +25,8 @@ fn bench_dkg_and_sign_threshold_sweep(c: &mut Criterion) {
             |b, &(t, n)| {
                 b.iter(|| {
                     let kg = confium_tc_cmp20::inprocess::keygen(t, n).unwrap();
-                    confium_tc_cmp20::inprocess::sign(&kg.shares[..t as usize], t, b"bench").unwrap()
+                    confium_tc_cmp20::inprocess::sign(&kg.shares[..t as usize], t, b"bench")
+                        .unwrap()
                 });
             },
         );
@@ -56,7 +57,8 @@ fn bench_dkg_and_sign_party_sweep(c: &mut Criterion) {
             |b, &(t, n)| {
                 b.iter(|| {
                     let kg = confium_tc_cmp20::inprocess::keygen(t, n).unwrap();
-                    confium_tc_cmp20::inprocess::sign(&kg.shares[..t as usize], t, b"bench").unwrap()
+                    confium_tc_cmp20::inprocess::sign(&kg.shares[..t as usize], t, b"bench")
+                        .unwrap()
                 });
             },
         );

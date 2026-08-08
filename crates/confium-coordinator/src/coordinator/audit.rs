@@ -104,10 +104,7 @@ impl AuditLog {
     /// Run a structured query against the audit log. Only non-None
     /// filters are applied — an empty query returns all entries.
     pub fn query(&self, query: &AuditQuery) -> Vec<&AuditEntry> {
-        self.entries
-            .iter()
-            .filter(|e| query.matches(e))
-            .collect()
+        self.entries.iter().filter(|e| query.matches(e)).collect()
     }
 
     /// All events involving a specific signer.
@@ -255,12 +252,25 @@ mod tests {
     #[test]
     fn query_by_signer() {
         let mut log = AuditLog::new();
-        log.append("s1", AuditEvent::SessionCreated {
-            requested_by: "alice".into(),
-            quorum_id: "q".into(),
-        });
-        log.append("s1", AuditEvent::CommitmentReceived { signer: "alice".into() });
-        log.append("s1", AuditEvent::ShareReceived { signer: "bob".into() });
+        log.append(
+            "s1",
+            AuditEvent::SessionCreated {
+                requested_by: "alice".into(),
+                quorum_id: "q".into(),
+            },
+        );
+        log.append(
+            "s1",
+            AuditEvent::CommitmentReceived {
+                signer: "alice".into(),
+            },
+        );
+        log.append(
+            "s1",
+            AuditEvent::ShareReceived {
+                signer: "bob".into(),
+            },
+        );
 
         let alice_events = log.query_by_signer("alice");
         assert_eq!(alice_events.len(), 2);

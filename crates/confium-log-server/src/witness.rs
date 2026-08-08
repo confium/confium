@@ -57,7 +57,10 @@ mod tests {
     #[test]
     fn digest_is_deterministic() {
         let root = [0x42; 32];
-        assert_eq!(witness_signing_digest(1, &root), witness_signing_digest(1, &root));
+        assert_eq!(
+            witness_signing_digest(1, &root),
+            witness_signing_digest(1, &root)
+        );
     }
 
     #[test]

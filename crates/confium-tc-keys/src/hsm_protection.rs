@@ -67,7 +67,10 @@ pub struct MockHsmBackend {
 impl HsmBackend for MockHsmBackend {
     fn seal(&self, share: &[u8], label: &str) -> Result<SealedShare, HsmError> {
         let handle = format!("mock-key-{label}");
-        self.keys.lock().unwrap().insert(handle.clone(), share.to_vec());
+        self.keys
+            .lock()
+            .unwrap()
+            .insert(handle.clone(), share.to_vec());
         Ok(SealedShare {
             key_handle: handle,
             encrypted_share: share.iter().map(|b| b ^ 0x42).collect(),
@@ -87,7 +90,10 @@ impl HsmBackend for MockHsmBackend {
         let mut counter = self.counter.lock().unwrap();
         *counter += 1;
         let handle = format!("mock-key-{label}-{}", *counter);
-        self.keys.lock().unwrap().insert(handle.clone(), vec![0; 32]);
+        self.keys
+            .lock()
+            .unwrap()
+            .insert(handle.clone(), vec![0; 32]);
         Ok(handle)
     }
 

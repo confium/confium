@@ -25,8 +25,14 @@ struct Args {
 
 fn build_router() -> axum::Router {
     axum::Router::new()
-        .route("/verify/composite", axum::routing::post(handlers::verify_composite))
-        .route("/verify/inclusion", axum::routing::post(handlers::verify_inclusion))
+        .route(
+            "/verify/composite",
+            axum::routing::post(handlers::verify_composite),
+        )
+        .route(
+            "/verify/inclusion",
+            axum::routing::post(handlers::verify_inclusion),
+        )
         .route("/healthz", axum::routing::get(handlers::healthz))
         .with_state(AppState)
 }

@@ -2,7 +2,7 @@
 
 use num_bigint::{BigInt, BigUint, RandBigInt, ToBigInt};
 use num_integer::Integer;
-use num_traits::{One, Zero, Signed, ToPrimitive};
+use num_traits::{One, Signed, ToPrimitive, Zero};
 use rand_core::OsRng;
 
 #[derive(Debug, Clone)]
@@ -310,9 +310,24 @@ mod tests {
     #[test]
     fn additive_homomorphism_chained() {
         let kp = make_keypair();
-        let c1 = encrypt(&kp.public, &BigUint::from(10u32), &random_below(&kp.public.n)).unwrap();
-        let c2 = encrypt(&kp.public, &BigUint::from(20u32), &random_below(&kp.public.n)).unwrap();
-        let c3 = encrypt(&kp.public, &BigUint::from(30u32), &random_below(&kp.public.n)).unwrap();
+        let c1 = encrypt(
+            &kp.public,
+            &BigUint::from(10u32),
+            &random_below(&kp.public.n),
+        )
+        .unwrap();
+        let c2 = encrypt(
+            &kp.public,
+            &BigUint::from(20u32),
+            &random_below(&kp.public.n),
+        )
+        .unwrap();
+        let c3 = encrypt(
+            &kp.public,
+            &BigUint::from(30u32),
+            &random_below(&kp.public.n),
+        )
+        .unwrap();
         let c_sum = add(&kp.public, &c1, &c2);
         let c_sum = add(&kp.public, &c_sum, &c3);
         let m_sum = decrypt(&kp.private, &kp.public, &c_sum).unwrap();

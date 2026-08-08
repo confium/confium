@@ -5,8 +5,8 @@
 //! the secret key. Used for leader election, lotteries, and
 //! verifiable randomness.
 
-use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
 use p256::elliptic_curve::PrimeField;
+use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
 use p256::{AffinePoint, ProjectivePoint, Scalar};
 use rand_core::{OsRng, RngCore};
 use serde::{Deserialize, Serialize};
@@ -86,14 +86,11 @@ pub fn verify(public: &AffinePoint, alpha: &[u8], output: &VrfOutput) -> bool {
 
     // U = s*G - c*Y = s*G + (-c)*Y
     let neg_c = -c;
-    let u = (ProjectivePoint::GENERATOR * &s
-        + ProjectivePoint::from(*public) * &neg_c)
-        .to_affine();
+    let u = (ProjectivePoint::GENERATOR * &s + ProjectivePoint::from(*public) * &neg_c).to_affine();
 
     // V = s*H - c*Gamma
-    let v = (ProjectivePoint::from(h_point) * &s
-        + ProjectivePoint::from(gamma) * &neg_c)
-        .to_affine();
+    let v =
+        (ProjectivePoint::from(h_point) * &s + ProjectivePoint::from(gamma) * &neg_c).to_affine();
 
     // Recompute challenge
     let c_expected = challenge(public, &h_point, &gamma, &u, &v, alpha);
@@ -235,7 +232,9 @@ mod tests {
         // Actually the proof uses the real public from the pair, so let's
         // use a truly different key
         let (_, other_public) = random_keypair();
-        assert!(!verify(&other_public, b"alpha", &output) || verify(&wrong_public, b"alpha", &output));
+        assert!(
+            !verify(&other_public, b"alpha", &output) || verify(&wrong_public, b"alpha", &output)
+        );
     }
 
     #[test]

@@ -49,7 +49,9 @@ impl NoiseHandshake {
         let payload = b"".to_vec();
         let ciphertext = mix_hash(&payload);
         self.chaining_key = ciphertext;
-        NoiseMessage { ciphertext: ciphertext.to_vec() }
+        NoiseMessage {
+            ciphertext: ciphertext.to_vec(),
+        }
     }
 
     /// Initiator: read the response (e, ee, es).
@@ -65,7 +67,9 @@ impl NoiseHandshake {
         let key = derive_key(&self.chaining_key, &ciphertext);
         self.send_key = Some(key);
         self.chaining_key = ciphertext;
-        NoiseMessage { ciphertext: ciphertext.to_vec() }
+        NoiseMessage {
+            ciphertext: ciphertext.to_vec(),
+        }
     }
 
     /// Derive the transport keys.
@@ -75,10 +79,8 @@ impl NoiseHandshake {
 }
 
 const INITIAL_CHAINING_KEY: [u8; 32] = [
-    0x93, 0x91, 0xa8, 0xb6, 0x1e, 0x6c, 0x1d, 0x2a,
-    0x42, 0x21, 0x60, 0xd1, 0x1d, 0x9b, 0x18, 0x1f,
-    0x4d, 0x29, 0x49, 0x4b, 0x7c, 0xa0, 0x51, 0x2c,
-    0x13, 0x4f, 0x1b, 0x99, 0x8f, 0x71, 0x6d, 0xfb,
+    0x93, 0x91, 0xa8, 0xb6, 0x1e, 0x6c, 0x1d, 0x2a, 0x42, 0x21, 0x60, 0xd1, 0x1d, 0x9b, 0x18, 0x1f,
+    0x4d, 0x29, 0x49, 0x4b, 0x7c, 0xa0, 0x51, 0x2c, 0x13, 0x4f, 0x1b, 0x99, 0x8f, 0x71, 0x6d, 0xfb,
 ];
 
 fn derive_ephemeral(seed: &[u8; 32]) -> [u8; 32] {
@@ -165,14 +167,18 @@ pub fn decrypt(ciphertext: &[u8], key: &[u8; 32]) -> Option<Vec<u8>> {
         keystream.extend_from_slice(&mac.finalize().into_bytes());
         mac = HmacSha256::new_from_slice(k).expect("HMAC");
     }
-    let plaintext: Vec<u8> = body.iter().enumerate()
+    let plaintext: Vec<u8> = body
+        .iter()
+        .enumerate()
         .map(|(i, &b)| b ^ keystream[i % keystream.len()])
         .collect();
     Some(plaintext)
 }
 
 fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
-    if a.len() != b.len() { return false; }
+    if a.len() != b.len() {
+        return false;
+    }
     let mut diff = 0u8;
     for (x, y) in a.iter().zip(b.iter()) {
         diff |= x ^ y;

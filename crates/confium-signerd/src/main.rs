@@ -30,11 +30,7 @@ pub struct Args {
 fn main() {
     let args = Args::parse();
 
-    let filter = tracing_subscriber::EnvFilter::new(if args.verbose {
-        "debug"
-    } else {
-        "info"
-    });
+    let filter = tracing_subscriber::EnvFilter::new(if args.verbose { "debug" } else { "info" });
 
     let subscriber = tracing_subscriber::fmt()
         .with_env_filter(filter)

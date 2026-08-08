@@ -55,11 +55,10 @@ fn migrate_shares(args: ThresholdMigrateSharesArgs) -> Result<(), String> {
     // 0.2.x share files were either a single object or an array of objects.
     // Handle both shapes.
     let legacy_shares: Vec<LegacyShare> = if input_json.trim_start().starts_with('[') {
-        serde_json::from_str(&input_json)
-            .map_err(|e| format!("parse legacy array: {e}"))?
+        serde_json::from_str(&input_json).map_err(|e| format!("parse legacy array: {e}"))?
     } else {
-        let single: LegacyShare = serde_json::from_str(&input_json)
-            .map_err(|e| format!("parse legacy object: {e}"))?;
+        let single: LegacyShare =
+            serde_json::from_str(&input_json).map_err(|e| format!("parse legacy object: {e}"))?;
         vec![single]
     };
 
@@ -104,11 +103,14 @@ fn migrate_shares(args: ThresholdMigrateSharesArgs) -> Result<(), String> {
         shares,
     };
 
-    let json = serde_json::to_string_pretty(&envelope)
-        .map_err(|e| format!("serialize: {e}"))?;
+    let json = serde_json::to_string_pretty(&envelope).map_err(|e| format!("serialize: {e}"))?;
     std::fs::write(&args.out, json.as_bytes())
         .map_err(|e| format!("write {}: {e}", args.out.display()))?;
-    eprintln!("migrated {} shares → {}", legacy_shares.len(), args.out.display());
+    eprintln!(
+        "migrated {} shares → {}",
+        legacy_shares.len(),
+        args.out.display()
+    );
     Ok(())
 }
 
@@ -132,8 +134,10 @@ fn refresh(args: ThresholdRefreshArgs) -> Result<(), String> {
         .collect::<Result<_, _>>()?;
 
     // Generate refresh contributions for each party.
-    let contributions =
-        confium_tc_cmp20::refresh::generate_refresh_contributions(envelope.threshold, envelope.party_count);
+    let contributions = confium_tc_cmp20::refresh::generate_refresh_contributions(
+        envelope.threshold,
+        envelope.party_count,
+    );
 
     // Verify zero-sum invariant (sum of all contributions = 0).
     if !confium_tc_cmp20::refresh::verify_zero_sum(&contributions) {
@@ -158,8 +162,8 @@ fn refresh(args: ThresholdRefreshArgs) -> Result<(), String> {
         public_key: envelope.public_key, // unchanged
         shares: refreshed,
     };
-    let json = serde_json::to_string_pretty(&new_envelope)
-        .map_err(|e| format!("serialize: {e}"))?;
+    let json =
+        serde_json::to_string_pretty(&new_envelope).map_err(|e| format!("serialize: {e}"))?;
     std::fs::write(&args.out, json.as_bytes())
         .map_err(|e| format!("write {}: {e}", args.out.display()))?;
     eprintln!(
@@ -193,8 +197,7 @@ fn dkg(args: ThresholdDkgArgs) -> Result<(), String> {
         public_key: hex::encode(&public_key),
         shares: shares.iter().map(hex::encode).collect(),
     };
-    let json =
-        serde_json::to_string_pretty(&envelope).map_err(|e| format!("serialize: {e}"))?;
+    let json = serde_json::to_string_pretty(&envelope).map_err(|e| format!("serialize: {e}"))?;
     match &args.out {
         Some(path) => std::fs::write(path, json.as_bytes())
             .map_err(|e| format!("write {}: {e}", path.display()))?,

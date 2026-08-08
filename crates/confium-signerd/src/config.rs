@@ -53,7 +53,9 @@ impl DaemonConfig {
             return Err(ConfigError::Invalid("quorum_id must not be empty".into()));
         }
         if self.coordinator_addr.is_empty() {
-            return Err(ConfigError::Invalid("coordinator_addr must not be empty".into()));
+            return Err(ConfigError::Invalid(
+                "coordinator_addr must not be empty".into(),
+            ));
         }
         Ok(())
     }

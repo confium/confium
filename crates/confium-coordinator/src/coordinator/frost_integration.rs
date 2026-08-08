@@ -1,7 +1,7 @@
 //! FROST coordinator integration — wire FROST into the coordinator.
 
-use crate::coordinator::session::{SessionId, SessionRequest, SessionState};
 use crate::coordinator::coordinator::Coordinator;
+use crate::coordinator::session::{SessionId, SessionRequest, SessionState};
 use serde::{Deserialize, Serialize};
 
 /// FROST signing scheme type.
@@ -31,7 +31,13 @@ pub struct PartialFrostSig {
 }
 
 impl FrostSession {
-    pub fn new(session_id: &str, scheme: FrostScheme, threshold: u32, party_count: u32, message: &[u8]) -> Self {
+    pub fn new(
+        session_id: &str,
+        scheme: FrostScheme,
+        threshold: u32,
+        party_count: u32,
+        message: &[u8],
+    ) -> Self {
         Self {
             session_id: session_id.into(),
             scheme,
@@ -46,7 +52,11 @@ impl FrostSession {
         if partial.party_idx == 0 || partial.party_idx > self.party_count {
             return Err("invalid party index".into());
         }
-        if self.partial_signatures.iter().any(|s| s.party_idx == partial.party_idx) {
+        if self
+            .partial_signatures
+            .iter()
+            .any(|s| s.party_idx == partial.party_idx)
+        {
             return Err("duplicate partial signature".into());
         }
         self.partial_signatures.push(partial);
@@ -92,7 +102,8 @@ pub fn create_frost_session(
         unlock_window_minutes: 60,
         requested_by: "frost-integration".into(),
     };
-    let session_id = coordinator.create_session(request)
+    let session_id = coordinator
+        .create_session(request)
         .map_err(|e| format!("{e:?}"))?;
     let frost_session = FrostSession::new(&session_id, scheme, threshold, party_count, message);
     Ok((session_id, frost_session))
@@ -113,67 +124,117 @@ mod tests {
     #[test]
     fn submit_partial_increments() {
         let mut session = FrostSession::new("s1", FrostScheme::Ed25519, 2, 3, b"msg");
-        session.submit_partial(PartialFrostSig {
-            signer_id: "a".into(), party_idx: 1, partial_sig_hex: "abc".into(),
-        }).unwrap();
+        session
+            .submit_partial(PartialFrostSig {
+                signer_id: "a".into(),
+                party_idx: 1,
+                partial_sig_hex: "abc".into(),
+            })
+            .unwrap();
         assert_eq!(session.partial_signatures.len(), 1);
     }
 
     #[test]
     fn ready_at_threshold() {
         let mut session = FrostSession::new("s1", FrostScheme::P256, 2, 3, b"msg");
-        session.submit_partial(PartialFrostSig {
-            signer_id: "a".into(), party_idx: 1, partial_sig_hex: "aa".into(),
-        }).unwrap();
-        session.submit_partial(PartialFrostSig {
-            signer_id: "b".into(), party_idx: 2, partial_sig_hex: "bb".into(),
-        }).unwrap();
+        session
+            .submit_partial(PartialFrostSig {
+                signer_id: "a".into(),
+                party_idx: 1,
+                partial_sig_hex: "aa".into(),
+            })
+            .unwrap();
+        session
+            .submit_partial(PartialFrostSig {
+                signer_id: "b".into(),
+                party_idx: 2,
+                partial_sig_hex: "bb".into(),
+            })
+            .unwrap();
         assert!(session.is_ready());
     }
 
     #[test]
     fn duplicate_partial_rejected() {
         let mut session = FrostSession::new("s1", FrostScheme::P256, 2, 3, b"msg");
-        session.submit_partial(PartialFrostSig {
-            signer_id: "a".into(), party_idx: 1, partial_sig_hex: "aa".into(),
-        }).unwrap();
-        assert!(session.submit_partial(PartialFrostSig {
-            signer_id: "a".into(), party_idx: 1, partial_sig_hex: "aa".into(),
-        }).is_err());
+        session
+            .submit_partial(PartialFrostSig {
+                signer_id: "a".into(),
+                party_idx: 1,
+                partial_sig_hex: "aa".into(),
+            })
+            .unwrap();
+        assert!(
+            session
+                .submit_partial(PartialFrostSig {
+                    signer_id: "a".into(),
+                    party_idx: 1,
+                    partial_sig_hex: "aa".into(),
+                })
+                .is_err()
+        );
     }
 
     #[test]
     fn invalid_party_idx_rejected() {
         let mut session = FrostSession::new("s1", FrostScheme::P256, 2, 3, b"msg");
-        assert!(session.submit_partial(PartialFrostSig {
-            signer_id: "x".into(), party_idx: 0, partial_sig_hex: "x".into(),
-        }).is_err());
-        assert!(session.submit_partial(PartialFrostSig {
-            signer_id: "x".into(), party_idx: 99, partial_sig_hex: "x".into(),
-        }).is_err());
+        assert!(
+            session
+                .submit_partial(PartialFrostSig {
+                    signer_id: "x".into(),
+                    party_idx: 0,
+                    partial_sig_hex: "x".into(),
+                })
+                .is_err()
+        );
+        assert!(
+            session
+                .submit_partial(PartialFrostSig {
+                    signer_id: "x".into(),
+                    party_idx: 99,
+                    partial_sig_hex: "x".into(),
+                })
+                .is_err()
+        );
     }
 
     #[test]
     fn missing_parties_listed() {
         let mut session = FrostSession::new("s1", FrostScheme::P256, 3, 5, b"msg");
-        session.submit_partial(PartialFrostSig {
-            signer_id: "a".into(), party_idx: 1, partial_sig_hex: "a".into(),
-        }).unwrap();
-        session.submit_partial(PartialFrostSig {
-            signer_id: "c".into(), party_idx: 3, partial_sig_hex: "c".into(),
-        }).unwrap();
+        session
+            .submit_partial(PartialFrostSig {
+                signer_id: "a".into(),
+                party_idx: 1,
+                partial_sig_hex: "a".into(),
+            })
+            .unwrap();
+        session
+            .submit_partial(PartialFrostSig {
+                signer_id: "c".into(),
+                party_idx: 3,
+                partial_sig_hex: "c".into(),
+            })
+            .unwrap();
         assert_eq!(session.missing_parties(), vec![2, 4, 5]);
     }
 
     #[test]
     fn ordered_partials_sorted() {
         let mut session = FrostSession::new("s1", FrostScheme::P256, 3, 5, b"msg");
-        session.submit_partial(PartialFrostSig {
-            signer_id: "c".into(), party_idx: 3, partial_sig_hex: "c".into(),
-        }).unwrap();
-        session.submit_partial(PartialFrostSig {
-            signer_id: "a".into(), party_idx: 1, partial_sig_hex: "a".into(),
-        }).unwrap();
+        session
+            .submit_partial(PartialFrostSig {
+                signer_id: "c".into(),
+                party_idx: 3,
+                partial_sig_hex: "c".into(),
+            })
+            .unwrap();
+        session
+            .submit_partial(PartialFrostSig {
+                signer_id: "a".into(),
+                party_idx: 1,
+                partial_sig_hex: "a".into(),
+            })
+            .unwrap();
         let ordered = session.ordered_partials();
         assert_eq!(ordered[0].party_idx, 1);
         assert_eq!(ordered[1].party_idx, 3);
@@ -182,9 +243,9 @@ mod tests {
     #[test]
     fn create_frost_session_on_coordinator() {
         let mut coord = Coordinator::new();
-        let (sid, frost) = create_frost_session(
-            &mut coord, FrostScheme::P256, "quorum-1", 2, 3, b"hello",
-        ).unwrap();
+        let (sid, frost) =
+            create_frost_session(&mut coord, FrostScheme::P256, "quorum-1", 2, 3, b"hello")
+                .unwrap();
         assert!(!sid.is_empty());
         assert_eq!(frost.scheme, FrostScheme::P256);
         assert_eq!(coord.session_count(), 1);

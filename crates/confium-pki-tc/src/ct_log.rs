@@ -77,7 +77,9 @@ impl CtClient {
                 let status = if entry.cert_hash_hex.len() / 2 <= self.log.max_entry_size {
                     CtSubmissionStatus::Accepted
                 } else {
-                    CtSubmissionStatus::Rejected { reason: "too large".into() }
+                    CtSubmissionStatus::Rejected {
+                        reason: "too large".into(),
+                    }
                 };
                 let sct = if matches!(status, CtSubmissionStatus::Accepted) {
                     Some(format!("sct-{}", entry.cert_hash_hex))
@@ -155,7 +157,10 @@ mod tests {
         let oversized = "a".repeat(3000);
         client.queue_entry(make_entry(&oversized));
         let results = client.process_pending();
-        assert!(matches!(results[0].status, CtSubmissionStatus::Rejected { .. }));
+        assert!(matches!(
+            results[0].status,
+            CtSubmissionStatus::Rejected { .. }
+        ));
     }
 
     #[test]

@@ -52,10 +52,7 @@ const MAX_ROUNDS: u8 = 8;
 /// `threshold` must be in `1..=party_count`. Parties are in-process
 /// (`Party::inproc`), identified `p0` … `p{n-1}`.
 pub fn run_dkg(scheme: &str, threshold: u32, party_count: usize) -> Result<Vec<Vec<u8>>> {
-    ensure!(
-        party_count > 0,
-        error::EmptyPartyListSnafu {}
-    );
+    ensure!(party_count > 0, error::EmptyPartyListSnafu {});
     let roster: Vec<Party> = (0..party_count)
         .map(|i| Party::inproc(format!("p{i}")))
         .collect();
@@ -189,10 +186,7 @@ mod tests {
         }
         fn create_session(&self, params: &SessionParams) -> Result<Box<dyn SessionImpl>> {
             let id = params.parties.get(params.this_party_idx)?.id.clone();
-            Ok(Box::new(ToySession {
-                id,
-                round_done: 0,
-            }))
+            Ok(Box::new(ToySession { id, round_done: 0 }))
         }
     }
 

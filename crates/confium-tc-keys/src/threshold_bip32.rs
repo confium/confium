@@ -24,7 +24,9 @@ pub struct DerivationPath {
 
 impl DerivationPath {
     pub fn new() -> Self {
-        Self { components: Vec::new() }
+        Self {
+            components: Vec::new(),
+        }
     }
 
     pub fn push(&mut self, index: u32, hardened: bool) -> &mut Self {
@@ -75,11 +77,7 @@ pub fn derive_path(parent: &Scalar, path: &DerivationPath) -> Scalar {
 /// Each party in a threshold quorum derives their child share
 /// independently. Since derivation is deterministic, all parties
 /// at the same path index derive consistently.
-pub fn derive_party_share(
-    parent_share: &Scalar,
-    party_idx: u32,
-    path: &DerivationPath,
-) -> Scalar {
+pub fn derive_party_share(parent_share: &Scalar, party_idx: u32, path: &DerivationPath) -> Scalar {
     let mut current = *parent_share;
     for component in &path.components {
         let mut c = *component;
@@ -94,8 +92,8 @@ pub fn derive_party_share(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use p256::elliptic_curve::rand_core::OsRng;
     use p256::elliptic_curve::Field;
+    use p256::elliptic_curve::rand_core::OsRng;
 
     fn random_scalar() -> Scalar {
         Scalar::random(&mut OsRng)

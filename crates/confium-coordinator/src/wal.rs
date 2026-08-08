@@ -72,11 +72,7 @@ impl SessionWal {
     }
 
     /// Append a transition to the WAL. Returns the assigned sequence number.
-    pub fn append(
-        &self,
-        session_id: &str,
-        transition: StateTransition,
-    ) -> std::io::Result<u64> {
+    pub fn append(&self, session_id: &str, transition: StateTransition) -> std::io::Result<u64> {
         let seq = {
             let mut next = self.next_seq.lock().unwrap();
             let current = *next;
@@ -152,14 +148,22 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let wal_path = tmp.path().join("wal.jsonl");
         let wal = SessionWal::open(&wal_path).unwrap();
-        wal.append("s1", StateTransition::Created {
-            quorum_id: "q".into(),
-            scheme: "CMP20".into(),
-            threshold: 2,
-        }).unwrap();
-        wal.append("s1", StateTransition::CommitmentReceived {
-            signer_id: "alice".into(),
-        }).unwrap();
+        wal.append(
+            "s1",
+            StateTransition::Created {
+                quorum_id: "q".into(),
+                scheme: "CMP20".into(),
+                threshold: 2,
+            },
+        )
+        .unwrap();
+        wal.append(
+            "s1",
+            StateTransition::CommitmentReceived {
+                signer_id: "alice".into(),
+            },
+        )
+        .unwrap();
         wal.append("s1", StateTransition::Completed).unwrap();
 
         let entries = wal.read_all().unwrap();
@@ -222,11 +226,17 @@ mod tests {
                 scheme: "CMP20".into(),
                 threshold: 2,
             },
-            StateTransition::CommitmentReceived { signer_id: "a".into() },
-            StateTransition::ShareReceived { signer_id: "a".into() },
+            StateTransition::CommitmentReceived {
+                signer_id: "a".into(),
+            },
+            StateTransition::ShareReceived {
+                signer_id: "a".into(),
+            },
             StateTransition::Completed,
             StateTransition::Expired,
-            StateTransition::Aborted { reason: "test".into() },
+            StateTransition::Aborted {
+                reason: "test".into(),
+            },
         ];
         for t in &transitions {
             let json = serde_json::to_string(t).unwrap();

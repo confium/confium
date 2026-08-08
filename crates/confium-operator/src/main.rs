@@ -32,13 +32,17 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-mod crd;
 mod controller;
+mod crd;
 
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[command(name = "confium-operator", version, about = "Kubernetes operator for Confium threshold signing")]
+#[command(
+    name = "confium-operator",
+    version,
+    about = "Kubernetes operator for Confium threshold signing"
+)]
 pub struct Args {
     /// Path to the kubeconfig file. Defaults to in-cluster config.
     #[arg(long)]

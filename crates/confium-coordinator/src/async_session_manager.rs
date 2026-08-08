@@ -7,7 +7,7 @@
 use crate::coordinator::coordinator::Coordinator;
 use crate::coordinator::session::{SessionId, SessionRequest, SessionState};
 use std::collections::HashMap;
-use std::sync::mpsc::{channel, Sender, Receiver};
+use std::sync::mpsc::{Receiver, Sender, channel};
 use std::thread;
 use std::time::Duration;
 
@@ -33,10 +33,7 @@ impl AsyncSessionManager {
         Self { sender: tx }
     }
 
-    fn run_loop(
-        coord: std::sync::Arc<std::sync::Mutex<Coordinator>>,
-        rx: Receiver<AsyncOp>,
-    ) {
+    fn run_loop(coord: std::sync::Arc<std::sync::Mutex<Coordinator>>, rx: Receiver<AsyncOp>) {
         while let Ok(op) = rx.recv() {
             match op {
                 AsyncOp::CreateSession(req) => {
@@ -113,10 +110,15 @@ pub struct PendingOpsTracker {
 }
 
 impl PendingOpsTracker {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn record_op(&mut self, session_id: &str, op: &str) {
-        self.pending.entry(session_id.into()).or_default().push(op.into());
+        self.pending
+            .entry(session_id.into())
+            .or_default()
+            .push(op.into());
     }
 
     pub fn pending_ops(&self, session_id: &str) -> Vec<String> {
@@ -205,7 +207,12 @@ mod tests {
         };
         let sid = coord.create_session(req).unwrap();
         // Session is Pending, not Completed - timeout
-        let completed = wait_for_state(&coord, &sid, SessionState::Completed, Duration::from_millis(50));
+        let completed = wait_for_state(
+            &coord,
+            &sid,
+            SessionState::Completed,
+            Duration::from_millis(50),
+        );
         assert!(!completed);
     }
 
@@ -226,7 +233,10 @@ mod tests {
         let sid = coord.lock().unwrap().create_session(request).unwrap();
         manager.submit_commitment(&sid, "alice", vec![0xAA; 32]);
         thread::sleep(Duration::from_millis(50));
-        assert_eq!(coord.lock().unwrap().session_commitment_count(&sid), Some(1));
+        assert_eq!(
+            coord.lock().unwrap().session_commitment_count(&sid),
+            Some(1)
+        );
         manager.shutdown();
     }
 

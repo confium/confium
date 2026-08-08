@@ -5,11 +5,11 @@
 //! verification equation.
 
 use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
-use p256::elliptic_curve::sec1::ToEncodedPoint;
 use p256::elliptic_curve::PrimeField;
-use p256::elliptic_curve::rand_core::RngCore;
-use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use p256::elliptic_curve::rand_core::OsRng;
+use p256::elliptic_curve::rand_core::RngCore;
+use p256::elliptic_curve::sec1::ToEncodedPoint;
+use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -59,8 +59,7 @@ pub fn prove_possession(
     let mut nonce_bytes = [0u8; 32];
     OsRng.fill_bytes(&mut nonce_bytes);
     let nonce_fb = FieldBytes::from(nonce_bytes);
-    let nonce = Option::<Scalar>::from(Scalar::from_repr(nonce_fb))
-        .unwrap_or(Scalar::ZERO);
+    let nonce = Option::<Scalar>::from(Scalar::from_repr(nonce_fb)).unwrap_or(Scalar::ZERO);
 
     // Commitment: R = nonce * G
     let commitment = (ProjectivePoint::GENERATOR * &nonce).to_affine();
@@ -76,8 +75,7 @@ pub fn prove_possession(
     challenge_hasher.update(&r_bytes);
     let challenge_bytes = challenge_hasher.finalize();
     let challenge_fb = FieldBytes::from(challenge_bytes);
-    let challenge = Option::<Scalar>::from(Scalar::from_repr(challenge_fb))
-        .unwrap_or(Scalar::ZERO);
+    let challenge = Option::<Scalar>::from(Scalar::from_repr(challenge_fb)).unwrap_or(Scalar::ZERO);
 
     // Response: response = nonce + challenge * s
     let response = nonce + challenge * &s_scalar;
@@ -92,10 +90,7 @@ pub fn prove_possession(
 }
 
 /// Verify a proof of signature possession.
-pub fn verify_possession(
-    proof: &SignaturePossessionProof,
-    message: &[u8],
-) -> bool {
+pub fn verify_possession(proof: &SignaturePossessionProof, message: &[u8]) -> bool {
     // Verify message hash matches
     let mut hasher = Sha256::new();
     hasher.update(message);
@@ -136,10 +131,11 @@ pub fn verify_possession(
     // In a real implementation, r would be derived from the proof
     challenge_hasher.update(&[0u8; 32]);
     let challenge_bytes = challenge_hasher.finalize();
-    let challenge = match Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(challenge_bytes))) {
-        Some(s) => s,
-        None => return false,
-    };
+    let challenge =
+        match Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(challenge_bytes))) {
+            Some(s) => s,
+            None => return false,
+        };
 
     // Verify: response * G == commitment + challenge * pk_point
     let lhs = ProjectivePoint::GENERATOR * &response;

@@ -86,9 +86,7 @@ pub enum DecryptionError {
 /// In a real implementation, this would use the group operation
 /// (e.g., EC point addition weighted by Lagrange coefficients).
 /// Here, we XOR-combine for the mock case.
-pub fn combine_shares(
-    session: &DecryptionSession,
-) -> Result<Vec<u8>, DecryptionError> {
+pub fn combine_shares(session: &DecryptionSession) -> Result<Vec<u8>, DecryptionError> {
     if !session.is_ready() {
         return Err(DecryptionError::InsufficientShares {
             have: session.share_count(),

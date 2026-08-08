@@ -253,8 +253,7 @@ impl Coordinator {
             });
         }
 
-        let share_blobs: Vec<Vec<u8>> =
-            session.shares.iter().map(|s| s.bytes.clone()).collect();
+        let share_blobs: Vec<Vec<u8>> = session.shares.iter().map(|s| s.bytes.clone()).collect();
         let threshold = session.threshold();
         let message = session.request.message.clone();
         let scheme = session.request.scheme.clone();

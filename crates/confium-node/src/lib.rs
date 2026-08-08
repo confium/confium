@@ -53,8 +53,8 @@ impl Cmp20 {
     pub fn sign(shares: Vec<Buffer>, threshold: u32, message: Buffer) -> NapiResult<Buffer> {
         let share_blobs: Vec<Vec<u8>> = shares.into_iter().map(|b| b.to_vec()).collect();
         let msg = message.to_vec();
-        let sig = confium_tc_cmp20::inprocess::sign(&share_blobs, threshold, &msg)
-            .map_err(map_err)?;
+        let sig =
+            confium_tc_cmp20::inprocess::sign(&share_blobs, threshold, &msg).map_err(map_err)?;
         Ok(sig.into())
     }
 
@@ -68,9 +68,8 @@ impl Cmp20 {
     ) -> NapiResult<Vec<Buffer>> {
         let share_blobs: Vec<Vec<u8>> = shares.into_iter().map(|b| b.to_vec()).collect();
         let msg_refs: Vec<&[u8]> = messages.iter().map(|b| b.as_ref()).collect();
-        let sigs =
-            confium_tc_cmp20::inprocess::sign_batch(&share_blobs, threshold, &msg_refs)
-                .map_err(map_err)?;
+        let sigs = confium_tc_cmp20::inprocess::sign_batch(&share_blobs, threshold, &msg_refs)
+            .map_err(map_err)?;
         Ok(sigs.into_iter().map(Into::into).collect())
     }
 }
@@ -96,8 +95,8 @@ impl Gg18 {
     /// Run a GG18 DKG. Returns the same shape as `Cmp20.keygen`.
     #[napi]
     pub fn keygen(threshold: u32, party_count: u32) -> NapiResult<Cmp20Keygen> {
-        let kg = confium_tc_gg18::inprocess::keygen(threshold, party_count as usize)
-            .map_err(map_err)?;
+        let kg =
+            confium_tc_gg18::inprocess::keygen(threshold, party_count as usize).map_err(map_err)?;
         Ok(Cmp20Keygen {
             shares: kg.shares.into_iter().map(Into::into).collect(),
             public_key: kg.public_key.into(),
@@ -109,8 +108,8 @@ impl Gg18 {
     pub fn sign(shares: Vec<Buffer>, threshold: u32, message: Buffer) -> NapiResult<Buffer> {
         let share_blobs: Vec<Vec<u8>> = shares.into_iter().map(|b| b.to_vec()).collect();
         let msg = message.to_vec();
-        let sig = confium_tc_gg18::inprocess::sign(&share_blobs, threshold, &msg)
-            .map_err(map_err)?;
+        let sig =
+            confium_tc_gg18::inprocess::sign(&share_blobs, threshold, &msg).map_err(map_err)?;
         Ok(sig.into())
     }
 }

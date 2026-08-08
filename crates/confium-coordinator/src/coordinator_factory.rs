@@ -71,7 +71,9 @@ impl CoordinatorBuilder {
             unlock_window_minutes: self.default_unlock_minutes,
             requested_by: "factory".into(),
         };
-        coordinator.create_session(request).map_err(|e| format!("{e:?}"))
+        coordinator
+            .create_session(request)
+            .map_err(|e| format!("{e:?}"))
     }
 
     /// Access the DI container.
@@ -81,7 +83,9 @@ impl CoordinatorBuilder {
 }
 
 impl Default for CoordinatorBuilder {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// Simple test helper: create a coordinator with preset config.
@@ -133,8 +137,7 @@ mod tests {
 
     #[test]
     fn builder_dependency_injection() {
-        let mut builder = CoordinatorBuilder::new()
-            .with_dependency(|| 42i32);
+        let mut builder = CoordinatorBuilder::new().with_dependency(|| 42i32);
         let container = builder.container();
         let result: Option<i32> = container.resolve();
         assert_eq!(result, Some(42));
@@ -150,8 +153,12 @@ mod tests {
     fn multiple_sessions_via_builder() {
         let mut builder = CoordinatorBuilder::new().with_threshold(2);
         let mut coord = builder.build();
-        let s1 = builder.create_default_session(&mut coord, "q1", vec![0; 32]).unwrap();
-        let s2 = builder.create_default_session(&mut coord, "q2", vec![1; 32]).unwrap();
+        let s1 = builder
+            .create_default_session(&mut coord, "q1", vec![0; 32])
+            .unwrap();
+        let s2 = builder
+            .create_default_session(&mut coord, "q2", vec![1; 32])
+            .unwrap();
         assert_ne!(s1, s2);
         assert_eq!(coord.session_count(), 2);
     }

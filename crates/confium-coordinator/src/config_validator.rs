@@ -170,12 +170,18 @@ mod tests {
     fn short_timeout_warns() {
         let result = validate_coordinator_config("0.0.0.0:80", 10, 30);
         assert!(result.valid);
-        assert!(result.issues.iter().any(|i| i.field == "session_timeout_secs"));
+        assert!(
+            result
+                .issues
+                .iter()
+                .any(|i| i.field == "session_timeout_secs")
+        );
     }
 
     #[test]
     fn valid_signer_config_passes() {
-        let result = validate_signer_config("localhost:18432", "alice", "quorum-1", "/shares/a.json");
+        let result =
+            validate_signer_config("localhost:18432", "alice", "quorum-1", "/shares/a.json");
         assert!(result.valid);
     }
 

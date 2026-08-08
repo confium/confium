@@ -125,7 +125,10 @@ impl SignerDaemon {
                 );
             }
             Ok(ProtocolMessage::Ack { .. }) => {
-                tracing::info!(session = session_id, "share submitted, waiting for more signers");
+                tracing::info!(
+                    session = session_id,
+                    "share submitted, waiting for more signers"
+                );
             }
             Ok(ProtocolMessage::Error { message }) => {
                 tracing::error!(session = session_id, error = %message, "signing failed");

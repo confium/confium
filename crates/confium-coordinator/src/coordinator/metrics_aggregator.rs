@@ -58,7 +58,11 @@ pub fn aggregate(instances: &[InstanceMetrics]) -> AggregatedMetrics {
     let total_signers: u64 = instances.iter().map(|i| i.registered_signers).sum();
     let total_agg: u64 = instances.iter().map(|i| i.aggregations_attempted).sum();
     let total_fail: u64 = instances.iter().map(|i| i.aggregations_failed).sum();
-    let max_active: u64 = instances.iter().map(|i| i.active_sessions).max().unwrap_or(0);
+    let max_active: u64 = instances
+        .iter()
+        .map(|i| i.active_sessions)
+        .max()
+        .unwrap_or(0);
     let success_rate = if total_agg > 0 {
         1.0 - (total_fail as f64 / total_agg as f64)
     } else {
@@ -114,10 +118,7 @@ mod tests {
 
     #[test]
     fn sums_across_instances() {
-        let agg = aggregate(&[
-            make_instance("a", 5, 10),
-            make_instance("b", 3, 20),
-        ]);
+        let agg = aggregate(&[make_instance("a", 5, 10), make_instance("b", 3, 20)]);
         assert_eq!(agg.total_active_sessions, 8);
         assert_eq!(agg.total_created, 30);
         assert_eq!(agg.total_signers, 6);
@@ -131,10 +132,7 @@ mod tests {
 
     #[test]
     fn avg_sessions() {
-        let agg = aggregate(&[
-            make_instance("a", 4, 0),
-            make_instance("b", 6, 0),
-        ]);
+        let agg = aggregate(&[make_instance("a", 4, 0), make_instance("b", 6, 0)]);
         assert!((agg.avg_sessions_per_instance - 5.0).abs() < 0.001);
     }
 

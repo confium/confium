@@ -51,4 +51,3 @@ macro_rules! pending_method {
         }
     };
 }
-

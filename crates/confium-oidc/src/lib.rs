@@ -84,11 +84,15 @@ impl OidcIssuer {
     /// JWKS URL — where to fetch the issuer's signing keys.
     pub fn jwks_url(&self) -> String {
         match self {
-            OidcIssuer::GitHubActions => "https://token.actions.githubusercontent.com/.well-known/jwks".to_string(),
+            OidcIssuer::GitHubActions => {
+                "https://token.actions.githubusercontent.com/.well-known/jwks".to_string()
+            }
             OidcIssuer::Google => "https://www.googleapis.com/oauth2/v3/certs".to_string(),
             OidcIssuer::GitLab => "https://gitlab.com/-/jwks".to_string(),
             OidcIssuer::Okta(tenant) => format!("{tenant}/oauth2/default/v1/keys"),
-            OidcIssuer::AzureAd(tenant_id) => format!("https://login.microsoftonline.com/{tenant_id}/discovery/v2.0/keys"),
+            OidcIssuer::AzureAd(tenant_id) => {
+                format!("https://login.microsoftonline.com/{tenant_id}/discovery/v2.0/keys")
+            }
             OidcIssuer::Custom { jwks_url, .. } => jwks_url.clone(),
         }
     }
@@ -160,24 +164,20 @@ impl OidcVerifier {
     /// Verify an OIDC token. Fetches the issuer's JWKS (cached on
     /// first call), validates the signature, checks `iss`/`aud`/
     /// `exp`, and returns the extracted claims.
-    pub fn verify(
-        &self,
-        issuer: &OidcIssuer,
-        token: &str,
-    ) -> Result<OidcClaims, OidcError> {
+    pub fn verify(&self, issuer: &OidcIssuer, token: &str) -> Result<OidcClaims, OidcError> {
         let expected_iss = issuer.issuer_url();
         let jwks = self.fetch_jwks(issuer)?;
 
         // Decode the header to find the key ID, then verify.
         let header = jsonwebtoken::decode_header(token)
             .map_err(|e| OidcError::Validation(format!("header decode: {e}")))?;
-        let kid = header.kid.ok_or_else(|| {
-            OidcError::Validation("token missing kid header".into())
-        })?;
+        let kid = header
+            .kid
+            .ok_or_else(|| OidcError::Validation("token missing kid header".into()))?;
 
-        let jwk = jwks.get(&kid).ok_or_else(|| {
-            OidcError::Validation(format!("issuer has no key with kid={kid}"))
-        })?;
+        let jwk = jwks
+            .get(&kid)
+            .ok_or_else(|| OidcError::Validation(format!("issuer has no key with kid={kid}")))?;
 
         let decoding_key = DecodingKey::from_rsa_components(&jwk.modulus, &jwk.exponent)
             .map_err(|e| OidcError::Validation(format!("JWK decode: {e}")))?;
@@ -189,8 +189,9 @@ impl OidcVerifier {
         // signing service).
         validation.validate_aud = false;
 
-        let token_data = decode::<HashMap<String, serde_json::Value>>(token, &decoding_key, &validation)
-            .map_err(|e| OidcError::Validation(format!("token verify: {e}")))?;
+        let token_data =
+            decode::<HashMap<String, serde_json::Value>>(token, &decoding_key, &validation)
+                .map_err(|e| OidcError::Validation(format!("token verify: {e}")))?;
 
         let raw = token_data.claims;
         let subject = raw
@@ -198,10 +199,7 @@ impl OidcVerifier {
             .and_then(|v| v.as_str())
             .ok_or_else(|| OidcError::Validation("missing sub".into()))?
             .to_string();
-        let email = raw
-            .get("email")
-            .and_then(|v| v.as_str())
-            .map(String::from);
+        let email = raw.get("email").and_then(|v| v.as_str()).map(String::from);
         let audience: Vec<String> = raw
             .get("aud")
             .map(|v| match v {
@@ -213,22 +211,36 @@ impl OidcVerifier {
                 _ => vec![],
             })
             .unwrap_or_default();
-        let expires_at = raw
-            .get("exp")
-            .and_then(|v| v.as_i64())
-            .unwrap_or(0);
-        let issued_at = raw
-            .get("iat")
-            .and_then(|v| v.as_i64())
-            .unwrap_or(0);
+        let expires_at = raw.get("exp").and_then(|v| v.as_i64()).unwrap_or(0);
+        let issued_at = raw.get("iat").and_then(|v| v.as_i64()).unwrap_or(0);
 
         let github = if raw.contains_key("repository") {
             Some(GithubClaims {
-                repository: raw.get("repository").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                workflow: raw.get("workflow").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                ref_: raw.get("ref").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                sha: raw.get("sha").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                actor: raw.get("actor").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                repository: raw
+                    .get("repository")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                workflow: raw
+                    .get("workflow")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                ref_: raw
+                    .get("ref")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                sha: raw
+                    .get("sha")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                actor: raw
+                    .get("actor")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
             })
         } else {
             None
@@ -266,9 +278,21 @@ impl OidcVerifier {
         let mut jwks = JwksSet::default();
         if let Some(keys) = body.get("keys").and_then(|v| v.as_array()) {
             for k in keys {
-                let kid = k.get("kid").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                let modulus = k.get("n").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                let exponent = k.get("e").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                let kid = k
+                    .get("kid")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let modulus = k
+                    .get("n")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let exponent = k
+                    .get("e")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
                 if !kid.is_empty() {
                     jwks.keys.insert(kid, Jwk { modulus, exponent });
                 }

@@ -48,7 +48,8 @@ impl SessionReaper {
 
     /// Start the reaper in a background thread.
     pub fn start(&self) {
-        self.running.store(true, std::sync::atomic::Ordering::SeqCst);
+        self.running
+            .store(true, std::sync::atomic::Ordering::SeqCst);
         let coordinator = Arc::clone(&self.coordinator);
         let interval = self.config.scan_interval;
         let running = Arc::clone(&self.running);
@@ -63,7 +64,8 @@ impl SessionReaper {
 
     /// Stop the reaper.
     pub fn stop(&self) {
-        self.running.store(false, std::sync::atomic::Ordering::SeqCst);
+        self.running
+            .store(false, std::sync::atomic::Ordering::SeqCst);
     }
 
     /// Run one reaping pass synchronously. Returns the number of
@@ -91,7 +93,9 @@ fn reap_expired_sessions(coordinator: &Arc<Mutex<Coordinator>>) -> usize {
             .unwrap_or(false);
         if should_expire {
             coord.set_session_state(&sid, SessionState::Expired);
-            coord.audit_log_mut().append(sid.clone(), AuditEvent::Expired);
+            coord
+                .audit_log_mut()
+                .append(sid.clone(), AuditEvent::Expired);
             expired_count += 1;
             tracing::info!(session = %sid, "session expired by reaper");
         }
@@ -120,7 +124,11 @@ mod tests {
     #[test]
     fn reap_expires_past_unlock_window() {
         let coord = Arc::new(Mutex::new(Coordinator::new()));
-        coord.lock().unwrap().create_session(make_request(0)).unwrap();
+        coord
+            .lock()
+            .unwrap()
+            .create_session(make_request(0))
+            .unwrap();
         std::thread::sleep(Duration::from_millis(1100));
         let reaper = SessionReaper::new(Arc::clone(&coord), ReaperConfig::default());
         let count = reaper.reap_once();
@@ -130,7 +138,11 @@ mod tests {
     #[test]
     fn reap_preserves_active_sessions() {
         let coord = Arc::new(Mutex::new(Coordinator::new()));
-        coord.lock().unwrap().create_session(make_request(240)).unwrap();
+        coord
+            .lock()
+            .unwrap()
+            .create_session(make_request(240))
+            .unwrap();
         let reaper = SessionReaper::new(Arc::clone(&coord), ReaperConfig::default());
         let count = reaper.reap_once();
         assert_eq!(count, 0);
@@ -139,8 +151,15 @@ mod tests {
     #[test]
     fn reap_does_not_touch_completed_sessions() {
         let coord = Arc::new(Mutex::new(Coordinator::new()));
-        let sid = coord.lock().unwrap().create_session(make_request(0)).unwrap();
-        coord.lock().unwrap().set_session_state(&sid, SessionState::Completed);
+        let sid = coord
+            .lock()
+            .unwrap()
+            .create_session(make_request(0))
+            .unwrap();
+        coord
+            .lock()
+            .unwrap()
+            .set_session_state(&sid, SessionState::Completed);
         std::thread::sleep(Duration::from_millis(1100));
         let reaper = SessionReaper::new(Arc::clone(&coord), ReaperConfig::default());
         let count = reaper.reap_once();
@@ -150,9 +169,21 @@ mod tests {
     #[test]
     fn reap_multiple_expired() {
         let coord = Arc::new(Mutex::new(Coordinator::new()));
-        coord.lock().unwrap().create_session(make_request(0)).unwrap();
-        coord.lock().unwrap().create_session(make_request(0)).unwrap();
-        coord.lock().unwrap().create_session(make_request(240)).unwrap();
+        coord
+            .lock()
+            .unwrap()
+            .create_session(make_request(0))
+            .unwrap();
+        coord
+            .lock()
+            .unwrap()
+            .create_session(make_request(0))
+            .unwrap();
+        coord
+            .lock()
+            .unwrap()
+            .create_session(make_request(240))
+            .unwrap();
         std::thread::sleep(Duration::from_millis(1100));
         let reaper = SessionReaper::new(Arc::clone(&coord), ReaperConfig::default());
         let count = reaper.reap_once();

@@ -54,7 +54,9 @@ async fn anchor_once(state: &Arc<AppState>) -> anyhow::Result<()> {
     // record a placeholder proof so the API surface is testable
     // end-to-end without an external dependency.
     let placeholder_proof = build_placeholder_proof(tree_size, &root);
-    state.db.store_ots_proof(tree_size, &root, &placeholder_proof, None)?;
+    state
+        .db
+        .store_ots_proof(tree_size, &root, &placeholder_proof, None)?;
 
     Ok(())
 }

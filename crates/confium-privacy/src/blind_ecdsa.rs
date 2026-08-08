@@ -6,9 +6,12 @@
 //!
 //! Uses the multiplicative blinding technique adapted for ECDSA.
 
-use p256::ecdsa::{Signature, SigningKey, VerifyingKey, signature::{Signer, Verifier}};
-use p256::{AffinePoint, ProjectivePoint, Scalar};
+use p256::ecdsa::{
+    Signature, SigningKey, VerifyingKey,
+    signature::{Signer, Verifier},
+};
 use p256::elliptic_curve::{Field, PrimeField, rand_core::OsRng};
+use p256::{AffinePoint, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
 
 /// A blind signature request (blinded hash sent to signer).

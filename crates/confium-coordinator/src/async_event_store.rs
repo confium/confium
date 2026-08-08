@@ -3,7 +3,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::mpsc::{channel, Sender};
+use std::sync::mpsc::{Sender, channel};
 use std::thread;
 use std::time::Duration;
 
@@ -149,7 +149,9 @@ pub struct AsyncProjection {
 }
 
 impl AsyncProjection {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     /// Apply an event to the projection.
     pub fn apply(&mut self, entry: &AsyncEventEntry) {
@@ -184,10 +186,12 @@ mod tests {
     #[test]
     fn async_submit_event() {
         let (store, _handle) = AsyncEventStore::spawn();
-        store.submit(DomainEvent::Created {
-            id: "x".into(),
-            payload: "data".into(),
-        }).unwrap();
+        store
+            .submit(DomainEvent::Created {
+                id: "x".into(),
+                payload: "data".into(),
+            })
+            .unwrap();
         thread::sleep(Duration::from_millis(20));
         // Event was processed by background thread
     }
@@ -196,10 +200,12 @@ mod tests {
     fn async_submit_many_events() {
         let (store, _handle) = AsyncEventStore::spawn();
         for i in 0..100 {
-            store.submit(DomainEvent::Created {
-                id: format!("k{i}"),
-                payload: format!("v{i}"),
-            }).unwrap();
+            store
+                .submit(DomainEvent::Created {
+                    id: format!("k{i}"),
+                    payload: format!("v{i}"),
+                })
+                .unwrap();
         }
         thread::sleep(Duration::from_millis(50));
     }
@@ -209,7 +215,8 @@ mod tests {
         let (appender, _handle) = BatchedEventAppender::spawn(5);
         for i in 0..3 {
             appender.append(DomainEvent::Created {
-                id: format!("k{i}"), payload: "v".into(),
+                id: format!("k{i}"),
+                payload: "v".into(),
             });
         }
         assert_eq!(appender.pending(), 3);
@@ -220,7 +227,8 @@ mod tests {
         let (appender, _handle) = BatchedEventAppender::spawn(3);
         for i in 0..5 {
             appender.append(DomainEvent::Created {
-                id: format!("k{i}"), payload: "v".into(),
+                id: format!("k{i}"),
+                payload: "v".into(),
             });
         }
         assert_eq!(appender.pending(), 2); // 3 sent, 2 remaining
@@ -229,7 +237,10 @@ mod tests {
     #[test]
     fn batched_appender_explicit_flush() {
         let (appender, _handle) = BatchedEventAppender::spawn(10);
-        appender.append(DomainEvent::Created { id: "k1".into(), payload: "v".into() });
+        appender.append(DomainEvent::Created {
+            id: "k1".into(),
+            payload: "v".into(),
+        });
         assert_eq!(appender.pending(), 1);
         appender.flush();
         assert_eq!(appender.pending(), 0);
@@ -241,12 +252,18 @@ mod tests {
         proj.apply(&AsyncEventEntry {
             sequence: 1,
             timestamp: Utc::now(),
-            event: DomainEvent::Created { id: "a".into(), payload: "1".into() },
+            event: DomainEvent::Created {
+                id: "a".into(),
+                payload: "1".into(),
+            },
         });
         proj.apply(&AsyncEventEntry {
             sequence: 2,
             timestamp: Utc::now(),
-            event: DomainEvent::Updated { id: "a".into(), payload: "2".into() },
+            event: DomainEvent::Updated {
+                id: "a".into(),
+                payload: "2".into(),
+            },
         });
         assert_eq!(proj.get("a"), Some("2".into()));
     }
@@ -255,11 +272,16 @@ mod tests {
     fn projection_delete() {
         let mut proj = AsyncProjection::new();
         proj.apply(&AsyncEventEntry {
-            sequence: 1, timestamp: Utc::now(),
-            event: DomainEvent::Created { id: "a".into(), payload: "x".into() },
+            sequence: 1,
+            timestamp: Utc::now(),
+            event: DomainEvent::Created {
+                id: "a".into(),
+                payload: "x".into(),
+            },
         });
         proj.apply(&AsyncEventEntry {
-            sequence: 2, timestamp: Utc::now(),
+            sequence: 2,
+            timestamp: Utc::now(),
             event: DomainEvent::Deleted { id: "a".into() },
         });
         assert!(proj.get("a").is_none());

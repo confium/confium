@@ -9,7 +9,8 @@ fn main() {
     let set_b: Vec<Vec<u8>> = vec![b"bob".to_vec(), b"carol".to_vec(), b"dave".to_vec()];
     let salt = b"shared-secret-salt";
 
-    let intersection = confium_privacy::privacy_and_dist_patterns::psi_hash_based(&set_a, &set_b, salt);
+    let intersection =
+        confium_privacy::privacy_and_dist_patterns::psi_hash_based(&set_a, &set_b, salt);
 
     println!("Intersection:");
     for item in &intersection {

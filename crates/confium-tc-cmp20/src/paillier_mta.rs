@@ -19,9 +19,8 @@
 //! Uses the Paillier implementation from `confium_tc::paillier`.
 
 use confium_tc::paillier::{
-    PaillierError, PaillierKeypair, PaillierPrivateKey, PaillierPublicKey,
-    add as paillier_add, decrypt as paillier_decrypt, encrypt as paillier_encrypt,
-    scalar_mul as paillier_scalar_mul,
+    PaillierError, PaillierKeypair, PaillierPrivateKey, PaillierPublicKey, add as paillier_add,
+    decrypt as paillier_decrypt, encrypt as paillier_encrypt, scalar_mul as paillier_scalar_mul,
 };
 use num_bigint::{BigUint, RandBigInt};
 use num_traits::{One, Zero};
@@ -68,10 +67,7 @@ impl From<PaillierError> for MtaError {
 }
 
 /// Party i initiates the MtA: encrypt k_i under j's public key.
-pub fn party_i_init(
-    j_public: &PaillierPublicKey,
-    k_i: &BigUint,
-) -> Result<MtaMessage1, MtaError> {
+pub fn party_i_init(j_public: &PaillierPublicKey, k_i: &BigUint) -> Result<MtaMessage1, MtaError> {
     let r = random_below(&j_public.n);
     let ciphertext = paillier_encrypt(j_public, k_i, &r)?;
     Ok(MtaMessage1 { ciphertext })

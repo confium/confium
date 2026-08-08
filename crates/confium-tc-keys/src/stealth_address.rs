@@ -63,7 +63,13 @@ pub fn create_stealth_address(
         + ProjectivePoint::GENERATOR * &adjustment)
         .to_affine();
 
-    (StealthAddress { ephemeral, one_time_pubkey }, r)
+    (
+        StealthAddress {
+            ephemeral,
+            one_time_pubkey,
+        },
+        r,
+    )
 }
 
 /// Recipient scans for stealth addresses using their scan secret.
@@ -108,11 +114,7 @@ mod tests {
 
         let (address, _r) = create_stealth_address(&scan_pubkey, &spend_kp.public);
 
-        let one_time_sk = scan_stealth_address(
-            &scan_secret,
-            &spend_kp.secret,
-            &address,
-        );
+        let one_time_sk = scan_stealth_address(&scan_secret, &spend_kp.secret, &address);
 
         assert!(one_time_sk.is_some());
     }

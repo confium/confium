@@ -6,8 +6,8 @@ use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 // === Tamper-Evident Audit Log (Merkle-backed) ===
 
@@ -28,13 +28,18 @@ pub struct TamperProofLog {
 
 impl TamperProofLog {
     pub fn new() -> Self {
-        Self { entries: Mutex::new(Vec::new()), root: Mutex::new("0".repeat(64)) }
+        Self {
+            entries: Mutex::new(Vec::new()),
+            root: Mutex::new("0".repeat(64)),
+        }
     }
 
     pub fn append(&self, event_type: &str, payload: &[u8]) -> u64 {
         let mut entries = self.entries.lock().unwrap();
         let seq = entries.len() as u64 + 1;
-        let prev_hash = entries.last().map(|e| e.entry_hash_hex.clone())
+        let prev_hash = entries
+            .last()
+            .map(|e| e.entry_hash_hex.clone())
             .unwrap_or_else(|| "0".repeat(64));
         let mut hasher = Sha256::new();
         hasher.update(seq.to_be_bytes());
@@ -43,9 +48,12 @@ impl TamperProofLog {
         hasher.update(prev_hash.as_bytes());
         let entry_hash = hex::encode(hasher.finalize());
         let entry = TamperProofEntry {
-            sequence: seq, timestamp: Utc::now(),
-            event_type: event_type.into(), payload_hex: hex::encode(payload),
-            prev_hash_hex: prev_hash.clone(), entry_hash_hex: entry_hash.clone(),
+            sequence: seq,
+            timestamp: Utc::now(),
+            event_type: event_type.into(),
+            payload_hex: hex::encode(payload),
+            prev_hash_hex: prev_hash.clone(),
+            entry_hash_hex: entry_hash.clone(),
         };
         entries.push(entry);
         *self.root.lock().unwrap() = entry_hash;
@@ -56,26 +64,43 @@ impl TamperProofLog {
         let entries = self.entries.lock().unwrap();
         let mut prev_hash = "0".repeat(64);
         for entry in entries.iter() {
-            if entry.prev_hash_hex != prev_hash { return false; }
+            if entry.prev_hash_hex != prev_hash {
+                return false;
+            }
             let mut hasher = Sha256::new();
             hasher.update(entry.sequence.to_be_bytes());
             hasher.update(entry.event_type.as_bytes());
-            let payload = match hex::decode(&entry.payload_hex) { Ok(p) => p, Err(_) => return false };
+            let payload = match hex::decode(&entry.payload_hex) {
+                Ok(p) => p,
+                Err(_) => return false,
+            };
             hasher.update(&payload);
             hasher.update(entry.prev_hash_hex.as_bytes());
             let computed = hex::encode(hasher.finalize());
-            if computed != entry.entry_hash_hex { return false; }
+            if computed != entry.entry_hash_hex {
+                return false;
+            }
             prev_hash = entry.entry_hash_hex.clone();
         }
         true
     }
 
-    pub fn root_hash(&self) -> String { self.root.lock().unwrap().clone() }
-    pub fn entry_count(&self) -> usize { self.entries.lock().unwrap().len() }
-    pub fn entries(&self) -> Vec<TamperProofEntry> { self.entries.lock().unwrap().clone() }
+    pub fn root_hash(&self) -> String {
+        self.root.lock().unwrap().clone()
+    }
+    pub fn entry_count(&self) -> usize {
+        self.entries.lock().unwrap().len()
+    }
+    pub fn entries(&self) -> Vec<TamperProofEntry> {
+        self.entries.lock().unwrap().clone()
+    }
 }
 
-impl Default for TamperProofLog { fn default() -> Self { Self::new() } }
+impl Default for TamperProofLog {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 // === Session Garbage Collector ===
 
@@ -89,8 +114,12 @@ pub struct GcConfig {
 
 impl Default for GcConfig {
     fn default() -> Self {
-        Self { max_completed_age: Duration::hours(24), max_expired_age: Duration::hours(48),
-               max_retained: 10_000, gc_interval_secs: 300 }
+        Self {
+            max_completed_age: Duration::hours(24),
+            max_expired_age: Duration::hours(48),
+            max_retained: 10_000,
+            gc_interval_secs: 300,
+        }
     }
 }
 
@@ -107,7 +136,12 @@ pub struct SessionGarbageCollector {
 }
 
 impl SessionGarbageCollector {
-    pub fn new(config: GcConfig) -> Self { Self { config, collected: AtomicU64::new(0) } }
+    pub fn new(config: GcConfig) -> Self {
+        Self {
+            config,
+            collected: AtomicU64::new(0),
+        }
+    }
 
     pub fn collect(&self, sessions: &mut Vec<GcSessionInfo>) -> usize {
         let now = Utc::now();
@@ -130,7 +164,9 @@ impl SessionGarbageCollector {
         collected
     }
 
-    pub fn total_collected(&self) -> u64 { self.collected.load(Ordering::SeqCst) }
+    pub fn total_collected(&self) -> u64 {
+        self.collected.load(Ordering::SeqCst)
+    }
 }
 
 // === Suspicious Signer Quarantine ===
@@ -152,15 +188,24 @@ pub struct SignerQuarantine {
 
 impl SignerQuarantine {
     pub fn new(bad_threshold: u32, quarantine_duration: Duration) -> Self {
-        Self { reputations: Mutex::new(HashMap::new()), bad_threshold, quarantine_duration }
+        Self {
+            reputations: Mutex::new(HashMap::new()),
+            bad_threshold,
+            quarantine_duration,
+        }
     }
 
     pub fn record_good(&self, signer_id: &str) {
         let mut reps = self.reputations.lock().unwrap();
-        let rep = reps.entry(signer_id.into()).or_insert_with(|| SignerReputation {
-            signer_id: signer_id.into(), good_count: 0, bad_count: 0,
-            quarantined: false, quarantine_until: None,
-        });
+        let rep = reps
+            .entry(signer_id.into())
+            .or_insert_with(|| SignerReputation {
+                signer_id: signer_id.into(),
+                good_count: 0,
+                bad_count: 0,
+                quarantined: false,
+                quarantine_until: None,
+            });
         rep.good_count += 1;
         if rep.quarantined && rep.good_count >= 10 {
             rep.quarantined = false;
@@ -170,10 +215,15 @@ impl SignerQuarantine {
 
     pub fn record_bad(&self, signer_id: &str) {
         let mut reps = self.reputations.lock().unwrap();
-        let rep = reps.entry(signer_id.into()).or_insert_with(|| SignerReputation {
-            signer_id: signer_id.into(), good_count: 0, bad_count: 0,
-            quarantined: false, quarantine_until: None,
-        });
+        let rep = reps
+            .entry(signer_id.into())
+            .or_insert_with(|| SignerReputation {
+                signer_id: signer_id.into(),
+                good_count: 0,
+                bad_count: 0,
+                quarantined: false,
+                quarantine_until: None,
+            });
         rep.bad_count += 1;
         if rep.bad_count >= self.bad_threshold {
             rep.quarantined = true;
@@ -183,13 +233,17 @@ impl SignerQuarantine {
 
     pub fn is_quarantined(&self, signer_id: &str) -> bool {
         let reps = self.reputations.lock().unwrap();
-        reps.get(signer_id).map(|r| {
-            if !r.quarantined { return false; }
-            if let Some(until) = r.quarantine_until {
-                return Utc::now() < until;
-            }
-            true
-        }).unwrap_or(false)
+        reps.get(signer_id)
+            .map(|r| {
+                if !r.quarantined {
+                    return false;
+                }
+                if let Some(until) = r.quarantine_until {
+                    return Utc::now() < until;
+                }
+                true
+            })
+            .unwrap_or(false)
     }
 
     pub fn reputation(&self, signer_id: &str) -> Option<SignerReputation> {
@@ -197,7 +251,12 @@ impl SignerQuarantine {
     }
 
     pub fn quarantined_count(&self) -> usize {
-        self.reputations.lock().unwrap().values().filter(|r| r.quarantined).count()
+        self.reputations
+            .lock()
+            .unwrap()
+            .values()
+            .filter(|r| r.quarantined)
+            .count()
     }
 
     pub fn release(&self, signer_id: &str) {
@@ -224,7 +283,12 @@ pub struct TimeLockedSession {
 
 impl TimeLockedSession {
     pub fn new(session_id: &str, unlock_at: DateTime<Utc>) -> Self {
-        Self { session_id: session_id.into(), condition: TimeLockCondition { unlock_at }, signature: None, ready: false }
+        Self {
+            session_id: session_id.into(),
+            condition: TimeLockCondition { unlock_at },
+            signature: None,
+            ready: false,
+        }
     }
 
     pub fn check_unlock(&mut self) -> bool {
@@ -235,7 +299,9 @@ impl TimeLockedSession {
     }
 
     pub fn store_signature(&mut self, sig: Vec<u8>) -> Result<(), String> {
-        if !self.ready { return Err("not unlocked yet".into()); }
+        if !self.ready {
+            return Err("not unlocked yet".into());
+        }
         self.signature = Some(sig);
         Ok(())
     }
@@ -246,9 +312,17 @@ impl TimeLockedSession {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum SigningCondition {
     Always,
-    QuorumVote { required: u32 },
-    OracleValue { oracle_id: String, min_value: f64 },
-    TimeWindow { start: DateTime<Utc>, end: DateTime<Utc> },
+    QuorumVote {
+        required: u32,
+    },
+    OracleValue {
+        oracle_id: String,
+        min_value: f64,
+    },
+    TimeWindow {
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+    },
 }
 
 impl SigningCondition {
@@ -256,7 +330,9 @@ impl SigningCondition {
         match self {
             Self::Always => true,
             Self::QuorumVote { required } => context.vote_count >= *required as usize,
-            Self::OracleValue { min_value, .. } => context.oracle_value.unwrap_or(f64::MIN) >= *min_value,
+            Self::OracleValue { min_value, .. } => {
+                context.oracle_value.unwrap_or(f64::MIN) >= *min_value
+            }
             Self::TimeWindow { start, end } => {
                 let now = Utc::now();
                 now >= *start && now <= *end
@@ -272,7 +348,12 @@ pub struct SigningContext {
 }
 
 impl Default for SigningContext {
-    fn default() -> Self { Self { vote_count: 0, oracle_value: None } }
+    fn default() -> Self {
+        Self {
+            vote_count: 0,
+            oracle_value: None,
+        }
+    }
 }
 
 // === Cross-Quorum Signature Aggregation ===
@@ -316,8 +397,13 @@ pub struct CoordinatorConfig {
 
 impl Default for CoordinatorConfig {
     fn default() -> Self {
-        Self { max_sessions: 100, session_timeout_secs: 3600, rate_limit_per_minute: 100,
-               allowed_schemes: vec!["CMP20".into(), "FROST-P256".into()], config_version: 1 }
+        Self {
+            max_sessions: 100,
+            session_timeout_secs: 3600,
+            rate_limit_per_minute: 100,
+            allowed_schemes: vec!["CMP20".into(), "FROST-P256".into()],
+            config_version: 1,
+        }
     }
 }
 
@@ -329,22 +415,36 @@ pub struct ConfigManager {
 
 impl ConfigManager {
     pub fn new(initial: CoordinatorConfig) -> Self {
-        Self { config: Mutex::new(initial), reload_count: AtomicU64::new(0),
-               last_reload: Mutex::new(None) }
+        Self {
+            config: Mutex::new(initial),
+            reload_count: AtomicU64::new(0),
+            last_reload: Mutex::new(None),
+        }
     }
 
     pub fn reload(&self, new_config: CoordinatorConfig) {
         let mut config = self.config.lock().unwrap();
         let old_version = config.config_version;
-        *config = CoordinatorConfig { config_version: old_version + 1, ..new_config };
+        *config = CoordinatorConfig {
+            config_version: old_version + 1,
+            ..new_config
+        };
         self.reload_count.fetch_add(1, Ordering::SeqCst);
         *self.last_reload.lock().unwrap() = Some(Utc::now());
     }
 
-    pub fn config(&self) -> CoordinatorConfig { self.config.lock().unwrap().clone() }
-    pub fn reload_count(&self) -> u64 { self.reload_count.load(Ordering::SeqCst) }
-    pub fn last_reload(&self) -> Option<DateTime<Utc>> { *self.last_reload.lock().unwrap() }
-    pub fn config_version(&self) -> u32 { self.config.lock().unwrap().config_version }
+    pub fn config(&self) -> CoordinatorConfig {
+        self.config.lock().unwrap().clone()
+    }
+    pub fn reload_count(&self) -> u64 {
+        self.reload_count.load(Ordering::SeqCst)
+    }
+    pub fn last_reload(&self) -> Option<DateTime<Utc>> {
+        *self.last_reload.lock().unwrap()
+    }
+    pub fn config_version(&self) -> u32 {
+        self.config.lock().unwrap().config_version
+    }
 }
 
 // === Wallet Policy Language ===
@@ -361,7 +461,10 @@ pub struct WalletPolicy {
 impl WalletPolicy {
     pub fn evaluate(&self, ctx: &WalletTxContext) -> Result<(), String> {
         if ctx.signer_count < self.required_signers as usize {
-            return Err(format!("need {} signers, got {}", self.required_signers, ctx.signer_count));
+            return Err(format!(
+                "need {} signers, got {}",
+                self.required_signers, ctx.signer_count
+            ));
         }
         if let Some(max) = self.max_amount {
             if ctx.amount > max {
@@ -399,17 +502,24 @@ pub struct ReplayProtection {
 
 impl ReplayProtection {
     pub fn new(max_cache_size: usize) -> Self {
-        Self { seen_nonces: Mutex::new(HashSet::new()), max_cache_size }
+        Self {
+            seen_nonces: Mutex::new(HashSet::new()),
+            max_cache_size,
+        }
     }
 
     pub fn check_and_consume(&self, nonce: &[u8]) -> bool {
         let mut seen = self.seen_nonces.lock().unwrap();
-        if seen.contains(nonce) { return false; }
+        if seen.contains(nonce) {
+            return false;
+        }
         if seen.len() >= self.max_cache_size {
             // Evict ~10% of entries (random-ish eviction)
             let to_remove = self.max_cache_size / 10;
             let keys: Vec<Vec<u8>> = seen.iter().take(to_remove).cloned().collect();
-            for k in keys { seen.remove(&k); }
+            for k in keys {
+                seen.remove(&k);
+            }
         }
         seen.insert(nonce.to_vec());
         true
@@ -419,7 +529,9 @@ impl ReplayProtection {
         self.seen_nonces.lock().unwrap().contains(nonce)
     }
 
-    pub fn cache_size(&self) -> usize { self.seen_nonces.lock().unwrap().len() }
+    pub fn cache_size(&self) -> usize {
+        self.seen_nonces.lock().unwrap().len()
+    }
 }
 
 // === Proactive Security Scheduler ===
@@ -442,7 +554,9 @@ impl ProactiveScheduler {
     }
 
     pub fn should_refresh(&self) -> bool {
-        if !*self.auto_refresh.lock().unwrap() { return false; }
+        if !*self.auto_refresh.lock().unwrap() {
+            return false;
+        }
         let last = *self.last_refresh.lock().unwrap();
         Utc::now() - last >= self.refresh_interval
     }
@@ -452,9 +566,15 @@ impl ProactiveScheduler {
         self.refresh_count.fetch_add(1, Ordering::SeqCst);
     }
 
-    pub fn set_auto_refresh(&self, enabled: bool) { *self.auto_refresh.lock().unwrap() = enabled; }
-    pub fn refresh_count(&self) -> u64 { self.refresh_count.load(Ordering::SeqCst) }
-    pub fn last_refresh(&self) -> DateTime<Utc> { *self.last_refresh.lock().unwrap() }
+    pub fn set_auto_refresh(&self, enabled: bool) {
+        *self.auto_refresh.lock().unwrap() = enabled;
+    }
+    pub fn refresh_count(&self) -> u64 {
+        self.refresh_count.load(Ordering::SeqCst)
+    }
+    pub fn last_refresh(&self) -> DateTime<Utc> {
+        *self.last_refresh.lock().unwrap()
+    }
 
     pub fn next_refresh_at(&self) -> DateTime<Utc> {
         *self.last_refresh.lock().unwrap() + self.refresh_interval
@@ -497,10 +617,21 @@ mod tests {
     // Session GC
     #[test]
     fn gc_collects_old_completed() {
-        let gc = SessionGarbageCollector::new(GcConfig { max_completed_age: Duration::seconds(0), ..Default::default() });
+        let gc = SessionGarbageCollector::new(GcConfig {
+            max_completed_age: Duration::seconds(0),
+            ..Default::default()
+        });
         let mut sessions = vec![
-            GcSessionInfo { session_id: "s1".into(), state: "completed".into(), last_updated: Utc::now() - Duration::hours(48) },
-            GcSessionInfo { session_id: "s2".into(), state: "pending".into(), last_updated: Utc::now() },
+            GcSessionInfo {
+                session_id: "s1".into(),
+                state: "completed".into(),
+                last_updated: Utc::now() - Duration::hours(48),
+            },
+            GcSessionInfo {
+                session_id: "s2".into(),
+                state: "pending".into(),
+                last_updated: Utc::now(),
+            },
         ];
         let collected = gc.collect(&mut sessions);
         assert_eq!(collected, 1);
@@ -510,9 +641,11 @@ mod tests {
     #[test]
     fn gc_preserves_pending() {
         let gc = SessionGarbageCollector::new(GcConfig::default());
-        let mut sessions = vec![
-            GcSessionInfo { session_id: "s1".into(), state: "pending".into(), last_updated: Utc::now() - Duration::days(365) },
-        ];
+        let mut sessions = vec![GcSessionInfo {
+            session_id: "s1".into(),
+            state: "pending".into(),
+            last_updated: Utc::now() - Duration::days(365),
+        }];
         gc.collect(&mut sessions);
         assert_eq!(sessions.len(), 1);
     }
@@ -542,7 +675,9 @@ mod tests {
         let q = SignerQuarantine::new(1, Duration::hours(1));
         q.record_bad("s1");
         assert!(q.is_quarantined("s1"));
-        for _ in 0..10 { q.record_good("s1"); }
+        for _ in 0..10 {
+            q.record_good("s1");
+        }
         assert!(!q.is_quarantined("s1"));
     }
 
@@ -571,21 +706,39 @@ mod tests {
     #[test]
     fn condition_quorum_vote() {
         let cond = SigningCondition::QuorumVote { required: 3 };
-        assert!(!cond.evaluate(&SigningContext { vote_count: 2, ..Default::default() }));
-        assert!(cond.evaluate(&SigningContext { vote_count: 3, ..Default::default() }));
+        assert!(!cond.evaluate(&SigningContext {
+            vote_count: 2,
+            ..Default::default()
+        }));
+        assert!(cond.evaluate(&SigningContext {
+            vote_count: 3,
+            ..Default::default()
+        }));
     }
 
     #[test]
     fn condition_oracle() {
-        let cond = SigningCondition::OracleValue { oracle_id: "price".into(), min_value: 100.0 };
-        assert!(!cond.evaluate(&SigningContext { oracle_value: Some(50.0), ..Default::default() }));
-        assert!(cond.evaluate(&SigningContext { oracle_value: Some(150.0), ..Default::default() }));
+        let cond = SigningCondition::OracleValue {
+            oracle_id: "price".into(),
+            min_value: 100.0,
+        };
+        assert!(!cond.evaluate(&SigningContext {
+            oracle_value: Some(50.0),
+            ..Default::default()
+        }));
+        assert!(cond.evaluate(&SigningContext {
+            oracle_value: Some(150.0),
+            ..Default::default()
+        }));
     }
 
     #[test]
     fn condition_time_window() {
         let now = Utc::now();
-        let cond = SigningCondition::TimeWindow { start: now - Duration::hours(1), end: now + Duration::hours(1) };
+        let cond = SigningCondition::TimeWindow {
+            start: now - Duration::hours(1),
+            end: now + Duration::hours(1),
+        };
         assert!(cond.evaluate(&SigningContext::default()));
     }
 
@@ -618,30 +771,51 @@ mod tests {
     #[test]
     fn wallet_policy_passes() {
         let policy = WalletPolicy {
-            required_signers: 2, total_signers: 3,
-            max_amount: Some(1000), allowed_recipients: None, time_window: None,
+            required_signers: 2,
+            total_signers: 3,
+            max_amount: Some(1000),
+            allowed_recipients: None,
+            time_window: None,
         };
-        let ctx = WalletTxContext { signer_count: 2, amount: 500, recipient: "bob".into() };
+        let ctx = WalletTxContext {
+            signer_count: 2,
+            amount: 500,
+            recipient: "bob".into(),
+        };
         assert!(policy.evaluate(&ctx).is_ok());
     }
 
     #[test]
     fn wallet_policy_fails_insufficient_signers() {
         let policy = WalletPolicy {
-            required_signers: 3, total_signers: 5,
-            max_amount: None, allowed_recipients: None, time_window: None,
+            required_signers: 3,
+            total_signers: 5,
+            max_amount: None,
+            allowed_recipients: None,
+            time_window: None,
         };
-        let ctx = WalletTxContext { signer_count: 2, amount: 100, recipient: "x".into() };
+        let ctx = WalletTxContext {
+            signer_count: 2,
+            amount: 100,
+            recipient: "x".into(),
+        };
         assert!(policy.evaluate(&ctx).is_err());
     }
 
     #[test]
     fn wallet_policy_fails_exceeds_amount() {
         let policy = WalletPolicy {
-            required_signers: 1, total_signers: 1,
-            max_amount: Some(100), allowed_recipients: None, time_window: None,
+            required_signers: 1,
+            total_signers: 1,
+            max_amount: Some(100),
+            allowed_recipients: None,
+            time_window: None,
         };
-        let ctx = WalletTxContext { signer_count: 1, amount: 200, recipient: "x".into() };
+        let ctx = WalletTxContext {
+            signer_count: 1,
+            amount: 200,
+            recipient: "x".into(),
+        };
         assert!(policy.evaluate(&ctx).is_err());
     }
 
@@ -650,11 +824,30 @@ mod tests {
         let mut allowed = HashSet::new();
         allowed.insert("alice".into());
         let policy = WalletPolicy {
-            required_signers: 1, total_signers: 1,
-            max_amount: None, allowed_recipients: Some(allowed), time_window: None,
+            required_signers: 1,
+            total_signers: 1,
+            max_amount: None,
+            allowed_recipients: Some(allowed),
+            time_window: None,
         };
-        assert!(policy.evaluate(&WalletTxContext { signer_count: 1, amount: 0, recipient: "alice".into() }).is_ok());
-        assert!(policy.evaluate(&WalletTxContext { signer_count: 1, amount: 0, recipient: "bob".into() }).is_err());
+        assert!(
+            policy
+                .evaluate(&WalletTxContext {
+                    signer_count: 1,
+                    amount: 0,
+                    recipient: "alice".into()
+                })
+                .is_ok()
+        );
+        assert!(
+            policy
+                .evaluate(&WalletTxContext {
+                    signer_count: 1,
+                    amount: 0,
+                    recipient: "bob".into()
+                })
+                .is_err()
+        );
     }
 
     // Replay protection
@@ -681,7 +874,9 @@ mod tests {
     #[test]
     fn replay_cache_eviction() {
         let rp = ReplayProtection::new(10);
-        for i in 0..15 { rp.check_and_consume(&[i as u8; 8]); }
+        for i in 0..15 {
+            rp.check_and_consume(&[i as u8; 8]);
+        }
         // Old nonces should be evicted
         assert!(rp.cache_size() <= 15);
     }

@@ -6,7 +6,7 @@ use axum::response::Json;
 use serde::{Deserialize, Serialize};
 
 use confium_composite::{
-    ComponentSignature, CompositeSignature, ED25519, ed25519_verifier, p256_verifier, ECDSA_P256,
+    ComponentSignature, CompositeSignature, ECDSA_P256, ED25519, ed25519_verifier, p256_verifier,
 };
 use confium_transparency::entry::MerkleEntry;
 use confium_transparency::merkle::{Hash, InclusionProof, MerkleTree, ProofStep, Side};
@@ -125,8 +125,12 @@ pub async fn verify_inclusion(
     State(_state): State<AppState>,
     Json(req): Json<VerifyInclusionRequest>,
 ) -> Result<Json<VerifyResponse>, (StatusCode, String)> {
-    let artifact_hash = decode_hash(&req.artifact_hash_hex)
-        .map_err(|e| (StatusCode::BAD_REQUEST, format!("invalid artifact_hash_hex: {e}")))?;
+    let artifact_hash = decode_hash(&req.artifact_hash_hex).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("invalid artifact_hash_hex: {e}"),
+        )
+    })?;
     let root = decode_hash(&req.root_hex)
         .map_err(|e| (StatusCode::BAD_REQUEST, format!("invalid root_hex: {e}")))?;
 
@@ -145,7 +149,7 @@ pub async fn verify_inclusion(
                 return Err((
                     StatusCode::BAD_REQUEST,
                     format!("invalid side at step {i}: {}", s.side),
-                ))
+                ));
             }
         };
         steps.push(ProofStep { sibling, side });
@@ -208,7 +212,12 @@ mod tests {
     #[tokio::test]
     async fn healthz_returns_ok() {
         let response = app()
-            .oneshot(Request::builder().uri("/healthz").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/healthz")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);

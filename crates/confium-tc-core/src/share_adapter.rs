@@ -73,14 +73,12 @@ impl NormalizedShare {
 
     /// Get the share scalar as bytes.
     pub fn scalar_bytes(&self) -> Result<Vec<u8>, AdapterError> {
-        hex::decode(&self.scalar_hex)
-            .map_err(|e| AdapterError::InvalidScalar(e.to_string()))
+        hex::decode(&self.scalar_hex).map_err(|e| AdapterError::InvalidScalar(e.to_string()))
     }
 
     /// Get the public key as bytes.
     pub fn public_key_bytes(&self) -> Result<Vec<u8>, AdapterError> {
-        hex::decode(&self.public_key_hex)
-            .map_err(|e| AdapterError::InvalidPublicKey(e.to_string()))
+        hex::decode(&self.public_key_hex).map_err(|e| AdapterError::InvalidPublicKey(e.to_string()))
     }
 
     /// Check if two shares are from the same quorum and have the same
@@ -128,16 +126,7 @@ mod tests {
     use super::*;
 
     fn make_share(scheme: &str) -> NormalizedShare {
-        NormalizedShare::new(
-            scheme,
-            "quorum-alpha",
-            3,
-            2,
-            5,
-            &[0xAA; 32],
-            &[0x04; 65],
-        )
-        .unwrap()
+        NormalizedShare::new(scheme, "quorum-alpha", 3, 2, 5, &[0xAA; 32], &[0x04; 65]).unwrap()
     }
 
     #[test]

@@ -48,7 +48,12 @@ pub struct SearchQuery {
 
 impl Default for SearchQuery {
     fn default() -> Self {
-        Self { query: None, interface: None, algorithm: None, min_version: None }
+        Self {
+            query: None,
+            interface: None,
+            algorithm: None,
+            min_version: None,
+        }
     }
 }
 
@@ -57,7 +62,8 @@ pub fn matches(entry: &MarketplaceEntry, query: &SearchQuery) -> bool {
     if let Some(ref q) = query.query {
         let q_lower = q.to_lowercase();
         if !entry.manifest.name.to_lowercase().contains(&q_lower)
-            && !entry.manifest.description.to_lowercase().contains(&q_lower) {
+            && !entry.manifest.description.to_lowercase().contains(&q_lower)
+        {
             return false;
         }
     }
@@ -123,35 +129,50 @@ mod tests {
     #[test]
     fn search_by_name() {
         let entry = make_entry("my-hash-plugin");
-        let query = SearchQuery { query: Some("hash".into()), ..Default::default() };
+        let query = SearchQuery {
+            query: Some("hash".into()),
+            ..Default::default()
+        };
         assert!(matches(&entry, &query));
     }
 
     #[test]
     fn search_no_match() {
         let entry = make_entry("crypto-plugin");
-        let query = SearchQuery { query: Some("networking".into()), ..Default::default() };
+        let query = SearchQuery {
+            query: Some("networking".into()),
+            ..Default::default()
+        };
         assert!(!matches(&entry, &query));
     }
 
     #[test]
     fn search_by_interface() {
         let entry = make_entry("x");
-        let query = SearchQuery { interface: Some("hash".into()), ..Default::default() };
+        let query = SearchQuery {
+            interface: Some("hash".into()),
+            ..Default::default()
+        };
         assert!(matches(&entry, &query));
     }
 
     #[test]
     fn search_by_algorithm() {
         let entry = make_entry("x");
-        let query = SearchQuery { algorithm: Some("SHA-256".into()), ..Default::default() };
+        let query = SearchQuery {
+            algorithm: Some("SHA-256".into()),
+            ..Default::default()
+        };
         assert!(matches(&entry, &query));
     }
 
     #[test]
     fn search_wrong_interface() {
         let entry = make_entry("x");
-        let query = SearchQuery { interface: Some("aead".into()), ..Default::default() };
+        let query = SearchQuery {
+            interface: Some("aead".into()),
+            ..Default::default()
+        };
         assert!(!matches(&entry, &query));
     }
 

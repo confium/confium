@@ -32,7 +32,9 @@ pub struct Pipeline {
 
 impl Pipeline {
     pub fn new() -> Self {
-        Self { middlewares: Vec::new() }
+        Self {
+            middlewares: Vec::new(),
+        }
     }
 
     pub fn add(&mut self, mw: Box<dyn Middleware>) -> &mut Self {
@@ -58,7 +60,9 @@ impl Pipeline {
 }
 
 impl Default for Pipeline {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 // Built-in middlewares
@@ -69,7 +73,9 @@ pub struct RateLimitMiddleware {
 }
 
 impl Middleware for RateLimitMiddleware {
-    fn name(&self) -> &str { "rate-limiter" }
+    fn name(&self) -> &str {
+        "rate-limiter"
+    }
     fn process(&self, ctx: &RequestContext) -> MiddlewareResult {
         // Simplified: check payload size as a proxy for load
         if ctx.payload_size > 1_000_000 {
@@ -86,7 +92,9 @@ pub struct AuthMiddleware {
 }
 
 impl Middleware for AuthMiddleware {
-    fn name(&self) -> &str { "auth" }
+    fn name(&self) -> &str {
+        "auth"
+    }
     fn process(&self, ctx: &RequestContext) -> MiddlewareResult {
         if self.required && ctx.signer_id.is_none() {
             MiddlewareResult::Reject("authentication required".into())
@@ -100,7 +108,9 @@ impl Middleware for AuthMiddleware {
 pub struct PolicyMiddleware;
 
 impl Middleware for PolicyMiddleware {
-    fn name(&self) -> &str { "policy" }
+    fn name(&self) -> &str {
+        "policy"
+    }
     fn process(&self, ctx: &RequestContext) -> MiddlewareResult {
         if ctx.quorum_id.is_none() && ctx.request_type != "health_check" {
             MiddlewareResult::Reject("quorum_id required".into())
@@ -116,10 +126,15 @@ pub struct BackpressureMiddleware {
 }
 
 impl Middleware for BackpressureMiddleware {
-    fn name(&self) -> &str { "backpressure" }
+    fn name(&self) -> &str {
+        "backpressure"
+    }
     fn process(&self, ctx: &RequestContext) -> MiddlewareResult {
         if ctx.payload_size > self.max_payload {
-            MiddlewareResult::Reject(format!("payload {} exceeds max {}", ctx.payload_size, self.max_payload))
+            MiddlewareResult::Reject(format!(
+                "payload {} exceeds max {}",
+                ctx.payload_size, self.max_payload
+            ))
         } else {
             MiddlewareResult::Continue
         }
@@ -130,7 +145,9 @@ impl Middleware for BackpressureMiddleware {
 pub struct LoggingMiddleware;
 
 impl Middleware for LoggingMiddleware {
-    fn name(&self) -> &str { "logging" }
+    fn name(&self) -> &str {
+        "logging"
+    }
     fn process(&self, _ctx: &RequestContext) -> MiddlewareResult {
         MiddlewareResult::Continue
     }
@@ -176,10 +193,14 @@ mod tests {
     fn full_pipeline_passes_valid_request() {
         let mut pipeline = Pipeline::new();
         pipeline
-            .add(Box::new(RateLimitMiddleware { max_per_second: 100 }))
+            .add(Box::new(RateLimitMiddleware {
+                max_per_second: 100,
+            }))
             .add(Box::new(AuthMiddleware { required: true }))
             .add(Box::new(PolicyMiddleware))
-            .add(Box::new(BackpressureMiddleware { max_payload: 10_000 }))
+            .add(Box::new(BackpressureMiddleware {
+                max_payload: 10_000,
+            }))
             .add(Box::new(LoggingMiddleware));
         assert!(pipeline.execute(&make_ctx("sign")).is_ok());
         assert_eq!(pipeline.middleware_count(), 5);

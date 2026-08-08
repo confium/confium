@@ -27,7 +27,11 @@ pub fn prove_dlog(secret: &Scalar) -> NizkProof {
     let challenge = fiat_shamir_challenge(&public, &commitment, b"dlog");
     let response = nonce + challenge * secret;
 
-    NizkProof { commitment, challenge, response }
+    NizkProof {
+        commitment,
+        challenge,
+        response,
+    }
 }
 
 /// Verify a DLOG proof.
@@ -38,8 +42,8 @@ pub fn verify_dlog(public: &AffinePoint, proof: &NizkProof) -> bool {
     }
     // Check: response * G == commitment + challenge * public
     let lhs = ProjectivePoint::GENERATOR * &proof.response;
-    let rhs = ProjectivePoint::from(proof.commitment)
-        + ProjectivePoint::from(*public) * &proof.challenge;
+    let rhs =
+        ProjectivePoint::from(proof.commitment) + ProjectivePoint::from(*public) * &proof.challenge;
     lhs == rhs
 }
 
@@ -64,8 +68,16 @@ pub fn prove_dlog_equality(
     let response = nonce + challenge * secret;
 
     (
-        NizkProof { commitment: commit1, challenge, response },
-        NizkProof { commitment: commit2, challenge, response },
+        NizkProof {
+            commitment: commit1,
+            challenge,
+            response,
+        },
+        NizkProof {
+            commitment: commit2,
+            challenge,
+            response,
+        },
     )
 }
 
@@ -88,17 +100,15 @@ pub fn verify_dlog_equality(
     }
     // Verify both equations
     let lhs1 = ProjectivePoint::from(*g1) * &proof1.response;
-    let rhs1 = ProjectivePoint::from(proof1.commitment) + ProjectivePoint::from(*y1) * &proof1.challenge;
+    let rhs1 =
+        ProjectivePoint::from(proof1.commitment) + ProjectivePoint::from(*y1) * &proof1.challenge;
     let lhs2 = ProjectivePoint::from(*g2) * &proof2.response;
-    let rhs2 = ProjectivePoint::from(proof2.commitment) + ProjectivePoint::from(*y2) * &proof2.challenge;
+    let rhs2 =
+        ProjectivePoint::from(proof2.commitment) + ProjectivePoint::from(*y2) * &proof2.challenge;
     lhs1 == rhs1 && lhs2 == rhs2
 }
 
-fn fiat_shamir_challenge(
-    public: &AffinePoint,
-    commitment: &AffinePoint,
-    domain: &[u8],
-) -> Scalar {
+fn fiat_shamir_challenge(public: &AffinePoint, commitment: &AffinePoint, domain: &[u8]) -> Scalar {
     let mut hasher = Sha256::new();
     hasher.update(b"nizk");
     hasher.update(domain);

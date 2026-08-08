@@ -26,8 +26,8 @@
 //! ```
 
 mod client;
-mod verify;
 mod store;
+mod verify;
 
 use std::path::PathBuf;
 use std::time::Duration;
@@ -90,7 +90,11 @@ async fn run_cycle(client: &client::LogClient, store: &store::StateStore) -> Res
             let proof = client.fetch_consistency(last_size).await?;
             let last_root = store.last_root()?;
             verify::verify_consistency(&last_root, last_size, &head, &proof)?;
-            tracing::info!(from = last_size, to = head.tree_size, "consistency verified");
+            tracing::info!(
+                from = last_size,
+                to = head.tree_size,
+                "consistency verified"
+            );
         }
         // Cache the new head.
         store.put_head(&head)?;

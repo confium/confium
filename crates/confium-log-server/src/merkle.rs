@@ -45,7 +45,10 @@ impl MerkleState {
         self.tree.len() as u64
     }
 
-    pub fn inclusion_proof(&self, sequence: u64) -> std::result::Result<InclusionProof, MerkleError> {
+    pub fn inclusion_proof(
+        &self,
+        sequence: u64,
+    ) -> std::result::Result<InclusionProof, MerkleError> {
         self.tree.inclusion_proof(sequence)
     }
 
