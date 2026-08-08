@@ -4,8 +4,6 @@
 //! to detect discrepancies. Used to verify cross-implementation
 //! compatibility (e.g., our FROST vs. reference FROST).
 
-use std::collections::HashMap;
-
 /// Result of a differential test comparison.
 #[derive(Debug, Clone)]
 pub struct DiffResult<T: Clone + PartialEq> {

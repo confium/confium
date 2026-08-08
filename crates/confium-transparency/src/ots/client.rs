@@ -63,8 +63,8 @@ impl OtsClient {
         F: Fn(u32) -> Result<[u8; 32], String>,
     {
         // Verify the Merkle root matches what's in the block.
-        let _block_hash = bitcoin_block_at_height(proof.bitcoin_height)
-            .map_err(|e| OtsError::BitcoinBackend(e))?;
+        let _block_hash =
+            bitcoin_block_at_height(proof.bitcoin_height).map_err(OtsError::BitcoinBackend)?;
 
         // Mock: in real impl, parse block header, extract Merkle root,
         // verify the Merkle branch proves inclusion of `proof.hash` under

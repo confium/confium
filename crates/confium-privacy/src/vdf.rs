@@ -11,7 +11,7 @@
 //! 4. Verify: check y^l == x * π^l  (actually y^l ≡ x * π^l ... simplified)
 
 use num_bigint::{BigUint, RandBigInt};
-use num_traits::{One, Zero};
+use num_traits::One;
 use rand_core::OsRng;
 use sha2::{Digest, Sha256};
 

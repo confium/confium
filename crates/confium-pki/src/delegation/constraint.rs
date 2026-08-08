@@ -99,7 +99,7 @@ pub enum ScopeValue<'a> {
 fn glob_match(pattern: &str, value: &str) -> bool {
     fn helper(p: &[u8], v: &[u8]) -> bool {
         match (p.first(), v.first()) {
-            (Some(b'*'), _) => helper(&p[1..], v) || (v.first().is_some() && helper(p, &v[1..])),
+            (Some(b'*'), _) => helper(&p[1..], v) || (!v.is_empty() && helper(p, &v[1..])),
             (Some(b'?'), Some(_)) => helper(&p[1..], &v[1..]),
             (Some(pc), Some(vc)) if pc == vc => helper(&p[1..], &v[1..]),
             (None, None) => true,

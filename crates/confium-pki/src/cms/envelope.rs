@@ -5,9 +5,7 @@
 //! Thunderbird/RNP, etc., the consumer should serialize via the `der`
 //! crate (not done here — this crate provides the semantic model only).
 
-use crate::cms::signed_data::{
-    AlgorithmIdentifier, EncapContentInfo, SignedData, SignerIdentifier, SignerInfo,
-};
+use crate::cms::signed_data::{AlgorithmIdentifier, SignedData, SignerIdentifier, SignerInfo};
 
 /// Builder for `SignedData`.
 #[derive(Debug, Default)]

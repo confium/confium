@@ -6,12 +6,9 @@
 //!
 //! Uses the multiplicative blinding technique adapted for ECDSA.
 
-use p256::ecdsa::{
-    Signature, SigningKey, VerifyingKey,
-    signature::{Signer, Verifier},
-};
+use p256::Scalar;
+use p256::ecdsa::{Signature, SigningKey, signature::Signer};
 use p256::elliptic_curve::{Field, PrimeField, rand_core::OsRng};
-use p256::{AffinePoint, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
 
 /// A blind signature request (blinded hash sent to signer).
@@ -40,7 +37,7 @@ pub fn blind(message_hash: &[u8; 32]) -> (BlindedMessage, BlindFactor) {
     let t = Scalar::random(&mut OsRng);
     let e = bytes_to_scalar(message_hash);
     // Blinded hash = e * t (multiplicative blinding)
-    let blinded = e * &t;
+    let blinded = e * t;
     let blinded_bytes: [u8; 32] = blinded.to_repr().into();
     (
         BlindedMessage {
@@ -75,7 +72,7 @@ pub fn unblind(raw: &RawSignature, factor: &BlindFactor) -> Signature {
     let s = Scalar::from_repr(s_arr.into()).unwrap_or(Scalar::ZERO);
     // s' = s * t^-1 (remove blinding)
     let t_inv = factor.t.invert().unwrap_or(Scalar::ZERO);
-    let s_unblinded = s * &t_inv;
+    let s_unblinded = s * t_inv;
     let r_bytes: [u8; 32] = r.to_repr().into();
     let s_bytes: [u8; 32] = s_unblinded.to_repr().into();
     Signature::from_scalars(r_bytes, s_bytes).unwrap()

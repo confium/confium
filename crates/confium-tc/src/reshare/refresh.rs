@@ -64,7 +64,7 @@ pub fn verify_refresh_preserves_aggregate(
     // Mock verification: sum of bytes mod 256 should be zero for any party's
     // contribution evaluated at 0 (i.e., f_i(0) = 0 means all bytes are zero
     // when summed appropriately). For real algorithms this uses field math.
-    let mut sum = vec![0u8; 32];
+    let mut sum = [0u8; 32];
     for c in party_zero_contributions {
         for (i, b) in c.bytes.iter().enumerate() {
             if i < sum.len() {
