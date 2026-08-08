@@ -31,8 +31,14 @@ let kg = cmp20::keygen(2, 3).expect("DKG");
 // Sign with all 3 shares (the threshold is 2, so any 2 would suffice)
 let sig = cmp20::sign(&kg.shares, 2, b"hello, threshold world").expect("sign");
 
-// Verify with the joint public key
-assert!(// cmp20::verify(&sig, &kg.public_key, b"hello, threshold world").expect("verify"));
+// The signature is a standard 64-byte ECDSA-P256 (r, s) pair.
+// Verify it with any standard P-256 verifier (p256 crate, OpenSSL, etc.).
+// Confium produces standard ECDSA signatures; there's no Confium-specific verify needed.
+//
+// Example using the p256 crate directly:
+//   let vk = p256::ecdsa::VerifyingKey::from_sec1_bytes(&kg.public_key).unwrap();
+//   let sig_obj = p256::ecdsa::Signature::from_slice(&sig).unwrap();
+//   vk.verify(&message, &sig_obj).unwrap();
 ```
 
 ## Verify a composite signature
