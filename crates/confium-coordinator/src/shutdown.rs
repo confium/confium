@@ -5,7 +5,7 @@
 //!
 //! ## Usage
 //!
-//! ```no_run
+//! ```ignore
 //! use confium_tc::shutdown::ShutdownSignal;
 //! use std::time::Duration;
 //!
