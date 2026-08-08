@@ -17,41 +17,57 @@ fn run_harness(args: MptsArgs) -> Result<(), String> {
     let mut results = Vec::with_capacity(args.rounds as usize);
     let test_message = b"mpts-test-vector";
 
-    eprintln!("Running {rounds} rounds of {scheme} T={threshold} N={n}",
+    eprintln!(
+        "Running {rounds} rounds of {scheme} T={threshold} N={n}",
         rounds = args.rounds,
         scheme = args.scheme,
         threshold = args.threshold,
-        n = args.party_count);
+        n = args.party_count
+    );
 
     for round in 0..args.rounds {
         let start = std::time::Instant::now();
 
         let (public_key, sig) = match args.scheme.as_str() {
             "cmp20" => {
-                let kg = confium_tc_cmp20::inprocess::keygen(args.threshold, args.party_count as usize)
-                    .map_err(|e| e.to_string())?;
-                let sig = confium_tc_cmp20::inprocess::sign(&kg.shares, args.threshold, test_message)
-                    .map_err(|e| e.to_string())?;
+                let kg =
+                    confium_tc_cmp20::inprocess::keygen(args.threshold, args.party_count as usize)
+                        .map_err(|e| e.to_string())?;
+                let sig =
+                    confium_tc_cmp20::inprocess::sign(&kg.shares, args.threshold, test_message)
+                        .map_err(|e| e.to_string())?;
                 (kg.public_key, sig)
             }
             "gg18" => {
-                let kg = confium_tc_gg18::inprocess::keygen(args.threshold, args.party_count as usize)
-                    .map_err(|e| e.to_string())?;
-                let sig = confium_tc_gg18::inprocess::sign(&kg.shares, args.threshold, test_message)
-                    .map_err(|e| e.to_string())?;
+                let kg =
+                    confium_tc_gg18::inprocess::keygen(args.threshold, args.party_count as usize)
+                        .map_err(|e| e.to_string())?;
+                let sig =
+                    confium_tc_gg18::inprocess::sign(&kg.shares, args.threshold, test_message)
+                        .map_err(|e| e.to_string())?;
                 (kg.public_key, sig)
             }
             "frost-p256" => {
                 let kp = confium_tc_frost_p256::generate_keypair();
                 let signed = confium_tc_frost_p256::sign_message(&kp, test_message)
                     .map_err(|e| e.to_string())?;
-                (kp.to_verifying_key().to_sec1_bytes().to_vec(), signed.fixed_bytes.to_vec())
+                (
+                    kp.to_verifying_key().to_sec1_bytes().to_vec(),
+                    signed.fixed_bytes.to_vec(),
+                )
             }
             "frost-ed25519" => {
-                let shares = confium_tc_frost_ed25519::inprocess::keygen(args.threshold, args.party_count as usize)
-                    .map_err(|e| e.to_string())?;
-                let sig = confium_tc_frost_ed25519::inprocess::sign(&shares, args.threshold, test_message)
-                    .map_err(|e| e.to_string())?;
+                let shares = confium_tc_frost_ed25519::inprocess::keygen(
+                    args.threshold,
+                    args.party_count as usize,
+                )
+                .map_err(|e| e.to_string())?;
+                let sig = confium_tc_frost_ed25519::inprocess::sign(
+                    &shares,
+                    args.threshold,
+                    test_message,
+                )
+                .map_err(|e| e.to_string())?;
                 (vec![], sig)
             }
             other => return Err(format!("unknown scheme: {other}")),
@@ -85,7 +101,9 @@ fn run_harness(args: MptsArgs) -> Result<(), String> {
             eprintln!("Report written to {path}");
         }
         None => {
-            std::io::stdout().write_all(json.as_bytes()).map_err(|e| e.to_string())?;
+            std::io::stdout()
+                .write_all(json.as_bytes())
+                .map_err(|e| e.to_string())?;
             println!();
         }
     }

@@ -40,8 +40,7 @@ pub fn run(cmd: LogCommand) {
 }
 
 fn append(args: LogAppendArgs) -> Result<(), String> {
-    let hash = hex::decode(&args.artifact_hash)
-        .map_err(|e| format!("artifact_hash hex: {e}"))?;
+    let hash = hex::decode(&args.artifact_hash).map_err(|e| format!("artifact_hash hex: {e}"))?;
     if hash.len() != 32 {
         return Err(format!(
             "artifact_hash must be 32 bytes, got {}",
@@ -109,10 +108,8 @@ fn prove(args: LogProveArgs) -> Result<(), String> {
 
 fn verify(args: LogVerifyArgs) -> Result<(), String> {
     let tree = load_or_new(&args.log)?;
-    let leaf = hex::decode(&args.leaf_hash)
-        .map_err(|e| format!("leaf_hash hex: {e}"))?;
-    let root = hex::decode(&args.root)
-        .map_err(|e| format!("root hex: {e}"))?;
+    let leaf = hex::decode(&args.leaf_hash).map_err(|e| format!("leaf_hash hex: {e}"))?;
+    let root = hex::decode(&args.root).map_err(|e| format!("root hex: {e}"))?;
     if leaf.len() != 32 || root.len() != 32 {
         return Err("leaf_hash and root must each be 32 bytes".to_string());
     }
@@ -123,14 +120,13 @@ fn verify(args: LogVerifyArgs) -> Result<(), String> {
     let proof = tree
         .inclusion_proof(args.sequence)
         .map_err(|e| e.to_string())?;
-    let entry = MerkleEntry::new(
-        args.sequence,
-        ArtifactType::CertificateIssuance,
-        leaf_arr,
-    );
+    let entry = MerkleEntry::new(args.sequence, ArtifactType::CertificateIssuance, leaf_arr);
     let result = MerkleTree::verify_inclusion(&entry, &proof, root_arr);
     if result.is_ok() {
-        println!("{}", serde_json::to_string_pretty(&serde_json::json!({"verified": true})).unwrap());
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&serde_json::json!({"verified": true})).unwrap()
+        );
         Ok(())
     } else {
         Err(format!("inclusion proof failed: {:?}", result.unwrap_err()))
@@ -161,12 +157,15 @@ fn load_or_new(path: &str) -> Result<MerkleTree, String> {
         if line.trim().is_empty() {
             continue;
         }
-        let record: LogRecord = serde_json::from_str(line)
-            .map_err(|e| format!("parse log line: {e}"))?;
-        let hash = hex::decode(&record.artifact_hash)
-            .map_err(|e| format!("artifact_hash hex: {e}"))?;
+        let record: LogRecord =
+            serde_json::from_str(line).map_err(|e| format!("parse log line: {e}"))?;
+        let hash =
+            hex::decode(&record.artifact_hash).map_err(|e| format!("artifact_hash hex: {e}"))?;
         if hash.len() != 32 {
-            return Err(format!("log entry hash must be 32 bytes, got {}", hash.len()));
+            return Err(format!(
+                "log entry hash must be 32 bytes, got {}",
+                hash.len()
+            ));
         }
         let mut arr = [0u8; 32];
         arr.copy_from_slice(&hash);

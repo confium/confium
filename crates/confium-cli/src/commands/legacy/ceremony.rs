@@ -59,7 +59,13 @@ pub struct CeremonyStatus {
 
 impl CeremonyStatus {
     /// Create a new ceremony in the Init state.
-    pub fn new(ceremony_id: &str, quorum_id: &str, scheme: &str, threshold: u32, party_count: u32) -> Self {
+    pub fn new(
+        ceremony_id: &str,
+        quorum_id: &str,
+        scheme: &str,
+        threshold: u32,
+        party_count: u32,
+    ) -> Self {
         Self {
             ceremony_id: ceremony_id.into(),
             quorum_id: quorum_id.into(),
@@ -82,7 +88,11 @@ impl CeremonyStatus {
             return Err(format!("signer {signer_id} already joined"));
         }
         if self.participants.len() >= self.party_count as usize {
-            return Err(format!("ceremony is full ({}/{})", self.participants.len(), self.party_count));
+            return Err(format!(
+                "ceremony is full ({}/{})",
+                self.participants.len(),
+                self.party_count
+            ));
         }
         self.participants.push(Participant {
             signer_id: signer_id.into(),
@@ -106,7 +116,10 @@ impl CeremonyStatus {
     /// Mark the ceremony as completed.
     pub fn complete(&mut self) -> Result<(), String> {
         if self.state != CeremonyState::Running {
-            return Err(format!("ceremony is in state {:?}, not Running", self.state));
+            return Err(format!(
+                "ceremony is in state {:?}, not Running",
+                self.state
+            ));
         }
         self.state = CeremonyState::Completed;
         self.completed_at = Some(Utc::now());
@@ -132,7 +145,11 @@ impl CeremonyStatus {
 
     /// Render a human-readable summary.
     pub fn summary(&self) -> String {
-        let participant_list: Vec<&str> = self.participants.iter().map(|p| p.signer_id.as_str()).collect();
+        let participant_list: Vec<&str> = self
+            .participants
+            .iter()
+            .map(|p| p.signer_id.as_str())
+            .collect();
         format!(
             "Ceremony {}: quorum={} scheme={} T={}/N={} state={:?} participants=[{}] ({}/{})",
             self.ceremony_id,
