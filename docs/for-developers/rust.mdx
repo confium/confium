@@ -32,7 +32,7 @@ let kg = cmp20::keygen(2, 3).expect("DKG");
 let sig = cmp20::sign(&kg.shares, 2, b"hello, threshold world").expect("sign");
 
 // Verify with the joint public key
-assert!(cmp20::verify(&sig, &kg.public_key, b"hello, threshold world").expect("verify"));
+assert!(// cmp20::verify(&sig, &kg.public_key, b"hello, threshold world").expect("verify"));
 ```
 
 ## Verify a composite signature

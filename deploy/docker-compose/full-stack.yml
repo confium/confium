@@ -20,7 +20,7 @@ name: confium-full-stack
 services:
   # --- Threshold signing cluster -----------------------------------------
   coordinator:
-    image: ghcr.io/confium/coordinator:latest
+    image: ghcr.io/confium/confium-coordinator:latest
     ports:
       - "7000:7000"
     environment:
@@ -34,7 +34,7 @@ services:
       retries: 3
 
   signerd-1:
-    image: ghcr.io/confium/signerd:latest
+    image: ghcr.io/confium/confium-signerd:latest
     depends_on: [coordinator]
     environment:
       COORDINATOR_URL: http://coordinator:7000
@@ -43,7 +43,7 @@ services:
       - signerd-1-data:/etc/confium/shares
 
   signerd-2:
-    image: ghcr.io/confium/signerd:latest
+    image: ghcr.io/confium/confium-signerd:latest
     depends_on: [coordinator]
     environment:
       COORDINATOR_URL: http://coordinator:7000
@@ -52,7 +52,7 @@ services:
       - signerd-2-data:/etc/confium/shares
 
   signerd-3:
-    image: ghcr.io/confium/signerd:latest
+    image: ghcr.io/confium/confium-signerd:latest
     depends_on: [coordinator]
     environment:
       COORDINATOR_URL: http://coordinator:7000
@@ -62,7 +62,7 @@ services:
 
   # --- Transparency log --------------------------------------------------
   log-server:
-    image: ghcr.io/confium/log-server:latest
+    image: ghcr.io/confium/confium-log-server:latest
     ports:
       - "7878:7878"
     environment:
@@ -77,7 +77,7 @@ services:
 
   # --- HTTP verification service -----------------------------------------
   verify-server:
-    image: ghcr.io/confium/verify-server:latest
+    image: ghcr.io/confium/confium-verify-server:latest
     ports:
       - "8080:8080"
     environment:

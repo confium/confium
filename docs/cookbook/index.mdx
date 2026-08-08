@@ -61,3 +61,25 @@ Open a PR adding `docs/cookbook/{slug}.mdx`. Each recipe should:
 5. Link to deeper docs (specs, API reference)
 
 See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the contribution process.
+
+## Implementation status
+
+Some recipes reference CLI commands or example files that are planned but not yet shipped. The underlying crate APIs exist; the CLI wrappers and example files are coming in subsequent releases.
+
+| Recipe | CLI commands used | Status |
+|--------|-------------------|--------|
+| threshold-sign-with-cmp20 | `threshold dkg`, `threshold sign` | ✅ All commands ship |
+| local-transparency-log | `transparency append`, `transparency prove`, `transparency verify` | ✅ All commands ship |
+| two-party-psi | `privacy psi` | ✅ Ships |
+| dp-aggregation | `privacy dp` | ✅ Ships |
+| verify-in-browser | WASM `@confium/confium-wasm` | ✅ Ships |
+| keyless-github-release | `uses: confium/action@v1` | 🚧 Action repo pending |
+| refresh-shares | `threshold refresh` | ⚠️ Rust API exists; CLI wrapper pending |
+| public-verify-endpoint | `docker pull ... verify-server` | ✅ Image ships (private until made public) |
+| prometheus-monitoring | `/metrics` on services | ✅ Metrics endpoints exist |
+| backup-shares | `threshold share-export`, `share-import` | ⚠️ Rust API exists; CLI wrappers pending |
+| deploy-signerd-k8s | K8s manifests | ✅ Manifests ship |
+| run-a-witness | `docker pull ... log-monitor` | ✅ Image ships (private until made public) |
+| ots-bitcoin-anchoring | `transparency ots`, `transparency head` | ⚠️ Rust API exists; CLI wrappers pending |
+| pkcs11-hsm-replacement | `confium-pkcs11-server` | ⚠️ Server binary exists; PKCS#11 .so module pending |
+| composite-sign-pq-migration | `pki composite-sign`, `verify composite` | ✅ Commands ship (Ed25519+P256 only; PQ pending) |
