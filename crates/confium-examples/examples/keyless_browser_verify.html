@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h1>Confium Keyless Verify</h1>
+  <script type="module">
+    import init, { CompositeSignature } from 'https://esm.sh/@confium/confium-wasm@0.4';
+    await init();
+    // Keyless signatures are composite signatures with a short-lived cert.
+    // Verify here using the same composite API.
+    console.log('Confium WASM loaded. Use CompositeSignature to verify keyless sigs.');
+  </script>
+</body>
+</html>

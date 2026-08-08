@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h1>Confium Verify (WASM)</h1>
+  <p>Message: <input id="msg" value="hello" /></p>
+  <p>Sig (hex): <input id="sig" size="80" /></p>
+  <p>PubKey (hex): <input id="pk" size="80" /></p>
+  <button id="go">Verify</button>
+  <pre id="result"></pre>
+
+  <script type="module">
+    import init, { CompositeSignature } from 'https://esm.sh/@confium/confium-wasm@0.4';
+    await init();
+
+    document.getElementById('go').onclick = () => {
+      try {
+        const msg = new TextEncoder().encode(document.getElementById('msg').value);
+        document.getElementById('result').textContent = 'Verify API: pass message + composite sig JSON';
+      } catch (e) {
+        document.getElementById('result').textContent = 'Error: ' + e.message;
+      }
+    };
+  </script>
+</body>
+</html>
