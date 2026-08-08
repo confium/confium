@@ -116,6 +116,19 @@ pub enum ProtocolMessage {
         /// Current state.
         state: String,
     },
+    /// Health check (used by signerd to verify coordinator is alive).
+    HealthCheck,
+    /// Health check response.
+    HealthStatus {
+        /// Server is alive.
+        alive: bool,
+        /// Coordinator is ready.
+        ready: bool,
+        /// Active session count.
+        session_count: usize,
+        /// Server uptime in seconds.
+        uptime_seconds: u64,
+    },
 }
 
 /// Send a protocol message over a TCP stream.

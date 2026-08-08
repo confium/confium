@@ -194,6 +194,13 @@ fn process_message(
             }
         }
 
+        ProtocolMessage::HealthCheck => Some(ProtocolMessage::HealthStatus {
+            alive: true,
+            ready: true,
+            session_count: coordinator.lock().unwrap().session_count(),
+            uptime_seconds: 0,
+        }),
+
         _ => Some(ProtocolMessage::Error {
             message: "unexpected message type".into(),
         }),
