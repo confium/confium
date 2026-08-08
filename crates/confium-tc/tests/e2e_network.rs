@@ -28,11 +28,7 @@
 use std::thread;
 use std::time::Duration;
 
-use confium_tc::coordinator::{
-    client::SignerClient,
-    net::{ProtocolMessage, recv_message, send_message},
-    net_server::CoordinatorServer,
-};
+use confium_tc::coordinator::{client::SignerClient, net_server::CoordinatorServer};
 use confium_tc_frost_p256::{keys, scalar, shamir, sign};
 use p256::ecdsa::{Signature, signature::Verifier};
 
@@ -264,8 +260,8 @@ fn network_e2e_session_lifecycle_over_tcp() {
             .expect("commitment");
         thread::sleep(Duration::from_millis(200));
         // This submit_share should trigger aggregation (2nd share for T=2)
-        let result = client.submit_share("session-0", "signer-2", &share2);
-        result
+
+        client.submit_share("session-0", "signer-2", &share2)
     });
 
     let sid = handle1.join().expect("thread1");

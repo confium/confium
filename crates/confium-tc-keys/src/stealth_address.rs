@@ -160,7 +160,7 @@ mod tests {
         let (address, _) = create_stealth_address(&scan_pubkey, &spend_kp.public);
 
         let one_time_sk = scan_stealth_address(&scan_secret, &spend_kp.secret, &address).unwrap();
-        let derived_pk = (ProjectivePoint::GENERATOR * &one_time_sk).to_affine();
+        let derived_pk = (ProjectivePoint::GENERATOR * one_time_sk).to_affine();
         assert_eq!(derived_pk, address.one_time_pubkey);
     }
 

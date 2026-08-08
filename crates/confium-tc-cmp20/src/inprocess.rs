@@ -174,7 +174,7 @@ mod tests {
         let vk = VerifyingKey::from_affine(pk).expect("vk");
         for (msg, sig) in messages.iter().zip(sigs.iter()) {
             let s = Signature::from_slice(sig).expect("parse sig");
-            vk.verify(*msg, &s).expect("verify");
+            vk.verify(msg, &s).expect("verify");
         }
     }
 }

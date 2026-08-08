@@ -114,7 +114,7 @@ fn reshare_refresh_contribution_round_trips() {
 #[test]
 fn kem_session_states_are_distinct() {
     use confium_tc::kem::session::KemSessionState;
-    let states = vec![
+    let states = [
         KemSessionState::Pending,
         KemSessionState::Round1Complete,
         KemSessionState::Completed,
