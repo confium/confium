@@ -56,7 +56,7 @@ impl Certificate {
     #[wasm_bindgen]
     pub fn is_within_validity(&self, epoch_ms: f64) -> bool {
         let now = chrono::DateTime::<chrono::Utc>::from_timestamp_millis(epoch_ms as i64)
-            .unwrap_or_else(|| chrono::Utc::now());
+            .unwrap_or_else(chrono::Utc::now);
         self.inner.is_within_validity(now)
     }
 }

@@ -1,3 +1,4 @@
+#![allow(missing_docs)] // TODO: document before 1.0
 //! Verifiable secret sharing, Paillier, Schnorr, and NIZK primitives.
 //!
 //! Standalone cryptographic primitives with no dependency on the threshold

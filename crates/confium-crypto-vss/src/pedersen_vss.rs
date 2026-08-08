@@ -31,7 +31,7 @@ impl PedersenParams {
     /// Generate h = g^alpha for random alpha (trapdoor discarded).
     pub fn generate() -> Self {
         let alpha = Scalar::random(&mut OsRng);
-        let h = (ProjectivePoint::GENERATOR * &alpha).to_affine();
+        let h = (ProjectivePoint::GENERATOR * alpha).to_affine();
         Self { h }
     }
 }
@@ -60,8 +60,8 @@ pub fn deal(
     let mut c_points = Vec::with_capacity(threshold as usize);
     let mut d_points = Vec::with_capacity(threshold as usize);
     for i in 0..threshold as usize {
-        let g_fi = ProjectivePoint::GENERATOR * &f_coeffs[i];
-        let h_ri = ProjectivePoint::from(params.h) * &r_coeffs[i];
+        let g_fi = ProjectivePoint::GENERATOR * f_coeffs[i];
+        let h_ri = ProjectivePoint::from(params.h) * r_coeffs[i];
         let c_i = (g_fi + h_ri).to_affine();
         let d_i = h_ri.to_affine();
         c_points.push(encode_point(&c_i));
@@ -94,8 +94,8 @@ pub fn verify_share(
     params: &PedersenParams,
 ) -> bool {
     // Compute g^{f(j)} * h^{r(j)}
-    let lhs = (ProjectivePoint::GENERATOR * &share.value
-        + ProjectivePoint::from(params.h) * &share.randomness)
+    let lhs = (ProjectivePoint::GENERATOR * share.value
+        + ProjectivePoint::from(params.h) * share.randomness)
         .to_affine();
 
     // Compute product(C_i^{j^i})
@@ -104,10 +104,10 @@ pub fn verify_share(
     let mut j_pow = Scalar::ONE;
     for i in 0..commitment.c_points_hex.len() {
         if let Some(c_i) = decode_point(&commitment.c_points_hex[i]) {
-            rhs += ProjectivePoint::from(c_i) * &j_pow;
+            rhs += ProjectivePoint::from(c_i) * j_pow;
         }
         let j_scalar = u32_to_scalar(j);
-        j_pow = j_pow * &j_scalar;
+        j_pow *= j_scalar;
     }
 
     lhs == rhs.to_affine()
@@ -135,8 +135,8 @@ fn eval_poly(coeffs: &[Scalar], x: u32) -> Scalar {
     let mut result = Scalar::ZERO;
     let mut x_pow = Scalar::ONE;
     for c in coeffs {
-        result = result + c * &x_pow;
-        x_pow = x_pow * &x_scalar;
+        result += c * &x_pow;
+        x_pow *= x_scalar;
     }
     result
 }

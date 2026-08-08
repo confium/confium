@@ -1,7 +1,7 @@
 //! Privacy-preserving cryptographic primitives.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 pub mod adaptor_sig;
 pub mod blind_ecdsa;

@@ -114,7 +114,7 @@ pub fn verify(s: &Scalar, r: &AffinePoint, agg_pk: &AffinePoint, challenge: &Sca
 /// Generate a random nonce for a party.
 pub fn generate_nonce(party_idx: u32) -> (Scalar, NonceCommitment) {
     let k = Scalar::random(&mut OsRng);
-    let r_point = (ProjectivePoint::GENERATOR * &k).to_affine();
+    let r_point = (ProjectivePoint::GENERATOR * k).to_affine();
     (k, NonceCommitment { party_idx, r_point })
 }
 

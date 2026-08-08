@@ -120,7 +120,7 @@ impl OpenpgpCardBackend for MockOpenpgpCardBackend {
             .get(&slot)
             .cloned()
             .or_else(|| Some(vec![slot as u8; 32]))
-            .ok_or_else(|| CardError::SlotNotConfigured(slot))
+            .ok_or(CardError::SlotNotConfigured(slot))
     }
 
     fn sign(&self, digest: &[u8]) -> Result<Vec<u8>, CardError> {

@@ -122,7 +122,7 @@ pub fn encrypt(plaintext: &[u8], key: &[u8; 32]) -> Vec<u8> {
     let mut output = Vec::with_capacity(plaintext.len() + 16);
     let mut mac = HmacSha256::new_from_slice(k).expect("HMAC");
     let mut keystream = Vec::new();
-    for chunk in plaintext.chunks(32) {
+    for _chunk in plaintext.chunks(32) {
         mac.update(key);
         mac.update(&(keystream.len() as u32).to_be_bytes());
         keystream.extend_from_slice(&mac.finalize().into_bytes());
@@ -134,7 +134,7 @@ pub fn encrypt(plaintext: &[u8], key: &[u8; 32]) -> Vec<u8> {
     // Append a "tag" (truncated HMAC) for authentication
     let mut tag_mac = HmacSha256::new_from_slice(key).expect("HMAC");
     tag_mac.update(&output);
-    output.extend_from_slice(&tag_mac.finalize().into_bytes()[..16].to_vec());
+    output.extend_from_slice(&tag_mac.finalize().into_bytes()[..16]);
     output
 }
 
@@ -161,7 +161,7 @@ pub fn decrypt(ciphertext: &[u8], key: &[u8; 32]) -> Option<Vec<u8>> {
     let k = derived.as_slice();
     let mut mac = HmacSha256::new_from_slice(k).expect("HMAC");
     let mut keystream = Vec::new();
-    for chunk in body.chunks(32) {
+    for _chunk in body.chunks(32) {
         mac.update(key);
         mac.update(&(keystream.len() as u32).to_be_bytes());
         keystream.extend_from_slice(&mac.finalize().into_bytes());

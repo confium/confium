@@ -312,7 +312,7 @@ impl SpdzParty {
         use rand_core::{OsRng, RngCore};
         let mut shares = Vec::with_capacity(n_parties as usize);
         let mut sum = 0i64;
-        for i in 0..(n_parties - 1) {
+        for _i in 0..(n_parties - 1) {
             let val = (OsRng.next_u32() as i64) % 10000;
             sum += val;
             shares.push(SpdzShare {
@@ -616,7 +616,7 @@ impl ThresholdBeacon {
         use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         hasher.update(b"beacon");
-        hasher.update(&round.to_be_bytes());
+        hasher.update(round.to_be_bytes());
         for s in round_shares {
             hasher.update(s);
         }

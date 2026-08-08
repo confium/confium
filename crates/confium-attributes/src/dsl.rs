@@ -183,7 +183,7 @@ fn parse_number(s: &str) -> Result<(String, &str), ParseError> {
     Ok((s[..end].to_string(), &s[end..]))
 }
 
-fn eat<'a>(s: &'a str, ch: char) -> Result<&'a str, ParseError> {
+fn eat(s: &str, ch: char) -> Result<&str, ParseError> {
     let s = s.trim_start();
     if s.starts_with(ch) {
         Ok(&s[ch.len_utf8()..])

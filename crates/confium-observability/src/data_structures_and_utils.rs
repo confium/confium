@@ -4,7 +4,7 @@ use hmac::{Hmac, Mac};
 use sha2::{Digest, Sha256};
 use std::collections::VecDeque;
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 // === Bloom Filter ===
 
@@ -24,7 +24,7 @@ impl BloomFilter {
         let num_hashes =
             ((num_bits as f64 / expected_items as f64) * std::f64::consts::LN_2).ceil() as usize;
         let num_hashes = num_hashes.max(1);
-        let words = (num_bits + 63) / 64;
+        let words = num_bits.div_ceil(64);
         Self {
             bits: vec![0u64; words],
             num_bits,
@@ -198,15 +198,15 @@ impl TestFixtures {
     }
 
     pub fn random_session_id() -> String {
-        format!("session-{}", hex::encode(&Self::random_bytes(4)))
+        format!("session-{}", hex::encode(Self::random_bytes(4)))
     }
 
     pub fn random_signer_id() -> String {
-        format!("signer-{}", hex::encode(&Self::random_bytes(4)))
+        format!("signer-{}", hex::encode(Self::random_bytes(4)))
     }
 
     pub fn random_quorum_id() -> String {
-        format!("quorum-{}", hex::encode(&Self::random_bytes(4)))
+        format!("quorum-{}", hex::encode(Self::random_bytes(4)))
     }
 
     pub fn fake_signature() -> Vec<u8> {
@@ -536,7 +536,7 @@ impl ConcurrentTestRunner {
                 }
             }));
         }
-        let total = handles.len();
+        let _total = handles.len();
         for h in handles {
             let _ = h.join();
         }

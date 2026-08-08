@@ -38,23 +38,12 @@ pub struct VerificationInfo {
 }
 
 /// Marketplace search query.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SearchQuery {
     pub query: Option<String>,
     pub interface: Option<String>,
     pub algorithm: Option<String>,
     pub min_version: Option<String>,
-}
-
-impl Default for SearchQuery {
-    fn default() -> Self {
-        Self {
-            query: None,
-            interface: None,
-            algorithm: None,
-            min_version: None,
-        }
-    }
 }
 
 /// Match an entry against a search query.

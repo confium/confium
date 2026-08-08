@@ -12,7 +12,7 @@
 
 use std::collections::HashMap;
 use std::sync::Mutex;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 /// Trait for rate limiters. Implementations decide whether a request
 /// from `key` (typically a client ID or IP) should be allowed.
@@ -75,7 +75,7 @@ impl TokenBucketRateLimiter {
         bucket.last_refill = now;
     }
 
-    fn get_or_create_bucket(&self, key: &str) -> Bucket {
+    fn get_or_create_bucket(&self, _key: &str) -> Bucket {
         Bucket {
             tokens: self.config.capacity as f64,
             last_refill: Instant::now(),

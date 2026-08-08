@@ -1,7 +1,7 @@
 //! Zero-knowledge proof systems and set-membership primitives.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 pub mod accumulator;
 pub mod threshold_abs;

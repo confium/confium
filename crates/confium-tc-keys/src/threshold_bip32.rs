@@ -51,13 +51,13 @@ pub fn derive_child_scalar(parent: &Scalar, component: &PathIndex) -> Scalar {
     let parent_bytes = parent.to_repr();
     let mut hasher = Sha256::new();
     hasher.update(b"confium-bip32-v1");
-    hasher.update(&parent_bytes);
+    hasher.update(parent_bytes);
     if component.hardened {
         hasher.update(b"H");
     } else {
         hasher.update(b"N");
     }
-    hasher.update(&component.index.to_be_bytes());
+    hasher.update(component.index.to_be_bytes());
     let hash = hasher.finalize();
 
     let fb = FieldBytes::from(hash);

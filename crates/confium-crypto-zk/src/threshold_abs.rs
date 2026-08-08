@@ -5,7 +5,6 @@
 //! control with threshold signing.
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// An attribute value.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]

@@ -10,7 +10,7 @@ use axum::{
     response::{IntoResponse, Json as AxumJson},
     routing::{get, post},
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::{Value, json};
 
 use crate::cert::{classify_cert, fingerprint, parse_der};

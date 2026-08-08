@@ -2,7 +2,6 @@
 
 use p256::elliptic_curve::rand_core;
 use p256::elliptic_curve::rand_core::RngCore;
-use p256::elliptic_curve::subtle::CtOption;
 use p256::elliptic_curve::{Field, PrimeField};
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 
@@ -26,7 +25,7 @@ pub fn generate_keypair() -> Keypair {
             }
         }
     };
-    let public = (ProjectivePoint::GENERATOR * &secret).to_affine();
+    let public = (ProjectivePoint::GENERATOR * secret).to_affine();
     Keypair {
         secret_scalar: secret,
         public_key: public,

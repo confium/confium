@@ -54,7 +54,7 @@ impl VssCommitment {
         for c in &self.commitments {
             let c_proj = ProjectivePoint::from(*c);
             rhs += c_proj * x_pow;
-            x_pow = x_pow * x;
+            x_pow *= x;
         }
         lhs == rhs
     }

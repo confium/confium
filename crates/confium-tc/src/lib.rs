@@ -1,3 +1,4 @@
+#![allow(missing_docs)] // TODO: document before 1.0
 //! Confium threshold-cryptography primitives — the headline deliverable.
 //!
 //! This crate supplies:

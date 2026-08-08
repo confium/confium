@@ -7,8 +7,6 @@
 
 use std::time::Duration;
 
-use crate::crd::{CeremonyPhase, SigningCeremonyStatus};
-
 pub struct CeremonyController {
     namespace: Option<String>,
 }
