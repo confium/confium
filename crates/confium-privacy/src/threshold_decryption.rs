@@ -3,7 +3,6 @@
 //! Coordinates ElGamal-style threshold decryption: collect decryption
 //! shares from T parties and combine them into the full plaintext.
 
-use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

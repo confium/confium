@@ -23,7 +23,7 @@ use confium_tc::paillier::{
     decrypt as paillier_decrypt, encrypt as paillier_encrypt, scalar_mul as paillier_scalar_mul,
 };
 use num_bigint::{BigUint, RandBigInt};
-use num_traits::{One, Zero};
+use num_traits::Zero;
 use rand::rngs::OsRng;
 
 /// Message from party i to party j (round 1 of MtA).

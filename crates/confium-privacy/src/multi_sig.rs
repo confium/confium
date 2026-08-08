@@ -4,10 +4,10 @@
 //! same message into a single aggregate. Verification checks all
 //! signers' public keys against the aggregate.
 
-use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
+use p256::ecdsa::{Signature, VerifyingKey};
 use p256::elliptic_curve::PrimeField;
 use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
-use p256::{AffinePoint, ProjectivePoint, Scalar};
+use p256::{AffinePoint, Scalar};
 use serde::{Deserialize, Serialize};
 
 /// An aggregate of multiple signatures on the same message.
@@ -37,10 +37,10 @@ pub fn aggregate(
 
     for sig in signatures {
         let (r, s) = sig.split_scalars();
-        let r_scalar: Scalar = (*r).into();
-        let s_scalar: Scalar = (*s).into();
-        r_sum = r_sum + r_scalar;
-        s_sum = s_sum + s_scalar;
+        let r_scalar: Scalar = *r;
+        let s_scalar: Scalar = *s;
+        r_sum += r_scalar;
+        s_sum += s_scalar;
     }
 
     let signer_pubkeys: Vec<String> = public_keys

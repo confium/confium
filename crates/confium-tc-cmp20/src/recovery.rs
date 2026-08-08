@@ -56,14 +56,14 @@ pub fn recover_share_scalar(
             }
             let x_j = Scalar::from(s_j.party_idx as u64);
             // numerator *= (x_target - x_j)
-            numerator = numerator * &(x_target - &x_j);
+            numerator *= x_target - x_j;
             // denominator *= (x_i - x_j)
-            denominator = denominator * &(x_i - &x_j);
+            denominator *= x_i - x_j;
         }
         let denom_inv = invert_scalar(&denominator);
-        let lagrange = numerator * &denom_inv;
-        let term = s_i.scalar() * &lagrange;
-        result = result + &term;
+        let lagrange = numerator * denom_inv;
+        let term = s_i.scalar() * lagrange;
+        result += term;
     }
     Ok(result)
 }

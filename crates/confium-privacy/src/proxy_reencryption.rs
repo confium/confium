@@ -10,9 +10,8 @@
 //! 2. Proxy transforms: (c1, c2) → (c1 * rk, c2)  [point multiplication]
 //! 3. Bob decrypts with his secret key
 
-use p256::elliptic_curve::PrimeField;
 use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
-use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
+use p256::{AffinePoint, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
 
 /// ElGamal ciphertext: (ephemeral point, encrypted point).
@@ -30,7 +29,7 @@ pub struct ReEncryptionKey {
 }
 
 /// Generate a re-encryption key from Alice's secret to Bob's public.
-pub fn generate_rk(alice_sk: &Scalar, bob_pk: &AffinePoint) -> ReEncryptionKey {
+pub fn generate_rk(alice_sk: &Scalar, _bob_pk: &AffinePoint) -> ReEncryptionKey {
     // Simple version: rk = alice_sk (the proxy can transform)
     // Real PRE uses a more complex derivation involving both keys
     // For this implementation, rk = alice_sk / bob_sk (conceptually)
@@ -43,8 +42,8 @@ pub fn encrypt_point(pk: &AffinePoint, message: &AffinePoint) -> Ciphertext {
     use p256::elliptic_curve::Field;
     use p256::elliptic_curve::rand_core::OsRng;
     let r = Scalar::random(&mut OsRng);
-    let c1 = (ProjectivePoint::GENERATOR * &r).to_affine();
-    let c2 = (ProjectivePoint::from(*pk) * &r + ProjectivePoint::from(*message)).to_affine();
+    let c1 = (ProjectivePoint::GENERATOR * r).to_affine();
+    let c2 = (ProjectivePoint::from(*pk) * r + ProjectivePoint::from(*message)).to_affine();
     Ciphertext {
         c1_hex: hex::encode(c1.to_encoded_point(true).as_bytes()),
         c2_hex: hex::encode(c2.to_encoded_point(true).as_bytes()),
@@ -65,7 +64,7 @@ pub fn decrypt_point(sk: &Scalar, ct: &Ciphertext) -> Option<AffinePoint> {
 pub fn re_encrypt(rk: &ReEncryptionKey, ct: &Ciphertext) -> Ciphertext {
     let c1 = decode_point(&ct.c1_hex).unwrap();
     // Transform: multiply c1 by rk
-    let new_c1 = (ProjectivePoint::from(c1) * &rk.rk).to_affine();
+    let new_c1 = (ProjectivePoint::from(c1) * rk.rk).to_affine();
     Ciphertext {
         c1_hex: hex::encode(new_c1.to_encoded_point(true).as_bytes()),
         c2_hex: ct.c2_hex.clone(),

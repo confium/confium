@@ -6,10 +6,10 @@
 //!
 //! Based on the Bellare-Micali protocol using P-256.
 
+use p256::elliptic_curve::Field;
 use p256::elliptic_curve::rand_core::OsRng;
-use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
-use p256::elliptic_curve::{Field, PrimeField};
-use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
+use p256::elliptic_curve::sec1::ToEncodedPoint;
+use p256::{AffinePoint, ProjectivePoint, Scalar};
 use sha2::{Digest, Sha256};
 
 /// Sender's setup message.
@@ -45,14 +45,14 @@ pub struct OtReceiver {
 /// Phase 1: Sender initiates with a random point.
 pub fn sender_setup() -> (OtSetup, Scalar) {
     let c_scalar = Scalar::random(&mut OsRng);
-    let c = (ProjectivePoint::GENERATOR * &c_scalar).to_affine();
+    let c = (ProjectivePoint::GENERATOR * c_scalar).to_affine();
     (OtSetup { c }, c_scalar)
 }
 
 /// Phase 2: Receiver chooses bit b and generates choice message.
 pub fn receiver_choose(b: bool, setup: &OtSetup) -> (OtChoice, OtReceiver) {
     let k = Scalar::random(&mut OsRng);
-    let k_g = (ProjectivePoint::GENERATOR * &k).to_affine();
+    let k_g = (ProjectivePoint::GENERATOR * k).to_affine();
 
     // If b == 0: P = k*G
     // If b == 1: P = k*G + C
@@ -80,7 +80,7 @@ pub fn sender_encrypt(choice: &OtChoice, setup: &OtSetup, m0: &[u8], m1: &[u8]) 
 
 /// Phase 4: Receiver decrypts the chosen message.
 pub fn receiver_decrypt(enc: &OtEncrypted, receiver: &OtReceiver) -> Vec<u8> {
-    let k_g = (ProjectivePoint::GENERATOR * &receiver.k).to_affine();
+    let k_g = (ProjectivePoint::GENERATOR * receiver.k).to_affine();
     if receiver.b {
         xor_encrypt(&k_g, &enc.e1)
     } else {

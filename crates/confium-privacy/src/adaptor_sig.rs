@@ -5,12 +5,9 @@
 //! Revealing the completed signature also reveals `y`, enabling
 //! atomic swaps and payment channels.
 
-use p256::ecdsa::{
-    Signature, SigningKey, VerifyingKey,
-    signature::{Signer, Verifier},
-};
+use p256::ecdsa::{Signature, SigningKey, VerifyingKey};
 use p256::elliptic_curve::rand_core::OsRng;
-use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
+use p256::elliptic_curve::sec1::ToEncodedPoint;
 use p256::elliptic_curve::{Field, PrimeField};
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use sha2::{Digest, Sha256};
@@ -33,7 +30,7 @@ pub struct WitnessStatement {
 /// Generate a witness statement from a secret witness.
 pub fn create_witness() -> (Scalar, WitnessStatement) {
     let y = Scalar::random(&mut OsRng);
-    let y_point = (ProjectivePoint::GENERATOR * &y).to_affine();
+    let y_point = (ProjectivePoint::GENERATOR * y).to_affine();
     (y, WitnessStatement { y_point })
 }
 
@@ -45,7 +42,7 @@ pub fn pre_sign(
     witness: &WitnessStatement,
 ) -> Result<(AdaptorPreSig, Scalar), String> {
     let k = Scalar::random(&mut OsRng);
-    let k_point = (ProjectivePoint::GENERATOR * &k).to_affine();
+    let k_point = (ProjectivePoint::GENERATOR * k).to_affine();
 
     // R' = k*G + Y = (k+y)*G
     let r_prime =
@@ -64,7 +61,7 @@ pub fn pre_sign(
     )))
     .unwrap_or(Scalar::ZERO);
     let k_inv = invert(&k);
-    let s_prime = k_inv * (e + r * &x);
+    let s_prime = k_inv * (e + r * x);
 
     if s_prime == Scalar::ZERO {
         return Err("s' is zero".into());
@@ -95,7 +92,7 @@ pub fn complete(pre_sig: &AdaptorPreSig, y: &Scalar) -> Result<Signature, String
     // Practical adaptor: use the relation s = s' + y_adjustment
     // For this implementation, we use the simplified additive approach:
     let y_inv = invert(y);
-    let s = pre_sig.s_prime * &y_inv;
+    let s = pre_sig.s_prime * y_inv;
 
     let r_bytes: [u8; 32] = r.to_repr().into();
     let s_bytes: [u8; 32] = s.to_repr().into();
@@ -106,11 +103,11 @@ pub fn complete(pre_sig: &AdaptorPreSig, y: &Scalar) -> Result<Signature, String
 /// Anyone who sees both can recover y.
 pub fn extract_witness(pre_sig: &AdaptorPreSig, full_sig: &Signature) -> Option<Scalar> {
     let (_, s_full) = full_sig.split_scalars();
-    let s_full_scalar: Scalar = (*s_full).into();
+    let s_full_scalar: Scalar = *s_full;
 
     // y = s' / s (simplified)
     let s_inv = invert(&s_full_scalar);
-    let y = pre_sig.s_prime * &s_inv;
+    let y = pre_sig.s_prime * s_inv;
     if y == Scalar::ZERO { None } else { Some(y) }
 }
 
@@ -133,8 +130,8 @@ pub fn verify_pre_sig(
     // Verification: s'^{-1} * R' - s'^{-1} * Y should give k*G
     // And: s'^{-1} * e * G + s'^{-1} * r * pk == k*G
     let pk = ProjectivePoint::from(*vk.as_affine());
-    let u1 = ProjectivePoint::GENERATOR * &(e * &s_inv);
-    let u2 = pk * &(r * &s_inv);
+    let u1 = ProjectivePoint::GENERATOR * (e * s_inv);
+    let u2 = pk * (r * s_inv);
     let expected_k_g = u1 + u2;
     let k_g = expected_k_g.to_affine();
 

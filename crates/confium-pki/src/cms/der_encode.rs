@@ -171,7 +171,7 @@ pub enum DerError {
 
 fn oid_to_der(arcs: &[u64]) -> Vec<u8> {
     // First byte: 40 * arc[0] + arc[1]
-    let first = (40 * arcs.get(0).copied().unwrap_or(0) + arcs.get(1).copied().unwrap_or(0)) as u8;
+    let first = (40 * arcs.first().copied().unwrap_or(0) + arcs.get(1).copied().unwrap_or(0)) as u8;
     let mut out = vec![first];
     for arc in arcs.iter().skip(2) {
         out.extend_from_slice(&encode_base128(*arc));
@@ -210,7 +210,7 @@ fn encode_base128(n: u64) -> Vec<u8> {
 }
 
 fn integer_to_der(n: i64) -> Vec<u8> {
-    if n >= 0 && n <= 127 {
+    if (0..=127).contains(&n) {
         return vec![0x02, 0x01, n as u8];
     }
     let bytes = n.to_be_bytes();

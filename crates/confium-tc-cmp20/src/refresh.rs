@@ -34,11 +34,9 @@
 use elliptic_curve::rand_core::OsRng;
 use elliptic_curve::rand_core::RngCore;
 use p256::{
-    AffinePoint, FieldBytes, ProjectivePoint, Scalar,
-    elliptic_curve::sec1::ToEncodedPoint,
+    FieldBytes, Scalar,
     elliptic_curve::{Field, PrimeField, group::GroupEncoding},
 };
-use zeroize::Zeroize;
 
 /// One party's refresh contribution: `(source_party_index, target_party_index, refresh_scalar_bytes)`.
 #[derive(Debug, Clone)]
@@ -109,12 +107,12 @@ pub fn apply_to_share(
     for c in contributions {
         if c.to_party == party_index {
             let c_scalar = bytes_to_scalar(&c.bytes);
-            refresh_sum = refresh_sum + &c_scalar;
+            refresh_sum += c_scalar;
         }
     }
 
     // new_scalar = old_scalar + refresh_sum
-    let new_scalar = old_scalar + &refresh_sum;
+    let new_scalar = old_scalar + refresh_sum;
     let new_bytes = scalar_to_bytes(&new_scalar);
 
     // Patch the share blob.
@@ -135,7 +133,7 @@ pub fn verify_zero_sum(contributions: &[RefreshContribution]) -> bool {
     // g_i(0) = 0. So sum_i g_i(0) = 0. We verify by checking
     // that the contributions at to_party = from_party (self-loop)
     // sum to zero — this is the constant term f_i(0) = 0.
-    let mut sum = Scalar::ZERO;
+    let sum = Scalar::ZERO;
     for c in contributions {
         if c.from_party == c.to_party {
             // Self-contribution is the constant term evaluation
@@ -168,8 +166,8 @@ fn evaluate_polynomial(coeffs: &[Scalar], x: u32) -> Scalar {
     let x_scalar = u32_to_scalar(x);
     let mut result = Scalar::ZERO;
     for c in coeffs.iter().rev() {
-        result = result * &x_scalar;
-        result = result + c;
+        result *= x_scalar;
+        result += c;
     }
     result
 }

@@ -45,8 +45,8 @@ pub fn prove(secret: &Scalar, public: &AffinePoint, alpha: &[u8]) -> VrfOutput {
         .unwrap_or_else(|| Scalar::random(&mut OsRng));
 
     // k*G and k*H
-    let k_g = (ProjectivePoint::GENERATOR * &k).to_affine();
-    let k_h = (ProjectivePoint::from(h_point) * &k).to_affine();
+    let k_g = (ProjectivePoint::GENERATOR * k).to_affine();
+    let k_h = (ProjectivePoint::from(h_point) * k).to_affine();
 
     // C = H2(g, y, h, gamma, k_g, k_h)
     let c = challenge(public, &h_point, &gamma, &k_g, &k_h, alpha);
@@ -86,11 +86,10 @@ pub fn verify(public: &AffinePoint, alpha: &[u8], output: &VrfOutput) -> bool {
 
     // U = s*G - c*Y = s*G + (-c)*Y
     let neg_c = -c;
-    let u = (ProjectivePoint::GENERATOR * &s + ProjectivePoint::from(*public) * &neg_c).to_affine();
+    let u = (ProjectivePoint::GENERATOR * s + ProjectivePoint::from(*public) * neg_c).to_affine();
 
     // V = s*H - c*Gamma
-    let v =
-        (ProjectivePoint::from(h_point) * &s + ProjectivePoint::from(gamma) * &neg_c).to_affine();
+    let v = (ProjectivePoint::from(h_point) * s + ProjectivePoint::from(gamma) * neg_c).to_affine();
 
     // Recompute challenge
     let c_expected = challenge(public, &h_point, &gamma, &u, &v, alpha);
@@ -109,13 +108,13 @@ fn hash_to_curve(alpha: &[u8]) -> AffinePoint {
         let mut hasher = Sha256::new();
         hasher.update(b"confium-vrf-h2c");
         hasher.update(alpha);
-        hasher.update(&counter.to_be_bytes());
+        hasher.update(counter.to_be_bytes());
         let hash = hasher.finalize();
 
         let fb = p256::FieldBytes::from(hash);
         let ct = Scalar::from_repr(fb);
         if let Some(scalar) = Option::<Scalar>::from(ct) {
-            let point = ProjectivePoint::GENERATOR * &scalar;
+            let point = ProjectivePoint::GENERATOR * scalar;
             return point.to_affine();
         }
         counter += 1;

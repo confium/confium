@@ -82,7 +82,7 @@ fn migrate_shares(args: ThresholdMigrateSharesArgs) -> Result<(), String> {
         .iter()
         .map(|s| {
             let x = s.x.as_u64().unwrap_or(0);
-            hex::encode(&[
+            hex::encode([
                 ((x >> 56) & 0xff) as u8,
                 ((x >> 48) & 0xff) as u8,
                 ((x >> 40) & 0xff) as u8,

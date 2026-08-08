@@ -128,7 +128,7 @@ pub fn run_sign(
 /// their recipients as the next round's incoming.
 fn drive_to_completion(sessions: &mut [Session], party_ids: &[String]) -> Result<()> {
     let mut outgoing: Vec<Vec<Message>> = Vec::new();
-    for round in 1..=MAX_ROUNDS {
+    for _round in 1..=MAX_ROUNDS {
         outgoing = step_rounds(sessions, &outgoing, party_ids)?;
         if sessions.iter().all(|s| s.is_complete()) {
             return Ok(());

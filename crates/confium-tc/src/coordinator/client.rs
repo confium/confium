@@ -76,10 +76,9 @@ impl SignerClient {
         let resp = recv_message(&mut self.stream)?;
         match resp {
             ProtocolMessage::SessionCreated { session_id } => Ok(session_id),
-            ProtocolMessage::Error { message } => Err(io::Error::new(
-                io::ErrorKind::Other,
-                format!("coordinator error: {message}"),
-            )),
+            ProtocolMessage::Error { message } => {
+                Err(io::Error::other(format!("coordinator error: {message}")))
+            }
             _ => Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "unexpected response",
@@ -108,10 +107,9 @@ impl SignerClient {
             .set_read_timeout(Some(std::time::Duration::from_secs(5)))?;
         match recv_message(&mut self.stream) {
             Ok(ProtocolMessage::Ack { .. }) => Ok(()),
-            Ok(ProtocolMessage::Error { message }) => Err(io::Error::new(
-                io::ErrorKind::Other,
-                format!("coordinator error: {message}"),
-            )),
+            Ok(ProtocolMessage::Error { message }) => {
+                Err(io::Error::other(format!("coordinator error: {message}")))
+            }
             Ok(_) => Ok(()), // tolerate unexpected but non-error responses
             Err(e) => Err(e),
         }
@@ -143,10 +141,9 @@ impl SignerClient {
         match recv_message(&mut self.stream) {
             Ok(ProtocolMessage::Signature { bytes, .. }) => Ok(Some(bytes)),
             Ok(ProtocolMessage::Ack { .. }) => Ok(None),
-            Ok(ProtocolMessage::Error { message }) => Err(io::Error::new(
-                io::ErrorKind::Other,
-                format!("coordinator error: {message}"),
-            )),
+            Ok(ProtocolMessage::Error { message }) => {
+                Err(io::Error::other(format!("coordinator error: {message}")))
+            }
             Ok(_) => Ok(None),
             Err(ref e)
                 if e.kind() == io::ErrorKind::WouldBlock || e.kind() == io::ErrorKind::TimedOut =>

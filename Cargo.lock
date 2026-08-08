@@ -983,7 +983,7 @@ dependencies = [
 
 [[package]]
 name = "confium-api"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-macros",
  "inventory",
@@ -1000,7 +1000,7 @@ dependencies = [
 
 [[package]]
 name = "confium-benchmarks"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-composite",
  "confium-transparency",
@@ -1012,7 +1012,7 @@ dependencies = [
 
 [[package]]
 name = "confium-cli"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "clap",
  "clap_complete",
@@ -1052,7 +1052,7 @@ dependencies = [
 
 [[package]]
 name = "confium-coordinator"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "chrono",
  "confium-api",
@@ -1092,7 +1092,7 @@ dependencies = [
 
 [[package]]
 name = "confium-crypto-vss"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "hex",
  "hmac 0.12.1",
@@ -1111,7 +1111,7 @@ dependencies = [
 
 [[package]]
 name = "confium-crypto-zk"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "hex",
  "hmac 0.12.1",
@@ -1127,7 +1127,7 @@ dependencies = [
 
 [[package]]
 name = "confium-daemon"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "base64 0.22.1",
  "clap",
@@ -1146,7 +1146,7 @@ dependencies = [
 
 [[package]]
 name = "confium-deployment"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "chrono",
  "data-encoding",
@@ -1160,14 +1160,18 @@ dependencies = [
 
 [[package]]
 name = "confium-examples"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "chrono",
+ "confium-composite",
  "confium-core",
  "confium-deployment",
  "confium-pkcs11-server",
+ "confium-pki",
+ "confium-privacy",
  "confium-store",
  "confium-tc",
+ "confium-tc-cmp20",
  "confium-tc-frost-p256",
  "confium-transparency",
  "elliptic-curve",
@@ -1178,7 +1182,7 @@ dependencies = [
 
 [[package]]
 name = "confium-fuzz"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-composite",
  "confium-tc",
@@ -1188,7 +1192,7 @@ dependencies = [
 
 [[package]]
 name = "confium-jce-provider"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "serde",
  "thiserror 1.0.69",
@@ -1196,7 +1200,7 @@ dependencies = [
 
 [[package]]
 name = "confium-keyless"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-composite",
  "confium-oidc",
@@ -1205,7 +1209,7 @@ dependencies = [
 
 [[package]]
 name = "confium-log-monitor"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1224,7 +1228,7 @@ dependencies = [
 
 [[package]]
 name = "confium-log-server"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "anyhow",
  "axum",
@@ -1249,7 +1253,7 @@ dependencies = [
 
 [[package]]
 name = "confium-macros"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "proc-macro2 1.0.107",
  "quote 1.0.47",
@@ -1258,7 +1262,7 @@ dependencies = [
 
 [[package]]
 name = "confium-mock-plugin"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-api",
  "confium-macros",
@@ -1266,7 +1270,7 @@ dependencies = [
 
 [[package]]
 name = "confium-net"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-api",
  "inventory",
@@ -1276,7 +1280,7 @@ dependencies = [
 
 [[package]]
 name = "confium-net-quic"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-net",
  "inventory",
@@ -1289,7 +1293,7 @@ dependencies = [
 
 [[package]]
 name = "confium-net-tcp"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-net",
  "inventory",
@@ -1299,7 +1303,7 @@ dependencies = [
 
 [[package]]
 name = "confium-net-ws"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-net",
  "inventory",
@@ -1327,7 +1331,7 @@ dependencies = [
 
 [[package]]
 name = "confium-observability"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "chrono",
  "hex",
@@ -1340,7 +1344,7 @@ dependencies = [
 
 [[package]]
 name = "confium-oidc"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "async-trait",
  "http 1.4.2",
@@ -1355,7 +1359,7 @@ dependencies = [
 
 [[package]]
 name = "confium-openssl-provider"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "serde",
  "thiserror 1.0.69",
@@ -1363,7 +1367,7 @@ dependencies = [
 
 [[package]]
 name = "confium-operator"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "anyhow",
  "clap",
@@ -1379,7 +1383,7 @@ dependencies = [
 
 [[package]]
 name = "confium-patterns"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "chrono",
  "data-encoding",
@@ -1391,7 +1395,7 @@ dependencies = [
 
 [[package]]
 name = "confium-pkcs11-server"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "chrono",
  "serde",
@@ -1422,7 +1426,7 @@ dependencies = [
 
 [[package]]
 name = "confium-pki-tc"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "chrono",
  "hex",
@@ -1437,7 +1441,7 @@ dependencies = [
 
 [[package]]
 name = "confium-privacy"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "chrono",
  "hex",
@@ -1455,7 +1459,7 @@ dependencies = [
 
 [[package]]
 name = "confium-publish"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "clap",
  "confium-api",
@@ -1469,7 +1473,7 @@ dependencies = [
 
 [[package]]
 name = "confium-registry"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-api",
  "libloading",
@@ -1484,7 +1488,7 @@ dependencies = [
 
 [[package]]
 name = "confium-ring"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "serde",
  "thiserror 1.0.69",
@@ -1492,7 +1496,7 @@ dependencies = [
 
 [[package]]
 name = "confium-sandbox-process"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "serde",
  "serde_json",
@@ -1501,7 +1505,7 @@ dependencies = [
 
 [[package]]
 name = "confium-sandbox-wasm"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "snafu 0.8.9",
  "wasmtime",
@@ -1510,7 +1514,7 @@ dependencies = [
 
 [[package]]
 name = "confium-signerd"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "clap",
  "confium-coordinator",
@@ -1526,7 +1530,7 @@ dependencies = [
 
 [[package]]
 name = "confium-store"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-api",
  "inventory",
@@ -1536,7 +1540,7 @@ dependencies = [
 
 [[package]]
 name = "confium-store-cloud"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "aws-config",
  "aws-sdk-kms",
@@ -1550,7 +1554,7 @@ dependencies = [
 
 [[package]]
 name = "confium-store-openpgp-card"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "rnp-rs",
  "serde",
@@ -1559,7 +1563,7 @@ dependencies = [
 
 [[package]]
 name = "confium-store-pkcs11"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-store",
  "cryptoki",
@@ -1569,7 +1573,7 @@ dependencies = [
 
 [[package]]
 name = "confium-store-tpm"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-store",
  "inventory",
@@ -1580,7 +1584,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "chrono",
  "confium-api",
@@ -1606,7 +1610,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-bls"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "serde",
  "thiserror 1.0.69",
@@ -1614,7 +1618,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-cmp20"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-tc",
  "crypto-bigint",
@@ -1633,7 +1637,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-core"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "chrono",
  "confium-api",
@@ -1658,7 +1662,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-ecies-p256"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "aes-gcm",
  "elliptic-curve",
@@ -1671,7 +1675,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-elgamal-p256"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "elliptic-curve",
  "p256",
@@ -1682,7 +1686,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-fhe-bfv"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "serde",
  "thiserror 1.0.69",
@@ -1690,7 +1694,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-frost-ed25519"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-tc",
  "curve25519-dalek",
@@ -1704,7 +1708,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-frost-ml-dsa-65"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "serde",
  "thiserror 1.0.69",
@@ -1712,7 +1716,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-frost-p256"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "elliptic-curve",
  "hex",
@@ -1725,7 +1729,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-gg18"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-tc",
  "crypto-bigint",
@@ -1742,7 +1746,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-keys"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "chrono",
  "confium-tc-core",
@@ -1759,7 +1763,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-ml-kem"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "serde",
  "thiserror 1.0.69",
@@ -1767,7 +1771,7 @@ dependencies = [
 
 [[package]]
 name = "confium-test-harness"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-api",
  "confium-core",
@@ -1785,7 +1789,7 @@ dependencies = [
 
 [[package]]
 name = "confium-threshold"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-coordinator",
  "confium-tc-bls",
@@ -1800,7 +1804,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tls-signer"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "serde",
  "thiserror 1.0.69",
@@ -1822,7 +1826,7 @@ dependencies = [
 
 [[package]]
 name = "confium-verify"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-attributes",
  "confium-composite",
@@ -1833,7 +1837,7 @@ dependencies = [
 
 [[package]]
 name = "confium-verify-server"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "axum",
  "clap",
@@ -1852,7 +1856,7 @@ dependencies = [
 
 [[package]]
 name = "confium-wasm"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "chrono",
  "confium-attributes",

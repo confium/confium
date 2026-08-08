@@ -159,7 +159,7 @@ impl MerkleTree {
     pub fn entry(&self, sequence: u64) -> Result<&MerkleEntry, MerkleError> {
         self.entries
             .get(sequence as usize)
-            .ok_or_else(|| MerkleError::OutOfRange(sequence, self.entries.len()))
+            .ok_or(MerkleError::OutOfRange(sequence, self.entries.len()))
     }
 
     /// Construct an inclusion proof for `sequence`. Returns direction-aware

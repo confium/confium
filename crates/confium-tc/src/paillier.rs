@@ -2,7 +2,7 @@
 
 use num_bigint::{BigInt, BigUint, RandBigInt, ToBigInt};
 use num_integer::Integer;
-use num_traits::{One, Signed, ToPrimitive, Zero};
+use num_traits::{One, Zero};
 use rand_core::OsRng;
 
 #[derive(Debug, Clone)]
