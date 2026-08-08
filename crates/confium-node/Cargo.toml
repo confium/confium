@@ -22,8 +22,8 @@ confium-tc-frost-p256 = { workspace = true }
 confium-tc-elgamal-p256 = { workspace = true }
 confium-composite = { workspace = true }
 confium-transparency = { workspace = true }
-napi = { version = "2", features = ["napi8"] }
-napi-derive = "2"
+napi = { version = "3", features = ["napi8"] }
+napi-derive = "3"
 hex = { workspace = true }
 serde_json = { workspace = true }
 
