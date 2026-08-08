@@ -96,7 +96,7 @@ mod tests {
 
     #[test]
     fn zero_proves() {
-        let value = BigUint::zero();
+        let value = BigUint::from(0u32);
         let proof = prove(&value, 32).unwrap();
         assert!(verify(&proof));
     }
@@ -135,6 +135,6 @@ mod tests {
     fn is_in_range_check() {
         assert!(is_in_range(&BigUint::from(100u32), 8));
         assert!(!is_in_range(&BigUint::from(256u32), 8));
-        assert!(is_in_range(&BigUint::zero(), 1));
+        assert!(is_in_range(&BigUint::from(0u32), 1));
     }
 }

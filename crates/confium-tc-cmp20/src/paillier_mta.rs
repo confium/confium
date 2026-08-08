@@ -125,7 +125,7 @@ fn random_below(n: &BigUint) -> BigUint {
     let mut rng = OsRng;
     loop {
         let r = rng.gen_biguint(n.bits());
-        if r < *n && r > BigUint::zero() {
+        if r < *n && r > BigUint::from(0u32) {
             return r;
         }
     }

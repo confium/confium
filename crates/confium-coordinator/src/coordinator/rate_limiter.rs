@@ -129,6 +129,7 @@ impl RateLimiter for NoopRateLimiter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Duration;
 
     #[test]
     fn allows_until_capacity() {
