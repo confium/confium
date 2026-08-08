@@ -122,7 +122,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: coordinator
-          image: ghcr.io/confium/coordinator:latest
+          image: ghcr.io/confium/confium-coordinator:latest
           imagePullPolicy: IfNotPresent
           args: ["--config", "/etc/confium/coordinator.toml"]
           env:
@@ -204,7 +204,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: signerd
-          image: ghcr.io/confium/signerd:latest
+          image: ghcr.io/confium/confium-signerd:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: COORDINATOR_URL
@@ -254,7 +254,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: log-server
-          image: ghcr.io/confium/log-server:latest
+          image: ghcr.io/confium/confium-log-server:latest
           env: [{ name: RUST_LOG, value: info }]
           ports: [{ name: http, containerPort: 7878 }]
           volumeMounts:

@@ -70,7 +70,7 @@ spec:
       serviceAccountName: confium-operator
       containers:
         - name: operator
-          image: ghcr.io/confium/operator:latest
+          image: ghcr.io/confium/confium-operator:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: RUST_LOG

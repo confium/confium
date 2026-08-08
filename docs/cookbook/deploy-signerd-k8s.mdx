@@ -137,7 +137,7 @@ See [prometheus-monitoring.mdx](./prometheus-monitoring.mdx) for the full alert 
 ```sh
 # Bump image version
 kubectl -n confium-system set image statefulset/confium-signerd \
-    signerd=ghcr.io/confium/signerd:v0.4.0
+    signerd=ghcr.io/confium/confium-signerd:v0.4.0
 
 # Watch the rolling update
 kubectl -n confium-system rollout status statefulset/confium-signerd

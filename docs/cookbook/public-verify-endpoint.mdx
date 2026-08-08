@@ -15,8 +15,8 @@ Deploy `confium-verify-server` as a stateless HTTP service.
 ### Quickstart via Docker
 
 ```sh
-docker pull ghcr.io/confium/verify-server:latest
-docker run -p 8080:8080 ghcr.io/confium/verify-server:latest
+docker pull ghcr.io/confium/confium-verify-server:latest
+docker run -p 8080:8080 ghcr.io/confium/confium-verify-server:latest
 
 # Verify a composite signature
 curl -X POST http://localhost:8080/v1/composite/verify \

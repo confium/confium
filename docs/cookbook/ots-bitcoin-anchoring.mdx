@@ -4,6 +4,14 @@ description: Anchor transparency log heads to Bitcoin for crypto-economic immuta
 audience: compliance, ca-operator
 ---
 
+> **⚠️ Implementation status:** Some CLI commands referenced in this
+> recipe (e.g., `threshold refresh`, `share-export`, `transparency ots`)
+> are not yet implemented. The underlying crate APIs exist; the CLI
+> wrappers are planned for a future release. Use the Rust API directly
+> or wait for the CLI command.
+
+
+
 # Anchor transparency log heads to Bitcoin via OTS
 
 **Problem:** Your transparency log is append-only by social contract. How do you make it cryptographically immutable — so retroactive modification requires breaking Bitcoin?
