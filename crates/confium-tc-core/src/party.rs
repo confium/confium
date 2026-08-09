@@ -206,7 +206,7 @@ mod tests {
     fn party_list_validate_rejects_duplicate_ids() {
         let list = PartyList::from_parties(vec![Party::inproc("a"), Party::inproc("a")]);
         let err = list.validate(1).unwrap_err();
-        assert!(matches!(err, error::Error::DuplicatePartyId { id: _, .. }));
+        assert!(matches!(err, error::Error::DuplicatePartyId { .. }));
     }
 
     #[test]
