@@ -73,12 +73,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("confiumd listening on tcp://{addr}");
             server.clone().run_tcp(listener).await?;
         }
+        #[cfg(unix)]
         ListenAddr::Unix(path) => {
             // Remove a stale socket file if present.
             let _ = std::fs::remove_file(path);
             let listener = tokio::net::UnixListener::bind(path)?;
             eprintln!("confiumd listening on unix://{}", path.display());
             server.clone().run_unix(listener).await?;
+        }
+        #[cfg(not(unix))]
+        ListenAddr::Unix(_) => {
+            return Err("Unix socket listening is not supported on this platform".into());
         }
     }
 
