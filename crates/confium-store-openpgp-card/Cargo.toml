@@ -18,13 +18,27 @@ keywords = ["crypto", "openpgp", "yubikey", "smartcard", "confium"]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
+[features]
+default = []
+# Enable the real rnp-backed OpenPGP card backend. Off by default so the
+# workspace builds without a C/C++ toolchain on platforms where rnp's
+# vendored build (Botan + json-c + rnp from source) is broken — notably
+# Windows MSVC, where the json-c install step is currently broken
+# upstream. Flip this on in any environment that has a working rnp
+# toolchain (Linux, macOS).
+rnp-backend = ["dep:rnp"]
+
 [dependencies]
 serde = { workspace = true }
 thiserror = { workspace = true }
-rnp = { workspace = true, features = ["vendored"] }
+rnp = { workspace = true, features = ["vendored"], optional = true }
 
 [dev-dependencies]
 rnp = { workspace = true, features = ["vendored"] }
 
 [lib]
 crate-type = ["rlib"]
+
+[package.metadata.cargo-machete]
+# rnp is feature-gated behind rnp-backend.
+ignored = ["rnp"]

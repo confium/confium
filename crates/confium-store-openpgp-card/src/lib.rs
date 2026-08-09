@@ -18,9 +18,13 @@
 #![allow(missing_docs)] // TODO: document before 1.0
 
 mod backend;
-mod rnp_backend;
 mod slot;
 
 pub use backend::*;
-pub use rnp_backend::*;
 pub use slot::*;
+
+#[cfg(feature = "rnp-backend")]
+mod rnp_backend;
+
+#[cfg(feature = "rnp-backend")]
+pub use rnp_backend::*;

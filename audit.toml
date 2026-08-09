@@ -1,0 +1,25 @@
+# cargo-audit configuration
+# https://github.com/rustsec/cargo-audit/blob/master/audit.toml.example
+
+[advisories]
+# These are informational advisories (unmaintained, unsound, notice) for
+# transitive dependencies we can't directly fix. Each is reviewed and
+# accepted as a known issue:
+#
+# - fxhash, instant, paste, rustls-pemfile — unmaintained crates pulled
+#   in transitively by workspace deps; no direct usage in confium.
+#   Replacing them requires upstream changes in the parent crates.
+#
+# - http-types — ASCII invariant violation in Authorization/WwwAuthenticate
+#   headers; pulled in transitively (likely via oauth2 / ureq chain);
+#   Confium does not consume these headers.
+#
+# Actual vulnerabilities (CVEs) are NOT ignored — fix at the source.
+
+ignore = [
+    "RUSTSEC-2025-0057", # fxhash unmaintained
+    "RUSTSEC-2024-0384", # instant unmaintained
+    "RUSTSEC-2024-0436", # paste unmaintained
+    "RUSTSEC-2025-0134", # rustls-pemfile unmaintained
+    "RUSTSEC-2026-0174", # http-types ASCII invariant (transitive)
+]
