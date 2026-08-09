@@ -25,13 +25,11 @@ use confium_tc::inprocess;
 
 // Drive a registered DKG scheme to completion in-process.
 // Returns the per-party share blobs in roster order.
-let share_blobs: Vec<Vec<u8>> =
-    inprocess::run_dkg("CMP20-ECDSA-P256", threshold = 2, party_count = 3)?;
+let share_blobs: Vec<Vec<u8>> = inprocess::run_dkg("CMP20-ECDSA-P256", 2, 3)?;
 
 // Drive a registered signing / decapsulation scheme to completion.
 // Returns the cryptographic artifact (e.g. 64-byte (r, s) ECDSA sig).
-let signature: Vec<u8> =
-    inprocess::run_sign("CMP20-ECDSA-P256-SIGN", &share_blobs[..2], 2, b"msg")?;
+let signature: Vec<u8> = inprocess::run_sign("CMP20-ECDSA-P256-SIGN", &share_blobs[..2], 2, b"msg")?;
 ```
 
 ## How it works
