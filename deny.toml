@@ -7,6 +7,16 @@ version = 2
 # Raise errors on yanked crates
 yanked = "deny"
 
+# Informational advisories for unmaintained transitive deps we cannot
+# fix without upstream changes. Actual CVEs are NOT ignored.
+ignore = [
+    "RUSTSEC-2025-0057", # fxhash unmaintained (transitive)
+    "RUSTSEC-2024-0384", # instant unmaintained (transitive)
+    "RUSTSEC-2024-0436", # paste unmaintained (transitive)
+    "RUSTSEC-2025-0134", # rustls-pemfile unmaintained (transitive)
+    "RUSTSEC-2026-0174", # http-types ASCII invariant (transitive, not consumed)
+]
+
 [licenses]
 # License checking configuration
 version = 2

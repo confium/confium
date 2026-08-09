@@ -10,6 +10,8 @@
 //! passphrase-protected rnp keystore, which has the same "key never leaves
 //! the device" property as a real YubiKey.
 
+#![cfg(feature = "rnp-backend")]
+
 use confium_store_openpgp_card::{
     CardError, OpenpgpCardBackend, OpenpgpSlot, RnpOpenpgpCardBackend,
 };
