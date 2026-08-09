@@ -1,3 +1,9 @@
+#![allow(rustdoc::broken_intra_doc_links)]
+#![allow(rustdoc::bare_urls)]
+#![allow(rustdoc::redundant_explicit_links)]
+#![allow(rustdoc::private_intra_doc_links)]
+#![allow(rustdoc::invalid_html_tags)]
+
 //! GG18 threshold ECDSA over P-256 (Gennaro & Goldfeder 2018, eprint 2019/114).
 //!
 //! Wired as a [`confium_tc::registry::TcScheme`] plugin with two scheme

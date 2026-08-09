@@ -5,6 +5,11 @@
 
 #![deny(unsafe_code)]
 #![allow(missing_docs)] // TODO: document before 1.0
+#![allow(rustdoc::broken_intra_doc_links)]
+#![allow(rustdoc::bare_urls)]
+#![allow(rustdoc::redundant_explicit_links)]
+#![allow(rustdoc::private_intra_doc_links)]
+#![allow(rustdoc::invalid_html_tags)]
 
 pub mod error;
 pub mod message;

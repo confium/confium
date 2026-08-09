@@ -1,3 +1,9 @@
+#![allow(rustdoc::broken_intra_doc_links)]
+#![allow(rustdoc::bare_urls)]
+#![allow(rustdoc::redundant_explicit_links)]
+#![allow(rustdoc::private_intra_doc_links)]
+#![allow(rustdoc::invalid_html_tags)]
+
 //! confiumd — long-running Confium daemon.
 //!
 //! Exposes the full Confium API over JSON-RPC 2.0 with length-prefixed

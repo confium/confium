@@ -5,7 +5,7 @@
 //! [`RpcResponse::Ok`] with a JSON result or [`RpcResponse::Err`] with
 //! a structured [`crate::error::RpcError`].
 //!
-//! Spec: https://www.jsonrpc.org/specification
+//! Spec: <https://www.jsonrpc.org/specification>
 //!
 //! The transport framing (length-prefixed JSON, newline-delimited JSON,
 //! etc.) is layered on top by the server loop — this module only
@@ -140,7 +140,7 @@ pub struct AuditParams<'a> {
     pub ts: &'a str,
     pub event: &'a str,
     /// Free-form event payload. The exact keys depend on the variant —
-    /// see [`crate::audit::AuditEvent`] for the canonical shape.
+    /// see [`crate::methods::audit::AuditEvent`] for the canonical shape.
     #[serde(flatten)]
     pub fields: &'a serde_json::Map<String, Value>,
 }

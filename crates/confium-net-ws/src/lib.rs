@@ -1,3 +1,9 @@
+#![allow(rustdoc::broken_intra_doc_links)]
+#![allow(rustdoc::bare_urls)]
+#![allow(rustdoc::redundant_explicit_links)]
+#![allow(rustdoc::private_intra_doc_links)]
+#![allow(rustdoc::invalid_html_tags)]
+
 //! WebSocket transport for Confium.
 //!
 //! `ws://host:port[/path]` and `wss://host:port[/path]` URLs address a

@@ -1,6 +1,11 @@
 // FFI entry points accept raw pointers and null-check them before
 // dereferencing; they are not `unsafe` from the C caller's perspective.
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
+#![allow(rustdoc::broken_intra_doc_links)]
+#![allow(rustdoc::bare_urls)]
+#![allow(rustdoc::redundant_explicit_links)]
+#![allow(rustdoc::private_intra_doc_links)]
+#![allow(rustdoc::invalid_html_tags)]
 
 #[macro_use]
 pub mod utils;

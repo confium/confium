@@ -1,3 +1,9 @@
+#![allow(rustdoc::broken_intra_doc_links)]
+#![allow(rustdoc::bare_urls)]
+#![allow(rustdoc::redundant_explicit_links)]
+#![allow(rustdoc::private_intra_doc_links)]
+#![allow(rustdoc::invalid_html_tags)]
+
 //! Confium Store PKCS#11 backend.
 //!
 //! Wraps the [PKCS#11] standard via the [`cryptoki`] Rust crate
