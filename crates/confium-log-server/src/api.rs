@@ -17,7 +17,7 @@ use crate::cert::{classify_cert, fingerprint, parse_der};
 use crate::db::{Database, Entry};
 use crate::merkle::MerkleState;
 
-/// Shared server state. Cheaply clonable (everything is behind an
+/// Shared server state. Cheaply cloneable (everything is behind an
 /// `Arc` / `Mutex`).
 pub struct AppState {
     pub db: Database,

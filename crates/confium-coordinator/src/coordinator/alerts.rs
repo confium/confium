@@ -24,7 +24,7 @@ groups:
           summary: "Aggregation error rate > 10%"
           description: "More than 10% of aggregation attempts are failing."
 
-      - alert: ConfimSessionsExpiredRate
+      - alert: ConfiumSessionsExpiredRate
         expr: rate(confium_sessions_expired_total[5m]) > 1
         for: 10m
         labels:
