@@ -1,6 +1,6 @@
 //! `confium config <show|set|get|edit>`.
 //!
-//! Reads and writes the local `config.toml` (see [`config_store`]).
+//! Reads and writes the local `config.toml` (see `config_store`).
 //! `edit` opens the file in `$EDITOR` (falling back to `vi`).
 
 use std::process::Command;

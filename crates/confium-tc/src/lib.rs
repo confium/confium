@@ -1,4 +1,9 @@
 #![allow(missing_docs)] // TODO: document before 1.0
+#![allow(rustdoc::broken_intra_doc_links)]
+#![allow(rustdoc::bare_urls)]
+#![allow(rustdoc::redundant_explicit_links)]
+#![allow(rustdoc::private_intra_doc_links)]
+#![allow(rustdoc::invalid_html_tags)]
 //! Confium threshold-cryptography primitives — the headline deliverable.
 //!
 //! This crate supplies:

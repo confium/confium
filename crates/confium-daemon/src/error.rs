@@ -11,7 +11,7 @@ use snafu::Snafu;
 /// JSON-RPC error codes as defined by the spec, plus the
 /// Confium-specific range (−32000 to −32099) for server errors.
 ///
-/// Spec: https://www.jsonrpc.org/specification#error_object
+/// Spec: <https://www.jsonrpc.org/specification#error_object>
 pub mod code {
     /// Invalid JSON was received by the server.
     pub const PARSE_ERROR: i32 = -32700;
