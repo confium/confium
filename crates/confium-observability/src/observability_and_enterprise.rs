@@ -862,10 +862,13 @@ mod tests {
         let mut data = vec![0u8; 1000];
         rand_core::OsRng.fill_bytes(&mut data);
         let p_value = frequency_test(&data);
-        assert!(
-            p_value > 0.01,
-            "p-value should be > 0.01 for random data, got {p_value}"
-        );
+        // p-value threshold 0.001 (1 in 1000) — at 0.01 the test would
+        // flap ~1% of runs by definition. Even at 0.001 the test is
+        // probabilistic; treat values in the borderline range as
+        // informational rather than a hard failure.
+        if p_value <= 0.001 {
+            panic!("p-value {p_value} is far below the random-data expectation");
+        }
     }
 
     #[test]
