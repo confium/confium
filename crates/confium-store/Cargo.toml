@@ -23,7 +23,6 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-confium-api = { workspace = true }
 inventory = { workspace = true }
 snafu = { workspace = true }
 

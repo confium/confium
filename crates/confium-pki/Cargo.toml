@@ -36,11 +36,9 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
-snafu = { workspace = true }
 thiserror = { workspace = true }
 x509-cert = { workspace = true }
 der = { workspace = true }
-spki = { workspace = true }
 chrono = { workspace = true }
 data-encoding = { workspace = true }
 sha2 = { workspace = true }

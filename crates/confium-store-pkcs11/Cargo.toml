@@ -24,8 +24,15 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-store = { workspace = true }
-cryptoki = "0.12"
+# Used by the `register_backend!` macro (absolute path).
 inventory = { workspace = true }
+cryptoki = "0.12"
 
 [dev-dependencies]
 tempfile = "3"
+
+[package.metadata.cargo-machete]
+# `inventory` is consumed by a workspace macro (register_transport!,
+# register_backend!, or register_tc_scheme!) via absolute path
+# `::inventory::submit!` — no `use inventory` in source.
+ignored = ["inventory"]

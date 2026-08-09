@@ -23,12 +23,9 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-confium-api = { workspace = true }
 serde = { workspace = true }
 toml = { workspace = true }
-toml_edit = { workspace = true }
 snafu = { workspace = true }
-url = { workspace = true }
 libloading = { workspace = true }
 ureq = { workspace = true }
 

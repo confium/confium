@@ -23,10 +23,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-confium-api = { workspace = true }
-confium-core = { workspace = true }
 confium-registry = { workspace = true }
-confium-store = { workspace = true }
 # Product surfaces reachable from the CLI umbrellas.
 confium-tc-cmp20 = { workspace = true }
 confium-tc-gg18 = { workspace = true }
@@ -42,8 +39,6 @@ hex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 toml = { workspace = true }
-toml_edit = { workspace = true }
-url = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

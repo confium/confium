@@ -20,9 +20,16 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-net = { workspace = true }
+# `inventory` is used by the `register_transport!` macro (absolute path
+# `::inventory::submit!`), so it must be a direct dep even though no
+# `use inventory` appears in our source.
 inventory = { workspace = true }
-snafu = { workspace = true }
 url = { workspace = true }
 
 [dev-dependencies]
 confium-net = { workspace = true }
+
+[package.metadata.cargo-machete]
+# `inventory` is consumed by the `register_transport!` macro via
+# absolute path `::inventory::submit!` — no `use inventory` in source.
+ignored = ["inventory"]

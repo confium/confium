@@ -44,8 +44,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-store = { workspace = true }
+# Used by the `register_backend!` macro (absolute path).
 inventory = { workspace = true }
-snafu = { workspace = true }
 
 # --- AWS KMS -------------------------------------------------------------
 aws-config = { version = "1.10", default-features = false, optional = true }
@@ -62,3 +62,9 @@ azure-security-keyvault = { version = "0.21", default-features = false, optional
 
 [dev-dependencies]
 tempfile = { workspace = true }
+
+[package.metadata.cargo-machete]
+# `inventory` is consumed by a workspace macro (register_transport!,
+# register_backend!, or register_tc_scheme!) via absolute path
+# `::inventory::submit!` — no `use inventory` in source.
+ignored = ["inventory"]

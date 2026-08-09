@@ -25,8 +25,6 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 confium-store = { workspace = true }
 inventory = { workspace = true }
-snafu = { workspace = true }
-
 # `tss-esapi` is the Rust binding for TPM 2.0 TSS2 (Enhanced System API).
 # It links against the native `tss2-esys` / `tss2-mu` / `tss2-tctildr`
 # libraries at build time (BSD-2-Clause per upstream, but the published
@@ -47,3 +45,10 @@ tpm = ["dep:tss-esapi"]
 
 [dev-dependencies]
 tempfile = { workspace = true }
+
+[package.metadata.cargo-machete]
+# `inventory` is consumed by a workspace macro (register_transport!,
+# register_backend!, or register_tc_scheme!) via absolute path
+# `::inventory::submit!` — no `use inventory` in source.
+# `tss-esapi` is gated behind the optional `tpm` feature.
+ignored = ["inventory", "tss-esapi"]

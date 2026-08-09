@@ -23,16 +23,21 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-tc = { workspace = true }
+# Used by the `register_tc_scheme!` macro (absolute path).
+inventory = { workspace = true }
 crypto-bigint = "0.5"
 elliptic-curve = { version = "0.13", features = ["digest", "sec1"] }
-hex = { version = "0.4" }
-inventory = { workspace = true }
 p256 = { version = "0.13", features = ["arithmetic", "ecdsa", "expose-field", "pkcs8", "serde"] }
 sha2 = { workspace = true }
-snafu = { workspace = true }
 zeroize = { workspace = true }
 
 [dev-dependencies]
 p256 = { version = "0.13", features = ["arithmetic", "ecdsa", "expose-field", "pem", "pkcs8"] }
 rand = { version = "0.8", default-features = false, features = ["std"] }
 rand_core = { version = "0.6", default-features = false }
+
+[package.metadata.cargo-machete]
+# `inventory` is consumed by a workspace macro (register_transport!,
+# register_backend!, or register_tc_scheme!) via absolute path
+# `::inventory::submit!` — no `use inventory` in source.
+ignored = ["inventory"]

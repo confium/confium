@@ -21,7 +21,6 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 serde = { workspace = true }
 thiserror = { workspace = true }
-chrono = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]

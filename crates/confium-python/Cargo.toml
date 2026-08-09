@@ -17,7 +17,6 @@ name = "confium"
 crate-type = ["cdylib"]
 
 [dependencies]
-confium-core = "0.2"
 confium-composite = { path = "../confium-composite", version = "0.4.0" }
 confium-transparency = { path = "../confium-transparency", version = "0.4.0" }
 confium-pki = { path = "../confium-pki", version = "0.4.0", features = ["cms"] }

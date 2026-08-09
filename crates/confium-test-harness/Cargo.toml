@@ -26,8 +26,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-api = { workspace = true }
-confium-core = { workspace = true }
-confium-net = { workspace = true }
+confium-core = { workspace = true } # exposed via the `confium` lib name
 confium-tc = { workspace = true }
 inventory = { workspace = true }
 serde = { workspace = true }
@@ -37,7 +36,6 @@ toml = { workspace = true }
 
 [dev-dependencies]
 confium-api = { workspace = true }
-confium-core = { workspace = true }
 confium-mock-plugin = { workspace = true }
 criterion = { workspace = true }
 libloading = { workspace = true }
@@ -45,3 +43,9 @@ libloading = { workspace = true }
 [[bench]]
 name = "sim"
 harness = false
+
+[package.metadata.cargo-machete]
+# `confium-core` exposes the lib under the name `confium` (see
+# `[lib] name = "confium"` in its Cargo.toml). Machete scans by
+# `use confium_core::`, which doesn't match.
+ignored = ["confium-core"]

@@ -19,9 +19,5 @@ crate-type = ["rlib"]
 serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = { workspace = true }
-hmac = { workspace = true }
 chrono = { workspace = true }
 hex = { workspace = true }
-thiserror = { workspace = true }
-p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
-rand_core = { workspace = true }

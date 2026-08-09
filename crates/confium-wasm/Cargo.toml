@@ -50,6 +50,9 @@ confium-attributes = { workspace = true, optional = true }
 confium-pki = { workspace = true, optional = true }
 confium-tc-cmp20 = { workspace = true, optional = true }
 confium-tc-gg18 = { workspace = true, optional = true }
+# Optional signing surface — pulled in only by the `sign` feature for
+# WASI hosts. cargo-machete may flag these as unused; that's a false
+# positive (they're behind a feature gate).
 confium-tc-frost-p256 = { workspace = true, optional = true }
 confium-tc-elgamal-p256 = { workspace = true, optional = true }
 
@@ -60,7 +63,6 @@ js-sys = "0.3"
 chrono = { workspace = true }
 
 # Verifier-only deps — all WASM-friendly, no filesystem, no threads.
-ed25519-dalek = { workspace = true }
 sha2 = { workspace = true }
 p256 = { version = "0.13", features = ["ecdsa"] }
 
@@ -72,3 +74,9 @@ getrandom = { version = "0.2", features = ["js"] }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.2"
+
+[package.metadata.cargo-machete]
+# `confium-tc-frost-p256` and `confium-tc-elgamal-p256` are behind the
+# `sign` feature gate (off by default for the browser build). Machete
+# doesn't see feature-gated deps.
+ignored = ["confium-tc-frost-p256", "confium-tc-elgamal-p256"]

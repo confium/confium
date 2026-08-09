@@ -22,8 +22,6 @@ rustdoc-args = ["--cfg", "docsrs"]
 serde = { workspace = true }
 thiserror = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
-sha2 = { workspace = true }
-elliptic-curve = { workspace = true, features = ["pkcs8", "sec1"] }
 
 [lib]
 crate-type = ["rlib"]

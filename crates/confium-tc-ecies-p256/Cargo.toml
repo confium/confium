@@ -23,9 +23,7 @@ serde = { workspace = true }
 thiserror = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
 sha2 = { workspace = true }
-elliptic-curve = { workspace = true, features = ["pkcs8", "sec1"] }
 aes-gcm = { workspace = true }
-hkdf = "0.12"
 
 [lib]
 crate-type = ["rlib"]

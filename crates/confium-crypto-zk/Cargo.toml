@@ -18,10 +18,8 @@ crate-type = ["rlib"]
 [dependencies]
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
 sha2 = { workspace = true }
-hmac = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-thiserror = { workspace = true }
 num-bigint = { workspace = true, features = ["rand"] }
 num-traits = { workspace = true }
 rand_core = { workspace = true }
