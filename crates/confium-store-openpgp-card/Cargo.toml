@@ -34,7 +34,11 @@ thiserror = { workspace = true }
 rnp = { workspace = true, features = ["vendored"], optional = true }
 
 [dev-dependencies]
-rnp = { workspace = true, features = ["vendored"] }
+# dev-dep rnp is also gated — without this, `cargo test` on Windows
+# tries to build rnp-src (Botan + json-c + rnp) which is broken on
+# Windows MSVC upstream. Use `cargo test --features rnp-backend` to
+# actually run the rnp integration tests on platforms that support it.
+rnp = { workspace = true, features = ["vendored"], optional = true }
 
 [lib]
 crate-type = ["rlib"]
