@@ -11,7 +11,7 @@ set(BUILD_SHARED_LIBS ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-corrosion_import_crate(MANIFEST_PATH ./crates/confium-core/Cargo.toml)
+corrosion_import_crate(MANIFEST_PATH ./crates/confium-core/Cargo.toml CRATES confium-core)
 
 install(
     FILES $<TARGET_FILE:confium-shared>
