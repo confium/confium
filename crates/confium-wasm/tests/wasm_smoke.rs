@@ -141,7 +141,7 @@ fn compute_leaf_hash_round_trips_through_inclusion_proof() {
     let tree = MerkleTree::new();
     let seq = tree.append(b"my-artifact").unwrap();
     let leaf_hash = compute_leaf_hash(seq as u64, 0.0, b"my-artifact");
-    let proof = tree.inclusion_proof(seq).unwrap();
+    let _proof = tree.inclusion_proof(seq).unwrap();
     // Use the standalone verifier with the precomputed leaf hash.
     // Note: include the proof's JSON shape so the verifier walks zero
     // steps and just compares leaf_hash to root.
