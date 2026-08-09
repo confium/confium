@@ -34,11 +34,12 @@ thiserror = { workspace = true }
 rnp = { workspace = true, features = ["vendored"], optional = true }
 
 [dev-dependencies]
-# dev-dep rnp is also gated — without this, `cargo test` on Windows
-# tries to build rnp-src (Botan + json-c + rnp) which is broken on
-# Windows MSVC upstream. Use `cargo test --features rnp-backend` to
-# actually run the rnp integration tests on platforms that support it.
-rnp = { workspace = true, features = ["vendored"], optional = true }
+# The rnp integration test is gated behind the `rnp-backend` feature.
+# When that feature is on, the lib's `rnp` dep (declared above) is
+# available to tests too — no separate dev-dep needed. We avoid
+# declaring rnp as a dev-dep because dev-deps are always built during
+# `cargo test`, which would force the broken-on-Windows vendored
+# Botan/json-c/rnp build even when the feature is off.
 
 [lib]
 crate-type = ["rlib"]
