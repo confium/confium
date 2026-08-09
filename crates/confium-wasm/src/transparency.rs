@@ -37,17 +37,22 @@ impl MerkleTree {
         }
         let mut hash_arr = [0u8; 32];
         hash_arr.copy_from_slice(artifact_hash);
+        // Pre-compute the sequence the tree will assign so the entry_hash
+        // we use for the leaf_hash matches what the tree will store
+        // internally. (entry_hash depends on sequence; if we let the tree
+        // rewrite sequence==0 to N after the fact, our cached leaf_hash
+        // would be wrong for every leaf past the first.)
+        let seq = self.inner.borrow().len() as u64;
         let entry = confium_transparency::entry::MerkleEntry::new(
-            0,
+            seq,
             confium_transparency::entry::ArtifactType::CertificateIssuance,
             hash_arr,
         );
-        // Compute the leaf hash before appending so we can store it for
-        // later verify() calls. Mirrors the tree's internal hash_leaf.
         let leaf_hash = hash_leaf(entry.entry_hash());
-        let seq = self.inner.borrow_mut().append(entry);
-        self.leaf_hashes.borrow_mut().insert(seq, leaf_hash);
-        Ok(seq)
+        let assigned = self.inner.borrow_mut().append(entry);
+        debug_assert_eq!(assigned, seq, "predicted sequence must match assigned");
+        self.leaf_hashes.borrow_mut().insert(assigned, leaf_hash);
+        Ok(assigned)
     }
 
     /// Current number of leaves.
