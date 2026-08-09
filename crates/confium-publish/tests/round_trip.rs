@@ -166,6 +166,8 @@ fn dry_run_writes_nothing() {
 
 /// Cross-check our Rust SHA-256 against the system `shasum -a 256` (or
 /// `sha256sum` on Linux) so the test is independent of our own hasher.
+/// On Windows we fall back to computing SHA-256 in-process via sha2
+/// (no `shasum` / `sha256sum` available by default).
 fn sha256_via_shasum(path: &std::path::Path) -> String {
     use std::process::Command;
     let out = if cfg!(target_os = "macos") {
@@ -174,6 +176,12 @@ fn sha256_via_shasum(path: &std::path::Path) -> String {
             .arg(path)
             .output()
             .expect("shasum available")
+    } else if cfg!(target_os = "windows") {
+        let bytes = std::fs::read(path).expect("read artifact back");
+        use sha2::{Digest, Sha256};
+        let mut h = Sha256::new();
+        h.update(&bytes);
+        return format!("{:x}", h.finalize());
     } else {
         Command::new("sha256sum")
             .arg(path)
