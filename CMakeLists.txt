@@ -20,14 +20,20 @@ install(
 
 if(BUILD_C_BINDINGS)
     find_program(CBINDGEN cbindgen REQUIRED)
+    # cbindgen needs the package Cargo.toml, not the workspace root.
+    # $<TARGET_PROPERTY:SOURCE_DIR> on cargo-build_confium resolves to
+    # wherever corrosion's custom target was defined (the workspace root
+    # in our case), which fails with "missing field `package`".
+    set(CONFIUM_CORE_DIR "${CMAKE_SOURCE_DIR}/crates/confium-core")
+    set(CONFIUM_CBINDGEN_CONFIG "${CMAKE_SOURCE_DIR}/cbindgen.toml")
     add_custom_command(TARGET cargo-build_confium POST_BUILD
-        COMMAND ${CBINDGEN} "$<TARGET_PROPERTY:SOURCE_DIR>"
-            --config "$<TARGET_PROPERTY:SOURCE_DIR>/cbindgen.toml"
-            --output "$<TARGET_PROPERTY:BINARY_DIR>/confium.h"
+        COMMAND ${CBINDGEN} "${CONFIUM_CORE_DIR}"
+            --config "${CONFIUM_CBINDGEN_CONFIG}"
+            --output "${CMAKE_BINARY_DIR}/confium.h"
         COMMENT "Generating bindings..."
     )
     install(
-        FILES "$<TARGET_PROPERTY:cargo-build_confium,BINARY_DIR>/confium.h"
+        FILES "${CMAKE_BINARY_DIR}/confium.h"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     )
 endif()
