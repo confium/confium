@@ -94,24 +94,27 @@ mod tests {
 
     #[test]
     fn sensitive_zeroizes_vec_on_drop() {
-        let ptr;
-        {
-            let s = Sensitive::new(vec![0xAAu8; 8]);
-            ptr = s.get().as_ptr();
-            assert_eq!(s.get(), &[0xAA; 8]);
+        // Verify Sensitive<T> applies zeroize on drop by checking
+        // that the inner value has been overwritten with zeros before
+        // the Drop glue runs. We can't reliably read the memory after
+        // free (UB on most allocators); instead we wrap the value in
+        // a Drop-implementing struct that records a flag.
+        use std::sync::atomic::{AtomicBool, Ordering};
+        static DROPPED: AtomicBool = AtomicBool::new(false);
+        DROPPED.store(false, Ordering::SeqCst);
+        struct Tracker(Vec<u8>);
+        impl Zeroize for Tracker {
+            fn zeroize(&mut self) {
+                self.0.fill(0);
+                DROPPED.store(true, Ordering::SeqCst);
+            }
         }
-        // After drop, read the same memory location. If the Vec
-        // allocator reused the slot, the read may give anything; we
-        // assert with a small heap region where reuse is unlikely
-        // immediately. This is a best-effort check.
-        // SAFETY: we still own the address space (heap); the read is
-        // well-defined as long as the page hasn't been returned to the
-        // OS, which doesn't happen for a small allocation.
-        let observed = unsafe { std::slice::from_raw_parts(ptr, 8) };
-        let any_zero = observed.contains(&0);
+        {
+            let _s = Sensitive::new(Tracker(vec![0xAA; 8]));
+        }
         assert!(
-            any_zero,
-            "memory should contain at least one zero byte after drop"
+            DROPPED.load(Ordering::SeqCst),
+            "Sensitive::drop should have called zeroize on the inner value"
         );
     }
 
