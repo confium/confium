@@ -30,4 +30,5 @@ pub use confium_attributes as attributes;
 
 #[cfg(feature = "server")]
 /// HTTP verification service.
+#[allow(rustdoc::broken_intra_doc_links)]
 pub use confium_verify_server as server;
