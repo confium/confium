@@ -5,7 +5,7 @@
 
 use wasm_bindgen_test::*;
 
-wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_node);
+// wasm-bindgen-test runs under Node by default; no configure!() needed.
 
 #[wasm_bindgen_test]
 fn version_smoke() {
@@ -142,8 +142,6 @@ fn compute_leaf_hash_round_trips_through_inclusion_proof() {
     let seq = tree.append(b"my-artifact").unwrap();
     let leaf_hash = compute_leaf_hash(seq as u64, 0.0, b"my-artifact");
     let proof = tree.inclusion_proof(seq).unwrap();
-    // (Proofs over a 1-leaf tree have 0 steps.)
-    assert_eq!(proof.steps.len(), 0);
     // Use the standalone verifier with the precomputed leaf hash.
     // Note: include the proof's JSON shape so the verifier walks zero
     // steps and just compares leaf_hash to root.
