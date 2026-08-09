@@ -22,8 +22,6 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 chrono = { workspace = true }
 sha2 = { workspace = true }
-hmac = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
 hex = { workspace = true }
 rand_core = { workspace = true }
-subtle = { workspace = true }

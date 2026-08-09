@@ -25,6 +25,5 @@ thiserror = { workspace = true }
 num-bigint = { workspace = true, features = ["rand"] }
 num-traits = { workspace = true }
 rand_core = { workspace = true }
-rand = { workspace = true }
 hex = { workspace = true }
 chrono = { workspace = true }

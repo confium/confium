@@ -19,13 +19,10 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-serde = { workspace = true }
 thiserror = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
-sha2 = { workspace = true }
 rand_core = { workspace = true }
 elliptic-curve = { workspace = true, features = ["pkcs8", "sec1"] }
-hex = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]

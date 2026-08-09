@@ -21,24 +21,18 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-confium-api = { workspace = true }
-confium-net = { workspace = true }
-confium-store = { workspace = true }
 hmac = { workspace = true }
 sha2 = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 chrono = { workspace = true }
-zeroize = { workspace = true, features = ["zeroize_derive"] }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
 subtle = { workspace = true }
 rand_core = { workspace = true }
 hex = { workspace = true }
 inventory = { workspace = true }
 snafu = { workspace = true }
-data-encoding = { workspace = true }
-tracing = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

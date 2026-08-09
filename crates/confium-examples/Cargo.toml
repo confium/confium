@@ -26,15 +26,11 @@ confium-tc-frost-p256 = { workspace = true }
 confium-transparency = { workspace = true }
 confium-pki = { workspace = true }
 confium-privacy = { workspace = true }
-confium-composite = { workspace = true }
 confium-pkcs11-server = { workspace = true }
 confium-store = { workspace = true }
-confium-deployment = { workspace = true }
 hex = { workspace = true }
-sha2 = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
 chrono = { workspace = true }
-elliptic-curve = { workspace = true }
 
 
 

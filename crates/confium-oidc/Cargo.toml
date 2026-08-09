@@ -21,9 +21,6 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 jsonwebtoken = "9"
 reqwest = { version = "0.12", features = ["blocking", "json"] }
-http = "1"
-url = { workspace = true }
-async-trait = "0.1"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }

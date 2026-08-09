@@ -993,8 +993,6 @@ dependencies = [
 name = "confium-attributes"
 version = "0.4.0"
 dependencies = [
- "serde",
- "serde_json",
  "thiserror 1.0.69",
 ]
 
@@ -1019,13 +1017,10 @@ version = "0.4.7"
 dependencies = [
  "clap",
  "clap_complete",
- "confium-api",
  "confium-composite",
- "confium-core",
  "confium-pki",
  "confium-privacy",
  "confium-registry",
- "confium-store",
  "confium-tc-cmp20",
  "confium-tc-gg18",
  "confium-transparency",
@@ -1036,8 +1031,6 @@ dependencies = [
  "serde_json",
  "tempfile",
  "toml",
- "toml_edit",
- "url",
 ]
 
 [[package]]
@@ -1058,27 +1051,17 @@ name = "confium-coordinator"
 version = "0.4.7"
 dependencies = [
  "chrono",
- "confium-api",
- "confium-net",
- "confium-store",
- "confium-tc-core",
- "data-encoding",
  "hex",
  "hmac 0.12.1",
- "inventory",
- "num-bigint",
- "num-traits",
  "p256",
  "proptest",
  "rand_core 0.6.4",
  "serde",
  "serde_json",
  "sha2 0.10.9",
- "snafu 0.8.9",
  "tempfile",
  "thiserror 1.0.69",
  "tracing",
- "zeroize",
 ]
 
 [[package]]
@@ -1098,17 +1081,14 @@ name = "confium-crypto-vss"
 version = "0.4.7"
 dependencies = [
  "hex",
- "hmac 0.12.1",
  "num-bigint",
  "num-integer",
  "num-traits",
  "p256",
- "rand 0.8.7",
  "rand_core 0.6.4",
  "serde",
  "serde_json",
  "sha2 0.10.9",
- "subtle",
  "thiserror 1.0.69",
 ]
 
@@ -1117,7 +1097,6 @@ name = "confium-crypto-zk"
 version = "0.4.7"
 dependencies = [
  "hex",
- "hmac 0.12.1",
  "num-bigint",
  "num-traits",
  "p256",
@@ -1125,7 +1104,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
- "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -1152,13 +1130,10 @@ name = "confium-deployment"
 version = "0.4.7"
 dependencies = [
  "chrono",
- "data-encoding",
  "serde",
  "serde_json",
- "snafu 0.8.9",
  "thiserror 1.0.69",
  "toml",
- "url",
 ]
 
 [[package]]
@@ -1166,9 +1141,7 @@ name = "confium-examples"
 version = "0.4.7"
 dependencies = [
  "chrono",
- "confium-composite",
  "confium-core",
- "confium-deployment",
  "confium-pkcs11-server",
  "confium-pki",
  "confium-privacy",
@@ -1177,10 +1150,8 @@ dependencies = [
  "confium-tc-cmp20",
  "confium-tc-frost-p256",
  "confium-transparency",
- "elliptic-curve",
  "hex",
  "p256",
- "sha2 0.10.9",
 ]
 
 [[package]]
@@ -1215,13 +1186,10 @@ name = "confium-log-monitor"
 version = "0.4.7"
 dependencies = [
  "anyhow",
- "chrono",
  "clap",
- "confium-transparency",
  "hex",
  "reqwest",
  "serde",
- "serde_json",
  "sha2 0.10.9",
  "sled",
  "tokio",
@@ -1249,7 +1217,6 @@ dependencies = [
  "tempfile",
  "tokio",
  "tokio-postgres",
- "tower-http 0.5.2",
  "tracing",
  "tracing-subscriber",
 ]
@@ -1275,7 +1242,6 @@ dependencies = [
 name = "confium-net"
 version = "0.4.7"
 dependencies = [
- "confium-api",
  "inventory",
  "snafu 0.8.9",
  "url",
@@ -1300,7 +1266,6 @@ version = "0.4.7"
 dependencies = [
  "confium-net",
  "inventory",
- "snafu 0.8.9",
  "url",
 ]
 
@@ -1310,7 +1275,6 @@ version = "0.4.7"
 dependencies = [
  "confium-net",
  "inventory",
- "snafu 0.8.9",
  "tungstenite",
  "url",
 ]
@@ -1319,17 +1283,12 @@ dependencies = [
 name = "confium-node"
 version = "0.4.0"
 dependencies = [
- "confium-composite",
  "confium-tc-cmp20",
- "confium-tc-elgamal-p256",
  "confium-tc-frost-p256",
  "confium-tc-gg18",
- "confium-transparency",
- "hex",
  "napi",
  "napi-build",
  "napi-derive",
- "serde_json",
 ]
 
 [[package]]
@@ -1349,15 +1308,12 @@ dependencies = [
 name = "confium-oidc"
 version = "0.4.7"
 dependencies = [
- "async-trait",
- "http 1.4.2",
  "jsonwebtoken",
  "reqwest",
  "serde",
  "serde_json",
  "thiserror 1.0.69",
  "tokio",
- "url",
 ]
 
 [[package]]
@@ -1365,7 +1321,6 @@ name = "confium-openssl-provider"
 version = "0.4.7"
 dependencies = [
  "serde",
- "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -1389,7 +1344,6 @@ name = "confium-patterns"
 version = "0.4.7"
 dependencies = [
  "chrono",
- "data-encoding",
  "serde",
  "serde_json",
  "sha2 0.10.9",
@@ -1400,7 +1354,6 @@ dependencies = [
 name = "confium-pkcs11-server"
 version = "0.4.7"
 dependencies = [
- "chrono",
  "serde",
  "thiserror 1.0.69",
 ]
@@ -1421,8 +1374,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
- "snafu 0.8.9",
- "spki",
  "thiserror 1.0.69",
  "x509-cert",
 ]
@@ -1433,13 +1384,9 @@ version = "0.4.7"
 dependencies = [
  "chrono",
  "hex",
- "hmac 0.12.1",
- "p256",
- "rand_core 0.6.4",
  "serde",
  "serde_json",
  "sha2 0.10.9",
- "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -1452,7 +1399,6 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "p256",
- "rand 0.8.7",
  "rand_core 0.6.4",
  "serde",
  "serde_json",
@@ -1465,8 +1411,6 @@ name = "confium-publish"
 version = "0.4.7"
 dependencies = [
  "clap",
- "confium-api",
- "confium-core",
  "libloading",
  "serde",
  "sha2 0.10.9",
@@ -1478,15 +1422,12 @@ dependencies = [
 name = "confium-registry"
 version = "0.4.7"
 dependencies = [
- "confium-api",
  "libloading",
  "serde",
  "snafu 0.8.9",
  "tempfile",
  "toml",
- "toml_edit",
  "ureq 2.12.1",
- "url",
 ]
 
 [[package]]
@@ -1522,7 +1463,6 @@ dependencies = [
  "clap",
  "confium-coordinator",
  "serde",
- "serde_json",
  "sha2 0.10.9",
  "tempfile",
  "thiserror 1.0.69",
@@ -1535,7 +1475,6 @@ dependencies = [
 name = "confium-store"
 version = "0.4.7"
 dependencies = [
- "confium-api",
  "inventory",
  "snafu 0.8.9",
  "tempfile",
@@ -1551,7 +1490,6 @@ dependencies = [
  "confium-store",
  "google-cloud-kms",
  "inventory",
- "snafu 0.8.9",
  "tempfile",
 ]
 
@@ -1580,7 +1518,6 @@ version = "0.4.7"
 dependencies = [
  "confium-store",
  "inventory",
- "snafu 0.8.9",
  "tempfile",
  "tss-esapi",
 ]
@@ -1590,11 +1527,7 @@ name = "confium-tc"
 version = "0.4.7"
 dependencies = [
  "chrono",
- "confium-api",
- "confium-net",
- "confium-store",
  "confium-tc-frost-p256",
- "data-encoding",
  "hmac 0.12.1",
  "inventory",
  "num-bigint",
@@ -1626,7 +1559,6 @@ dependencies = [
  "confium-tc",
  "crypto-bigint",
  "elliptic-curve",
- "hex",
  "inventory",
  "num-bigint",
  "num-traits",
@@ -1634,7 +1566,6 @@ dependencies = [
  "rand 0.8.7",
  "rand_core 0.6.4",
  "sha2 0.10.9",
- "snafu 0.8.9",
  "zeroize",
 ]
 
@@ -1643,10 +1574,6 @@ name = "confium-tc-core"
 version = "0.4.7"
 dependencies = [
  "chrono",
- "confium-api",
- "confium-net",
- "confium-store",
- "data-encoding",
  "hex",
  "hmac 0.12.1",
  "inventory",
@@ -1659,8 +1586,6 @@ dependencies = [
  "snafu 0.8.9",
  "subtle",
  "thiserror 1.0.69",
- "tracing",
- "zeroize",
 ]
 
 [[package]]
@@ -1668,8 +1593,6 @@ name = "confium-tc-ecies-p256"
 version = "0.4.7"
 dependencies = [
  "aes-gcm",
- "elliptic-curve",
- "hkdf",
  "p256",
  "serde",
  "sha2 0.10.9",
@@ -1680,10 +1603,8 @@ dependencies = [
 name = "confium-tc-elgamal-p256"
 version = "0.4.7"
 dependencies = [
- "elliptic-curve",
  "p256",
  "serde",
- "sha2 0.10.9",
  "thiserror 1.0.69",
 ]
 
@@ -1722,11 +1643,8 @@ name = "confium-tc-frost-p256"
 version = "0.4.7"
 dependencies = [
  "elliptic-curve",
- "hex",
  "p256",
  "rand_core 0.6.4",
- "serde",
- "sha2 0.10.9",
  "thiserror 1.0.69",
 ]
 
@@ -1737,13 +1655,11 @@ dependencies = [
  "confium-tc",
  "crypto-bigint",
  "elliptic-curve",
- "hex",
  "inventory",
  "p256",
  "rand 0.8.7",
  "rand_core 0.6.4",
  "sha2 0.10.9",
- "snafu 0.8.9",
  "zeroize",
 ]
 
@@ -1754,13 +1670,11 @@ dependencies = [
  "chrono",
  "confium-tc-core",
  "hex",
- "hmac 0.12.1",
  "p256",
  "rand_core 0.6.4",
  "serde",
  "serde_json",
  "sha2 0.10.9",
- "subtle",
  "thiserror 1.0.69",
 ]
 
@@ -1779,7 +1693,6 @@ dependencies = [
  "confium-api",
  "confium-core",
  "confium-mock-plugin",
- "confium-net",
  "confium-tc",
  "criterion",
  "inventory",
@@ -1818,11 +1731,9 @@ name = "confium-transparency"
 version = "0.4.0"
 dependencies = [
  "chrono",
- "data-encoding",
  "serde",
  "serde_json",
  "sha2 0.10.9",
- "snafu 0.8.9",
  "thiserror 1.0.69",
  "tokio",
 ]
@@ -1846,13 +1757,11 @@ dependencies = [
  "clap",
  "confium-composite",
  "confium-transparency",
- "ed25519-dalek",
  "hex",
  "serde",
  "serde_json",
  "tokio",
  "tower 0.5.3",
- "tower-http 0.6.11",
  "tracing",
  "tracing-subscriber",
 ]
@@ -1870,7 +1779,6 @@ dependencies = [
  "confium-tc-frost-p256",
  "confium-tc-gg18",
  "confium-transparency",
- "ed25519-dalek",
  "getrandom 0.2.17",
  "js-sys",
  "p256",
@@ -3026,15 +2934,6 @@ name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
-
-[[package]]
-name = "hkdf"
-version = "0.12.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b5f8eb2ad728638ea2c7d47a21db23b7b58a72ed6a38256b8a1849f15fbbdf7"
-dependencies = [
- "hmac 0.12.1",
-]
 
 [[package]]
 name = "hmac"
@@ -4794,7 +4693,7 @@ dependencies = [
  "tokio",
  "tokio-native-tls",
  "tower 0.5.3",
- "tower-http 0.6.11",
+ "tower-http",
  "tower-service",
  "url",
  "wasm-bindgen",
@@ -5931,23 +5830,6 @@ dependencies = [
 
 [[package]]
 name = "tower-http"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e9cd434a998747dd2c4276bc96ee2e0c7a2eadf3cae88e52be55a05fa9053f5"
-dependencies = [
- "bitflags 2.13.1",
- "bytes",
- "http 1.4.2",
- "http-body 1.1.0",
- "http-body-util",
- "pin-project-lite",
- "tower-layer",
- "tower-service",
- "tracing",
-]
-
-[[package]]
-name = "tower-http"
 version = "0.6.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4cfcf7e2740e6fc6d4d688b4ef00650406bb94adf4731e43c096c3a19fe40840"
@@ -5961,7 +5843,6 @@ dependencies = [
  "tower 0.5.3",
  "tower-layer",
  "tower-service",
- "tracing",
  "url",
 ]
 
