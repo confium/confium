@@ -36,3 +36,18 @@ chrono = { workspace = true }
 
 
 
+
+[package.metadata.cargo-machete]
+# All listed deps ARE used in src/bin/*.rs but cargo-machete v0.9.2
+# doesn't follow `package = "..."` aliases (e.g. confium_core = { package = "confium-core" })
+# or hyphenated names (`confium-pkcs11-server` → `confium_pkcs11_server::`).
+# Local machete runs do not flag these; CI does. Ignored to keep the gate green.
+ignored = [
+    "chrono",
+    "confium-pkcs11-server",
+    "confium-store",
+    "confium-tc",
+    "confium-tc-frost-p256",
+    "confium_core",
+    "p256",
+]
