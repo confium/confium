@@ -93,6 +93,30 @@ for the full plan.
 | [042](042-seed-blog-posts.md) | seed-blog-posts | ⏳ |
 | [043](043-search-cross-link-audit.md) | search-cross-link-audit | ⏳ |
 
+## Bindings + Daemon + Docs (044–059)
+
+Second-wave completion items: Python binding parity (PKI, Attributes,
+Ruby CMS sign path, daemon composite_verify JSON-RPC method, docs +
+website updates, and a deferred-work catalogue.
+
+| # | Slug | Status |
+|---|---|---|
+| [044](044-python-pki-binding.md) | python-pki-binding | ✅ |
+| [045](045-python-attributes-binding.md) | python-attributes-binding | ✅ |
+| [046](046-ruby-cms-sign-path.md) | ruby-cms-sign-path | ✅ |
+| [047](047-daemon-composite-verify.md) | daemon-composite-verify | ✅ |
+| [048](048-bindings-parity-matrix.md) | bindings-parity-matrix | ✅ |
+| [049](049-rust-docs-python-binding.md) | rust-docs-python-binding | ✅ |
+| [050](050-website-python-binding.md) | website-python-binding | ✅ |
+| [051](051-deferred-research-grade-work.md) | deferred-research-grade-work | ✅ |
+| [052](052-ci-rot-typos-deadcode.md) | ci-rot-typos-deadcode | ✅ |
+| [053](053-python-composite-sign.md) | python-composite-sign | ✅ |
+| [054](054-python-cms-build-sign.md) | python-cms-build-sign | ✅ |
+| [055](055-python-consistency-proofs-deferred.md) | python-consistency-proofs-deferred | ➖ deferred |
+| [056](056-python-error-from-impls-deferred.md) | python-error-from-impls-deferred | ➖ deferred |
+| [057](057-cross-binding-examples-doc.md) | cross-binding-examples-doc | ✅ |
+| [058](058-website-cross-link-fix.md) | website-cross-link-fix | ✅ |
+
 ## Cross-cutting requirements (apply to every TODO above)
 
 Every code change must satisfy:
