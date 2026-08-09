@@ -96,6 +96,7 @@ impl Server {
     }
 
     /// Run the accept loop on a Unix socket listener until shutdown.
+    #[cfg(unix)]
     pub async fn serve_unix(
         self: Rc<Self>,
         listener: tokio::net::UnixListener,
@@ -126,6 +127,7 @@ impl Server {
     }
 
     /// Drive a Unix listener inside a [`LocalSet`] until shutdown.
+    #[cfg(unix)]
     pub async fn run_unix(self: Rc<Self>, listener: tokio::net::UnixListener) -> error::Result<()> {
         let local = LocalSet::new();
         local.run_until(self.serve_unix(listener)).await
@@ -140,6 +142,7 @@ impl Server {
     }
 
     /// Handle a single Unix socket connection.
+    #[cfg(unix)]
     async fn handle_unix(self: Rc<Self>, stream: tokio::net::UnixStream) -> error::Result<()> {
         let (mut read, mut write) = tokio::io::split(stream);
         Self::drive_connection(&self, &mut read, &mut write).await
