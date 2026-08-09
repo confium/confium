@@ -28,7 +28,7 @@ use serde::{Deserialize, Serialize};
 /// anchor timestamp (ISO 8601).
 pub type OtsProofRow = (Vec<u8>, Option<u64>, String);
 
-/// Wrapper around the SQLite connection. Cheaply clonable because
+/// Wrapper around the SQLite connection. Cheaply cloneable because
 /// `Connection` is wrapped in a `Mutex` inside an `Arc`.
 #[derive(Clone)]
 pub struct Database {

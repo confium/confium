@@ -2,7 +2,19 @@
 # See: https://github.com/crate-ci/typos
 
 [files]
-extend-exclude = ["target/", ".git/", "cpp-tests/", "cmake/"]
+extend-exclude = [
+    "target/",
+    ".git/",
+    "cpp-tests/",
+    "cmake/",
+    # Local-only planning files — never committed, often contain
+    # domain shorthand ("OT", "mis-issuance") that typos flags.
+    "TODO.completion/",
+    "TODO.complete/",
+    "TODO.roadmap/",
+    "TODO.finalize/",
+    "TODO.restructure/",
+]
 
 [default.extend-words]
 # Project-specific terms
@@ -32,6 +44,20 @@ hashicorpvault = "hashicorpvault"
 certificat = "certificat"
 cose = "cose"
 gost = "gost"
+
+# PKI / MPC terms that look like typos to the dictionary.
+# - "mis-issuance" is the standard RFC 6962 term for a CA issuing a
+#   cert it shouldn't have. The hyphen causes typos to flag the bare
+#   prefix "mis".
+# - "ot" / "OT" — Oblivious Transfer. The all-caps form collides with
+#   the typo "OT" (for "TO"). Both forms are correct here.
+# - "AIMD" — Additive Increase / Multiplicative Decrease (congestion
+#   control algorithm).
+mis = "mis"
+Mis = "Mis"
+ot = "ot"
+OT = "OT"
+AIMD = "AIMD"
 
 [default.extend-identifiers]
 # PascalCase / camelCase forms that typos' word segmentation heuristic
