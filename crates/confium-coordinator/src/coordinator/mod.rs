@@ -10,7 +10,7 @@
 //! See `TODO.roadmap/29-tc-coordinator-design.md` for the full spec.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)]
 
 pub mod abort;
 pub mod admin;

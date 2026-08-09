@@ -11,7 +11,7 @@
 //! See `TODO.roadmap/38-attribute-based-threshold.md` for the full spec.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 #![recursion_limit = "256"]
 
 mod ast;

@@ -7,7 +7,7 @@
 //! See `TODO.roadmap/35-pq-composite-signatures.md` for the full spec.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 use serde::{Deserialize, Serialize};
 

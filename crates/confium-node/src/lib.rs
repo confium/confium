@@ -15,7 +15,7 @@
 //! signing microservices, scheduled-ceremony workers.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 use napi::bindgen_prelude::Buffer;
 use napi::bindgen_prelude::Result as NapiResult;

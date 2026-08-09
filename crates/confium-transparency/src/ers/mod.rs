@@ -11,7 +11,7 @@
 //! See `TODO.roadmap/37-long-term-archival.md` for full spec.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

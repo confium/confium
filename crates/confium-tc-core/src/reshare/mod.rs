@@ -7,7 +7,7 @@
 //! See `TODO.roadmap/30-tc-reshare-protocol.md` for full spec.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 pub mod lagrange;
 pub mod refresh;

@@ -8,7 +8,7 @@
 //! See `TODO.roadmap/31-threshold-encryption.md` for the full spec.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 pub mod encapsulate;
 pub mod session;

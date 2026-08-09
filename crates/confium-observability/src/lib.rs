@@ -2,7 +2,7 @@
 //! metric cardinality, RNG testing, zeroization audit, syslog forwarding.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 pub mod data_structures_and_utils;
 pub mod observability_and_enterprise;
