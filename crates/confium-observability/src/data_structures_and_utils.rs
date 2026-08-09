@@ -804,7 +804,11 @@ mod tests {
         assert!(!buf.is_zeroized());
         buf.zeroize();
         assert!(buf.is_zeroized());
-        assert!(buf.as_slice().iter().all(|&b| b != 0x42));
+        // The buffer must have changed from the initial all-0x42 state.
+        // (We can't assert "no byte is 0x42" because secure_overwrite's
+        // final pass uses OsRng, which can return any byte value.)
+        let unchanged = buf.as_slice().iter().filter(|&&b| b == 0x42).count();
+        assert!(unchanged < 32, "buffer was not overwritten (still all 0x42)");
     }
 
     // Entropy monitor
