@@ -480,18 +480,22 @@ mod tests {
             .expect("put_public");
         unsafe { reclaim_key(h) };
 
+        // The on-disk filename is sanitized for the host platform
+        // (Windows reserves `:` etc.), so the leaf differs from the
+        // caller-supplied identity on Windows.
+        let leaf = sanitize_for_filename(identity);
         let key_path = dir
             .path()
             .join("mod")
             .join("app")
             .join("public")
-            .join(identity);
+            .join(&leaf);
         let sig_path = dir
             .path()
             .join("mod")
             .join("app")
             .join("public")
-            .join(format!("{identity}.sig"));
+            .join(format!("{leaf}.sig"));
         assert!(key_path.exists(), "key file at leaf identity");
         assert!(sig_path.exists(), "sig file at leaf identity + .sig");
         assert_ne!(key_path, sig_path, "key and sig paths must differ");
@@ -544,11 +548,15 @@ mod tests {
         let entries = ks
             .enumerate("mod", "app", Compartment::Public)
             .expect("enumerate public");
-        let ids: Vec<&str> = entries.iter().map(|(_, id)| id.as_str()).collect();
-        assert_eq!(
-            ids,
-            vec!["email:alice@example.com", "email:bob@example.com"]
-        );
+        let ids: Vec<String> = entries.iter().map(|(_, id)| id.clone()).collect();
+        // The on-disk filename is sanitized for the host platform; the
+        // enumerate API returns the sanitized leaf name (Windows
+        // replaces `:` with `_`).
+        let expected: Vec<String> = ["email:alice@example.com", "email:bob@example.com"]
+            .iter()
+            .map(|s| sanitize_for_filename(s))
+            .collect();
+        assert_eq!(ids, expected);
         for (key, _) in &entries {
             unsafe { reclaim_key(*key) };
         }
