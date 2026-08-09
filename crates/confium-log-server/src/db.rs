@@ -24,6 +24,10 @@ use anyhow::{Context, Result, anyhow};
 use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
 
+/// OTS proof row: encoded proof bytes, optional Bitcoin block height,
+/// anchor timestamp (ISO 8601).
+pub type OtsProofRow = (Vec<u8>, Option<u64>, String);
+
 /// Wrapper around the SQLite connection. Cheaply clonable because
 /// `Connection` is wrapped in a `Mutex` inside an `Arc`.
 #[derive(Clone)]
@@ -274,7 +278,7 @@ impl Database {
         Ok(())
     }
 
-    pub fn get_ots_proof(&self, tree_size: u64) -> Result<Option<(Vec<u8>, Option<u64>, String)>> {
+    pub fn get_ots_proof(&self, tree_size: u64) -> Result<Option<OtsProofRow>> {
         let conn = self.conn.lock();
         let row = conn.query_row(
             "SELECT ots_proof, bitcoin_height, anchor_time

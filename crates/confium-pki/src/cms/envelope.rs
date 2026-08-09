@@ -117,6 +117,10 @@ pub fn build_detached_signature(
     builder.build()
 }
 
+/// Re-export EncapContentInfo so consumers can build it without reaching
+/// into the signed_data module directly.
+pub use crate::cms::signed_data::EncapContentInfo as _ReExportEncapContentInfo;
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -151,7 +155,3 @@ mod tests {
         assert!(result.is_err());
     }
 }
-
-/// Re-export EncapContentInfo so consumers can build it without reaching
-/// into the signed_data module directly.
-pub use crate::cms::signed_data::EncapContentInfo as _ReExportEncapContentInfo;

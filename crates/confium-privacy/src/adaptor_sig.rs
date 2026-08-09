@@ -223,7 +223,7 @@ mod tests {
     #[test]
     fn create_witness_deterministic_point() {
         let (y, witness) = create_witness();
-        let expected = (ProjectivePoint::GENERATOR * &y).to_affine();
+        let expected = (ProjectivePoint::GENERATOR * y).to_affine();
         assert_eq!(witness.y_point, expected);
     }
 }

@@ -203,8 +203,8 @@ fn encode_base128(n: u64) -> Vec<u8> {
     }
     // Set high bit on all but last
     let last = bytes.len() - 1;
-    for i in 0..last {
-        bytes[i] |= 0x80;
+    for b in &mut bytes[..last] {
+        *b |= 0x80;
     }
     bytes
 }

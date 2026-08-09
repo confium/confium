@@ -43,6 +43,13 @@
 //! `POST /v1/head/<sequence>/witness` — submit a witness countersignature
 //! `GET /v1/head/<sequence>/witnesses` — list known witnesses for tree head
 
+// Several log-server helpers (pagination field, witness digest helpers,
+// historical entry lookup) are pub for the upcoming HTTP API expansion
+// but not yet wired into a route handler.
+#![forbid(unsafe_code)]
+#![allow(dead_code)]
+#![allow(missing_docs)]
+
 mod api;
 mod cert;
 mod db;

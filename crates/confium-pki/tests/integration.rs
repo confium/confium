@@ -11,7 +11,7 @@ use confium_pki::{
     // Cert
     cert::{CertError, Certificate, CertificateSigningRequest},
     // CMS
-    cms::{SignedData, SignedDataBuilder, build_detached_signature, verify_signed_data},
+    cms::{SignedData, build_detached_signature, verify_signed_data},
     // Delegation
     delegation::{
         Constraint, DelegationScope, Operation, ScopeValue, SignCertSpec, validate_delegation,

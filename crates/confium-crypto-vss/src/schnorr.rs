@@ -120,7 +120,7 @@ mod tests {
         let fb = p256::FieldBytes::from(buf);
         let ct = Scalar::from_repr(fb);
         let secret = Option::<Scalar>::from(ct).unwrap_or_else(|| Scalar::random(&mut OsRng));
-        let public = (ProjectivePoint::GENERATOR * &secret).to_affine();
+        let public = (ProjectivePoint::GENERATOR * secret).to_affine();
         (secret, public)
     }
 

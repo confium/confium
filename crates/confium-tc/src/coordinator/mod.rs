@@ -11,6 +11,7 @@
 
 #![forbid(unsafe_code)]
 #![allow(missing_docs)] // TODO: document before 1.0
+#![allow(clippy::module_inception)]
 
 pub mod audit;
 pub mod client;

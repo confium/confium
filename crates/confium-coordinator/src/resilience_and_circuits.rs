@@ -20,7 +20,7 @@ pub struct ConnectionPool {
     idle_timeout: Duration,
 }
 
-struct PooledConn {
+pub struct PooledConn {
     host: String,
     created_at: Instant,
     healthy: bool,

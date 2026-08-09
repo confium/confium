@@ -36,16 +36,16 @@ fn verify_composite(args: VerifyCompositeArgs) -> Result<(), String> {
     let composite: confium_composite::CompositeSignature =
         serde_json::from_slice(&json_bytes).map_err(|e| format!("parse composite JSON: {e}"))?;
 
-    let verifier: fn(&str, &[u8], &[u8], &[u8]) -> Result<(), String> =
-        match args.algorithm.as_str() {
-            "ed25519" => confium_composite::ed25519_verifier,
-            "ecdsa-p256" | "ecdsa" | "p256" => confium_composite::p256_verifier,
-            other => {
-                return Err(format!(
-                    "unknown algorithm: {other} (try ed25519 or ecdsa-p256)"
-                ));
-            }
-        };
+    type VerifierFn = fn(&str, &[u8], &[u8], &[u8]) -> Result<(), String>;
+    let verifier: VerifierFn = match args.algorithm.as_str() {
+        "ed25519" => confium_composite::ed25519_verifier,
+        "ecdsa-p256" | "ecdsa" | "p256" => confium_composite::p256_verifier,
+        other => {
+            return Err(format!(
+                "unknown algorithm: {other} (try ed25519 or ecdsa-p256)"
+            ));
+        }
+    };
 
     // Verify each component that matches the requested algorithm. Components
     // for other algorithms are skipped (so a composite with both Ed25519 and

@@ -59,6 +59,7 @@ impl ShutdownSignal {
     /// platforms, this is a no-op — callers must call `trigger()`
     /// manually.
     #[cfg(unix)]
+    #[allow(unsafe_code)] // signal installation requires FFI into libc
     pub fn install(&self, _drain_timeout: Duration) {
         let signal = self.clone();
         unsafe {
@@ -128,6 +129,7 @@ mod libc_signum {
 }
 
 #[cfg(unix)]
+#[allow(unsafe_code)] // libc signal FFI is inherently unsafe
 unsafe fn libc_signal(signum: i32, handler: impl Fn() + Send + 'static) {
     // Store the handler in a static for the signal callback to find.
     // This is a simplified approach; a production implementation would

@@ -85,14 +85,14 @@ mod tests {
 
     fn random_keypair() -> (Scalar, AffinePoint) {
         let sk = Scalar::random(&mut OsRng);
-        let pk = (ProjectivePoint::GENERATOR * &sk).to_affine();
+        let pk = (ProjectivePoint::GENERATOR * sk).to_affine();
         (sk, pk)
     }
 
     #[test]
     fn encrypt_decrypt_round_trips() {
         let (sk, pk) = random_keypair();
-        let msg = (ProjectivePoint::GENERATOR * &Scalar::from(42u32)).to_affine();
+        let msg = (ProjectivePoint::GENERATOR * Scalar::from(42u32)).to_affine();
         let ct = encrypt_point(&pk, &msg);
         let recovered = decrypt_point(&sk, &ct).unwrap();
         assert_eq!(recovered, msg);
@@ -100,9 +100,9 @@ mod tests {
 
     #[test]
     fn wrong_key_fails() {
-        let (sk1, pk1) = random_keypair();
-        let (_, pk2) = random_keypair();
-        let msg = (ProjectivePoint::GENERATOR * &Scalar::from(42u32)).to_affine();
+        let (_sk1, pk1) = random_keypair();
+        let (_, _pk2) = random_keypair();
+        let msg = (ProjectivePoint::GENERATOR * Scalar::from(42u32)).to_affine();
         let ct = encrypt_point(&pk1, &msg);
         // Decrypt with sk2 under pk2 won't recover the message
         let (sk2, _) = random_keypair();
@@ -113,7 +113,7 @@ mod tests {
     #[test]
     fn ciphertext_differs_per_encryption() {
         let (_, pk) = random_keypair();
-        let msg = (ProjectivePoint::GENERATOR * &Scalar::from(99u32)).to_affine();
+        let msg = (ProjectivePoint::GENERATOR * Scalar::from(99u32)).to_affine();
         let ct1 = encrypt_point(&pk, &msg);
         let ct2 = encrypt_point(&pk, &msg);
         assert_ne!(ct1.c1_hex, ct2.c1_hex);
@@ -122,7 +122,7 @@ mod tests {
     #[test]
     fn re_encrypt_preserves_format() {
         let (sk, pk) = random_keypair();
-        let msg = (ProjectivePoint::GENERATOR * &Scalar::from(7u32)).to_affine();
+        let msg = (ProjectivePoint::GENERATOR * Scalar::from(7u32)).to_affine();
         let ct = encrypt_point(&pk, &msg);
         let rk = generate_rk(&sk, &pk);
         let re_ct = re_encrypt(&rk, &ct);

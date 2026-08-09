@@ -106,19 +106,15 @@ fn bench_consistency_proof(c: &mut Criterion) {
     group.finish();
 }
 
-// Helper trait for benchmarks — the production crate doesn't expose
-// `root_at_size` publicly (it's a private impl detail), so we add a
-// thin extension trait here that walks leaf_hashes[..half].
+// The production crate doesn't expose `root_at_size` publicly (it's a
+// private impl detail). For benchmarks we just recompute the full root;
+// the verify_consistency hot path is what we actually want to measure.
 trait MerkleTreeBenchExt {
     fn root_at_size_for_bench(&self, size: usize) -> Hash;
 }
 
 impl MerkleTreeBenchExt for MerkleTree {
     fn root_at_size_for_bench(&self, _size: usize) -> Hash {
-        // We don't have access to private leaf_hashes, so just compute
-        // the full root. Benchmarks will get a "current root" reading
-        // rather than a true old-root reading — sufficient for measuring
-        // the verify_consistency hot path.
         self.root()
     }
 }

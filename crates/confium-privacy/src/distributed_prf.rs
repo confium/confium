@@ -142,8 +142,8 @@ mod tests {
         let a = [1u8; 32];
         let b = [2u8; 32];
         let result = combine(&[a, b]);
-        for i in 0..32 {
-            assert_eq!(result[i], 1 ^ 2);
+        for r in &result {
+            assert_eq!(*r, 1 ^ 2);
         }
     }
 }

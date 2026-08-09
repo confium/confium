@@ -185,7 +185,7 @@ mod tests {
         let fb = p256::FieldBytes::from(buf);
         let secret = Option::<Scalar>::from(Scalar::from_repr(fb))
             .unwrap_or_else(|| Scalar::random(&mut OsRng));
-        let public = (ProjectivePoint::GENERATOR * &secret).to_affine();
+        let public = (ProjectivePoint::GENERATOR * secret).to_affine();
         (secret, public)
     }
 
@@ -227,7 +227,7 @@ mod tests {
         let (_, wrong_public) = random_keypair();
         let output = prove(&secret, &wrong_public, b"alpha");
         // Proof won't verify because it was created with mismatched key
-        let (_, correct_public) = random_keypair();
+        let (_, _correct_public) = random_keypair();
         // Actually the proof uses the real public from the pair, so let's
         // use a truly different key
         let (_, other_public) = random_keypair();

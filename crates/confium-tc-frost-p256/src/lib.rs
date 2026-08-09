@@ -74,9 +74,8 @@ mod integration_tests {
         // With 2 shares when 3 needed, recovery should fail (return wrong value or error).
         // Real Shamir: recovery is undefined for insufficient shares.
         // We accept either an error or a wrong (non-matching) result.
-        match result {
-            Ok(r) => assert_ne!(r, keypair.secret_scalar, "should not match with <T shares"),
-            Err(_) => {}
+        if let Ok(r) = result {
+            assert_ne!(r, keypair.secret_scalar, "should not match with <T shares")
         }
     }
 

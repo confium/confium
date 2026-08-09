@@ -259,7 +259,7 @@ impl Coordinator {
         let scheme = session.request.scheme.clone();
         let contributing: Vec<String> =
             session.shares.iter().map(|s| s.signer_id.clone()).collect();
-        drop(session);
+        let _ = session; // borrow ends here; cloned fields used below
 
         let aggregated = self
             .signer
