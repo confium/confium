@@ -1,8 +1,8 @@
 //! Keypair generation for threshold ECIES-P256.
 
+use p256::elliptic_curve::PrimeField;
 use p256::elliptic_curve::rand_core;
 use p256::elliptic_curve::rand_core::RngCore;
-use p256::elliptic_curve::{Field, PrimeField};
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 
 /// A P-256 keypair.

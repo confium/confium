@@ -750,8 +750,10 @@ mod tests {
     fn config_reload_updates() {
         let mgr = ConfigManager::new(CoordinatorConfig::default());
         assert_eq!(mgr.config_version(), 1);
-        let mut new_config = CoordinatorConfig::default();
-        new_config.max_sessions = 200;
+        let new_config = CoordinatorConfig {
+            max_sessions: 200,
+            ..Default::default()
+        };
         mgr.reload(new_config);
         assert_eq!(mgr.config().max_sessions, 200);
         assert_eq!(mgr.config_version(), 2);

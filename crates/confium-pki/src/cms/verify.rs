@@ -6,7 +6,7 @@ use crate::cms::signed_data::{SignedData, SignerIdentifier};
 
 /// Result of CMS verification.
 #[derive(Debug, Clone, Default)]
-pub struct VerificationResult {
+pub struct CmsVerificationResult {
     /// True iff every signer's signature verified.
     pub all_verified: bool,
     /// Per-signer results.
@@ -118,7 +118,7 @@ pub fn verify_signed_data<F>(
     signed_data: &SignedData,
     payload: &[u8],
     verifier: F,
-) -> Result<VerificationResult, CmsError>
+) -> Result<CmsVerificationResult, CmsError>
 where
     F: Fn(usize, &[u8], &[u8], &[u8]) -> Result<(), String>,
 {
@@ -192,7 +192,7 @@ where
         }
     }
 
-    Ok(VerificationResult {
+    Ok(CmsVerificationResult {
         all_verified,
         per_signer,
     })

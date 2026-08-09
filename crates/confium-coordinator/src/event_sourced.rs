@@ -98,8 +98,10 @@ impl EventStore {
         if events.is_empty() {
             return None;
         }
-        let mut proj = SessionProjection::default();
-        proj.session_id = session_id.into();
+        let mut proj = SessionProjection {
+            session_id: session_id.into(),
+            ..Default::default()
+        };
         for entry in &events {
             apply_event(&mut proj, &entry.event);
         }

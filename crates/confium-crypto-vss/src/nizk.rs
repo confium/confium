@@ -1,8 +1,8 @@
 //! General-purpose NIZK proof system using Fiat-Shamir transform.
 
+use p256::elliptic_curve::PrimeField;
 use p256::elliptic_curve::rand_core::{OsRng, RngCore};
 use p256::elliptic_curve::sec1::ToEncodedPoint;
-use p256::elliptic_curve::{Field, PrimeField};
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use sha2::{Digest, Sha256};
 
@@ -137,12 +137,13 @@ fn equality_challenge(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use p256::elliptic_curve::Field;
 
     #[test]
     fn dlog_proof_verifies() {
         let secret = Scalar::random(&mut OsRng);
         let proof = prove_dlog(&secret);
-        let public = (ProjectivePoint::GENERATOR * &secret).to_affine();
+        let public = (ProjectivePoint::GENERATOR * secret).to_affine();
         assert!(verify_dlog(&public, &proof));
     }
 
@@ -150,7 +151,7 @@ mod tests {
     fn dlog_wrong_public_rejected() {
         let secret = Scalar::random(&mut OsRng);
         let proof = prove_dlog(&secret);
-        let wrong = (ProjectivePoint::GENERATOR * &Scalar::random(&mut OsRng)).to_affine();
+        let wrong = (ProjectivePoint::GENERATOR * Scalar::random(&mut OsRng)).to_affine();
         assert!(!verify_dlog(&wrong, &proof));
     }
 
@@ -158,7 +159,7 @@ mod tests {
     fn dlog_tampered_response_rejected() {
         let secret = Scalar::random(&mut OsRng);
         let mut proof = prove_dlog(&secret);
-        let public = (ProjectivePoint::GENERATOR * &secret).to_affine();
+        let public = (ProjectivePoint::GENERATOR * secret).to_affine();
         proof.response += Scalar::ONE;
         assert!(!verify_dlog(&public, &proof));
     }
@@ -175,11 +176,11 @@ mod tests {
     fn equality_proof_verifies() {
         let secret = Scalar::random(&mut OsRng);
         let g1 = AffinePoint::GENERATOR;
-        let g2 = (ProjectivePoint::GENERATOR * &Scalar::from(2u32)).to_affine();
+        let g2 = (ProjectivePoint::GENERATOR * Scalar::from(2u32)).to_affine();
 
         let (p1, p2) = prove_dlog_equality(&secret, &g1, &g2);
-        let y1 = (ProjectivePoint::from(g1) * &secret).to_affine();
-        let y2 = (ProjectivePoint::from(g2) * &secret).to_affine();
+        let y1 = (ProjectivePoint::from(g1) * secret).to_affine();
+        let y2 = (ProjectivePoint::from(g2) * secret).to_affine();
 
         assert!(verify_dlog_equality(&y1, &y2, &g1, &g2, &p1, &p2));
     }
@@ -188,12 +189,12 @@ mod tests {
     fn equality_wrong_secret_rejected() {
         let secret = Scalar::random(&mut OsRng);
         let g1 = AffinePoint::GENERATOR;
-        let g2 = (ProjectivePoint::GENERATOR * &Scalar::from(2u32)).to_affine();
+        let g2 = (ProjectivePoint::GENERATOR * Scalar::from(2u32)).to_affine();
 
         let (p1, p2) = prove_dlog_equality(&secret, &g1, &g2);
         let wrong = Scalar::random(&mut OsRng);
-        let y1 = (ProjectivePoint::from(g1) * &wrong).to_affine();
-        let y2 = (ProjectivePoint::from(g2) * &secret).to_affine();
+        let y1 = (ProjectivePoint::from(g1) * wrong).to_affine();
+        let y2 = (ProjectivePoint::from(g2) * secret).to_affine();
 
         assert!(!verify_dlog_equality(&y1, &y2, &g1, &g2, &p1, &p2));
     }

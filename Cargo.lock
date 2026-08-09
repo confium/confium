@@ -1003,6 +1003,9 @@ name = "confium-benchmarks"
 version = "0.4.7"
 dependencies = [
  "confium-composite",
+ "confium-tc-cmp20",
+ "confium-tc-frost-p256",
+ "confium-tc-gg18",
  "confium-transparency",
  "criterion",
  "ed25519-dalek",

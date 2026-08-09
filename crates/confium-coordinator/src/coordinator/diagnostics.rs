@@ -38,6 +38,7 @@ pub struct DiagnosticsReport {
 
 impl DiagnosticsReport {
     /// Generate a report from the current coordinator state.
+    #[allow(clippy::too_many_arguments)]
     pub fn generate(
         version: &str,
         started_at: DateTime<Utc>,

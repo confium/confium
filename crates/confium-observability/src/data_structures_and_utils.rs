@@ -163,6 +163,9 @@ impl<T: Clone> RingBuffer<T> {
     pub fn len(&self) -> usize {
         self.data.len()
     }
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
     pub fn is_full(&self) -> bool {
         self.data.len() == self.capacity
     }
@@ -854,8 +857,9 @@ mod tests {
 
     #[test]
     fn concurrent_runner_parallel() {
+        type TestFn = (&'static str, fn() -> bool);
         let runner = ConcurrentTestRunner::new();
-        let tests: Vec<(&str, fn() -> bool)> = vec![
+        let tests: Vec<TestFn> = vec![
             ("t1", || true),
             ("t2", || true),
             ("t3", || true),

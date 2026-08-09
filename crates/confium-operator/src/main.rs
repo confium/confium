@@ -31,6 +31,7 @@
 
 #![forbid(unsafe_code)]
 #![allow(missing_docs)] // TODO: document before 1.0
+#![allow(dead_code)] // CRD/controller types not yet wired into the reconcile loop
 
 mod controller;
 mod crd;

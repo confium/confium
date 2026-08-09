@@ -126,7 +126,7 @@ mod tests {
         (0..n)
             .map(|_| {
                 let sk = Scalar::random(&mut OsRng);
-                let pk = (ProjectivePoint::GENERATOR * &sk).to_affine();
+                let pk = (ProjectivePoint::GENERATOR * sk).to_affine();
                 (sk, pk)
             })
             .collect()
@@ -232,7 +232,7 @@ mod tests {
         let pairs = make_keypairs(2);
         let pks: Vec<AffinePoint> = pairs.iter().map(|(_, pk)| *pk).collect();
         let session = MusigSession::new(pks.clone(), 2);
-        let r = (ProjectivePoint::GENERATOR * &Scalar::random(&mut OsRng)).to_affine();
+        let r = (ProjectivePoint::GENERATOR * Scalar::random(&mut OsRng)).to_affine();
         let agg_pk = session.aggregate_public_key();
         let c = session.challenge(b"test");
         let wrong_s = Scalar::random(&mut OsRng);

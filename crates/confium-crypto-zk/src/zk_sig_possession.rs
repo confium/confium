@@ -52,7 +52,7 @@ pub fn prove_possession(
 
     // Use the signature's s-value as the "secret" for the Schnorr proof
     let (r, s) = signature.split_scalars();
-    let s_scalar: Scalar = (*s);
+    let s_scalar: Scalar = *s;
     let _s_bytes: [u8; 32] = s_scalar.to_repr().into();
 
     // Pick random nonce
@@ -188,7 +188,7 @@ mod tests {
         // The proof should not contain the raw signature bytes
         let sig_bytes = sig.to_bytes();
         let proof_json = serde_json::to_string(&proof).unwrap();
-        assert!(!proof_json.contains(&hex::encode(&sig_bytes)));
+        assert!(!proof_json.contains(&hex::encode(sig_bytes)));
     }
 
     #[test]

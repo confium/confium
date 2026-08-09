@@ -222,7 +222,7 @@ mod tests {
             master_pubkey_hex: "mpk-123".into(),
         };
         let ct = ibe_encrypt(&params, "alice@example.com", b"hello");
-        let identity_key = {
+        let _identity_key = {
             let mut h = Sha256::new();
             h.update(b"ibe-key");
             h.update("mpk-123".as_bytes());

@@ -15,11 +15,10 @@
 pub mod keys;
 pub mod shamir;
 
+use p256::elliptic_curve::PrimeField;
 use p256::elliptic_curve::rand_core;
-use p256::elliptic_curve::rand_core::RngCore;
 use p256::elliptic_curve::sec1::ToEncodedPoint;
 use p256::elliptic_curve::subtle::CtOption;
-use p256::elliptic_curve::{Field, PrimeField};
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
 
@@ -147,15 +146,15 @@ pub fn encapsulate(
     let r = loop {
         let mut buf = [0u8; 32];
         rand_core::OsRng.fill_bytes(&mut buf);
-        if let Some(s) = CtOption::into(Scalar::from_repr(FieldBytes::from(buf))) {
+        if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(buf))) {
             if s != Scalar::ZERO {
                 break s;
             }
         }
     };
 
-    let c1 = ProjectivePoint::GENERATOR * &r;
-    let c2 = recipient_pt * &r;
+    let c1 = ProjectivePoint::GENERATOR * r;
+    let c2 = recipient_pt * r;
 
     let c1_bytes = encode_point(&c1);
     let c2_bytes = encode_point(&c2);
@@ -177,7 +176,7 @@ pub fn partial_decrypt(
 ) -> Result<PartialDecryption, ElGamalError> {
     let s = decode_scalar(&share.bytes)?;
     let c1 = decode_point(&ciphertext.c1)?;
-    let partial = c1 * &s;
+    let partial = c1 * s;
     Ok(PartialDecryption {
         party_index: share.party_index,
         bytes: encode_point(&partial),
@@ -219,14 +218,14 @@ pub fn aggregate_partials(
                 continue;
             }
             let x_j = party_to_scalar(p_j.party_index);
-            numerator = numerator * &negate(&x_j);
-            denominator = denominator * &(x_i.sub(&x_j));
+            numerator *= negate(&x_j);
+            denominator *= x_i.sub(&x_j);
         }
         let denom_inv = invert(&denominator);
         let lagrange = numerator * denom_inv;
 
         let partial_point = decode_point(&p_i.bytes)?;
-        let weighted = partial_point * &lagrange;
+        let weighted = partial_point * lagrange;
         combined = combined.add(&weighted);
     }
 
@@ -246,12 +245,6 @@ fn x_coordinate(point: &ProjectivePoint) -> Vec<u8> {
 
 fn negate(s: &Scalar) -> Scalar {
     Scalar::ZERO.sub(s)
-}
-
-fn negate_projective(p: &ProjectivePoint) -> ProjectivePoint {
-    // -p = p * (-1)
-    let neg_one = negate(&Scalar::ONE);
-    p * &neg_one
 }
 
 fn invert(s: &Scalar) -> Scalar {

@@ -191,7 +191,7 @@ mod tests {
         let (commitment, _) = deal(&secret, 2, 3, &params);
         let pk = joint_public_key(&commitment).unwrap();
         // g^{secret} == pk
-        let expected = (ProjectivePoint::GENERATOR * &secret).to_affine();
+        let expected = (ProjectivePoint::GENERATOR * secret).to_affine();
         assert_eq!(pk, expected);
     }
 

@@ -11,6 +11,7 @@
 
 #![forbid(unsafe_code)]
 #![allow(missing_docs)]
+#![allow(clippy::module_inception)]
 
 pub mod abort;
 pub mod admin;

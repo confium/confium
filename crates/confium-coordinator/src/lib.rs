@@ -19,6 +19,10 @@
 // that's a dedicated effort tracked separately. Allow for now so the
 // crate compiles cleanly.
 #![allow(missing_docs)]
+// Many coordinator types are wired up incrementally — pub fields and
+// helpers exist for the next round of integration. Allow dead_code at
+// the crate level rather than annotating each item.
+#![allow(dead_code)]
 
 pub mod chaos_testing;
 pub mod circuit_breaker;

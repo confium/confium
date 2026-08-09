@@ -41,7 +41,7 @@ pub struct InclusionProof {
 }
 
 /// The Merkle tree.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct MerkleTree {
     /// All entries in append order.
     entries: Vec<MerkleEntry>,
@@ -438,14 +438,14 @@ mod consistency_tests {
 
     #[test]
     fn consistency_proof_empty_for_same_size() {
-        let mut tree = build_tree(8);
+        let tree = build_tree(8);
         let proof = tree.consistency_proof(8).unwrap();
         assert!(proof.is_empty());
     }
 
     #[test]
     fn consistency_proof_empty_for_zero() {
-        let mut tree = build_tree(8);
+        let tree = build_tree(8);
         let proof = tree.consistency_proof(0).unwrap();
         assert!(proof.is_empty());
     }
@@ -459,7 +459,7 @@ mod consistency_tests {
     #[test]
     fn consistency_proof_returns_subtree_hashes_for_pow2_old_size() {
         // For (old=4, new=8): proof should contain the right 4-leaf subtree root.
-        let mut tree = build_tree(8);
+        let tree = build_tree(8);
         let proof = tree.consistency_proof(4).unwrap();
         assert_eq!(proof.len(), 1, "expected single entry for (4, 8)");
     }
@@ -467,7 +467,7 @@ mod consistency_tests {
     #[test]
     fn consistency_proof_returns_multiple_entries_for_non_pow2() {
         // For (old=3, new=5): generator emits [root_01, lh_3, lh_4].
-        let mut tree = build_tree(5);
+        let tree = build_tree(5);
         let proof = tree.consistency_proof(3).unwrap();
         assert_eq!(proof.len(), 3, "expected 3 entries for (3, 5)");
     }

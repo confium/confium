@@ -116,8 +116,8 @@ mod tests {
         let mut result = Scalar::ZERO;
         let mut x_pow = Scalar::ONE;
         for c in coeffs {
-            result = result + c * &x_pow;
-            x_pow = x_pow * &x_scalar;
+            result += c * &x_pow;
+            x_pow *= x_scalar;
         }
         result
     }

@@ -87,8 +87,8 @@ where
 mod tests {
     use super::*;
     use crate::cert::Certificate;
-    use chrono::TimeZone;
 
+    #[allow(dead_code)] // placeholder until real cert fixtures land
     fn synthetic_cert() -> Certificate {
         // We can't easily generate a real cert in pure-Rust no-deps mode.
         // Path validation tests require real cert chains, which belong in

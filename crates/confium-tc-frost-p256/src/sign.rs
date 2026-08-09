@@ -41,7 +41,7 @@ pub fn sign_message(keypair: &Keypair, message: &[u8]) -> Result<Signed, SignErr
 mod tests {
     use super::*;
     use crate::keys::generate_keypair;
-    use p256::ecdsa::{VerifyingKey, signature::Verifier};
+    use p256::ecdsa::signature::Verifier;
 
     #[test]
     fn sign_and_verify_round_trip() {

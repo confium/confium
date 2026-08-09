@@ -2,6 +2,10 @@
 //!
 //! Connects to a coordinator and responds to signing requests.
 
+#![forbid(unsafe_code)]
+#![allow(dead_code)]
+#![allow(missing_docs)]
+
 mod config;
 mod daemon;
 
@@ -39,10 +43,7 @@ fn main() {
     #[cfg(test)]
     let _ = subscriber.try_init();
     #[cfg(not(test))]
-    {
-        use tracing_subscriber::util::SubscriberInitExt;
-        subscriber.init()
-    };
+    subscriber.init();
 
     let config = match DaemonConfig::load(&args.config) {
         Ok(c) => c,

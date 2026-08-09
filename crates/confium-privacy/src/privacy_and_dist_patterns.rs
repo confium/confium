@@ -639,9 +639,10 @@ impl HomomorphicMac {
     /// Homomorphically combine two MAC tags (XOR).
     pub fn combine(a: &MacTag, b: &MacTag) -> MacTag {
         let mut combined = [0u8; 32];
-        for i in 0..32 {
-            combined[i] = a.tag[i] ^ b.tag[i];
-        }
+        combined
+            .iter_mut()
+            .zip(a.tag.iter().zip(b.tag.iter()))
+            .for_each(|(out, (x, y))| *out = x ^ y);
         MacTag { tag: combined }
     }
 

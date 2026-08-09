@@ -92,7 +92,7 @@ pub async fn composite_verify(
 mod tests {
     use super::*;
     use crate::test_util::test_confium;
-    use base64::{Engine as _, engine::general_purpose};
+    use base64::engine::general_purpose;
     use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
     use rand_core::OsRng;
 

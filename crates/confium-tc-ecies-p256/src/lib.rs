@@ -24,11 +24,11 @@ pub mod keys;
 pub mod shamir;
 
 use aes_gcm::{AeadInPlace, Aes256Gcm, KeyInit, Nonce};
+use p256::elliptic_curve::PrimeField;
 use p256::elliptic_curve::rand_core;
 use p256::elliptic_curve::rand_core::RngCore;
 use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
 use p256::elliptic_curve::subtle::CtOption;
-use p256::elliptic_curve::{Field, PrimeField};
 use p256::{AffinePoint, EncodedPoint, FieldBytes, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
 

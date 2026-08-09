@@ -79,6 +79,7 @@ impl EscrowService {
     }
 
     /// Escrow a key (or any secret) to a recipient quorum.
+    #[allow(clippy::too_many_arguments)]
     pub fn escrow(
         &self,
         plaintext_key: &[u8],

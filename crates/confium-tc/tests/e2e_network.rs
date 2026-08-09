@@ -55,9 +55,9 @@ fn network_e2e_full_3_of_5_signing_ceremony() {
     // ================================================================
     let mut signer_handles = Vec::new();
 
-    for i in 0..3usize {
+    for (i, share) in shares.iter().take(3).enumerate() {
         let addr_clone = addr.clone();
-        let share_bytes = scalar::scalar_to_bytes(&shares[i].y).to_vec();
+        let share_bytes = scalar::scalar_to_bytes(&share.y).to_vec();
         let signer_id = format!("director-{}", i + 1);
         let msg = message.to_vec();
 
