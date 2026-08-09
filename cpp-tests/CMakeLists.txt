@@ -4,7 +4,7 @@ add_executable(cpp-tests
     src/version.cpp
 )
 
-target_link_libraries(cpp-tests PRIVATE confium)
+target_link_libraries(cpp-tests PRIVATE confium-shared)
 target_include_directories(cpp-tests PRIVATE
     # confium.h
     "${CMAKE_CURRENT_BINARY_DIR}/../"
