@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(confium LANGUAGES CXX)
+project(confium-cpp LANGUAGES CXX)
 include(GNUInstallDirs)
 include(CTest)
 add_subdirectory(cmake/corrosion)
