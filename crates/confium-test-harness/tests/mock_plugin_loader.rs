@@ -132,7 +132,9 @@ fn mock_plugin_advertises_hash_and_cipher_interfaces() {
     let lib = match unsafe { libloading::Library::new(MOCK_PLUGIN_PATH) } {
         Ok(l) => l,
         Err(e) => {
-            eprintln!("warning: mock plugin failed to load at {MOCK_PLUGIN_PATH}: {e}; skipping test");
+            eprintln!(
+                "warning: mock plugin failed to load at {MOCK_PLUGIN_PATH}: {e}; skipping test"
+            );
             return;
         }
     };
@@ -168,7 +170,9 @@ fn mock_plugin_cipher_symbols_resolve() {
     let lib = match unsafe { libloading::Library::new(MOCK_PLUGIN_PATH) } {
         Ok(l) => l,
         Err(e) => {
-            eprintln!("warning: mock plugin failed to load at {MOCK_PLUGIN_PATH}: {e}; skipping test");
+            eprintln!(
+                "warning: mock plugin failed to load at {MOCK_PLUGIN_PATH}: {e}; skipping test"
+            );
             return;
         }
     };
@@ -220,7 +224,9 @@ fn mock_plugin_cipher_round_trips_through_ffi() {
     let lib = match unsafe { libloading::Library::new(MOCK_PLUGIN_PATH) } {
         Ok(l) => l,
         Err(e) => {
-            eprintln!("warning: mock plugin failed to load at {MOCK_PLUGIN_PATH}: {e}; skipping test");
+            eprintln!(
+                "warning: mock plugin failed to load at {MOCK_PLUGIN_PATH}: {e}; skipping test"
+            );
             return;
         }
     };
@@ -294,7 +300,9 @@ fn mock_plugin_exports_metadata() {
     let lib = match unsafe { libloading::Library::new(MOCK_PLUGIN_PATH) } {
         Ok(l) => l,
         Err(e) => {
-            eprintln!("warning: mock plugin failed to load at {MOCK_PLUGIN_PATH}: {e}; skipping test");
+            eprintln!(
+                "warning: mock plugin failed to load at {MOCK_PLUGIN_PATH}: {e}; skipping test"
+            );
             return;
         }
     };
