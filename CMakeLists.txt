@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 corrosion_import_crate(MANIFEST_PATH ./crates/confium-core/Cargo.toml)
 
 install(
-    FILES $<TARGET_FILE:confium>
+    FILES $<TARGET_FILE:confium-shared>
     DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )
 
