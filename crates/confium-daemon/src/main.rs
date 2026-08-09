@@ -19,7 +19,7 @@ use tokio::net::TcpListener;
 #[derive(Debug, Clone)]
 enum ListenAddr {
     Tcp(std::net::SocketAddr),
-    Unix(PathBuf),
+    Unix(#[allow(dead_code)] PathBuf),
 }
 
 impl std::str::FromStr for ListenAddr {
