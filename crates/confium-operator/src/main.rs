@@ -30,7 +30,7 @@
 //! lets teams design their ceremony workflow against a stable API.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 mod controller;
 mod crd;

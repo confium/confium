@@ -10,7 +10,7 @@
 //! See `TODO.roadmap/31-threshold-encryption.md` for full spec.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 pub mod keys;
 pub mod shamir;

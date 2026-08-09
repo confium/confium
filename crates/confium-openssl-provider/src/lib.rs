@@ -22,7 +22,7 @@
 //! See `TODO.roadmap/28-mode2-pki-replacement.md` for full spec.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 use serde::{Deserialize, Serialize};
 

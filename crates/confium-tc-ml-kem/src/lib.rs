@@ -12,7 +12,7 @@
 //! - Cross-tier re-encryption (IA → BIML without plaintext exposure)
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 use serde::{Deserialize, Serialize};
 

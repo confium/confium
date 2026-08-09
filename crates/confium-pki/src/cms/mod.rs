@@ -7,7 +7,7 @@
 //! See `TODO.roadmap/32-cert-delegation-cms-xmldsig.md` for full spec.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 mod der_encode;
 mod envelope;

@@ -10,7 +10,7 @@
 //! ```
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // TODO: document before 1.0
 
 #[cfg(feature = "composite")]
 /// Composite multi-algorithm signature verification.
