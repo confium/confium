@@ -52,6 +52,31 @@ const fn forbidden_char(c: char) -> bool {
     matches!(c, '/' | '\\' | '\0')
 }
 
+/// Replace characters that are illegal in filenames on the host platform
+/// (notably `:` on Windows, which `email:alice@example.com` contains).
+/// Returns a string that's safe to use as a path leaf on this OS. Only
+/// the on-disk filename is rewritten; the identity in the API stays as
+/// the caller supplied it.
+#[cfg(target_os = "windows")]
+fn sanitize_for_filename(s: &str) -> String {
+    s.chars()
+        .map(|c| match c {
+            ':' | '<' | '>' | '"' | '|' | '?' | '*' | '/' | '\\' => '_',
+            other => other,
+        })
+        .collect()
+}
+
+#[cfg(not(target_os = "windows"))]
+fn sanitize_for_filename(s: &str) -> String {
+    s.chars()
+        .map(|c| match c {
+            '/' | '\\' | '\0' => '_',
+            other => other,
+        })
+        .collect()
+}
+
 // --- path sanitisation ---------------------------------------------------
 
 /// Reject path components that could escape the store root or otherwise
@@ -196,7 +221,16 @@ impl FilesystemInstance {
     }
 
     fn public_key_path(&self, module: &str, app: &str, identity: &str) -> Result<PathBuf> {
-        join_path(&self.root, module, app, "public", identity)
+        validate_component(module)?;
+        validate_component(app)?;
+        let identity = sanitize_for_filename(identity);
+        validate_component(&identity)?;
+        Ok(self
+            .root
+            .join(module)
+            .join(app)
+            .join("public")
+            .join(identity))
     }
 
     fn public_sig_path(&self, module: &str, app: &str, identity: &str) -> Result<PathBuf> {
@@ -210,6 +244,7 @@ impl FilesystemInstance {
         // hostile.
         validate_component(module)?;
         validate_component(app)?;
+        let identity = sanitize_for_filename(identity);
         let leaf = format!("{identity}.{SIG_EXT}");
         validate_component(&leaf)?;
         Ok(self.root.join(module).join(app).join("public").join(leaf))
