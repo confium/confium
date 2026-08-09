@@ -25,8 +25,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 confium-tc = { workspace = true }
 # Used by the `register_tc_scheme!` macro (absolute path).
 inventory = { workspace = true }
-crypto-bigint = "0.5"
-elliptic-curve = { version = "0.13", features = ["digest", "sec1"] }
+crypto-bigint = "0.7"
+elliptic-curve = { version = "0.14", features = ["digest", "sec1"] }
 p256 = { version = "0.13", features = ["arithmetic", "ecdsa", "expose-field", "pkcs8", "serde"] }
 sha2 = { workspace = true }
 zeroize = { workspace = true }
