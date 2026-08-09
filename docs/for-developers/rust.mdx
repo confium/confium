@@ -77,13 +77,16 @@ let proof = tree.inclusion_proof(seq)?;
 use confium_pki::Certificate;
 
 let cert = Certificate::from_der(&der_bytes)?;
-println!("Subject: {}", cert.subject());
+// Subject / issuer live on the inner x509-cert type:
+println!("Subject: {}", cert.as_inner().subject);
 println!("Not after: {}", cert.not_after());
 
 // Verify chain
 use confium_pki::path::{CertPath, verify_path_signatures};
 let path = CertPath { leaf: &cert, intermediates: &[], root: &anchor };
-let result = verify_path_signatures(&path, |issuer_pk, sig| {
+// The verifier receives (issuer_pubkey_bytes, signed_cert_der) per
+// link and returns Ok(()) if the signature is valid.
+let result = verify_path_signatures(&path, |_issuer_pk, _signed_der| {
     // Dispatch on algorithm; return Ok if sig verifies.
     Ok(())
 });
