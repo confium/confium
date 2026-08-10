@@ -19,10 +19,19 @@ use crate::error;
 /// `scheme` ties the share to the scheme that produced it (e.g.
 /// `"FROST-ed25519"`). `bytes` is the scheme-specific encoding of the
 /// share; the framework never inspects or reinterprets it.
+///
+/// The secret `bytes` field is zeroized on drop.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Share {
     scheme: String,
     bytes: Vec<u8>,
+}
+
+impl Drop for Share {
+    fn drop(&mut self) {
+        use zeroize::Zeroize;
+        self.bytes.zeroize();
+    }
 }
 
 impl Share {
@@ -42,7 +51,7 @@ impl Share {
     }
 
     pub fn into_bytes(self) -> Vec<u8> {
-        self.bytes
+        self.bytes.clone()
     }
 
     pub fn len(&self) -> usize {

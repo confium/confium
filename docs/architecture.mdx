@@ -78,7 +78,7 @@ for human inspection.
 
 Threshold cryptography protocols (FROST, CMP20, GG18) require multiple
 parties to exchange messages across rounds. The
-`confium-tc-coordinator` service orchestrates these sessions
+`confium-coordinator` service orchestrates these sessions
 asynchronously, so parties do not need to be online simultaneously.
 
 Sessions are identified by a session ID. Each party joins, submits
@@ -102,10 +102,13 @@ implementations are closed for modification. Examples:
 - `OpenpgpCardBackend` — OpenPGP card hardware backends
 - `ThresholdSigner` — threshold signing protocols
 
-### No unsafe code
+### No unsafe code (where possible)
 
-Every crate carries `#![forbid(unsafe_code)]`. All FFI is contained in
-`confium-core` and uses `#[unsafe(no_mangle)]` per edition 2024
+Most crates carry `#![forbid(unsafe_code)]` or `#![warn(unsafe_code)]`.
+Exceptions are documented with `#[allow(unsafe_code)]` and a comment
+explaining why (e.g., `confium-core` FFI entry points,
+`confium-coordinator` libc signal handling). All FFI in
+`confium-core` uses `#[unsafe(no_mangle)]` per edition 2024
 requirements.
 
 ### No vendor SDKs

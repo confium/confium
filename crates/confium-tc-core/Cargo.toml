@@ -33,6 +33,7 @@ rand_core = { workspace = true }
 hex = { workspace = true }
 inventory = { workspace = true }
 snafu = { workspace = true }
+zeroize = { workspace = true, features = ["zeroize_derive"] }
 
 [dev-dependencies]
 proptest = { workspace = true }

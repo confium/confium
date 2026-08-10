@@ -9,12 +9,20 @@ use p256::Scalar;
 use p256::elliptic_curve::PrimeField;
 
 /// A Shamir share: (x, y) where x is the party index and y is a scalar.
+/// The secret `y` field is zeroized on drop.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Share {
     /// Party index (the x-coordinate). Typically 1-based per FROST convention.
     pub x: u32,
     /// The share value (the y-coordinate).
     pub y: Scalar,
+}
+
+impl Drop for Share {
+    fn drop(&mut self) {
+        use zeroize::Zeroize;
+        self.y.zeroize();
+    }
 }
 
 /// Errors during Shamir operations.
