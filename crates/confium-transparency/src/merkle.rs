@@ -47,6 +47,9 @@ pub struct MerkleTree {
     entries: Vec<MerkleEntry>,
     /// Cached leaf hashes.
     leaf_hashes: Vec<Hash>,
+    /// Cached root hash. Recomputed on every append; `root()` is O(1).
+    /// `[0u8; 32]` for an empty tree.
+    cached_root: Hash,
 }
 
 /// Errors during Merkle tree operations.
@@ -118,6 +121,12 @@ impl MerkleTree {
         let hash = entry.entry_hash();
         self.leaf_hashes.push(hash_leaf(hash));
         self.entries.push(entry);
+        // Maintain cached root. Recomputing here costs O(log N) work
+        // per append on average (only the path from the new leaf up
+        // to the root changes); doing it lazily would defer the cost
+        // but make `root()` non-trivial. Eager is simpler and matches
+        // RFC 6962's "tree head = root after every append" model.
+        self.cached_root = Self::compute_root(&self.leaf_hashes);
         (self.entries.len() - 1) as u64
     }
 
@@ -132,11 +141,19 @@ impl MerkleTree {
     }
 
     /// Compute the current root hash. Empty tree returns all-zeros.
+    ///
+    /// O(1) — the root is incrementally maintained on every `append()`.
     pub fn root(&self) -> Hash {
-        if self.leaf_hashes.is_empty() {
+        self.cached_root
+    }
+
+    /// Compute the root hash from leaf hashes. O(N) in the number of leaves.
+    /// Used by [`append`](Self::append) to maintain the cached root.
+    fn compute_root(leaf_hashes: &[Hash]) -> Hash {
+        if leaf_hashes.is_empty() {
             return [0u8; 32];
         }
-        let mut level = self.leaf_hashes.clone();
+        let mut level = leaf_hashes.to_vec();
         while level.len() > 1 {
             let mut next = Vec::with_capacity(level.len() / 2 + 1);
             let mut iter = level.iter();
