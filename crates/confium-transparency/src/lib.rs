@@ -38,6 +38,7 @@ pub mod ers;
 pub mod merkle;
 pub mod ots;
 pub mod proof;
+pub mod witness;
 
 pub use entry::*;
 pub use merkle::*;
