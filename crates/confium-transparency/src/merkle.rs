@@ -679,8 +679,8 @@ mod proptests {
         MerkleEntry::new(seq, ArtifactType::CertificateIssuance, hash)
     }
 
-    /// For any tree size N in [1, 100], every leaf's inclusion proof
-    /// verifies against the current root.
+    // For any tree size N in [1, 100], every leaf's inclusion proof
+    // verifies against the current root.
     proptest! {
         #[test]
         fn every_leaf_inclusion_proof_verifies(n in 1u64..100) {
@@ -697,7 +697,7 @@ mod proptests {
         }
     }
 
-    /// A proof for one entry must NOT verify a different entry.
+    // A proof for one entry must NOT verify a different entry.
     proptest! {
         #[test]
         fn inclusion_proof_rejects_wrong_entry(n in 2u64..50, i in 0u64..50, j in 0u64..50) {
@@ -714,8 +714,8 @@ mod proptests {
         }
     }
 
-    /// Appending an entry changes the root (log is append-only and
-    /// every append is reflected in the commitment).
+    // Appending an entry changes the root (log is append-only and
+    // every append is reflected in the commitment).
     proptest! {
         #[test]
         fn append_changes_root(n in 0u64..50) {
@@ -730,7 +730,7 @@ mod proptests {
         }
     }
 
-    /// Empty tree's root is the all-zero hash (RFC 6962 convention).
+    // Empty tree's root is the all-zero hash (RFC 6962 convention).
     #[test]
     fn empty_tree_root_is_zero() {
         let tree = MerkleTree::new();

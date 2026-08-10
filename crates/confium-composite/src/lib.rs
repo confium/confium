@@ -412,12 +412,12 @@ mod proptests {
     use super::*;
     use proptest::prelude::*;
 
-    /// Round-trip: build an Ed25519 component, encode to JSON, parse back,
-    /// verify. Should hold for arbitrary messages.
+    // Round-trip: build an Ed25519 component, encode to JSON, parse back,
+    // verify. Should hold for arbitrary messages.
     proptest! {
         #[test]
         fn ed25519_roundtrip_json_verifies(msg in proptest::collection::vec(any::<u8>(), 0..256)) {
-            use ed25519_dalek::{Signer, SigningKey};
+            use ed25519_dalek::SigningKey;
             use rand_core::OsRng;
             let signing = SigningKey::generate(&mut OsRng);
             let verifying: ed25519_dalek::VerifyingKey = signing.verifying_key();
@@ -438,15 +438,15 @@ mod proptests {
         }
     }
 
-    /// Tamper detection: flipping any bit of the signature or message
-    /// must cause verification to fail.
+    // Tamper detection: flipping any bit of the signature or message
+    // must cause verification to fail.
     proptest! {
         #[test]
         fn ed25519_tamper_fails(
             msg in proptest::collection::vec(any::<u8>(), 1..256),
             flip_index in 0usize..256,
         ) {
-            use ed25519_dalek::{Signer, SigningKey};
+            use ed25519_dalek::SigningKey;
             use rand_core::OsRng;
             let signing = SigningKey::generate(&mut OsRng);
             let component = build_ed25519_component(&signing, &msg)?;
