@@ -6,49 +6,62 @@
 #![allow(rustdoc::invalid_html_tags)]
 //! Confium threshold-cryptography primitives — the headline deliverable.
 //!
-//! This crate supplies:
+//! This crate is a **compatibility facade** that re-exports the core
+//! session primitives from [`confium_tc_core`] and adds:
+//!
 //! - the `cfm_tc_*` FFI surface for threshold sessions
-//! - session state machine (round orchestration, message routing)
-//! - link-time scheme registry (in-process Rust schemes)
 //! - async session coordinator (for globally distributed signers)
 //! - share re-sharing + proactive refresh (committee evolution without
 //!   changing public key)
 //! - threshold KEM session interface (parallel to signing session)
+//! - Paillier encryption (used by CMP20 / GG18 MtA)
 //!
-//! Built on top of: `confium-net` (transport, separate concern),
-//! `confium-store` (share persistence), `confium-api` (shared types).
-//! Scheme plugins (FROST, GG18, …) implement [`registry::TcScheme`] and
-//! register via [`register_tc_scheme!`]; the framework supplies
-//! everything else.
+//! ## Migration: `confium-tc` → `confium-tc-core`
+//!
+//! New consumers should depend on `confium-tc-core` directly for the
+//! session primitives (Session, SessionParams, Party, PartyList, Share,
+//! TcScheme, etc.). The coordinator, KEM, Paillier, and reshare modules
+//! are still being extracted and remain in this crate temporarily.
 //!
 //! See `TODO.roadmap/04-threshold-cryptography.md` — this is the entire
 //! reason Confium exists.
 
-pub mod error;
-pub mod ffi;
-pub mod message;
-pub mod party;
-pub mod registry;
-pub mod schemes;
-pub mod session;
-pub mod share;
+// Re-export the identical modules from confium-tc-core. These were
+// verified byte-identical (diff=0) before the facade conversion:
+//   error, message, party, registry, session, share, share_envelope.
+// ffi and inprocess have tc-specific concerns (unsafe, different imports)
+// and remain as local modules.
+pub use confium_tc_core::error;
+pub use confium_tc_core::message;
+pub use confium_tc_core::party;
+pub use confium_tc_core::registry;
+pub use confium_tc_core::session;
+pub use confium_tc_core::share;
+pub use confium_tc_core::share_envelope;
 
-pub mod coordinator;
+pub use confium_tc_core::Error;
+pub use confium_tc_core::Result;
+pub use confium_tc_core::Message;
+pub use confium_tc_core::Party;
+pub use confium_tc_core::PartyList;
+pub use confium_tc_core::RoundResult;
+pub use confium_tc_core::SessionImpl;
+pub use confium_tc_core::TcScheme;
+pub use confium_tc_core::TcSchemeKind;
+pub use confium_tc_core::Session;
+pub use confium_tc_core::SessionParams;
+pub use confium_tc_core::Share;
+
+// Local modules — have tc-specific concerns not yet extracted.
+pub mod ffi;
 pub mod inprocess;
+pub mod coordinator;
 pub mod kem;
 pub mod paillier;
 pub mod reshare;
-pub mod share_envelope;
+pub mod schemes;
 
-pub use error::Error;
-pub use error::Result;
-pub use message::Message;
-pub use party::Party;
-pub use party::PartyList;
-pub use registry::RoundResult;
-pub use registry::SessionImpl;
-pub use registry::TcScheme;
-pub use registry::TcSchemeKind;
-pub use session::Session;
-pub use session::SessionParams;
-pub use share::Share;
+// The register_tc_scheme! macro is #[macro_export]'d from tc-core,
+// so `confium_tc_core::register_tc_scheme!` works. Scheme crates call
+// it as `confium_tc::register_tc_scheme!` — re-export for back-compat.
+pub use confium_tc_core::register_tc_scheme;

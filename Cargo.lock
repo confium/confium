@@ -979,7 +979,7 @@ dependencies = [
 
 [[package]]
 name = "confium-attributes"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "thiserror 1.0.69",
 ]
@@ -1023,10 +1023,12 @@ dependencies = [
 
 [[package]]
 name = "confium-composite"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
+ "confium-transparency",
  "ed25519-dalek",
  "p256",
+ "proptest",
  "rand_core 0.6.4",
  "serde",
  "serde_json",
@@ -1054,7 +1056,7 @@ dependencies = [
 
 [[package]]
 name = "confium-core"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "aes-gcm",
  "inventory",
@@ -1269,7 +1271,7 @@ dependencies = [
 
 [[package]]
 name = "confium-node"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "confium-tc-cmp20",
  "confium-tc-frost-p256",
@@ -1348,7 +1350,7 @@ dependencies = [
 
 [[package]]
 name = "confium-pki"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "chrono",
  "confium-attributes",
@@ -1515,6 +1517,7 @@ name = "confium-tc"
 version = "0.4.7"
 dependencies = [
  "chrono",
+ "confium-tc-core",
  "confium-tc-frost-p256",
  "hmac 0.12.1",
  "inventory",
@@ -1545,6 +1548,7 @@ name = "confium-tc-cmp20"
 version = "0.4.7"
 dependencies = [
  "confium-tc",
+ "confium-transparency",
  "crypto-bigint",
  "elliptic-curve",
  "inventory",
@@ -1632,6 +1636,7 @@ version = "0.4.7"
 dependencies = [
  "elliptic-curve",
  "p256",
+ "proptest",
  "rand_core 0.6.4",
  "thiserror 1.0.69",
 ]
@@ -1716,9 +1721,10 @@ dependencies = [
 
 [[package]]
 name = "confium-transparency"
-version = "0.4.0"
+version = "0.4.7"
 dependencies = [
  "chrono",
+ "proptest",
  "serde",
  "serde_json",
  "sha2 0.10.9",
