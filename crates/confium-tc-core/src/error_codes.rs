@@ -92,7 +92,9 @@ impl ErrorCode {
     pub fn description(&self) -> &'static str {
         match self {
             Self::SessionNotFound => "The requested session does not exist.",
-            Self::InvalidSessionState => "The session is not in the required state for this operation.",
+            Self::InvalidSessionState => {
+                "The session is not in the required state for this operation."
+            }
             Self::ThresholdNotMet => "Not enough shares have been submitted to meet the threshold.",
             Self::DuplicateSubmission => "This signer has already submitted to this session.",
             Self::SessionExpired => "The session's unlock window has elapsed.",

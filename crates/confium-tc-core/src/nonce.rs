@@ -34,8 +34,8 @@ pub fn derive_nonce_share(
     message_hash: &[u8; 32],
     party_idx: u32,
 ) -> Scalar {
-    let mut mac = HmacSha256::new_from_slice(&secret_share.to_repr())
-        .expect("HMAC accepts any key length");
+    let mut mac =
+        HmacSha256::new_from_slice(&secret_share.to_repr()).expect("HMAC accepts any key length");
     mac.update(message_hash);
     mac.update(&party_idx.to_be_bytes());
     let result = mac.finalize().into_bytes();
@@ -91,8 +91,8 @@ fn reduce_mod_order(bytes: &[u8; 32]) -> Scalar {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use p256::elliptic_curve::rand_core::OsRng;
     use p256::elliptic_curve::Field;
+    use p256::elliptic_curve::rand_core::OsRng;
 
     fn random_scalar() -> Scalar {
         Scalar::random(&mut OsRng)
