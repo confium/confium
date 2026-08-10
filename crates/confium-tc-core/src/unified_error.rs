@@ -21,9 +21,18 @@ pub enum UnifiedError {
 #[derive(Debug)]
 pub enum SessionErrorKind {
     NotFound(String),
-    InvalidState { session: String, current: String, expected: String },
-    ThresholdNotMet { have: usize, need: u32 },
-    DuplicateSubmission { signer: String },
+    InvalidState {
+        session: String,
+        current: String,
+        expected: String,
+    },
+    ThresholdNotMet {
+        have: usize,
+        need: u32,
+    },
+    DuplicateSubmission {
+        signer: String,
+    },
     Expired(String),
     SigningFailed(String),
 }
@@ -57,7 +66,11 @@ pub enum StoreErrorKind {
 
 #[derive(Debug)]
 pub enum ConfigErrorKind {
-    InvalidValue { field: String, value: String, expected: String },
+    InvalidValue {
+        field: String,
+        value: String,
+        expected: String,
+    },
     MissingField(String),
     FileError(String),
 }
@@ -71,7 +84,9 @@ impl fmt::Display for UnifiedError {
             Self::Crypto(e) => write!(f, "crypto error: {e:?}"),
             Self::Store(e) => write!(f, "store error: {e:?}"),
             Self::Config(e) => write!(f, "config error: {e:?}"),
-            Self::RateLimited { retry_after_secs } => write!(f, "rate limited, retry after {retry_after_secs}s"),
+            Self::RateLimited { retry_after_secs } => {
+                write!(f, "rate limited, retry after {retry_after_secs}s")
+            }
             Self::Backpressure { active, max } => write!(f, "at capacity: {active}/{max}"),
             Self::Unauthorized { reason } => write!(f, "unauthorized: {reason}"),
             Self::NotFound { resource } => write!(f, "not found: {resource}"),
@@ -111,22 +126,24 @@ impl UnifiedError {
     }
 
     pub fn is_retryable(&self) -> bool {
-        matches!(self,
-            Self::Session(SessionErrorKind::ThresholdNotMet { .. }) |
-            Self::Network(NetworkErrorKind::Timeout) |
-            Self::RateLimited { .. } |
-            Self::Backpressure { .. }
+        matches!(
+            self,
+            Self::Session(SessionErrorKind::ThresholdNotMet { .. })
+                | Self::Network(NetworkErrorKind::Timeout)
+                | Self::RateLimited { .. }
+                | Self::Backpressure { .. }
         )
     }
 
     pub fn is_client_error(&self) -> bool {
-        matches!(self,
-            Self::Session(SessionErrorKind::NotFound(_)) |
-            Self::Session(SessionErrorKind::DuplicateSubmission { .. }) |
-            Self::Session(SessionErrorKind::Expired(_)) |
-            Self::Policy(_) |
-            Self::Unauthorized { .. } |
-            Self::NotFound { .. }
+        matches!(
+            self,
+            Self::Session(SessionErrorKind::NotFound(_))
+                | Self::Session(SessionErrorKind::DuplicateSubmission { .. })
+                | Self::Session(SessionErrorKind::Expired(_))
+                | Self::Policy(_)
+                | Self::Unauthorized { .. }
+                | Self::NotFound { .. }
         )
     }
 
@@ -153,16 +170,24 @@ impl UnifiedError {
         Self::Session(SessionErrorKind::NotFound(id.into()))
     }
     pub fn rate_limited(retry_after: u64) -> Self {
-        Self::RateLimited { retry_after_secs: retry_after }
+        Self::RateLimited {
+            retry_after_secs: retry_after,
+        }
     }
     pub fn unauthorized(reason: &str) -> Self {
-        Self::Unauthorized { reason: reason.into() }
+        Self::Unauthorized {
+            reason: reason.into(),
+        }
     }
     pub fn not_found(resource: &str) -> Self {
-        Self::NotFound { resource: resource.into() }
+        Self::NotFound {
+            resource: resource.into(),
+        }
     }
     pub fn internal(message: &str) -> Self {
-        Self::Internal { message: message.into() }
+        Self::Internal {
+            message: message.into(),
+        }
     }
 }
 
@@ -201,7 +226,10 @@ mod tests {
 
     #[test]
     fn backpressure_error() {
-        let e = UnifiedError::Backpressure { active: 10, max: 10 };
+        let e = UnifiedError::Backpressure {
+            active: 10,
+            max: 10,
+        };
         assert!(e.is_retryable());
         assert!(!e.is_client_error());
         assert_eq!(e.code(), 2002);
@@ -209,8 +237,14 @@ mod tests {
 
     #[test]
     fn crypto_error_codes() {
-        assert_eq!(UnifiedError::Crypto(CryptoErrorKind::InvalidSignature).code(), 4001);
-        assert_eq!(UnifiedError::Crypto(CryptoErrorKind::InvalidShare).code(), 4002);
+        assert_eq!(
+            UnifiedError::Crypto(CryptoErrorKind::InvalidSignature).code(),
+            4001
+        );
+        assert_eq!(
+            UnifiedError::Crypto(CryptoErrorKind::InvalidShare).code(),
+            4002
+        );
     }
 
     #[test]
