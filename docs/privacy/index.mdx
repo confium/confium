@@ -20,20 +20,23 @@ shared data without revealing it.
 
 ## Concepts
 
-- [Private Set Intersection (PSI)](./concepts/psi.mdx)
-- [Private Information Retrieval (PIR)](./concepts/pir.mdx)
-- [Differential Privacy (DP)](./concepts/dp.mdx)
-- [Multi-party Computation (MPC / SPDZ)](./concepts/mpc.mdx)
-- [Ring signatures](./concepts/ring-sigs.mdx)
-- [Blind signatures](./concepts/blind-sigs.mdx)
-- [VRF + VDF](./concepts/vrf-vdf.mdx)
+These concepts are specified in the [specs repo](https://www.confium.org/specs/):
+
+- [Private Set Intersection (PSI)](https://www.confium.org/specs/31-psi)
+- [Multi-party Computation (MPC / SPDZ)](https://www.confium.org/specs/32-mpc-spdz)
+- [Differential Privacy (DP)](https://www.confium.org/specs/33-differential-privacy)
+- [Ring signatures](https://www.confium.org/specs/34-ring-sigs)
+
+PIR, blind signatures, VRF, and VDF are implemented in
+`confium-privacy` but don't have standalone specs yet — see the
+[Rust API docs](https://docs.rs/confium-privacy) for details.
 
 ## How-to
 
-- [Choose the right primitive](./how-to/choose-primitive.mdx)
-- [Two-party PSI](./how-to/two-party-psi.mdx)
-- [MPC cluster deployment](./how-to/mpc-cluster.mdx)
-- [Issue anonymous credentials](./how-to/anonymous-credentials.mdx)
+Practical recipes live in the [Cookbook](../cookbook/):
+
+- [Two-party PSI](../cookbook/two-party-psi.mdx)
+- [DP aggregation on user telemetry](../cookbook/dp-aggregation.mdx)
 
 ## Reference
 

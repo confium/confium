@@ -91,12 +91,12 @@ For real deployments, signers do not hold the full secret — they hold
 individual shares. A signing session collects T signature shares and
 aggregates them into the final signature without ever reconstructing
 the secret. That orchestration is handled by
-[`confium-tc-coordinator`](../crates/coordinator.mdx).
+[`confium-tc-coordinator`](https://docs.rs/confium-coordinator).
 
 ## Related
 
 - [`confium-tc-frost-p256` deep dive](../crates/frost-p256.mdx).
-- [`confium-tc-coordinator`](../crates/coordinator.mdx) for the
+- [`confium-tc-coordinator`](https://docs.rs/confium-coordinator) for the
   multi-party session protocol.
 - [Threshold crypto 101](https://www.confium.org/concepts/threshold-crypto-101/)
   on the public website.
