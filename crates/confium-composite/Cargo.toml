@@ -30,6 +30,7 @@ p256 = { workspace = true, features = ["ecdsa"] }
 [dev-dependencies]
 proptest = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
+confium-transparency = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]
