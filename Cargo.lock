@@ -1577,6 +1577,7 @@ dependencies = [
  "snafu 0.8.9",
  "subtle",
  "thiserror 1.0.69",
+ "zeroize",
 ]
 
 [[package]]
@@ -1638,6 +1639,7 @@ dependencies = [
  "proptest",
  "rand_core 0.6.4",
  "thiserror 1.0.69",
+ "zeroize",
 ]
 
 [[package]]

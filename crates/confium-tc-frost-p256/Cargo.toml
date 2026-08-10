@@ -23,6 +23,7 @@ thiserror = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
 rand_core = { workspace = true }
 elliptic-curve = { workspace = true, features = ["pkcs8", "sec1"] }
+zeroize = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
