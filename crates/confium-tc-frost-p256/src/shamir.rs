@@ -175,8 +175,8 @@ mod proptests {
     use super::*;
     use proptest::prelude::*;
 
-    /// Any threshold T in [1, 10], any party count N in [T, 20]:
-    /// any subset of T distinct shares reconstructs the same secret.
+    // Any threshold T in [1, 10], any party count N in [T, 20]:
+    // any subset of T distinct shares reconstructs the same secret.
     proptest! {
         #[test]
         fn any_t_of_n_reconstructs_secret(t in 1u32..=10, n in 10u32..=20) {
@@ -203,8 +203,8 @@ mod proptests {
         }
     }
 
-    /// Reconstruction is deterministic: same shares in different orders
-    /// give the same secret.
+    // Reconstruction is deterministic: same shares in different orders
+    // give the same secret.
     proptest! {
         #[test]
         fn reconstruction_order_invariant(t in 1u32..=8, n in 8u32..=16) {
@@ -219,9 +219,9 @@ mod proptests {
         }
     }
 
-    /// Threshold invariant: T shares suffice, T-1 do not (different secret).
-    /// The T-1 reconstruction gives SOME scalar, but it shouldn't match the
-    /// original with overwhelming probability.
+    // Threshold invariant: T shares suffice, T-1 do not (different secret).
+    // The T-1 reconstruction gives SOME scalar, but it shouldn't match the
+    // original with overwhelming probability.
     proptest! {
         #[test]
         fn below_threshold_gives_different_secret(t in 2u32..=8, n in 8u32..=16) {
