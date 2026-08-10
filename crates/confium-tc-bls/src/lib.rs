@@ -63,12 +63,20 @@ pub struct Signature {
 }
 
 /// Threshold share of BLS signing key.
+/// The secret `bytes` field is zeroized on drop.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Share {
     /// Party index.
     pub party_index: u32,
     /// Share bytes (32 bytes).
     pub bytes: Vec<u8>,
+}
+
+impl Drop for Share {
+    fn drop(&mut self) {
+        use zeroize::Zeroize;
+        self.bytes.zeroize();
+    }
 }
 
 /// Errors during BLS operations.

@@ -22,6 +22,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 serde = { workspace = true }
 thiserror = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
+zeroize = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]
