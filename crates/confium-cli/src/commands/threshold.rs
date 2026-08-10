@@ -29,7 +29,9 @@ pub fn run(cmd: ThresholdCommand) {
         ThresholdCommand::Sign(args) => sign(args),
         ThresholdCommand::Refresh(args) => refresh(args),
         ThresholdCommand::Recover => Err(
-            "confium threshold recover: recovery API is in development. See https://www.confium.org/threshold/".into(),
+            "confium threshold recover: not exposed via the CLI yet. \
+             Use the Rust API: confium_tc_cmp20::recovery::recover_share. \
+             See https://docs.rs/confium-tc-cmp20/latest/confium_tc_cmp20/recovery/".into(),
         ),
         ThresholdCommand::MigrateShares(args) => migrate_shares(args),
     };
