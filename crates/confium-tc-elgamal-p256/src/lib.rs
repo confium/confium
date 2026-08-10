@@ -371,3 +371,72 @@ mod tests {
         assert_eq!(recovered_b, shared_secret);
     }
 }
+
+#[cfg(test)]
+mod proptests {
+    use super::*;
+    use proptest::prelude::*;
+
+    /// For any threshold T in [2, 5] and party count N in [T, 8],
+    /// the threshold ElGamal round-trip (encapsulate → split decrypt
+    /// → aggregate) must produce the same shared secret.
+    proptest! {
+        #[test]
+        fn elgamal_roundtrip_any_threshold(t in 2u32..=5, n in 5u32..=8) {
+            let kp = generate_keypair();
+            let pub_key = PublicKey::from_affine(kp.public_key);
+            let shares = split_secret(&kp.secret_scalar, t, n);
+            let decryption_shares: Vec<DecryptionShare> = shares
+                .iter()
+                .map(|s| DecryptionShare {
+                    party_index: s.x,
+                    bytes: {
+                        let fb: FieldBytes = s.y.to_bytes();
+                        let arr: [u8; 32] = fb.into();
+                        arr.to_vec()
+                    },
+                })
+                .collect();
+
+            let (ciphertext, shared_secret) = encapsulate(&pub_key)?;
+
+            let partials: Vec<PartialDecryption> = decryption_shares[..t as usize]
+                .iter()
+                .map(|ds| partial_decrypt(ds, &ciphertext).unwrap())
+                .collect();
+            let recovered = aggregate_partials(&partials, t, &ciphertext)?;
+
+            prop_assert_eq!(recovered, shared_secret);
+        }
+    }
+
+    /// Threshold invariant: T shares recover the secret, T-1 do NOT.
+    proptest! {
+        #[test]
+        fn elgamal_below_threshold_fails(t in 2u32..=4, n in 5u32..=8) {
+            let kp = generate_keypair();
+            let pub_key = PublicKey::from_affine(kp.public_key);
+            let shares = split_secret(&kp.secret_scalar, t, n);
+            let decryption_shares: Vec<DecryptionShare> = shares
+                .iter()
+                .map(|s| DecryptionShare {
+                    party_index: s.x,
+                    bytes: {
+                        let fb: FieldBytes = s.y.to_bytes();
+                        let arr: [u8; 32] = fb.into();
+                        arr.to_vec()
+                    },
+                })
+                .collect();
+
+            let (ciphertext, _) = encapsulate(&pub_key)?;
+
+            let partials: Vec<PartialDecryption> = decryption_shares[..(t - 1) as usize]
+                .iter()
+                .map(|ds| partial_decrypt(ds, &ciphertext).unwrap())
+                .collect();
+            let result = aggregate_partials(&partials, t, &ciphertext);
+            prop_assert!(result.is_err(), "below-threshold should fail");
+        }
+    }
+}
