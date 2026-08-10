@@ -49,6 +49,7 @@
 pub mod dkg;
 pub mod error;
 pub mod group;
+pub mod inprocess;
 pub mod polynomial;
 pub mod sign;
 pub mod transcript;
