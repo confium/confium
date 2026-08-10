@@ -28,11 +28,12 @@ pub fn run(cmd: ThresholdCommand) {
         ThresholdCommand::Dkg(args) => dkg(args),
         ThresholdCommand::Sign(args) => sign(args),
         ThresholdCommand::Refresh(args) => refresh(args),
-        ThresholdCommand::Recover => Err(
-            "confium threshold recover: not exposed via the CLI yet. \
+        ThresholdCommand::Recover => {
+            Err("confium threshold recover: not exposed via the CLI yet. \
              Use the Rust API: confium_tc_cmp20::recovery::recover_share. \
-             See https://docs.rs/confium-tc-cmp20/latest/confium_tc_cmp20/recovery/".into(),
-        ),
+             See https://docs.rs/confium-tc-cmp20/latest/confium_tc_cmp20/recovery/"
+                .into())
+        }
         ThresholdCommand::MigrateShares(args) => migrate_shares(args),
     };
     if let Err(e) = result {
