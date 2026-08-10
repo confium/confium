@@ -14,10 +14,18 @@ pub struct NonceCommitment {
 }
 
 /// Round 2: each party publishes a partial signature.
+/// The secret `s_i` field is zeroized on drop.
 #[derive(Debug, Clone)]
 pub struct PartialSig {
     pub party_idx: u32,
     pub s_i: Scalar,
+}
+
+impl Drop for PartialSig {
+    fn drop(&mut self) {
+        use zeroize::Zeroize;
+        self.s_i.zeroize();
+    }
 }
 
 /// MuSig signing session.

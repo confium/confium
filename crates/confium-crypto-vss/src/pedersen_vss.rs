@@ -14,11 +14,20 @@ pub struct PedersenCommitment {
 }
 
 /// A Pedersen share: (x, y, y_r) where y = f(x), y_r = r(x).
+/// The secret `value` and `randomness` fields are zeroized on drop.
 #[derive(Debug, Clone)]
 pub struct PedersenShare {
     pub party_idx: u32,
     pub value: Scalar,
     pub randomness: Scalar,
+}
+
+impl Drop for PedersenShare {
+    fn drop(&mut self) {
+        use zeroize::Zeroize;
+        self.value.zeroize();
+        self.randomness.zeroize();
+    }
 }
 
 /// Second generator h = g^alpha for some unknown alpha.

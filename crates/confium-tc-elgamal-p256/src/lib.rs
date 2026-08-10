@@ -45,12 +45,20 @@ impl PublicKey {
 }
 
 /// Share of the secret key held by one party.
+/// The secret `bytes` field is zeroized on drop.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DecryptionShare {
     /// Party index.
     pub party_index: u32,
     /// Scalar share bytes (32 bytes).
     pub bytes: Vec<u8>,
+}
+
+impl Drop for DecryptionShare {
+    fn drop(&mut self) {
+        use zeroize::Zeroize;
+        self.bytes.zeroize();
+    }
 }
 
 /// Ciphertext: pair of EC points (c1, c2) per ElGamal.
