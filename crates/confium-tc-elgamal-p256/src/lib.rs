@@ -377,9 +377,8 @@ mod proptests {
     use super::*;
     use proptest::prelude::*;
 
-    /// For any threshold T in [2, 5] and party count N in [T, 8],
-    /// the threshold ElGamal round-trip (encapsulate → split decrypt
-    /// → aggregate) must produce the same shared secret.
+    // For any threshold T in [2, 5] and party count N in [T, 8],
+    // the threshold ElGamal round-trip must produce the same shared secret.
     proptest! {
         #[test]
         fn elgamal_roundtrip_any_threshold(t in 2u32..=5, n in 5u32..=8) {
@@ -410,7 +409,7 @@ mod proptests {
         }
     }
 
-    /// Threshold invariant: T shares recover the secret, T-1 do NOT.
+    // Threshold invariant: T shares recover the secret, T-1 do NOT.
     proptest! {
         #[test]
         fn elgamal_below_threshold_fails(t in 2u32..=4, n in 5u32..=8) {
