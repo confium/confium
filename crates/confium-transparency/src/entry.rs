@@ -26,6 +26,66 @@ pub enum ArtifactType {
     ArchiveRenewal,
 }
 
+impl ArtifactType {
+    /// Stable string identifier (snake_case). Round-trips with
+    /// [`ArtifactType::from_str`]. Used by every language binding so
+    /// there's a single source of truth for the variant names.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            ArtifactType::CertificateIssuance => "certificate_issuance",
+            ArtifactType::CertificateRevocation => "certificate_revocation",
+            ArtifactType::ThresholdSignature => "threshold_signature",
+            ArtifactType::ThresholdEncryption => "threshold_encryption",
+            ArtifactType::DirectorRotation => "director_rotation",
+            ArtifactType::QuorumPolicy => "quorum_policy",
+            ArtifactType::DirectorIdentity => "director_identity",
+            ArtifactType::ArchiveRenewal => "archive_renewal",
+        }
+    }
+
+    /// All variants in declaration order — useful for binding iterators
+    /// and CLI argument completion.
+    pub const ALL: &[ArtifactType] = &[
+        ArtifactType::CertificateIssuance,
+        ArtifactType::CertificateRevocation,
+        ArtifactType::ThresholdSignature,
+        ArtifactType::ThresholdEncryption,
+        ArtifactType::DirectorRotation,
+        ArtifactType::QuorumPolicy,
+        ArtifactType::DirectorIdentity,
+        ArtifactType::ArchiveRenewal,
+    ];
+}
+
+impl std::fmt::Display for ArtifactType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl std::str::FromStr for ArtifactType {
+    type Err = UnknownArtifactType;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        for variant in ArtifactType::ALL {
+            if variant.as_str() == s {
+                return Ok(*variant);
+            }
+        }
+        Err(UnknownArtifactType {
+            input: s.to_string(),
+        })
+    }
+}
+
+/// Error returned by [`ArtifactType::from_str`] when the input doesn't
+/// match any known variant.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("unknown artifact_type '{input}' (expected one of: {})", ArtifactType::ALL.iter().map(|v| v.as_str()).collect::<Vec<_>>().join(", "))]
+pub struct UnknownArtifactType {
+    input: String,
+}
+
 /// A single entry in the transparency log.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MerkleEntry {
@@ -95,5 +155,32 @@ mod tests {
         e1.timestamp = now;
         e2.timestamp = now;
         assert_ne!(e1.entry_hash(), e2.entry_hash());
+    }
+
+    #[test]
+    fn artifact_type_as_str_roundtrips() {
+        use std::str::FromStr;
+        for variant in ArtifactType::ALL {
+            let s = variant.as_str();
+            let parsed = ArtifactType::from_str(s).unwrap();
+            assert_eq!(parsed, *variant);
+        }
+    }
+
+    #[test]
+    fn artifact_type_display_matches_as_str() {
+        for variant in ArtifactType::ALL {
+            assert_eq!(variant.to_string(), variant.as_str());
+        }
+    }
+
+    #[test]
+    fn artifact_type_unknown_string_fails() {
+        use std::str::FromStr;
+        let result = ArtifactType::from_str("not_a_real_type");
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.to_string().contains("not_a_real_type"));
+        assert!(err.to_string().contains("certificate_issuance"));
     }
 }

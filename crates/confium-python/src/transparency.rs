@@ -35,37 +35,13 @@ use confium_transparency::{
 use sha2::{Digest, Sha256};
 
 fn parse_artifact_type(s: &str) -> PyResult<ArtifactType> {
-    Ok(match s {
-        "certificate_issuance" => ArtifactType::CertificateIssuance,
-        "certificate_revocation" => ArtifactType::CertificateRevocation,
-        "threshold_signature" => ArtifactType::ThresholdSignature,
-        "threshold_encryption" => ArtifactType::ThresholdEncryption,
-        "director_rotation" => ArtifactType::DirectorRotation,
-        "quorum_policy" => ArtifactType::QuorumPolicy,
-        "director_identity" => ArtifactType::DirectorIdentity,
-        "archive_renewal" => ArtifactType::ArchiveRenewal,
-        other => {
-            return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                "unknown artifact_type '{other}' \
-                 (expected one of: certificate_issuance, certificate_revocation, \
-                 threshold_signature, threshold_encryption, director_rotation, \
-                 quorum_policy, director_identity, archive_renewal)"
-            )));
-        }
-    })
+    use std::str::FromStr;
+    ArtifactType::from_str(s)
+        .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
 }
 
 fn artifact_type_str(at: ArtifactType) -> &'static str {
-    match at {
-        ArtifactType::CertificateIssuance => "certificate_issuance",
-        ArtifactType::CertificateRevocation => "certificate_revocation",
-        ArtifactType::ThresholdSignature => "threshold_signature",
-        ArtifactType::ThresholdEncryption => "threshold_encryption",
-        ArtifactType::DirectorRotation => "director_rotation",
-        ArtifactType::QuorumPolicy => "quorum_policy",
-        ArtifactType::DirectorIdentity => "director_identity",
-        ArtifactType::ArchiveRenewal => "archive_renewal",
-    }
+    at.as_str()
 }
 
 fn require_hash_32(buf: &[u8], field: &str) -> PyResult<Hash> {
