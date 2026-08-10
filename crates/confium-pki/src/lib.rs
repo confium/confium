@@ -19,6 +19,23 @@
 //! - `xmldsig`: XMLDSig + canonicalization
 //!
 //! See `TODO.roadmap/32-cert-delegation-cms-xmldsig.md` for the full spec.
+//!
+//! # Example
+//!
+//! ```
+//! use confium_pki::result::VerificationResult;
+//!
+//! // Aggregate two verification results: if either is invalid, the
+//! // combined result is invalid; per-check failures propagate.
+//! let r1 = VerificationResult { valid: true, checks: vec![] };
+//! let r2 = VerificationResult {
+//!     valid: false,
+//!     checks: vec![confium_pki::PathFailure::Expired],
+//! };
+//! let combined = VerificationResult::aggregate(&[r1, r2]);
+//! assert!(!combined.valid);
+//! assert_eq!(combined.checks.len(), 1);
+//! ```
 
 #![forbid(unsafe_code)]
 #![allow(missing_docs)] // TODO: document before 1.0

@@ -5,6 +5,25 @@
 //! composite. Used for PQ migration without breaking verifiers.
 //!
 //! See `TODO.roadmap/35-pq-composite-signatures.md` for the full spec.
+//!
+//! # Example
+//!
+//! ```
+//! use confium_composite::{CompositeSignature, build_ed25519_component, ed25519_verifier, ED25519};
+//! use ed25519_dalek::{Signer, SigningKey};
+//! use rand_core::OsRng;
+//!
+//! let signing = SigningKey::generate(&mut OsRng);
+//! let message = b"hybrid sig demo";
+//! let component = build_ed25519_component(&signing, message)?;
+//! let composite = CompositeSignature::new(vec![component]);
+//! let result = composite.verify(message, |alg, pk, msg, sig| {
+//!     if alg == ED25519 { ed25519_verifier(alg, pk, msg, sig) }
+//!     else { Err(format!("unknown algorithm: {alg}")) }
+//! })?;
+//! assert!(result.all_verified);
+//! # Ok::<(), Box<dyn std::error::Error>>(())
+//! ```
 
 #![forbid(unsafe_code)]
 #![allow(missing_docs)] // TODO: document before 1.0

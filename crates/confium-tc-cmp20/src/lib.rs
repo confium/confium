@@ -20,6 +20,20 @@
 //!   the offending party is reported by index rather than failing
 //!   opaquely.
 //!
+//! # Example
+//!
+//! ```
+//! use confium_tc_cmp20::inprocess;
+//!
+//! // 2-of-3 DKG: produces 3 share blobs + a joint P-256 public key.
+//! let kg = inprocess::keygen(2, 3)?;
+//!
+//! // Sign with the first 2 shares (threshold met).
+//! let sig = inprocess::sign(&kg.shares[..2], 2, b"hello, threshold world")?;
+//! assert_eq!(sig.len(), 64); // (r, s) pair
+//! # Ok::<(), confium_tc::Error>(())
+//! ```
+//!
 //! Wired as a [`confium_tc::registry::TcScheme`] plugin with two scheme
 //! names registered through [`confium_tc::register_tc_scheme!`]:
 //!

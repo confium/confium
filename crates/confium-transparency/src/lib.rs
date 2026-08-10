@@ -13,6 +13,22 @@
 //!
 //! See `TODO.roadmap/36-transparency-and-ots.md` and
 //! `TODO.roadmap/37-long-term-archival.md` for full specs.
+//!
+//! # Example
+//!
+//! ```
+//! use confium_transparency::{MerkleTree, entry::{ArtifactType, MerkleEntry}};
+//!
+//! let mut tree = MerkleTree::new();
+//! let hash = [0u8; 32]; // sha256 of your artifact
+//! let entry = MerkleEntry::new(0, ArtifactType::CertificateIssuance, hash);
+//! let seq = tree.append(entry);
+//! let root = tree.root();
+//! let proof = tree.inclusion_proof(seq)?;
+//! let entry_ref = tree.entry(seq)?;
+//! MerkleTree::verify_inclusion(entry_ref, &proof, root)?;
+//! # Ok::<(), confium_transparency::MerkleError>(())
+//! ```
 
 #![forbid(unsafe_code)]
 #![allow(missing_docs)] // TODO: document before 1.0
