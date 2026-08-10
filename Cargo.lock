@@ -1530,7 +1530,6 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "snafu 0.8.9",
- "subtle",
  "thiserror 1.0.69",
  "zeroize",
 ]

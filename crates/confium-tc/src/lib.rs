@@ -40,22 +40,22 @@ pub use confium_tc_core::share;
 pub use confium_tc_core::share_envelope;
 
 pub use confium_tc_core::Error;
-pub use confium_tc_core::Result;
 pub use confium_tc_core::Message;
 pub use confium_tc_core::Party;
 pub use confium_tc_core::PartyList;
+pub use confium_tc_core::Result;
 pub use confium_tc_core::RoundResult;
-pub use confium_tc_core::SessionImpl;
-pub use confium_tc_core::TcScheme;
-pub use confium_tc_core::TcSchemeKind;
 pub use confium_tc_core::Session;
+pub use confium_tc_core::SessionImpl;
 pub use confium_tc_core::SessionParams;
 pub use confium_tc_core::Share;
+pub use confium_tc_core::TcScheme;
+pub use confium_tc_core::TcSchemeKind;
 
 // Local modules — have tc-specific concerns not yet extracted.
+pub mod coordinator;
 pub mod ffi;
 pub mod inprocess;
-pub mod coordinator;
 pub mod kem;
 pub mod paillier;
 pub mod reshare;
