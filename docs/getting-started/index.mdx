@@ -68,8 +68,10 @@ jq -r '.public_key' shares.json > pubkey.hex
 
 # Verify with OpenSSL (Confium produces standard ECDSA-P256 sigs)
 echo -n "hello, threshold world" > message.txt
-# (Decode the hex signature + SEC1 public key into DER format first;
-# see the cookbook recipe "verify-threshold-signature-with-openssl" for details.)
+# Decode the hex signature + SEC1 public key into DER format, then:
+#   openssl dgst -sha256 -verify pubkey.der -signature sig.der message.txt
+# Or use the p256 Rust crate — see
+# https://docs.rs/confium-composite for a verify example.
 ```
 
 Or in the browser via WASM — visit the [playground](https://www.confium.org/playground/).
