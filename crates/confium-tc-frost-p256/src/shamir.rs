@@ -169,3 +169,74 @@ mod tests {
         assert_eq!(recovered, secret);
     }
 }
+
+#[cfg(test)]
+mod proptests {
+    use super::*;
+    use proptest::prelude::*;
+
+    /// Any threshold T in [1, 10], any party count N in [T, 20]:
+    /// any subset of T distinct shares reconstructs the same secret.
+    proptest! {
+        #[test]
+        fn any_t_of_n_reconstructs_secret(t in 1u32..=10, n in 10u32..=20) {
+            let secret = scalar::random_scalar();
+            let shares = split_secret(&secret, t, n);
+            prop_assert_eq!(shares.len() as u32, n);
+
+            // First T shares
+            let subset_a: Vec<&Share> = shares.iter().take(t as usize).collect();
+            prop_assert_eq!(recover_secret(&subset_a)?, secret);
+
+            // Last T shares (different subset when N > T)
+            if n > t {
+                let subset_b: Vec<&Share> = shares.iter().skip((n - t) as usize).collect();
+                prop_assert_eq!(recover_secret(&subset_b)?, secret);
+            }
+
+            // A "middle" subset
+            if n > t {
+                let mid = (n - t) / 2;
+                let subset_c: Vec<&Share> = shares.iter().skip(mid as usize).take(t as usize).collect();
+                prop_assert_eq!(recover_secret(&subset_c)?, secret);
+            }
+        }
+    }
+
+    /// Reconstruction is deterministic: same shares in different orders
+    /// give the same secret.
+    proptest! {
+        #[test]
+        fn reconstruction_order_invariant(t in 1u32..=8, n in 8u32..=16) {
+            let secret = scalar::random_scalar();
+            let shares = split_secret(&secret, t, n);
+            let mut subset: Vec<&Share> = shares.iter().take(t as usize).collect();
+            let expected = recover_secret(&subset)?;
+
+            // Reverse the subset — should still reconstruct the same secret.
+            subset.reverse();
+            prop_assert_eq!(recover_secret(&subset)?, expected);
+        }
+    }
+
+    /// Threshold invariant: T shares suffice, T-1 do not (different secret).
+    /// The T-1 reconstruction gives SOME scalar, but it shouldn't match the
+    /// original with overwhelming probability.
+    proptest! {
+        #[test]
+        fn below_threshold_gives_different_secret(t in 2u32..=8, n in 8u32..=16) {
+            let secret = scalar::random_scalar();
+            let shares = split_secret(&secret, t, n);
+
+            // (T-1) shares — reconstruction should NOT match the secret
+            // (probability 1/p ≈ 1/2^256 of accidental match).
+            let subset: Vec<&Share> = shares.iter().take((t - 1) as usize).collect();
+            if let Ok(recovered) = recover_secret(&subset) {
+                prop_assert_ne!(
+                    recovered, secret,
+                    "below-threshold reconstruction accidentally matched (p ≈ 1/2^256)"
+                );
+            }
+        }
+    }
+}

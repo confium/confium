@@ -665,3 +665,75 @@ mod tests {
         assert!(matches!(result, Err(MerkleError::OutOfRange(_, _))));
     }
 }
+
+#[cfg(test)]
+mod proptests {
+    use super::*;
+    use crate::entry::ArtifactType;
+    use proptest::prelude::*;
+
+    fn arb_entry(seq: u64) -> MerkleEntry {
+        let mut hash = [0u8; 32];
+        // Mix seq into a few bytes so each entry has a distinct hash.
+        hash[0..8].copy_from_slice(&seq.to_le_bytes());
+        MerkleEntry::new(seq, ArtifactType::CertificateIssuance, hash)
+    }
+
+    /// For any tree size N in [1, 100], every leaf's inclusion proof
+    /// verifies against the current root.
+    proptest! {
+        #[test]
+        fn every_leaf_inclusion_proof_verifies(n in 1u64..100) {
+            let mut tree = MerkleTree::new();
+            let entries: Vec<MerkleEntry> = (0..n).map(arb_entry).collect();
+            for e in &entries {
+                tree.append(e.clone());
+            }
+            let root = tree.root();
+            for seq in 0..n {
+                let proof = tree.inclusion_proof(seq)?;
+                MerkleTree::verify_inclusion(&entries[seq as usize], &proof, root)?;
+            }
+        }
+    }
+
+    /// A proof for one entry must NOT verify a different entry.
+    proptest! {
+        #[test]
+        fn inclusion_proof_rejects_wrong_entry(n in 2u64..50, i in 0u64..50, j in 0u64..50) {
+            prop_assume!(n > 1 && i < n && j < n && i != j);
+            let mut tree = MerkleTree::new();
+            let entries: Vec<MerkleEntry> = (0..n).map(arb_entry).collect();
+            for e in &entries {
+                tree.append(e.clone());
+            }
+            let root = tree.root();
+            let proof = tree.inclusion_proof(i)?;
+            let result = MerkleTree::verify_inclusion(&entries[j as usize], &proof, root);
+            prop_assert!(matches!(result, Err(MerkleError::InclusionFailed(_))));
+        }
+    }
+
+    /// Appending an entry changes the root (log is append-only and
+    /// every append is reflected in the commitment).
+    proptest! {
+        #[test]
+        fn append_changes_root(n in 0u64..50) {
+            let mut tree = MerkleTree::new();
+            for seq in 0..n {
+                tree.append(arb_entry(seq));
+            }
+            let root_before = tree.root();
+            tree.append(arb_entry(n));
+            let root_after = tree.root();
+            prop_assert_ne!(root_before, root_after);
+        }
+    }
+
+    /// Empty tree's root is the all-zero hash (RFC 6962 convention).
+    #[test]
+    fn empty_tree_root_is_zero() {
+        let tree = MerkleTree::new();
+        assert_eq!(tree.root(), [0u8; 32]);
+    }
+}
