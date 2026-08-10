@@ -17,8 +17,8 @@
 
 use confium_tc_cmp20::inprocess;
 use confium_transparency::{
-    entry::{ArtifactType, MerkleEntry},
     MerkleTree,
+    entry::{ArtifactType, MerkleEntry},
 };
 
 #[test]

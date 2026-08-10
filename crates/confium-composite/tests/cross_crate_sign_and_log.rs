@@ -12,12 +12,10 @@
 
 #![cfg(not(target_arch = "wasm32"))]
 
-use confium_composite::{
-    build_ed25519_component, ed25519_verifier, CompositeSignature, ED25519,
-};
+use confium_composite::{CompositeSignature, ED25519, build_ed25519_component, ed25519_verifier};
 use confium_transparency::{
-    entry::{ArtifactType, MerkleEntry},
     MerkleTree,
+    entry::{ArtifactType, MerkleEntry},
 };
 use ed25519_dalek::SigningKey;
 use rand_core::OsRng;
@@ -27,8 +25,7 @@ use sha2::{Digest, Sha256};
 fn composite_signature_anchors_into_transparency_log() {
     let signing = SigningKey::generate(&mut OsRng);
     let message = b"cross-crate: composite sig + log";
-    let component =
-        build_ed25519_component(&signing, message).expect("build component");
+    let component = build_ed25519_component(&signing, message).expect("build component");
     let composite = CompositeSignature::new(vec![component]);
 
     // Verify the composite standalone.
@@ -66,8 +63,7 @@ fn composite_signature_anchors_into_transparency_log() {
 
     // Re-parse the anchored composite and re-verify the signature —
     // the on-the-wire format round-trips through the log.
-    let reparsed: CompositeSignature =
-        serde_json::from_slice(&composite_json).expect("parse");
+    let reparsed: CompositeSignature = serde_json::from_slice(&composite_json).expect("parse");
     let result2 = reparsed
         .verify(message, |alg, pk, msg, sig| {
             if alg == ED25519 {
