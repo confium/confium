@@ -86,13 +86,7 @@ impl VerificationCache {
         let seq = inner.next_seq;
         inner.next_seq += 1;
 
-        inner.entries.insert(
-            key,
-            CacheEntry {
-                verified,
-                seq,
-            },
-        );
+        inner.entries.insert(key, CacheEntry { verified, seq });
 
         if inner.entries.len() > inner.max_entries {
             evict_oldest(&mut inner.entries);
@@ -153,7 +147,10 @@ mod tests {
     fn put_then_get_returns_cached() {
         let cache = VerificationCache::new(100);
         cache.put("Ed25519", &[1; 32], &[2; 32], &[3; 64], true);
-        assert_eq!(cache.get("Ed25519", &[1; 32], &[2; 32], &[3; 64]), Some(true));
+        assert_eq!(
+            cache.get("Ed25519", &[1; 32], &[2; 32], &[3; 64]),
+            Some(true)
+        );
     }
 
     #[test]

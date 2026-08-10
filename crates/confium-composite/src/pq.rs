@@ -27,11 +27,7 @@
 /// `signature` is the raw ML-DSA-65 signature bytes.
 ///
 /// Returns `Ok(())` if the signature is valid, `Err` otherwise.
-pub fn verify_mldsa65(
-    public_key: &[u8],
-    message: &[u8],
-    signature: &[u8],
-) -> Result<(), String> {
+pub fn verify_mldsa65(public_key: &[u8], message: &[u8], signature: &[u8]) -> Result<(), String> {
     // ML-DSA-65 signature sizes (FIPS 204):
     //   signature: 3309 bytes
     //   public key: 1952 bytes
@@ -62,11 +58,7 @@ pub fn verify_mldsa65(
 }
 
 /// Verify a SLH-DSA-SHA2-192s signature (FIPS 205).
-pub fn verify_slh_dsa(
-    public_key: &[u8],
-    message: &[u8],
-    signature: &[u8],
-) -> Result<(), String> {
+pub fn verify_slh_dsa(public_key: &[u8], message: &[u8], signature: &[u8]) -> Result<(), String> {
     let _ = (public_key, message, signature);
     Err(
         "SLH-DSA verification not yet wired to a real implementation. \
