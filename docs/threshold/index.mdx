@@ -38,27 +38,36 @@ alone. Compromising any T-1 parties doesn't compromise the key.
 
 ## Concepts
 
-- [Threshold signing fundamentals](./concepts/threshold-signing.mdx)
-- [Distributed key generation (DKG)](./concepts/dkg.mdx)
-- [Multiplicative-to-Additive (MtA) via Paillier](./concepts/mta.mdx)
-- [Share refresh & proactive security](./concepts/share-refresh.mdx)
-- [Reshare: changing T or N without re-keying](./concepts/reshare.mdx)
+These topics are specified in the [specs repo](https://www.confium.org/specs/):
+
+- [Threshold signing fundamentals](https://www.confium.org/specs/22-threshold-session)
+- [Distributed key generation (DKG)](https://www.confium.org/specs/22-threshold-session)
+- [Share refresh & proactive security](https://www.confium.org/specs/24-share-reshare)
+- [Reshare: changing T or N without re-keying](https://www.confium.org/specs/24-share-reshare)
+
+Multiplicative-to-Additive (MtA) via Paillier is described in the
+[CMP20 spec](https://www.confium.org/specs/70-cmp20) and implemented
+in `confium-crypto-vss::paillier`.
 
 ## How-to
 
-- [Deploy signerd in production](./how-to/deploy-signerd.mdx)
-- [Protect shares with an HSM](./how-to/integrate-hsm.mdx)
-- [Schedule Herzberg share refresh](./how-to/refresh.mdx)
-- [Monitor signing sessions](./how-to/monitor.mdx)
-- [Attribute-based signing policies](./how-to/policy.mdx)
+Practical recipes live in the [Cookbook](../cookbook/):
+
+- [Threshold-sign-with-CMP20](../cookbook/threshold-sign-with-cmp20.mdx) — 2-of-3 sign ceremony
+- [Refresh shares without re-keying](../cookbook/refresh-shares.mdx) — Herzberg proactive security
+- [Backup and restore shares](../cookbook/backup-shares.mdx) — disaster recovery
+- [Deploy signerd on Kubernetes](../cookbook/deploy-signerd-k8s.mdx)
+- [Monitor Confium with Prometheus](../cookbook/prometheus-monitoring.mdx)
 
 ## Reference
 
 - [Rust API](https://docs.rs/confium-threshold)
-- [signerd config reference](./reference/config.mdx)
-- [CLI commands](./reference/cli.mdx)
 - [Threshold session spec](https://www.confium.org/specs/22-threshold-session)
 - [CMP20 spec](https://www.confium.org/specs/70-cmp20)
+- [GG18 spec](https://www.confium.org/specs/71-gg18)
+- [FROST-P256 spec](https://www.confium.org/specs/51-frost-p256)
+- [FROST-Ed25519 spec](https://www.confium.org/specs/72-frost-ed25519)
+- [ElGamal-P256 spec](https://www.confium.org/specs/54-elgamal-p256)
 
 ## Cross-links
 

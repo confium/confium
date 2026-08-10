@@ -23,17 +23,21 @@ certificate chains. Verifier-only by design.
 
 ## Concepts
 
-- [Verifier-only design philosophy](./concepts/verifier-only.mdx)
-- [Provenance & transparency-log anchoring](./concepts/provenance.mdx)
-- [Batch verification + LRU cache](./concepts/batch-verify.mdx)
-- [Language bindings parity model](./concepts/bindings.mdx)
+These topics are specified in the [specs repo](https://www.confium.org/specs/):
+
+- [Verifier-only design philosophy](https://www.confium.org/specs/61-wasm-verifier)
+- [Provenance & transparency-log anchoring](https://www.confium.org/specs/42-transparency-log)
+- [Bindings parity model](https://www.confium.org/specs/63-bindings-matrix)
+
+Batch verification uses an LRU cache — see the
+[Rust API docs](https://docs.rs/confium-composite) for details.
 
 ## How-to
 
-- [Embed WASM in a SPA](./how-to/wasm-in-spa.mdx)
-- [Add verify gate to CI](./how-to/ci-gate.mdx)
-- [Deploy verify-server](./how-to/server-deploy.mdx)
-- [Real-time verify dashboard](./how-to/dashboard.mdx)
+Practical recipes live in the [Cookbook](../cookbook/):
+
+- [Verify in the browser via WASM](../cookbook/verify-in-browser.mdx)
+- [Deploy a public HTTP verify endpoint](../cookbook/public-verify-endpoint.mdx)
 
 ## Reference
 

@@ -20,16 +20,22 @@ certificates from threshold keys.
 
 ## Concepts
 
-- [OIDC for code signing](./concepts/oidc.mdx)
-- [Short-lived certificates from threshold keys](./concepts/short-lived-certs.mdx)
-- [Transparency log anchoring](./concepts/anchoring.mdx)
-- [Root of trust model](./concepts/root-of-trust.mdx)
+These topics are specified in the [specs repo](https://www.confium.org/specs/):
+
+- [OIDC for code signing](https://www.confium.org/specs/90-oidc-binding)
+- [Short-lived certificates from threshold keys](https://www.confium.org/specs/92-short-lived-cert)
+- [Keyless flow spec](https://www.confium.org/specs/91-keyless-flow)
+
+Transparency log anchoring is covered by the
+[transparency product](../transparency/). The root-of-trust model
+depends on deployment mode — see
+[Architecture / Four Modes](../architecture/four-modes.mdx).
 
 ## How-to
 
-- [Configure the GitHub Action](./how-to/github-action.mdx)
-- [Add a new OIDC provider](./how-to/new-oidc-provider.mdx)
-- [Verify keyless signatures in CI](./how-to/verify-in-ci.mdx)
+Practical recipes live in the [Cookbook](../cookbook/):
+
+- [Sign a GitHub release keylessly](../cookbook/keyless-github-release.mdx)
 
 ## Reference
 
