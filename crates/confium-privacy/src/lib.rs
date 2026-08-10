@@ -1,4 +1,16 @@
 //! Privacy-preserving cryptographic primitives.
+//!
+//! # Example
+//!
+//! ```
+//! use confium_privacy::privacy_and_dist_patterns::dp_query;
+//!
+//! // Apply differential privacy noise to a numeric value.
+//! // ε = 0.5 gives moderate privacy; lower ε = more noise = more privacy.
+//! let true_value = 1234.0;
+//! let perturbed = dp_query(true_value, /* sensitivity */ 1.0, /* epsilon */ 0.5);
+//! assert!(perturbed.is_finite());
+//! ```
 
 #![forbid(unsafe_code)]
 #![allow(missing_docs)] // TODO: document before 1.0

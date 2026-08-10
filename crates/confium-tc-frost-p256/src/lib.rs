@@ -20,6 +20,21 @@
 //! use `confium-tc-cmp20`.
 //!
 //! See `TODO.roadmap/04-threshold-cryptography.md` for the FFI spec.
+//!
+//! # Example
+//!
+//! ```
+//! use confium_tc_frost_p256::{generate_keypair, split_secret, recover_secret};
+//!
+//! let kp = generate_keypair();
+//! // 3-of-5 secret sharing of the keypair's secret scalar.
+//! let shares = split_secret(&kp.secret_scalar, 3, 5);
+//! // Any 3 shares reconstruct the original secret.
+//! let subset: Vec<_> = shares.iter().take(3).collect();
+//! let recovered = recover_secret(&subset)?;
+//! assert_eq!(recovered, kp.secret_scalar);
+//! # Ok::<(), confium_tc_frost_p256::ShamirError>(())
+//! ```
 
 #![forbid(unsafe_code)]
 #![allow(missing_docs)] // TODO: document before 1.0
