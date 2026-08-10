@@ -41,13 +41,23 @@ pub struct Share {
 /// Errors during BLS operations.
 #[derive(Debug, thiserror::Error)]
 pub enum BlsError {
-    /// Threshold not met.
+    /// Fewer than T partial signatures were supplied to an aggregation
+    /// call. The threshold was set during DKG; the caller must collect
+    /// at least T partials before aggregating.
+    /// Caller action: wait for more partials from peers.
     #[error("threshold not met")]
     ThresholdNotMet,
-    /// Aggregation failed.
+    /// Aggregation failed — typically because the supplied partials
+    /// are inconsistent (different messages, wrong group operation).
+    /// The string describes the specific failure.
+    /// Caller action: inspect the message; restart the round if needed.
     #[error("aggregation failed: {0}")]
     AggregationFailed(String),
-    /// Invalid signature.
+    /// The aggregated signature failed verification against the joint
+    /// public key. Indicates either a Byzantine participant or a
+    /// corrupted public key / message.
+    /// Caller action: re-run the verification with a known-good key
+    /// before reporting the issue.
     #[error("invalid signature")]
     InvalidSignature,
 }
