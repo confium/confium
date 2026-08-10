@@ -6,29 +6,29 @@
 #include <toml.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include <filesystem>
 
 std::string cargo_version_string() {
-    auto cargo_toml_path = std::string(getenv("CONFIUM_CARGO_TOML"));
+    const char *cargo_toml_env = getenv("CONFIUM_CARGO_TOML");
+    std::string cargo_toml_path(cargo_toml_env ? cargo_toml_env : "");
     auto cargo_toml = toml::parse(cargo_toml_path);
     auto package = toml::find(cargo_toml, "package");
+    auto &pkg_table = package.as_table();
 
     // Check if version uses workspace inheritance: version.workspace = true
-    // In that case the "version" key in [package] is a table, not a string,
+    // In that case "version" in [package] is a table, not a string,
     // and the real version lives in the workspace root's [workspace.package].
-    auto version_node = package.as_table()->find("version");
-    if (version_node != package.as_table()->end()) {
-        if (version_node->second.is_table()) {
-            // version = { workspace = true } — resolve from workspace root.
-            auto crate_dir = std::filesystem::path(cargo_toml_path).parent_path();
-            auto workspace_root = crate_dir.parent_path().parent_path();
-            auto workspace_toml = toml::parse((workspace_root / "Cargo.toml").string());
-            auto ws_package = toml::find(workspace_toml, "workspace", "package");
-            return toml::find<std::string>(ws_package, "version");
-        }
-        return version_node->second.as_string();
+    auto it = pkg_table.find("version");
+    if (it != pkg_table.end() && it->second.is_table()) {
+        // Walk up to find the workspace root Cargo.toml.
+        // crate_dir = crates/confium-core/ → workspace root = ../..
+        std::string crate_dir = cargo_toml_path.substr(0, cargo_toml_path.find_last_of('/'));
+        std::string crates_dir = crate_dir.substr(0, crate_dir.find_last_of('/'));
+        std::string workspace_root = crates_dir.substr(0, crates_dir.find_last_of('/'));
+        std::string ws_toml_path = workspace_root + "/Cargo.toml";
+        auto ws_toml = toml::parse(ws_toml_path);
+        auto ws_package = toml::find(ws_toml, "workspace", "package");
+        return toml::find<std::string>(ws_package, "version");
     }
-    // Fallback: direct string version.
     return toml::find<std::string>(package, "version");
 }
 
