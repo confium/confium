@@ -24,5 +24,8 @@ p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
 rand_core = { workspace = true }
 elliptic-curve = { workspace = true, features = ["pkcs8", "sec1"] }
 
+[dev-dependencies]
+proptest = { workspace = true }
+
 [lib]
 crate-type = ["rlib"]

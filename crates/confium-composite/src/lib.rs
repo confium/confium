@@ -387,3 +387,77 @@ mod real_ed25519_tests {
         assert_eq!(result.per_component.len(), 2);
     }
 }
+
+#[cfg(test)]
+mod proptests {
+    use super::*;
+    use proptest::prelude::*;
+
+    /// Round-trip: build an Ed25519 component, encode to JSON, parse back,
+    /// verify. Should hold for arbitrary messages.
+    proptest! {
+        #[test]
+        fn ed25519_roundtrip_json_verifies(msg in proptest::collection::vec(any::<u8>(), 0..256)) {
+            use ed25519_dalek::{Signer, SigningKey};
+            use rand_core::OsRng;
+            let signing = SigningKey::generate(&mut OsRng);
+            let verifying: ed25519_dalek::VerifyingKey = signing.verifying_key();
+            let component = build_ed25519_component(&signing, &msg)?;
+            let composite = CompositeSignature::new(vec![component]);
+            let json = serde_json::to_string(&composite)?;
+            let parsed: CompositeSignature = serde_json::from_str(&json)?;
+            let result = parsed.verify(&msg, |alg, pk, m, sig| {
+                if alg == ED25519 {
+                    ed25519_verifier(alg, pk, m, sig)
+                } else {
+                    Err(format!("unknown algorithm: {alg}"))
+                }
+            })?;
+            prop_assert!(result.all_verified);
+            prop_assert_eq!(result.per_component.len(), 1);
+            let _ = verifying; // dummy use to silence warning
+        }
+    }
+
+    /// Tamper detection: flipping any bit of the signature or message
+    /// must cause verification to fail.
+    proptest! {
+        #[test]
+        fn ed25519_tamper_fails(
+            msg in proptest::collection::vec(any::<u8>(), 1..256),
+            flip_index in 0usize..256,
+        ) {
+            use ed25519_dalek::{Signer, SigningKey};
+            use rand_core::OsRng;
+            let signing = SigningKey::generate(&mut OsRng);
+            let component = build_ed25519_component(&signing, &msg)?;
+            let composite = CompositeSignature::new(vec![component]);
+
+            let mut tampered_msg = msg.clone();
+            let mut tampered_sig = composite.components[0].signature.clone();
+            if flip_index < tampered_msg.len() {
+                tampered_msg[flip_index] ^= 0x01;
+            } else {
+                let sig_idx = flip_index - tampered_msg.len();
+                if sig_idx < tampered_sig.len() {
+                    tampered_sig[sig_idx] ^= 0x01;
+                } else {
+                    return Ok(()); // index out of both ranges — skip
+                }
+            }
+            let tampered = CompositeSignature::new(vec![ComponentSignature {
+                algorithm: ED25519.to_string(),
+                public_key: composite.components[0].public_key.clone(),
+                signature: tampered_sig,
+            }]);
+            let result = tampered.verify(&tampered_msg, |alg, pk, m, sig| {
+                if alg == ED25519 {
+                    ed25519_verifier(alg, pk, m, sig)
+                } else {
+                    Err(format!("unknown algorithm: {alg}"))
+                }
+            })?;
+            prop_assert!(!result.all_verified);
+        }
+    }
+}

@@ -27,5 +27,9 @@ ed25519-dalek = { workspace = true, features = ["rand_core"] }
 rand_core = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa"] }
 
+[dev-dependencies]
+proptest = { workspace = true }
+p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
+
 [lib]
 crate-type = ["rlib"]
