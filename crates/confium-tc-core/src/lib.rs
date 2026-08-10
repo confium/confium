@@ -11,8 +11,11 @@
 #![allow(rustdoc::private_intra_doc_links)]
 #![allow(rustdoc::invalid_html_tags)]
 
+pub mod commitment;
 pub mod error;
+pub mod error_codes;
 pub mod message;
+pub mod nonce;
 pub mod party;
 pub mod registry;
 pub mod schemes;
@@ -20,6 +23,7 @@ pub mod session;
 pub mod share;
 pub mod share_adapter;
 pub mod share_envelope;
+pub mod unified_error;
 
 pub use error::Error;
 pub use error::Result;
