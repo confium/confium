@@ -231,6 +231,7 @@ impl<'a> CborReader<'a> {
         Self { bytes, pos: 0 }
     }
 
+    #[allow(dead_code)]
     fn peek(&self) -> Option<u8> {
         self.bytes.get(self.pos).copied()
     }
@@ -331,7 +332,9 @@ fn decode_cose_sign1(bytes: &[u8]) -> Result<CoseSign1, CoseError> {
     // The CBOR reader transparently handles tags (major type 6):
     // read() returns the tagged item directly.
     let mut reader = CborReader::new(bytes);
-    let array_value = reader.read().ok_or_else(|| CoseError::Decode("empty".into()))?;
+    let array_value = reader
+        .read()
+        .ok_or_else(|| CoseError::Decode("empty".into()))?;
     decode_cose_sign1_array(&array_value, bytes)
 }
 
@@ -369,7 +372,9 @@ fn decode_cose_sign1_array(value: &CborValue<'_>, _bytes: &[u8]) -> Result<CoseS
 
 fn decode_algorithm(protected_bytes: &[u8]) -> Result<i32, CoseError> {
     let mut reader = CborReader::new(protected_bytes);
-    let map = reader.read().ok_or_else(|| CoseError::Decode("empty protected header".into()))?;
+    let map = reader
+        .read()
+        .ok_or_else(|| CoseError::Decode("empty protected header".into()))?;
     let entries = match map {
         CborValue::Map(e) => e,
         _ => return Err(CoseError::Decode("protected header must be a map".into())),
