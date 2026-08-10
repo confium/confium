@@ -27,9 +27,10 @@ pub enum ArtifactType {
 }
 
 impl ArtifactType {
-    /// Stable string identifier (snake_case). Round-trips with
-    /// [`ArtifactType::from_str`]. Used by every language binding so
-    /// there's a single source of truth for the variant names.
+    /// Stable string identifier (snake_case). Round-trips with the
+    /// [`FromStr`](std::str::FromStr) impl below. Used by every
+    /// language binding so there's a single source of truth for the
+    /// variant names.
     pub const fn as_str(self) -> &'static str {
         match self {
             ArtifactType::CertificateIssuance => "certificate_issuance",
@@ -78,8 +79,8 @@ impl std::str::FromStr for ArtifactType {
     }
 }
 
-/// Error returned by [`ArtifactType::from_str`] when the input doesn't
-/// match any known variant.
+/// Error returned by the [`FromStr`](std::str::FromStr) impl on
+/// [`ArtifactType`] when the input doesn't match any known variant.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("unknown artifact_type '{input}' (expected one of: {})", ArtifactType::ALL.iter().map(|v| v.as_str()).collect::<Vec<_>>().join(", "))]
 pub struct UnknownArtifactType {
