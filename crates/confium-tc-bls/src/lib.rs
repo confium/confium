@@ -1,9 +1,42 @@
 //! Threshold BLS signature for cross-organization aggregation.
 //!
+//! **⚠️ RESEARCH PROTOTYPE — NOT FOR PRODUCTION USE.**
+//!
+//! This crate exists to validate the threshold-BLS API shape and
+//! coordinator integration. The actual aggregation is a **mock**:
+//! signature bytes are XOR-folded rather than combined via the
+//! BLS12-381 pairing. The mock:
+//!
+//! - Is NOT cryptographically secure — XOR-folding signatures is a
+//!   well-known anti-pattern (sponge attacks recover individual
+//!   signatures from aggregates).
+//! - Does NOT use the `blst` or `ark-bls12-381` crates.
+//! - Does NOT produce signatures that verify under standard BLS
+//!   libraries (randombytes, blst, py_ecc, etc.).
+//!
+//! A production BLS implementation is tracked as a separate work
+//! stream (see `TODO.roadmap/04-threshold-cryptography.md`).
+//! Until that lands, treat every output from this crate as
+//! unverified placeholder data.
+//!
+//! ## What this crate IS good for
+//!
+//! - Validating the coordinator's session-driver wiring for an
+//!   aggregation-style scheme.
+//! - Testing the FFI surface and language bindings without needing
+//!   real BLS12-381 native dependencies.
+//! - Reference for what the eventual API shape will look like.
+//!
+//! ## What this crate is NOT good for
+//!
+//! - Real signature verification.
+//! - Cross-organization MAA (Mutual Acceptance Arrangement) signing.
+//! - Any deployment where the signature protects a real asset.
+//!
 //! BLS signatures natively aggregate: many signatures over distinct
 //! messages under different public keys can be combined into a single
-//! short signature. Useful for OIML MAA (Mutual Acceptance Arrangement):
-//! multiple IAs co-sign a single CNML certificate, aggregated into one.
+//! short signature. Useful for OIML MAA: multiple IAs co-sign a
+//! single CNML certificate, aggregated into one.
 //!
 //! See `TODO.roadmap/04-threshold-cryptography.md` for full spec.
 
