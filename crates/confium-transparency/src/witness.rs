@@ -73,11 +73,7 @@ impl Witness {
     ///
     /// `tree` is the current tree state (used to brute-force verify
     /// consistency via root recomputation).
-    pub fn receive_head(
-        &mut self,
-        head: TreeHead,
-        tree: &MerkleTree,
-    ) -> Result<(), WitnessError> {
+    pub fn receive_head(&mut self, head: TreeHead, tree: &MerkleTree) -> Result<(), WitnessError> {
         if let Some(old) = self.latest_head() {
             if head.tree_size > old.tree_size {
                 tree.verify_consistency(
@@ -143,7 +139,11 @@ mod tests {
     fn build_tree(n: u64) -> MerkleTree {
         let mut tree = MerkleTree::new();
         for i in 0..n {
-            tree.append(MerkleEntry::new(i, ArtifactType::ThresholdSignature, [i as u8; 32]));
+            tree.append(MerkleEntry::new(
+                i,
+                ArtifactType::ThresholdSignature,
+                [i as u8; 32],
+            ));
         }
         tree
     }
@@ -181,7 +181,11 @@ mod tests {
         };
         w.receive_head(head1, &tree).unwrap();
 
-        tree.append(MerkleEntry::new(5, ArtifactType::ThresholdSignature, [5; 32]));
+        tree.append(MerkleEntry::new(
+            5,
+            ArtifactType::ThresholdSignature,
+            [5; 32],
+        ));
         let head2 = TreeHead {
             tree_size: 6,
             root_hash: tree.root(),
@@ -225,7 +229,11 @@ mod tests {
         };
         w.receive_head(head1, &tree).unwrap();
 
-        tree.append(MerkleEntry::new(1, ArtifactType::ThresholdSignature, [1; 32]));
+        tree.append(MerkleEntry::new(
+            1,
+            ArtifactType::ThresholdSignature,
+            [1; 32],
+        ));
         let head2 = TreeHead {
             tree_size: 2,
             root_hash: tree.root(),
@@ -233,7 +241,11 @@ mod tests {
         };
         w.receive_head(head2, &tree).unwrap();
 
-        tree.append(MerkleEntry::new(2, ArtifactType::ThresholdSignature, [2; 32]));
+        tree.append(MerkleEntry::new(
+            2,
+            ArtifactType::ThresholdSignature,
+            [2; 32],
+        ));
         let head3 = TreeHead {
             tree_size: 3,
             root_hash: tree.root(),
