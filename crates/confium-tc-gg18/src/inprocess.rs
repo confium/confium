@@ -139,4 +139,44 @@ mod tests {
         let err = sign(&[corrupt], 1, b"msg");
         assert!(err.is_err());
     }
+
+    #[test]
+    fn sign_batch_produces_one_sig_per_message() {
+        let kg = keygen(2, 3).expect("dkg");
+        let messages: Vec<&[u8]> = vec![b"msg-a", b"msg-b", b"msg-c", b"msg-d"];
+        let sigs = sign_batch(&kg.shares[..2], 2, &messages).expect("batch sign");
+        assert_eq!(sigs.len(), 4);
+        for s in &sigs {
+            assert_eq!(s.len(), 64);
+        }
+    }
+
+    #[test]
+    fn sign_batch_all_verify_under_joint_public_key() {
+        let kg = keygen(2, 3).expect("dkg");
+        let messages: Vec<&[u8]> = vec![b"a", b"b", b"c"];
+        let sigs = sign_batch(&kg.shares[..2], 2, &messages).expect("batch sign");
+        let pk = decode_public_key(&kg.public_key).expect("pk");
+        let vk = VerifyingKey::from_affine(pk).expect("vk");
+        for (msg, sig) in messages.iter().zip(sigs.iter()) {
+            let s = Signature::from_slice(sig).expect("parse sig");
+            vk.verify(msg, &s).expect("verify");
+        }
+    }
+
+    #[test]
+    fn sign_batch_empty_messages_returns_empty() {
+        let kg = keygen(2, 3).expect("dkg");
+        let sigs = sign_batch(&kg.shares[..2], 2, &[]).expect("empty batch");
+        assert!(sigs.is_empty());
+    }
+
+    #[test]
+    fn sign_batch_propagates_signing_error() {
+        let kg = keygen(3, 5).expect("dkg");
+        // threshold is 3 but we only supply 2 shares — each sign call must fail.
+        let messages: Vec<&[u8]> = vec![b"a", b"b"];
+        let err = sign_batch(&kg.shares[..2], 3, &messages);
+        assert!(err.is_err());
+    }
 }
