@@ -40,6 +40,9 @@ pub mod ots;
 pub mod proof;
 pub mod witness;
 
+#[cfg(test)]
+mod props;
+
 pub use entry::*;
 pub use merkle::*;
 pub use proof::*;

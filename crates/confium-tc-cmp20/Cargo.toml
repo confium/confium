@@ -39,6 +39,7 @@ p256 = { version = "0.13", features = ["arithmetic", "ecdsa", "expose-field", "p
 rand = { version = "0.8", default-features = false, features = ["std"] }
 rand_core = { version = "0.6", default-features = false }
 confium-transparency = { workspace = true }
+proptest = { workspace = true }
 
 [package.metadata.cargo-machete]
 # `inventory` is consumed by a workspace macro (register_transport!,

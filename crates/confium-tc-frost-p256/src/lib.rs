@@ -44,6 +44,9 @@ pub mod scalar;
 pub mod shamir;
 pub mod sign;
 
+#[cfg(test)]
+mod props;
+
 pub use keys::*;
 pub use shamir::*;
 pub use sign::*;
