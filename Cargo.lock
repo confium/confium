@@ -1363,10 +1363,13 @@ dependencies = [
  "confium-tls-signer",
  "data-encoding",
  "der",
+ "proptest",
+ "rcgen",
  "serde",
  "serde_json",
  "sha2 0.10.9",
  "thiserror 1.0.69",
+ "time",
  "x509-cert",
 ]
 
