@@ -1,8 +1,7 @@
 //! Property-based tests for composite signature verification.
 
 use crate::{
-    ComponentSignature, CompositeSignature, ED25519, build_ed25519_component,
-    ed25519_verifier,
+    ComponentSignature, CompositeSignature, ED25519, build_ed25519_component, ed25519_verifier,
 };
 use ed25519_dalek::SigningKey;
 use proptest::prelude::*;

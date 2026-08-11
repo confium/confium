@@ -34,6 +34,9 @@ pub mod cache;
 pub mod cose;
 pub mod pq;
 
+#[cfg(test)]
+mod props;
+
 /// Algorithm identifier for Ed25519 components.
 pub const ED25519: &str = "Ed25519";
 /// Algorithm identifier for ECDSA-P256 components (NIST P-256 + SHA-256).
