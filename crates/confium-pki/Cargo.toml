@@ -53,3 +53,8 @@ confium-attributes = { workspace = true, optional = true }
 
 [lib]
 crate-type = ["rlib"]
+
+[dev-dependencies]
+proptest = { workspace = true }
+rcgen = "0.13"
+time = "0.3"
