@@ -59,4 +59,31 @@ mod tests {
         let shares = keygen(3, 5).expect("dkg");
         assert!(sign(&shares[..2], 3, b"msg").is_err());
     }
+
+    #[test]
+    fn sign_batch_produces_one_sig_per_message() {
+        let shares = keygen(2, 3).expect("dkg");
+        let messages: Vec<&[u8]> = vec![b"msg-a", b"msg-b", b"msg-c", b"msg-d"];
+        let sigs = sign_batch(&shares[..2], 2, &messages).expect("batch sign");
+        assert_eq!(sigs.len(), 4);
+        for s in &sigs {
+            assert!(!s.is_empty());
+        }
+    }
+
+    #[test]
+    fn sign_batch_empty_messages_returns_empty() {
+        let shares = keygen(2, 3).expect("dkg");
+        let sigs = sign_batch(&shares[..2], 2, &[]).expect("empty batch");
+        assert!(sigs.is_empty());
+    }
+
+    #[test]
+    fn sign_batch_propagates_signing_error() {
+        let shares = keygen(3, 5).expect("dkg");
+        // threshold is 3 but we only supply 2 shares — each sign call must fail.
+        let messages: Vec<&[u8]> = vec![b"a", b"b"];
+        let err = sign_batch(&shares[..2], 3, &messages);
+        assert!(err.is_err());
+    }
 }
