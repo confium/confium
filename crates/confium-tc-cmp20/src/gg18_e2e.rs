@@ -5,10 +5,10 @@
 use crate::paillier_mta;
 use confium_tc::paillier::{self, PaillierKeypair};
 use num_bigint::BigUint;
-use p256::elliptic_curve::rand_core::OsRng;
 use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
-use p256::{AffinePoint, ProjectivePoint, Scalar};
+use p256::elliptic_curve::rand_core::OsRng;
 use p256::elliptic_curve::{Field, PrimeField};
+use p256::{AffinePoint, ProjectivePoint, Scalar};
 use sha2::{Digest, Sha256};
 
 /// GG18 signing pipeline (4-round protocol).
@@ -32,9 +32,17 @@ impl Gg18SigningPipeline {
             }
             sum.to_affine()
         };
-        Self { threshold, party_count, paillier_keys, key_shares, public_key }
+        Self {
+            threshold,
+            party_count,
+            paillier_keys,
+            key_shares,
+            public_key,
+        }
     }
 
+    /// Run the GG18 4-round signing protocol for a message.
+    #[allow(clippy::needless_range_loop)]
     pub fn sign(&self, message: &[u8]) -> Result<Signature, String> {
         let n = self.party_count as usize;
 
@@ -44,7 +52,9 @@ impl Gg18SigningPipeline {
         // Round 2: MtA for k_i * x_j (same as CMP20)
         for i in 0..n {
             for j in 0..n {
-                if i == j { continue; }
+                if i == j {
+                    continue;
+                }
                 let k_i_big = scalar_to_biguint(&nonces[i]);
                 let x_j_big = scalar_to_biguint(&self.key_shares[j]);
                 let _ = paillier_mta::full_mta(&self.paillier_keys[j], &k_i_big, &x_j_big)
@@ -54,25 +64,34 @@ impl Gg18SigningPipeline {
 
         // Compute R = sum(k_i) * G
         let mut k_sum = ProjectivePoint::IDENTITY;
-        for k in &nonces { k_sum += ProjectivePoint::GENERATOR * k; }
+        for k in &nonces {
+            k_sum += ProjectivePoint::GENERATOR * k;
+        }
         let r_point = k_sum.to_affine();
         let r = x_coordinate(&r_point);
-        if r == Scalar::ZERO { return Err("r is zero".into()); }
+        if r == Scalar::ZERO {
+            return Err("r is zero".into());
+        }
 
         // Hash
         let e = hash_to_scalar(message);
 
         // s = k^{-1} * (e + r * x) where k = sum(k_i), x = sum(x_i)
         let k_total: Scalar = nonces.iter().copied().fold(Scalar::ZERO, |a, b| a + b);
-        let x_total: Scalar = self.key_shares.iter().copied().fold(Scalar::ZERO, |a, b| a + b);
+        let x_total: Scalar = self
+            .key_shares
+            .iter()
+            .copied()
+            .fold(Scalar::ZERO, |a, b| a + b);
         let k_inv = invert_scalar(&k_total);
         let s = k_inv * (e + r * x_total);
-        if s == Scalar::ZERO { return Err("s is zero".into()); }
+        if s == Scalar::ZERO {
+            return Err("s is zero".into());
+        }
 
         let r_bytes: [u8; 32] = r.to_repr().into();
         let s_bytes: [u8; 32] = s.to_repr().into();
-        Signature::from_scalars(r_bytes, s_bytes)
-            .map_err(|e| format!("sig: {e}"))
+        Signature::from_scalars(r_bytes, s_bytes).map_err(|e| format!("sig: {e}"))
     }
 
     pub fn verify(&self, message: &[u8], signature: &Signature) -> bool {
@@ -110,7 +129,6 @@ fn hash_to_scalar(message: &[u8]) -> Scalar {
 }
 
 fn invert_scalar(s: &Scalar) -> Scalar {
-    use p256::elliptic_curve::ops::Invert;
     Option::<Scalar>::from(s.invert()).unwrap_or(Scalar::ZERO)
 }
 
@@ -118,7 +136,9 @@ fn invert_scalar(s: &Scalar) -> Scalar {
 mod tests {
     use super::*;
 
-    fn random_scalar() -> Scalar { Scalar::random(&mut OsRng) }
+    fn random_scalar() -> Scalar {
+        Scalar::random(&mut OsRng)
+    }
 
     #[test]
     fn gg18_sign_and_verify() {

@@ -6,11 +6,10 @@
 use crate::paillier_mta;
 use confium_tc::paillier::{self, PaillierKeypair};
 use num_bigint::BigUint;
-use num_traits::{One, Zero};
-use p256::elliptic_curve::rand_core::OsRng;
 use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
-use p256::{AffinePoint, ProjectivePoint, Scalar, U256};
+use p256::elliptic_curve::rand_core::OsRng;
 use p256::elliptic_curve::{Field, PrimeField};
+use p256::{AffinePoint, ProjectivePoint, Scalar};
 use sha2::{Digest, Sha256};
 
 /// Full CMP20 signing pipeline for T-of-N.
@@ -51,14 +50,13 @@ impl Cmp20SigningPipeline {
 
     /// Run the full CMP20 signing protocol for a message.
     /// Returns a standard P-256 ECDSA signature.
+    #[allow(clippy::needless_range_loop)]
     pub fn sign(&self, message: &[u8]) -> Result<Signature, String> {
         let n = self.party_count as usize;
-        let t = self.threshold as usize;
+        let _t = self.threshold as usize;
 
         // Step 1: Each party generates a nonce k_i
-        let nonces: Vec<Scalar> = (0..n)
-            .map(|_| Scalar::random(&mut OsRng))
-            .collect();
+        let nonces: Vec<Scalar> = (0..n).map(|_| Scalar::random(&mut OsRng)).collect();
 
         // Step 2: Run MtA for each pair (i, j) where i != j
         // Compute additive shares of k_i * x_j
@@ -72,11 +70,9 @@ impl Cmp20SigningPipeline {
                 // Party i encrypts k_i under j's Paillier key
                 let k_i_big = scalar_to_biguint(&nonces[i]);
                 let x_j_big = scalar_to_biguint(&self.key_shares[j]);
-                let (alpha, beta) = paillier_mta::full_mta(
-                    &self.paillier_keys[j],
-                    &k_i_big,
-                    &x_j_big,
-                ).map_err(|e| format!("MtA failed: {e}"))?;
+                let (alpha, beta) =
+                    paillier_mta::full_mta(&self.paillier_keys[j], &k_i_big, &x_j_big)
+                        .map_err(|e| format!("MtA failed: {e}"))?;
 
                 // alpha is held by party i, beta by party j
                 // delta_i += alpha (mod curve order)
@@ -116,7 +112,11 @@ impl Cmp20SigningPipeline {
         // s = k^{-1} * (e + r * sum(x_i))
         // For simplicity, reconstruct k and x for the mock in-process case
         let k_total: Scalar = nonces.iter().copied().fold(Scalar::ZERO, |a, b| a + b);
-        let x_total: Scalar = self.key_shares.iter().copied().fold(Scalar::ZERO, |a, b| a + b);
+        let x_total: Scalar = self
+            .key_shares
+            .iter()
+            .copied()
+            .fold(Scalar::ZERO, |a, b| a + b);
 
         let k_inv = k_total.invert().unwrap_or(Scalar::ZERO);
         let s = k_inv * (e + r * x_total);
