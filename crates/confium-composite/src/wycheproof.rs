@@ -56,9 +56,9 @@ struct TestCase {
     tc_id: u64,
     #[allow(dead_code)]
     comment: String,
-    msg: String,           // hex
-    sig: String,           // hex (DER for ECDSA)
-    result: String,        // "valid" | "invalid" | "acceptable"
+    msg: String,    // hex
+    sig: String,    // hex (DER for ECDSA)
+    result: String, // "valid" | "invalid" | "acceptable"
     #[allow(dead_code)]
     flags: Option<Vec<String>>,
 }
@@ -66,7 +66,10 @@ struct TestCase {
 /// Load a Wycheproof ECDSA-P256 JSON file and run every test case
 /// through `confium_composite`'s verifier. Returns the count of
 /// (passed, failed, acceptable).
-pub fn run_ecdsa_p256(path: &Path, verifier: impl Fn(&[u8], &[u8], &[u8]) -> bool) -> (usize, usize, usize) {
+pub fn run_ecdsa_p256(
+    path: &Path,
+    verifier: impl Fn(&[u8], &[u8], &[u8]) -> bool,
+) -> (usize, usize, usize) {
     let raw = match std::fs::read_to_string(path) {
         Ok(s) => s,
         Err(_) => return (0, 0, 0),
