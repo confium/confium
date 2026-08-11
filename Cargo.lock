@@ -1735,6 +1735,7 @@ name = "confium-transparency"
 version = "0.4.7"
 dependencies = [
  "chrono",
+ "criterion",
  "proptest",
  "serde",
  "serde_json",

@@ -45,8 +45,14 @@ pub struct InclusionProof {
 pub struct MerkleTree {
     /// All entries in append order.
     entries: Vec<MerkleEntry>,
-    /// Cached leaf hashes.
+    /// Cached leaf hashes (level 0 of the tree).
     leaf_hashes: Vec<Hash>,
+    /// Cached intermediate levels of the tree.
+    /// `levels[0]` is leaf hashes (same as `leaf_hashes`); `levels[k]`
+    /// is the k-th level above the leaves. The last entry is the
+    /// singleton level holding just the root.
+    /// Empty when the tree is empty; rebuilt on every `append`.
+    levels: Vec<Vec<Hash>>,
     /// Cached root hash. Recomputed on every append; `root()` is O(1).
     /// `[0u8; 32]` for an empty tree.
     cached_root: Hash,
@@ -121,13 +127,38 @@ impl MerkleTree {
         let hash = entry.entry_hash();
         self.leaf_hashes.push(hash_leaf(hash));
         self.entries.push(entry);
-        // Maintain cached root. Recomputing here costs O(log N) work
-        // per append on average (only the path from the new leaf up
-        // to the root changes); doing it lazily would defer the cost
-        // but make `root()` non-trivial. Eager is simpler and matches
-        // RFC 6962's "tree head = root after every append" model.
-        self.cached_root = Self::compute_root(&self.leaf_hashes);
+        // Rebuild cached levels + root. Append is O(N) in the worst
+        // case (when N is just past a power of two, every level above
+        // the leaves changes); in exchange, every `inclusion_proof`
+        // call drops from O(N) to O(log N) because it walks the
+        // pre-computed levels instead of rebuilding them.
+        self.rebuild_levels();
         (self.entries.len() - 1) as u64
+    }
+
+    /// Recompute `levels` and `cached_root` from `leaf_hashes`.
+    fn rebuild_levels(&mut self) {
+        if self.leaf_hashes.is_empty() {
+            self.levels.clear();
+            self.cached_root = [0u8; 32];
+            return;
+        }
+        self.levels.clear();
+        self.levels.push(self.leaf_hashes.clone());
+        while self.levels.last().map_or(0, |l| l.len()) > 1 {
+            let current = self.levels.last().unwrap();
+            let mut next = Vec::with_capacity(current.len() / 2 + 1);
+            let mut iter = current.iter();
+            loop {
+                match (iter.next(), iter.next()) {
+                    (Some(l), Some(r)) => next.push(hash_internal(*l, *r)),
+                    (Some(l), None) => next.push(*l),
+                    _ => break,
+                }
+            }
+            self.levels.push(next);
+        }
+        self.cached_root = self.levels.last().unwrap()[0];
     }
 
     /// Current entry count.
@@ -147,31 +178,6 @@ impl MerkleTree {
         self.cached_root
     }
 
-    /// Compute the root hash from leaf hashes. O(N) in the number of leaves.
-    /// Used by [`append`](Self::append) to maintain the cached root.
-    fn compute_root(leaf_hashes: &[Hash]) -> Hash {
-        if leaf_hashes.is_empty() {
-            return [0u8; 32];
-        }
-        let mut level = leaf_hashes.to_vec();
-        while level.len() > 1 {
-            let mut next = Vec::with_capacity(level.len() / 2 + 1);
-            let mut iter = level.iter();
-            loop {
-                match (iter.next(), iter.next()) {
-                    (Some(l), Some(r)) => next.push(hash_internal(*l, *r)),
-                    (Some(l), None) => {
-                        // Odd node: promoted to next level unchanged
-                        next.push(*l);
-                    }
-                    _ => break,
-                }
-            }
-            level = next;
-        }
-        level[0]
-    }
-
     /// Get an entry by sequence.
     pub fn entry(&self, sequence: u64) -> Result<&MerkleEntry, MerkleError> {
         self.entries
@@ -181,20 +187,32 @@ impl MerkleTree {
 
     /// Construct an inclusion proof for `sequence`. Returns direction-aware
     /// proof per RFC 6962 §2.1.1.
+    ///
+    /// O(log N) — walks the cached levels from leaf to root, picking
+    /// the sibling at each level. Compare to the previous O(N)
+    /// implementation which rebuilt every level on each call.
     pub fn inclusion_proof(&self, sequence: u64) -> Result<InclusionProof, MerkleError> {
         if sequence as usize >= self.leaf_hashes.len() {
             return Err(MerkleError::OutOfRange(sequence, self.entries.len()));
         }
+        // If the cache hasn't been built (empty tree, or invariants
+        // violated), fall back to the O(N) builder.
+        if self.levels.is_empty() && !self.leaf_hashes.is_empty() {
+            // Defensive: rebuild_levels should always be called by
+            // append(). If we get here, the tree was constructed via
+            // a path that bypassed rebuild_levels. Bail out cleanly.
+            return Err(MerkleError::OutOfRange(sequence, self.entries.len()));
+        }
         let mut steps = Vec::new();
         let mut idx = sequence as usize;
-        let mut level = self.leaf_hashes.clone();
-        while level.len() > 1 {
+        for level in 0..self.levels.len().saturating_sub(1) {
+            let current = &self.levels[level];
             if idx % 2 == 0 {
                 // Current is left child; sibling (if exists) is right
                 let sibling_idx = idx + 1;
-                if sibling_idx < level.len() {
+                if sibling_idx < current.len() {
                     steps.push(ProofStep {
-                        sibling: level[sibling_idx],
+                        sibling: current[sibling_idx],
                         side: Side::Right,
                     });
                 }
@@ -202,21 +220,10 @@ impl MerkleTree {
                 // Current is right child; sibling is left
                 let sibling_idx = idx - 1;
                 steps.push(ProofStep {
-                    sibling: level[sibling_idx],
+                    sibling: current[sibling_idx],
                     side: Side::Left,
                 });
             }
-            // Build next level
-            let mut next = Vec::with_capacity(level.len() / 2 + 1);
-            let mut iter = level.iter().enumerate();
-            while let Some((_, l)) = iter.next() {
-                if let Some((_, r)) = iter.next() {
-                    next.push(hash_internal(*l, *r));
-                } else {
-                    next.push(*l);
-                }
-            }
-            level = next;
             idx /= 2;
         }
         Ok(InclusionProof { sequence, steps })

@@ -29,6 +29,11 @@ subtle = { workspace = true }
 [dev-dependencies]
 tokio = { workspace = true }
 proptest = { workspace = true }
+criterion = { version = "0.5", default-features = false, features = ["plotters", "cargo_bench_support"] }
+
+[[bench]]
+name = "inclusion_proof"
+harness = false
 
 [lib]
 crate-type = ["rlib"]
