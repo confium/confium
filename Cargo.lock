@@ -1027,6 +1027,7 @@ version = "0.4.7"
 dependencies = [
  "confium-transparency",
  "ed25519-dalek",
+ "hex",
  "p256",
  "proptest",
  "rand_core 0.6.4",

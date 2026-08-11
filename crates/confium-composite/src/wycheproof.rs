@@ -52,11 +52,14 @@ struct TestGroup {
 #[derive(Debug, Deserialize)]
 struct TestCase {
     #[serde(rename = "tcId")]
+    #[allow(dead_code)]
     tc_id: u64,
+    #[allow(dead_code)]
     comment: String,
     msg: String,           // hex
     sig: String,           // hex (DER for ECDSA)
     result: String,        // "valid" | "invalid" | "acceptable"
+    #[allow(dead_code)]
     flags: Option<Vec<String>>,
 }
 
