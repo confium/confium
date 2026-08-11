@@ -353,7 +353,9 @@ fn verify_inclusion_with_leaf(
         };
     }
 
-    if current == root_hash {
+    use subtle::ConstantTimeEq;
+    let ok: bool = current.ct_eq(&root_hash).into();
+    if ok {
         Ok(())
     } else {
         Err(pyo3::exceptions::PyValueError::new_err(format!(

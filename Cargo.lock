@@ -1183,6 +1183,7 @@ dependencies = [
  "serde",
  "sha2 0.10.9",
  "sled",
+ "subtle",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -1733,6 +1734,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "subtle",
  "thiserror 1.0.69",
  "tokio",
 ]
@@ -1784,6 +1786,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "subtle",
  "wasm-bindgen",
  "wasm-bindgen-test",
 ]
