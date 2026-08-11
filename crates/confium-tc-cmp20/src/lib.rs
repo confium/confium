@@ -63,6 +63,9 @@ pub mod share;
 pub mod sign;
 pub mod vss;
 
+#[cfg(test)]
+mod props;
+
 pub use scheme::{Cmp20EcdsaP256, Cmp20EcdsaP256Sign};
 pub use share::Cmp20Share;
 
