@@ -1738,6 +1738,7 @@ version = "0.4.7"
 dependencies = [
  "chrono",
  "criterion",
+ "hex",
  "proptest",
  "serde",
  "serde_json",

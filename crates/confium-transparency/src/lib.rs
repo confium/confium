@@ -38,6 +38,7 @@ pub mod ers;
 pub mod merkle;
 pub mod ots;
 pub mod proof;
+pub mod test_vectors;
 pub mod witness;
 
 #[cfg(test)]
