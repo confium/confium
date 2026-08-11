@@ -143,6 +143,12 @@ fn default_min_signatures() -> u32 {
 mod tests {
     use super::*;
 
+    // Real registry fixtures — these mirror what's actually served
+    // at registry.confium.org and catch wire-format drift that
+    // inline-only test fixtures would miss.
+    const MASTER_FIXTURE: &str = include_str!("../../../sites/registry/index.toml");
+    const PLUGIN_FIXTURE: &str = include_str!("../../../sites/registry/plugins/botan/index.toml");
+
     const SAMPLE_MANIFEST: &str = r#"
 [plugin]
 name = "botan"
@@ -213,5 +219,42 @@ key-url = "/publishers/ribose.asc"
         assert_eq!(roots.min_signatures, 1);
         assert_eq!(roots.publishers[0].name, "ribose");
         assert_eq!(roots.publishers[0].key_id, "0xABCD");
+    }
+
+    #[test]
+    fn real_master_fixture_parses() {
+        let cat: RegistryIndex = toml::from_str(MASTER_FIXTURE).expect("master fixture parses");
+        let botan = cat
+            .plugins
+            .iter()
+            .find(|p| p.name == "botan")
+            .expect("botan entry present in fixture");
+        assert_eq!(botan.latest, "3.2.0");
+        assert_eq!(botan.publishers, vec!["ribose", "ni4"]);
+        assert_eq!(botan.versions_url, "/plugins/botan/index.toml");
+    }
+
+    #[test]
+    fn real_plugin_fixture_parses() {
+        let idx: PluginIndex = toml::from_str(PLUGIN_FIXTURE).expect("plugin fixture parses");
+        assert_eq!(idx.name, "botan");
+        assert_eq!(idx.latest, "3.2.0");
+        assert_eq!(idx.versions.len(), 1);
+        assert_eq!(
+            idx.versions[0].manifest_url,
+            "/plugins/botan/3.2.0/manifest.toml"
+        );
+    }
+
+    #[test]
+    fn real_plugin_fixture_resolves_latest() {
+        let idx: PluginIndex = toml::from_str(PLUGIN_FIXTURE).expect("plugin fixture parses");
+        let target = idx
+            .versions
+            .iter()
+            .find(|v| v.version == idx.latest)
+            .map(|v| v.manifest_url.as_str())
+            .expect("latest resolves");
+        assert_eq!(target, "/plugins/botan/3.2.0/manifest.toml");
     }
 }

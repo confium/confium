@@ -32,8 +32,8 @@ impl MasterCatalog {
     /// Parse a master catalog from TOML text.
     pub fn parse(text: &str) -> Result<Self> {
         toml::from_str(text).map_err(|e| Error::TomlParse {
-            what: "master index.toml".to_string(),
-            message: Error::stringify(e),
+            path: "master index.toml".to_string(),
+            source: e,
         })
     }
 
@@ -66,8 +66,8 @@ impl PluginIndex {
     /// Parse a per-plugin index from TOML text.
     pub fn parse(text: &str) -> Result<Self> {
         toml::from_str(text).map_err(|e| Error::TomlParse {
-            what: "per-plugin index.toml".to_string(),
-            message: Error::stringify(e),
+            path: "per-plugin index.toml".to_string(),
+            source: e,
         })
     }
 
@@ -84,9 +84,9 @@ impl PluginIndex {
             .iter()
             .find(|v| v.version == target)
             .map(|v| v.manifest_url.as_str())
-            .ok_or_else(|| Error::NotFound {
-                what: "version".to_string(),
-                detail: format!("plugin '{}' has no version '{}'", self.name, target),
+            .ok_or_else(|| Error::VersionNotFound {
+                name: self.name.clone(),
+                version: target.to_string(),
             })
     }
 }
@@ -138,6 +138,6 @@ mod tests {
     fn rejects_unknown_version() {
         let idx = PluginIndex::parse(PLUGIN).expect("plugin parses");
         let err = idx.manifest_url_for("9.9.9").unwrap_err();
-        assert!(matches!(err, Error::NotFound { .. }));
+        assert!(matches!(err, Error::VersionNotFound { .. }));
     }
 }
