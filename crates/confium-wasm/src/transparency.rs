@@ -144,7 +144,8 @@ impl InclusionProof {
                 confium_transparency::merkle::Side::Right => hash_internal(current, step.sibling),
             };
         }
-        Ok(current == root_arr)
+        use subtle::ConstantTimeEq;
+        Ok(current.ct_eq(&root_arr).into())
     }
 }
 
@@ -302,5 +303,6 @@ pub fn verify_inclusion_with_head(
             confium_transparency::merkle::Side::Right => hash_internal(current, step.sibling),
         };
     }
-    Ok(current == root_arr)
+    use subtle::ConstantTimeEq;
+    Ok(current.ct_eq(&root_arr).into())
 }

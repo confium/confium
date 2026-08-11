@@ -235,7 +235,8 @@ impl MerkleTree {
                 Side::Right => hash_internal(current, step.sibling),
             };
         }
-        if current == root {
+        use subtle::ConstantTimeEq;
+        if current.ct_eq(&root).into() {
             Ok(())
         } else {
             Err(MerkleError::InclusionFailed(entry.sequence))
@@ -427,7 +428,10 @@ impl MerkleTree {
         let computed_old_root = self.root_at_size(old_size);
         let computed_new_root = self.root();
 
-        if computed_old_root == old_root && computed_new_root == new_root {
+        use subtle::ConstantTimeEq;
+        let old_ok: bool = computed_old_root.ct_eq(&old_root).into();
+        let new_ok: bool = computed_new_root.ct_eq(&new_root).into();
+        if old_ok && new_ok {
             Ok(())
         } else {
             Err(MerkleError::ConsistencyFailed {

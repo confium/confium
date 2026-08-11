@@ -31,10 +31,14 @@ pub fn verify_consistency(
         proof.new_size,
         new_head.tree_size
     );
-    ensure!(
-        proof.new_root == new_head.root,
-        "proof new_root doesn't match head root"
-    );
+    // Constant-time comparison of the hex-encoded roots. Both sides
+    // are public, but hashing primitives should never short-circuit
+    // compare — defense in depth.
+    use subtle::ConstantTimeEq;
+    let proof_root_bytes = hex::decode(&proof.new_root).unwrap_or_default();
+    let head_root_bytes = hex::decode(&new_head.root).unwrap_or_default();
+    let root_ok: bool = proof_root_bytes.ct_eq(&head_root_bytes).into();
+    ensure!(root_ok, "proof new_root doesn't match head root");
 
     // RFC 6962 consistency verification: walk the proof hashes
     // starting from the leftmost subtree of old_size, combining
@@ -107,7 +111,9 @@ pub fn verify_inclusion(
             hash_pair(&current, &sib_arr)
         };
     }
-    ensure!(&current == root, "inclusion proof doesn't reach root");
+    use subtle::ConstantTimeEq;
+    let root_ok: bool = current.ct_eq(root).into();
+    ensure!(root_ok, "inclusion proof doesn't reach root");
     Ok(())
 }
 
