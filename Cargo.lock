@@ -1149,7 +1149,9 @@ dependencies = [
 name = "confium-fuzz"
 version = "0.4.7"
 dependencies = [
+ "confium-attributes",
  "confium-composite",
+ "confium-pki",
  "confium-tc",
  "confium-transparency",
  "serde_json",
