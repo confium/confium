@@ -86,15 +86,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cert::Certificate;
-
-    #[allow(dead_code)] // placeholder until real cert fixtures land
-    fn synthetic_cert() -> Certificate {
-        // We can't easily generate a real cert in pure-Rust no-deps mode.
-        // Path validation tests require real cert chains, which belong in
-        // integration tests. This module's logic is exercised there.
-        unimplemented!("use integration tests with real cert fixtures")
-    }
 
     #[test]
     fn empty_path_is_valid() {
