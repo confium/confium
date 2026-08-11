@@ -4,9 +4,9 @@
 //! the cached-levels optimization. Compare with the previous O(N)
 //! behavior by reverting the rebuild_levels change.
 
-use criterion::{BenchmarkId, criterion_group, criterion_main, Criterion};
 use confium_transparency::entry::{ArtifactType, MerkleEntry};
 use confium_transparency::merkle::MerkleTree;
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 
 fn build_tree(n: u64) -> MerkleTree {
     let mut tree = MerkleTree::new();
