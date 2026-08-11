@@ -1561,7 +1561,6 @@ dependencies = [
  "elliptic-curve",
  "inventory",
  "num-bigint",
- "num-traits",
  "p256",
  "proptest",
  "rand 0.8.7",
