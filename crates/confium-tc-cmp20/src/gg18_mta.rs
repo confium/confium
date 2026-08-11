@@ -4,8 +4,8 @@
 //! This module re-exports the CMP20 Paillier MtA for GG20's use.
 
 pub use crate::paillier_mta::{
-    self, MtaError, MtaMessage1, MtaMessage2,
-    full_mta, party_i_init, party_i_finish, party_j_respond,
+    self, MtaError, MtaMessage1, MtaMessage2, full_mta, party_i_finish, party_i_init,
+    party_j_respond,
 };
 
 /// GG18-specific MtA: runs the MtA between two parties with an

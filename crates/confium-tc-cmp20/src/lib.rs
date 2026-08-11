@@ -50,7 +50,10 @@
 //! in the clear) rather than a Paillier-based homomorphic MtA, matching
 //! the GG18 crate's deferred-Paillier approach.
 
+pub mod e2e_signing;
 pub mod error;
+pub mod gg18_e2e;
+pub mod gg18_mta;
 pub mod inprocess;
 pub mod keygen;
 pub mod lagrange;
