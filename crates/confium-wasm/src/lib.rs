@@ -44,6 +44,12 @@ mod pki;
 #[cfg(feature = "verify-pki")]
 pub use pki::{Certificate, SignedData};
 
+#[cfg(feature = "sign")]
+mod signer;
+
+#[cfg(feature = "sign")]
+pub use signer::{Cmp20Signer, Gg18Signer};
+
 /// Package version (mirrors the Cargo version).
 #[wasm_bindgen]
 pub fn version() -> String {

@@ -73,10 +73,7 @@ pub fn generate_vector(n: u64) -> TestVector {
                 },
             })
             .collect();
-        proofs.push(InclusionProofJson {
-            sequence: i,
-            steps,
-        });
+        proofs.push(InclusionProofJson { sequence: i, steps });
     }
 
     let artifact_hashes: Vec<String> = (0..n).map(|i| hex::encode([i as u8; 32])).collect();
@@ -239,7 +236,10 @@ mod tests {
     fn power_of_two_tree_has_clean_proofs() {
         let vector = generate_vector(8);
         for proof in &vector.inclusion_proofs {
-            assert!(proof.steps.len() <= 4, "8-entry tree has at most 4 proof steps");
+            assert!(
+                proof.steps.len() <= 4,
+                "8-entry tree has at most 4 proof steps"
+            );
         }
     }
 }

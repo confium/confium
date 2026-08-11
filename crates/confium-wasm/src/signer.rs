@@ -117,8 +117,8 @@ impl Gg18Signer {
     /// Run a GG18 DKG.
     #[wasm_bindgen]
     pub fn keygen(&self, threshold: u32, party_count: u32) -> Result<JsValue, JsValue> {
-        let kg = confium_tc_gg18::inprocess::keygen(threshold, party_count as usize)
-            .map_err(map_err)?;
+        let kg =
+            confium_tc_gg18::inprocess::keygen(threshold, party_count as usize).map_err(map_err)?;
         let obj = js_sys::Object::new();
         let shares = js_sys::Array::new();
         for s in kg.shares {
