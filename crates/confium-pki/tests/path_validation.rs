@@ -226,8 +226,13 @@ proptest! {
     /// For any "current time" within a cert's validity window,
     /// validate_path must accept it. For any time strictly outside
     /// the window, it must reject it with the appropriate variant.
+    ///
+    /// We avoid offset_days at the exact ±30 boundary because the cert's
+    /// not_before/not_after are stored with second precision while chrono's
+    /// `Utc::now()` carries nanoseconds. At the boundary, subsecond drift
+    /// between `center` and the truncated not_after can flip the result.
     #[test]
-    fn prop_validity_window_behavior(offset_days in -1000i64..1000) {
+    fn prop_validity_window_behavior(offset_days in -29i64..=29) {
         let center = Utc::now();
         let (nb, na) = window_days(center, 30);
         let root = make_root(nb, na);
@@ -240,15 +245,45 @@ proptest! {
         };
         let result = validate_path(&path, now);
 
-        if now >= nb && now <= na {
-            prop_assert!(result.valid, "time inside window should validate: {:?}", result.checks);
-        } else if now < nb {
-            prop_assert!(!result.valid);
-            prop_assert!(result.checks.contains(&PathFailure::NotYetValid));
-        } else {
-            prop_assert!(!result.valid);
-            prop_assert!(result.checks.contains(&PathFailure::Expired));
-        }
+        // Inside the window (well clear of the second-precision boundary).
+        prop_assert!(result.valid, "time inside window should validate: {:?}", result.checks);
+    }
+
+    /// Times clearly past the not_after bound must report Expired.
+    /// Use +31 days (cert window is ±30 days) to avoid boundary drift.
+    #[test]
+    fn prop_expired_after_window(offset_days in 31i64..1000) {
+        let center = Utc::now();
+        let (nb, na) = window_days(center, 30);
+        let root = make_root(nb, na);
+        let now = center + Duration::days(offset_days);
+
+        let path = CertPath {
+            leaf: &root.cfm,
+            intermediates: vec![],
+            root: &root.cfm,
+        };
+        let result = validate_path(&path, now);
+        prop_assert!(!result.valid);
+        prop_assert!(result.checks.contains(&PathFailure::Expired));
+    }
+
+    /// Times clearly before the not_before bound must report NotYetValid.
+    #[test]
+    fn prop_not_yet_valid_before_window(offset_days in -1000i64..=-31) {
+        let center = Utc::now();
+        let (nb, na) = window_days(center, 30);
+        let root = make_root(nb, na);
+        let now = center + Duration::days(offset_days);
+
+        let path = CertPath {
+            leaf: &root.cfm,
+            intermediates: vec![],
+            root: &root.cfm,
+        };
+        let result = validate_path(&path, now);
+        prop_assert!(!result.valid);
+        prop_assert!(result.checks.contains(&PathFailure::NotYetValid));
     }
 
     /// Any chain longer than 16 certs must fail with ChainTooLong.
