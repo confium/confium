@@ -13,9 +13,8 @@ use pyo3::prelude::*;
 /// the canonical form used for XMLDSig signature verification.
 #[pyfunction]
 fn canonicalize(xml: &str) -> PyResult<String> {
-    confium_pki::xmldsig::canonicalize(xml).map_err(|e| {
-        pyo3::exceptions::PyValueError::new_err(e.to_string())
-    })
+    confium_pki::xmldsig::canonicalize(xml)
+        .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
 }
 
 /// Canonicalize XML per Exclusive C14N (RFC 3741).
@@ -24,9 +23,8 @@ fn canonicalize(xml: &str) -> PyResult<String> {
 /// should NOT be visible in the canonical form (e.g., SOAP envelopes).
 #[pyfunction]
 fn canonicalize_exclusive(xml: &str) -> PyResult<String> {
-    confium_pki::xmldsig::canonicalize_exclusive(xml).map_err(|e| {
-        pyo3::exceptions::PyValueError::new_err(e.to_string())
-    })
+    confium_pki::xmldsig::canonicalize_exclusive(xml)
+        .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
 }
 
 /// Compute the SHA-256 digest of `data` as 32 bytes.
@@ -38,10 +36,7 @@ fn sha256_digest<'py>(py: Python<'py>, data: &[u8]) -> Bound<'py, pyo3::types::P
 }
 
 /// Register the `xmldsig` submodule.
-pub(crate) fn register_module(
-    py: Python<'_>,
-    parent: &Bound<'_, PyModule>,
-) -> PyResult<()> {
+pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     let m = PyModule::new_bound(py, "xmldsig")?;
     m.add_function(wrap_pyfunction!(canonicalize, &m)?)?;
     m.add_function(wrap_pyfunction!(canonicalize_exclusive, &m)?)?;

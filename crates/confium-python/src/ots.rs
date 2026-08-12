@@ -1,8 +1,8 @@
 //! OpenTimestamps (OTS) bindings — anchor hashes to Bitcoin.
 
+use pyo3::Bound;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyList};
-use pyo3::Bound;
 
 use confium_transparency::ots::{OtsClient, OtsProof, OtsVerification};
 
@@ -40,7 +40,9 @@ fn require_hash_32(buf: &[u8], field: &str) -> PyResult<[u8; 32]> {
 impl PyOtsClient {
     #[new]
     fn new() -> Self {
-        Self { inner: OtsClient::new() }
+        Self {
+            inner: OtsClient::new(),
+        }
     }
 
     #[getter]
@@ -55,11 +57,7 @@ impl PyOtsClient {
     /// Submit a 32-byte hash for timestamping. Returns an OtsProof.
     /// Current implementation returns a mock proof (block 800000);
     /// real HTTP stamping lands with the full calendar server integration.
-    fn stamp<'py>(
-        &self,
-        _py: Python<'py>,
-        hash: &Bound<'py, PyBytes>,
-    ) -> PyResult<PyOtsProof> {
+    fn stamp<'py>(&self, _py: Python<'py>, hash: &Bound<'py, PyBytes>) -> PyResult<PyOtsProof> {
         let hash_arr = require_hash_32(hash.as_bytes(), "hash")?;
         Ok(PyOtsProof {
             inner: OtsProof::new(hash_arr, 800_000),
@@ -83,13 +81,19 @@ impl PyOtsProof {
 #[pymethods]
 impl PyOtsVerification {
     #[getter]
-    fn valid(&self) -> bool { self.inner.valid }
+    fn valid(&self) -> bool {
+        self.inner.valid
+    }
 
     #[getter]
-    fn bitcoin_height(&self) -> u32 { self.inner.bitcoin_height }
+    fn bitcoin_height(&self) -> u32 {
+        self.inner.bitcoin_height
+    }
 
     #[getter]
-    fn block_timestamp(&self) -> Option<u64> { self.inner.block_timestamp }
+    fn block_timestamp(&self) -> Option<u64> {
+        self.inner.block_timestamp
+    }
 }
 
 pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {

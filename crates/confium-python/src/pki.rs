@@ -10,15 +10,15 @@
 //! SignedData model. Once `confium_pki::cms::from_der` lands, a
 //! `SignedData.from_der` classmethod will be added here.
 
+use pyo3::Bound;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList, PyString};
-use pyo3::Bound;
 
 use confium_pki::{
-    cert::{Certificate as RustCert, CertificateSigningRequest as RustCsr, CertError},
+    cert::{CertError, Certificate as RustCert, CertificateSigningRequest as RustCsr},
     cms::{
-        build_detached_signature, encode_signed_data_der, verify_signed_data, SignerVerification,
-        SignedData as RustSignedData,
+        SignedData as RustSignedData, SignerVerification, build_detached_signature,
+        encode_signed_data_der, verify_signed_data,
     },
 };
 
@@ -200,9 +200,8 @@ impl PySignedData {
         algorithm: String,
         certificates: Vec<Vec<u8>>,
     ) -> PyResult<Self> {
-        let inner =
-            build_detached_signature(Vec::new(), &algorithm, signature, certificates)
-                .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
+        let inner = build_detached_signature(Vec::new(), &algorithm, signature, certificates)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
         Ok(Self { inner })
     }
 

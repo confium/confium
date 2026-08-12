@@ -20,13 +20,13 @@
 //!   assert pred.evaluate(signers) is True
 //!   ```
 
+use pyo3::Bound;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
-use pyo3::Bound;
 
 use confium_attributes::{
-    evaluate as rust_evaluate, parse as rust_parse, Predicate as RustPredicate,
-    SignerAttributes as RustSignerAttributes,
+    Predicate as RustPredicate, SignerAttributes as RustSignerAttributes,
+    evaluate as rust_evaluate, parse as rust_parse,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -146,12 +146,6 @@ impl PySignerAttributes {
 }
 
 // Test-only helper exposed for the test suite; not part of the public API.
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn placeholder() {}
-}
-
 /// Register the `attributes` submodule.
 pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     let m = PyModule::new_bound(py, "attributes")?;
@@ -164,7 +158,10 @@ pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> P
         ("none", r#"none("nationality:cn")"#),
         ("any", r#"any("expertise")"#),
         ("all", r#"all("role:director")"#),
-        ("and", r#"and(min_count("role:director", 5), min_distinct("region", 3))"#),
+        (
+            "and",
+            r#"and(min_count("role:director", 5), min_distinct("region", 3))"#,
+        ),
         ("or", r#"or(any("backup"), any("primary"))"#),
         ("not", r#"not(none("role:director"))"#),
     ]
@@ -177,4 +174,10 @@ pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> P
     m.add("EXAMPLES", ex_dict)?;
     parent.add_submodule(&m)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn placeholder() {}
 }

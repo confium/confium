@@ -123,9 +123,7 @@ impl CompositeSignature {
         let signing = ed25519_dalek::SigningKey::from_bytes(&seed);
         let msg = message.as_bytes().to_vec();
         let component = py
-            .allow_threads(move || {
-                confium_composite::build_ed25519_component(&signing, &msg)
-            })
+            .allow_threads(move || confium_composite::build_ed25519_component(&signing, &msg))
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
         Ok(Self {
             inner: confium_composite::CompositeSignature::new(vec![component]),
@@ -149,15 +147,12 @@ impl CompositeSignature {
                 pk_bytes.len()
             )));
         }
-        let signing = p256::ecdsa::SigningKey::from_bytes(pk_bytes.into())
-            .map_err(|e| {
-                pyo3::exceptions::PyValueError::new_err(format!("invalid P-256 key: {e}"))
-            })?;
+        let signing = p256::ecdsa::SigningKey::from_bytes(pk_bytes.into()).map_err(|e| {
+            pyo3::exceptions::PyValueError::new_err(format!("invalid P-256 key: {e}"))
+        })?;
         let msg = message.as_bytes().to_vec();
         let component = py
-            .allow_threads(move || {
-                confium_composite::build_p256_component(&signing, &msg)
-            })
+            .allow_threads(move || confium_composite::build_p256_component(&signing, &msg))
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
         Ok(Self {
             inner: confium_composite::CompositeSignature::new(vec![component]),
@@ -173,9 +168,7 @@ impl CompositeSignature {
     fn from_json(json_str: &str) -> PyResult<Self> {
         let inner: confium_composite::CompositeSignature =
             serde_json::from_str(json_str).map_err(|e| {
-                pyo3::exceptions::PyValueError::new_err(format!(
-                    "invalid composite JSON: {e}"
-                ))
+                pyo3::exceptions::PyValueError::new_err(format!("invalid composite JSON: {e}"))
             })?;
         Ok(Self { inner })
     }
@@ -325,7 +318,7 @@ fn verify_ed25519(
         message.as_bytes(),
         signature.as_bytes(),
     )
-    .map_err(|e| pyo3::exceptions::PyValueError::new_err(e))
+    .map_err(pyo3::exceptions::PyValueError::new_err)
 }
 
 /// Built-in ECDSA-P256 verifier. Public key is SEC1 (compressed or
@@ -342,14 +335,11 @@ fn verify_ecdsa_p256(
         message.as_bytes(),
         signature.as_bytes(),
     )
-    .map_err(|e| pyo3::exceptions::PyValueError::new_err(e))
+    .map_err(pyo3::exceptions::PyValueError::new_err)
 }
 
 /// Register the `composite` submodule.
-pub(crate) fn register_module(
-    py: Python<'_>,
-    parent: &Bound<'_, PyModule>,
-) -> PyResult<()> {
+pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     let m = PyModule::new_bound(py, "composite")?;
     m.add_class::<ComponentSignature>()?;
     m.add_class::<CompositeSignature>()?;

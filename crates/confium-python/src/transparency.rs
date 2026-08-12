@@ -24,9 +24,9 @@
 //!   tree.verify_inclusion(seq, proof, root)  # round-trip
 //!   ```
 
+use pyo3::Bound;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList};
-use pyo3::Bound;
 
 use confium_transparency::{
     ArtifactType, Hash, InclusionProof as RustInclusionProof, MerkleEntry,
@@ -36,8 +36,7 @@ use sha2::{Digest, Sha256};
 
 fn parse_artifact_type(s: &str) -> PyResult<ArtifactType> {
     use std::str::FromStr;
-    ArtifactType::from_str(s)
-        .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
+    ArtifactType::from_str(s).map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
 }
 
 fn artifact_type_str(at: ArtifactType) -> &'static str {
@@ -107,11 +106,7 @@ impl MerkleTree {
     ///
     /// Returns:
     ///     The sequence number (u64) assigned to the entry.
-    fn append(
-        &mut self,
-        artifact_type: &str,
-        artifact_hash: &Bound<'_, PyBytes>,
-    ) -> PyResult<u64> {
+    fn append(&mut self, artifact_type: &str, artifact_hash: &Bound<'_, PyBytes>) -> PyResult<u64> {
         let at = parse_artifact_type(artifact_type)?;
         let hash = require_hash_32(artifact_hash.as_bytes(), "artifact_hash")?;
         let seq = self.inner.len() as u64;
@@ -173,11 +168,7 @@ impl MerkleTree {
     ///
     /// Returns a dict with keys: `sequence`, `timestamp` (ISO 8601 string),
     /// `artifact_type`, `artifact_hash` (bytes).
-    fn entry<'py>(
-        &self,
-        py: Python<'py>,
-        sequence: u64,
-    ) -> PyResult<Bound<'py, PyDict>> {
+    fn entry<'py>(&self, py: Python<'py>, sequence: u64) -> PyResult<Bound<'py, PyDict>> {
         let e = self
             .inner
             .entry(sequence)
@@ -245,7 +236,13 @@ impl MerkleTree {
             proof_hashes.push(require_hash_32(&bytes, "proof entry")?);
         }
         self.inner
-            .verify_consistency(old_root_hash, new_root_hash, old_size, new_size, &proof_hashes)
+            .verify_consistency(
+                old_root_hash,
+                new_root_hash,
+                old_size,
+                new_size,
+                &proof_hashes,
+            )
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
     }
 }
@@ -366,10 +363,7 @@ fn verify_inclusion_with_leaf(
 }
 
 /// Register the `transparency` submodule.
-pub(crate) fn register_module(
-    py: Python<'_>,
-    parent: &Bound<'_, PyModule>,
-) -> PyResult<()> {
+pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     let m = PyModule::new_bound(py, "transparency")?;
     m.add_class::<MerkleTree>()?;
     m.add_class::<PyInclusionProof>()?;
