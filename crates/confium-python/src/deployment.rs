@@ -8,8 +8,10 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyList, PyString};
 
-use confium_deployment::{validate_manifest as rust_validate, Manifest as RustManifest,
-    parse_manifest as rust_parse, manifest_to_toml as rust_to_toml};
+use confium_deployment::{
+    Manifest as RustManifest, manifest_to_toml as rust_to_toml, parse_manifest as rust_parse,
+    validate_manifest as rust_validate,
+};
 
 /// A parsed deployment manifest (TOML-backed model).
 ///
@@ -77,10 +79,7 @@ impl PyManifest {
 }
 
 /// Register the `deployment` submodule.
-pub(crate) fn register_module(
-    py: Python<'_>,
-    parent: &Bound<'_, PyModule>,
-) -> PyResult<()> {
+pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     let m = PyModule::new_bound(py, "deployment")?;
     m.add_class::<PyManifest>()?;
     parent.add_submodule(&m)?;

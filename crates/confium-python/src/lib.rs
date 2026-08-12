@@ -13,6 +13,12 @@
 // in-unsafe-fn under edition 2024. The macro output is correct; the
 // warnings are upstream noise pending a PyO3 0.23+ bump.
 #![allow(unsafe_op_in_unsafe_fn)]
+// Idiomatic PyO3 wrapper pattern: `.map_err(|e| PyValueError::new_err(...))?`
+// in a function returning `PyResult<T>` does PyErr -> PyErr via `From`,
+// which clippy::useless_conversion flags. The `?` is correct (it short-
+// circuits on Err and unwraps on Ok) and the alternative (`.map(...)?`
+// chains) is less readable. Allow the lint at the crate level.
+#![allow(clippy::useless_conversion)]
 
 use pyo3::prelude::*;
 

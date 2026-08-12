@@ -15,21 +15,21 @@
 //! sig = confium.tc.Cmp20.sign(kg["shares"][:2], threshold=2, message=b"hi")
 //! ```
 
+use pyo3::Bound;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList};
-use pyo3::Bound;
 
 use confium_tc_cmp20::inprocess as cmp20_inprocess;
 use confium_tc_elgamal_p256::{
-    aggregate_partials as elgamal_aggregate, encapsulate as elgamal_encapsulate,
-    partial_decrypt as elgamal_partial_decrypt, Ciphertext as ElGamalCiphertext,
-    DecryptionShare, PartialDecryption, PublicKey as ElGamalPublicKey,
+    Ciphertext as ElGamalCiphertext, DecryptionShare, PartialDecryption,
+    PublicKey as ElGamalPublicKey, aggregate_partials as elgamal_aggregate,
+    encapsulate as elgamal_encapsulate, partial_decrypt as elgamal_partial_decrypt,
 };
 use confium_tc_frost_p256::{
-    generate_keypair, public_key_for,
+    Keypair, generate_keypair, public_key_for,
     scalar::{scalar_from_bytes, scalar_to_bytes},
-    shamir::{recover_secret, split_secret, Share},
-    sign_message, Keypair,
+    shamir::{Share, recover_secret, split_secret},
+    sign_message,
 };
 use confium_tc_gg18::inprocess as gg18_inprocess;
 
@@ -121,9 +121,7 @@ impl PyFrostP256 {
             let y_b = bytes_arg_to_vec(&y_value)?;
             let y_arr = require_scalar_32("y_bytes", &y_b)?;
             let y = scalar_from_bytes(&y_arr).ok_or_else(|| {
-                pyo3::exceptions::PyValueError::new_err(
-                    "share y_bytes is not a valid P-256 scalar",
-                )
+                pyo3::exceptions::PyValueError::new_err("share y_bytes is not a valid P-256 scalar")
             })?;
             owned.push(Share { x, y });
         }
@@ -164,17 +162,14 @@ impl PyFrostP256 {
         let msg_b = bytes_arg_to_vec(message)?;
         let pk_arr = require_scalar_32("private_key", &pk_b)?;
         let secret = scalar_from_bytes(&pk_arr).ok_or_else(|| {
-            pyo3::exceptions::PyValueError::new_err(
-                "private_key is not a valid P-256 scalar",
-            )
+            pyo3::exceptions::PyValueError::new_err("private_key is not a valid P-256 scalar")
         })?;
         let kp = Keypair {
             secret_scalar: secret,
             public_key: public_key_for(&secret),
         };
-        let signed = sign_message(&kp, &msg_b).map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("sign_message: {e}"))
-        })?;
+        let signed = sign_message(&kp, &msg_b)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("sign_message: {e}")))?;
         let d = PyDict::new_bound(py);
         d.set_item("der", PyBytes::new_bound(py, &signed.der_bytes))?;
         d.set_item("fixed", PyBytes::new_bound(py, &signed.fixed_bytes))?;
@@ -198,9 +193,8 @@ impl PyElGamalP256 {
     ) -> PyResult<Bound<'py, PyDict>> {
         let pk_b = bytes_arg_to_vec(public_key)?;
         let pk = ElGamalPublicKey { bytes: pk_b };
-        let (ct, ss) = elgamal_encapsulate(&pk).map_err(|e| {
-            pyo3::exceptions::PyRuntimeError::new_err(format!("encapsulate: {e}"))
-        })?;
+        let (ct, ss) = elgamal_encapsulate(&pk)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("encapsulate: {e}")))?;
         let ct_dict = PyDict::new_bound(py);
         ct_dict.set_item("c1", PyBytes::new_bound(py, &ct.c1))?;
         ct_dict.set_item("c2", PyBytes::new_bound(py, &ct.c2))?;
@@ -280,8 +274,14 @@ impl PyCmp20 {
         threshold: u32,
         party_count: u32,
     ) -> PyResult<Bound<'py, PyDict>> {
-        let kg = cmp20_inprocess::keygen(threshold, party_count as usize)
-            .map_err(|e| threshold_err("Cmp20.keygen", &e.to_string(), party_count as usize, threshold as usize))?;
+        let kg = cmp20_inprocess::keygen(threshold, party_count as usize).map_err(|e| {
+            threshold_err(
+                "Cmp20.keygen",
+                &e.to_string(),
+                party_count as usize,
+                threshold as usize,
+            )
+        })?;
         let shares = PyList::empty_bound(py);
         for s in kg.shares {
             shares.append(PyBytes::new_bound(py, &s))?;
@@ -308,8 +308,9 @@ impl PyCmp20 {
         }
         let supplied = share_bytes.len();
         let msg = bytes_arg_to_vec(message)?;
-        let sig = cmp20_inprocess::sign(&share_bytes, threshold, &msg)
-            .map_err(|e| threshold_err("Cmp20.sign", &e.to_string(), supplied, threshold as usize))?;
+        let sig = cmp20_inprocess::sign(&share_bytes, threshold, &msg).map_err(|e| {
+            threshold_err("Cmp20.sign", &e.to_string(), supplied, threshold as usize)
+        })?;
         Ok(PyBytes::new_bound(py, &sig))
     }
 }
@@ -328,8 +329,14 @@ impl PyGg18 {
         threshold: u32,
         party_count: u32,
     ) -> PyResult<Bound<'py, PyDict>> {
-        let kg = gg18_inprocess::keygen(threshold, party_count as usize)
-            .map_err(|e| threshold_err("Gg18.keygen", &e.to_string(), party_count as usize, threshold as usize))?;
+        let kg = gg18_inprocess::keygen(threshold, party_count as usize).map_err(|e| {
+            threshold_err(
+                "Gg18.keygen",
+                &e.to_string(),
+                party_count as usize,
+                threshold as usize,
+            )
+        })?;
         let shares = PyList::empty_bound(py);
         for s in kg.shares {
             shares.append(PyBytes::new_bound(py, &s))?;
@@ -355,8 +362,9 @@ impl PyGg18 {
         }
         let supplied = share_bytes.len();
         let msg = bytes_arg_to_vec(message)?;
-        let sig = gg18_inprocess::sign(&share_bytes, threshold, &msg)
-            .map_err(|e| threshold_err("Gg18.sign", &e.to_string(), supplied, threshold as usize))?;
+        let sig = gg18_inprocess::sign(&share_bytes, threshold, &msg).map_err(|e| {
+            threshold_err("Gg18.sign", &e.to_string(), supplied, threshold as usize)
+        })?;
         Ok(PyBytes::new_bound(py, &sig))
     }
 }

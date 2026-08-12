@@ -3,8 +3,8 @@
 use pyo3::prelude::*;
 
 use confium_transparency::ers::{
-    build_initial_evidence_record, renew_evidence_record, renewal_count,
-    EvidenceRecord, HashAlgorithm,
+    EvidenceRecord, HashAlgorithm, build_initial_evidence_record, renew_evidence_record,
+    renewal_count,
 };
 
 /// An RFC 4998 Evidence Record for long-term archival protection.
@@ -35,12 +35,8 @@ impl PyEvidenceRecord {
     #[staticmethod]
     fn build_initial(data_hash: &[u8], tsa_id: &str, timestamp_token: Vec<u8>) -> PyResult<Self> {
         let hash = require_hash_32(data_hash, "data_hash")?;
-        let inner = build_initial_evidence_record(
-            hash,
-            HashAlgorithm::Sha256,
-            tsa_id,
-            timestamp_token,
-        );
+        let inner =
+            build_initial_evidence_record(hash, HashAlgorithm::Sha256, tsa_id, timestamp_token);
         Ok(Self { inner })
     }
 
