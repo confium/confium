@@ -22,6 +22,7 @@ pub mod deployment;
 pub mod ers;
 pub mod ots;
 pub mod pki;
+pub mod tc;
 pub mod transparency;
 pub mod version;
 pub mod xmldsig;
@@ -40,6 +41,7 @@ fn confium(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     ers::register_module(py, m)?;
     ots::register_module(py, m)?;
     pki::register_module(py, m)?;
+    tc::register_module(py, m)?;
     transparency::register_module(py, m)?;
     xmldsig::register_module(py, m)?;
 
