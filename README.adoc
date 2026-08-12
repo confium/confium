@@ -148,12 +148,12 @@ struct MyPlugin;
 
 == Workspace
 
-65 crates, 1730+ tests, 0 failures.
+65 crates, 1848+ tests, 0 failures.
 
 [source,sh]
 ----
 cargo build --workspace      # builds all 65 crates
-cargo test --workspace       # 1730+ tests pass
+cargo test --workspace       # 1848+ tests pass
 cargo clippy --workspace --all-targets -- -D warnings
 ----
 
