@@ -6,7 +6,6 @@
 //! - [`xmldsig_canonicalize_exclusive`] — Exclusive C14N (RFC 3741)
 
 use pyo3::prelude::*;
-use pyo3::types::PyString;
 
 /// Canonicalize XML per RFC 3076 (Canonical XML 1.0).
 ///

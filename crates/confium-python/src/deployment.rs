@@ -6,7 +6,7 @@
 //! - [`validate_manifest`] — validate a manifest's internal consistency.
 
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList, PyString};
+use pyo3::types::{PyList, PyString};
 
 use confium_deployment::{validate_manifest as rust_validate, Manifest as RustManifest,
     parse_manifest as rust_parse, manifest_to_toml as rust_to_toml};
