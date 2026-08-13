@@ -1,44 +1,77 @@
 ---
 title: Migration Guide — 0.3 to 0.4
-description: How to update from Confium 0.3 (product facades) to 0.4 (deprecated facade re-exports)
+description: How to update from Confium 0.3 (product facades) to 0.4 (extracted sub-crates available alongside the facade)
 audience: security-engineer, devsecops
 status: draft
 ---
 
 # Migrating from 0.3 to 0.4
 
-0.4 deprecates the `confium-tc` facade's blanket re-exports. Consumers should depend directly on the extracted crates (`confium-tc-core`, `confium-coordinator`, `confium-tc-keys`, etc.) or on the product facades (`confium-threshold`, etc.).
+0.4 extracts the `confium-tc` god-crate into focused sub-crates
+(`confium-tc-core`, `confium-coordinator`, `confium-tc-keys`,
+`confium-crypto-vss`, `confium-crypto-zk`, `confium-privacy`,
+`confium-observability`, `confium-pki-tc`). The `confium-tc` facade
+stays in place and **its re-exports are NOT yet deprecated** — they
+will be in 0.5, and removed in 0.6.
 
-**Status:** Draft — 0.4 is not yet released. This guide will be finalized when 0.4 ships.
+**Status:** Draft — the extracted sub-crates shipped in 0.4.0
+(currently 0.4.7); deprecation of the facade re-exports is queued
+for 0.5. This guide is for consumers who want to switch to the
+focused crates now.
 
-## What's changing
+## What changed in 0.4
 
-### `confium-tc` re-exports deprecated
+### Extracted sub-crates available
 
-Every `pub use` in `confium-tc/src/lib.rs` that re-exports from an extracted crate gets `#[deprecated(since = "0.4.0", note = "use confium-{extracted-crate} directly")]`.
+New consumers can depend directly on the extracted crates:
 
-In 0.4 you'll see deprecation warnings but everything still works. In 0.6 the re-exports are removed entirely.
+| Old path | New path |
+|----------|----------|
+| `confium_tc::coordinator` | `confium_coordinator` |
+| `confium_tc::paillier` | `confium_crypto_vss::paillier` |
+| `confium_tc::share_envelope` | `confium_tc_core::share_envelope` |
+| `confium_tc::session`, `message`, `party`, `registry`, `share` | `confium_tc_core::*` |
+| `confium_tc::ring_sig` (planned) | `confium_privacy::ring_sig` |
+
+Scheme crates (`confium-tc-cmp20`, `-gg18`, `-frost-*`) still depend
+on `confium-tc` because they need `paillier` (which lives there).
+Moving `paillier` into `confium-crypto-vss` is queued for 0.5 as
+part of P1 #56 in [TODO.complete/53](../../TODO.complete/53-remaining-work-catalog.md).
+
+### `confium-tc` facade re-exports NOT deprecated yet
+
+The `pub use` re-exports in `confium-tc/src/lib.rs` continue to work
+without warnings. Deprecation is queued for 0.5 (TODO.restructure/11).
+Today, consumers can choose either path.
 
 ### Cargo features
 
-`confium-tc` features `coordinator`, `keys` are now no-ops (still accepted, do nothing). Switch to depending on `confium-coordinator` / `confium-tc-keys` directly.
+`confium-tc` doesn't yet have product-aligned Cargo features
+(TODO.restructure/09, queued for 0.5). For per-product feature gating
+today, depend on the product facades (`confium-threshold`,
+`confium-pki`, `confium-keyless`, etc.).
 
 ## Migration steps
 
-1. **Run `cargo build`** — note every deprecation warning
-2. **For each warning**, replace `confium_tc::{X}` with the new path:
-   - `confium_tc::coordinator` → `confium_coordinator`
-   - `confium_tc::paillier` → `confium_crypto_vss::paillier`
-   - `confium_tc::share_envelope` → `confium_tc_core::share_envelope`
-   - `confium_tc::ring_sig` → `confium_privacy::ring_sig`
-   - etc.
-3. **Or** — switch to a product facade: `confium-threshold` for everything threshold, `confium-privacy` for everything privacy, etc.
+1. **Audit your imports** — anywhere you write `confium_tc::X`, check
+   whether `X` is now in an extracted crate via the table above.
+2. **Switch imports** where the extracted crate is the better home.
+   The facade still re-exports everything, so a mix is fine.
+3. **For new code**, depend on the focused crate directly. The build
+   time win is significant: scheme crates that switch from
+   `confium-tc` (27K lines) to `confium-tc-core` (5K lines) see
+   4-5x faster incremental builds.
 
 ## Why we're doing this
 
-`confium-tc` was a 120-module god-crate. The 0.3 restructuring extracted 8 focused crates but kept `confium-tc` as a thin facade for back-compat. In 0.4 we deprecate the facade to signal the new shape. In 0.6 the facade is emptied.
+`confium-tc` was a 120-module god-crate. The 0.4 restructuring
+extracted 8 focused crates but kept `confium-tc` as a thin facade
+for back-compat. In 0.5 we'll deprecate the facade to signal the
+new shape. In 0.6 the facade is emptied.
 
-The benefit: new consumers depend on focused crates (5K lines each), not the 27K-line facade. Build times drop; dependency graphs shrink; crate boundaries become real.
+The benefit: new consumers depend on focused crates (5K lines each),
+not the 27K-line facade. Build times drop; dependency graphs shrink;
+crate boundaries become real.
 
 ## Need help
 
