@@ -39,6 +39,7 @@ For threshold cryptography, CT-safety matters most in:
 | GG18 signature combine | CT | `confium-tc-gg18::sign::combine` — same |
 | Feldman VSS verify | CT | `confium-crypto-vss::vss::verify` — CT scalar ops |
 | Lagrange interpolation | CT | `confium-tc-cmp20::lagrange` — CT scalar ops |
+| Merkle root / hash comparisons | CT | `confium-transparency`, `confium-wasm`, `confium-python`, `confium-log-monitor` — `subtle::ConstantTimeEq` (Aug 2026 audit, see [TODO.complete/57](../../TODO.complete/57-constant-time-comparison-audit.md)) |
 
 ### CT-best-effort (not audited; treat as soft)
 
@@ -82,6 +83,13 @@ Confium's CI runs `dudect`-style statistical tests for the CT-claimed paths (pla
 4. Fails if `p < 0.01` for the difference.
 
 Current status: `confium-benchmarks` has timing infrastructure; CT-specific tests TBD.
+
+The August 2026 constant-time comparison audit (see
+[TODO.complete/57](../../TODO.complete/57-constant-time-comparison-audit.md))
+replaced every `==` on hash bytes with `subtle::ConstantTimeEq::ct_eq`
+across `confium-transparency`, `confium-wasm`, `confium-python`, and
+`confium-log-monitor`. The Ruby binding's transparency surface got
+the same fix via [confium-ruby PR #50](https://github.com/confium/confium-ruby/pull/50).
 
 ## Hardware considerations
 
