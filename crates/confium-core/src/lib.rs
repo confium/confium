@@ -1,3 +1,32 @@
+//! Confium Engine — host library, plugin loader, and FFI entry points.
+//!
+//! This crate is the runtime host for Confium plugins. It provides:
+//!
+//! - **Plugin loader** — discovers and loads plugins via the
+//!   [`cfmp_*`](ffi) ABI contract.
+//! - **Interface registry** — link-time registry of plugin interfaces
+//!   (`hash`, `rng`, `cipher`, `aead`, `kdf`, `kem`, `keyfmt`,
+//!   `signature`) via [`inventory`].
+//! - **FFI surface** — C-callable entry points (`cfm_hash_*`,
+//!   `cfm_rng_*`, etc.) that dispatch to the registered interfaces.
+//! - **Audit + sensitive-data utilities** — compartmentalized audit
+//!   logging and `mlock`ed secret buffers.
+//!
+//! See `TODO.roadmap/03-plugin-contract.md` for the wire contract
+//! and `TODO.roadmap/06-module-registry.md` for the registry design.
+//!
+//! # Crate layout
+//!
+//! - [`hash`], [`rng`], [`cipher`], [`aead`], [`kdf`], [`kem`],
+//!   [`keyfmt`], [`signature`] — interface modules, each owning
+//!   its `FFI<Type>` opaque type, `InterfaceV0` vtable, and
+//!   `cfm_<iface>_*` entry points.
+//! - [`ffi`] — common FFI utilities (plugin handle, registry
+//!   scraper, metadata).
+//! - [`audit`] — append-only audit log writer.
+//! - [`secret`], [`sensitive`] — zeroized secret buffers and
+//!   `mlock`ed regions.
+
 // FFI entry points accept raw pointers and null-check them before
 // dereferencing; they are not `unsafe` from the C caller's perspective.
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
