@@ -38,12 +38,12 @@ scalar element is zeroized by `Scalar`'s Drop.
 
 | Secret site                | Type             | Zeroize mechanism              |
 |----------------------------|------------------|--------------------------------|
-| `DecryptionShare.bytes`    | `Vec<u8>`        | **NOT zeroized** — see gap below |
+| `DecryptionShare.bytes`    | `Vec<u8>`        | Explicit `Drop` impl that calls `bytes.zeroize()` (Aug 2026 — see [TODO.complete/54](../../TODO.complete/54-zeroize-remaining-shares.md)) |
 | Internal scalar temporaries| `p256::Scalar`   | Implicit Drop                  |
 
-**Gap**: `DecryptionShare.bytes` is a raw `Vec<u8>` holding the
-32-byte scalar share. It's not zeroized on drop. Fix is in flight —
-see "Planned work" below.
+`DecryptionShare.bytes` previously leaked; the Aug 2026 sweep
+([TODO.complete/54](../../TODO.complete/54-zeroize-remaining-shares.md))
+added an explicit `Drop` impl.
 
 ### `confium-tc-cmp20` / `confium-tc-gg18`
 
@@ -57,6 +57,11 @@ see "Planned work" below.
 The explicit `Drop` impls in `share.rs` re-zeroize the `to_bytes()`
 allocation as defense-in-depth. See `crates/confium-tc-cmp20/src/share.rs:34-39`
 for the canonical pattern.
+
+The Aug 2026 zeroize sweep ([TODO.complete/54](../../TODO.complete/54-zeroize-remaining-shares.md))
+also added `Drop` impls to `confium-tc-bls::Share`, `confium-crypto-vss::PedersenShare`,
+`confium-crypto-vss::PartialSig`, and `confium-crypto-vss::NormalizedShare`. The
+workspace is now zeroize-clean for every secret-bearing type.
 
 ## Bindings
 
@@ -91,12 +96,12 @@ secret-scalar storage on this side.
 
 ## Planned work
 
-- Add explicit `Drop` for `DecryptionShare` in `confium-tc-elgamal-p256`
-  that zeroizes `bytes`. (One-line fix; scheduled for the next
-  release.)
 - Add a `ZeroizingVec<u8>` newtype in `confium-api` for use across
   crates that handle raw secret bytes. Currently each crate invents
-  its own pattern.
+  its own pattern. The Aug 2026 sweep
+  ([TODO.complete/54](../../TODO.complete/54-zeroize-remaining-shares.md))
+  closed the per-type zeroize gaps but didn't introduce the shared
+  newtype.
 
 ## Related
 
