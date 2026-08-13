@@ -25,11 +25,11 @@ confium threshold sign \
     --message "payload to sign" \
     --out signature.hex
 
-# 3. Verify
-confium verify ecdsa-p256 \
-    --message "payload to sign" \
-    --signature "$(cat signature.hex)" \
-    --public-key "$(jq -r .public_key shares.json)"
+# 3. Verify with openssl (Confium outputs standard P-256 ECDSA):
+openssl pkeyutl -verify -pubin \
+    -inkey <(jq -r .public_key shares.json | openssl pkey -pubin -inform DER) \
+    -sigfile <(xxd -r -p signature.hex) \
+    -in <(printf 'payload to sign' | openssl dgst -sha256 -binary)
 ```
 
 ## What's happening
