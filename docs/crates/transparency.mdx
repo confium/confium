@@ -39,10 +39,16 @@ For a consistency proof between two tree sizes:
 
 ```rust
 let proof: Vec<[u8; 32]> = tree.consistency_proof(old_size)?;
-confium_transparency::MerkleTree::verify_consistency(
+tree.verify_consistency(
     old_root, new_root, old_size, new_size, &proof,
 )?;
 ```
+
+Note: `verify_consistency` is a method on the tree (not a static
+function) — the current implementation brute-force-verifies by
+recomputing the root at `old_size`, so it needs the tree's leaf
+hashes. External proof-only verification (no tree) is planned for
+a follow-up.
 
 ## Leaf hashing
 
