@@ -115,6 +115,67 @@ Return the binding version and underlying engine version as strings.
 | `SignerAttributes.add(key, val)` | Add value to attribute. |
 | `EXAMPLES` | Dict of example DSL expressions. |
 
+### `confium.tc`
+
+Threshold cryptography (peer-to-peer in-process drivers):
+
+| Symbol | Description |
+|---|---|
+| `tc.FrostP256.generate_keypair()` | Generate P-256 keypair (returns dict). |
+| `tc.FrostP256.split_secret(secret, t, n)` | Shamir-split into N shares, threshold T. |
+| `tc.FrostP256.recover_secret([share, ...])` | Recover secret from T shares. |
+| `tc.FrostP256.sign(...)` | ECDSA-P256 sign. |
+| `tc.ElGamalP256.encapsulate(pk)` | Threshold ElGamal KEM encapsulate. |
+| `tc.ElGamalP256.partial_decrypt(share, ct)` | Per-custodian partial decryption. |
+| `tc.ElGamalP256.aggregate_partials(partials, t, ct)` | Combine T partials → shared secret. |
+| `tc.Cmp20.keygen(t, n)` | CMP20 in-process DKG → shares + joint pubkey. |
+| `tc.Cmp20.sign(shares, t, msg)` | CMP20 threshold ECDSA sign → 64-byte (r,s). |
+| `tc.Gg18.keygen(t, n)` | GG18 in-process DKG. |
+| `tc.Gg18.sign(shares, t, msg)` | GG18 threshold ECDSA sign. |
+
+```python
+import confium
+kg = confium.tc.Cmp20.keygen(threshold=2, party_count=3)
+sig = confium.tc.Cmp20.sign(kg["shares"][:2], threshold=2, message=b"hi")
+```
+
+### `confium.deployment`
+
+| Symbol | Description |
+|---|---|
+| `Manifest.from_toml(s)` | Parse a deployment manifest. |
+| `Manifest.to_toml()` | Serialize back to TOML. |
+| `Manifest.validate()` | Validate internal consistency (returns issue list). |
+| `Manifest.name` / `operator` / `mode` / `tier_count` | Manifest accessors. |
+
+### `confium.ers` — Evidence Record Syntax (RFC 4998)
+
+| Symbol | Description |
+|---|---|
+| `EvidenceRecord.build_initial(hash, tsa_id, token)` | Build the initial archival evidence. |
+| `EvidenceRecord.renew(new_hash, tsa_id, token)` | Re-timestamp under a newer hash. |
+| `EvidenceRecord.renewal_count` | Number of renewals so far. |
+
+### `confium.ots` — OpenTimestamps (Bitcoin anchoring)
+
+| Symbol | Description |
+|---|---|
+| `OtsClient()` | Calendar-server client. |
+| `OtsClient.calendar_servers` | Configured calendar server URLs. |
+| `OtsClient.stamp(hash)` | Submit a 32-byte hash for anchoring. |
+| `OtsProof.hash` | The anchored hash. |
+| `OtsProof.bitcoin_height` | Bitcoin block height of the anchor. |
+| `OtsVerification.valid` | Whether the proof verified. |
+| `OtsVerification.bitcoin_height` | Block height (0 if unconfirmed). |
+| `OtsVerification.block_timestamp` | Block timestamp (None if pending). |
+
+### `confium.xmldsig` — XML canonicalization
+
+| Symbol | Description |
+|---|---|
+| `xmldsig.canonicalize(xml)` | RFC 3076 Canonical XML 1.0. |
+| `xmldsig.canonicalize_exclusive(xml)` | RFC 3741 Exclusive C14N. |
+
 ## Building from source
 
 ```sh
