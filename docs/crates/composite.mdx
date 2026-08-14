@@ -25,25 +25,30 @@ Use `confium-composite` when:
 
 ## Public API
 
-The crate exposes a `CompositeSignature` value type and a
-`CompositeVerifier` that dispatches per-component verification to
-pluggable per-algorithm verifiers.
+The crate exposes a `CompositeSignature` value type. Verification
+takes a closure that dispatches per component — you supply the
+verifier for each algorithm the composite contains.
 
 ```rust
-use confium_composite::{CompositeSignature, CompositeVerifier, VerifierCallback};
+use confium_composite::{CompositeSignature, ed25519_verifier, ED25519};
 
 let composite: CompositeSignature = /* ... */;
-let verifier = CompositeVerifier::new()
-    .with("1.3.101.112", my_ed25519_verifier)       // Ed25519
-    .with("1.2.840.10045.4.3.2", my_ecdsa_verifier) // ECDSA-P256
-    .with("2.16.840.1.101.3.4.3.18", my_ml_dsa_65_verifier);
+let result = composite.verify(&message, |alg, pk, msg, sig| {
+    if alg == ED25519 {
+        ed25519_verifier(alg, pk, msg, sig)
+    } else {
+        // Route other algorithms to their verifiers.
+        Err(format!("no verifier for {alg}"))
+    }
+})?;
 
-let valid: bool = verifier.verify(&composite, &message)?;
+// result.all_verified — true iff every component verified
+// result.per_component — Vec<ComponentResult> with per-algorithm detail
 ```
 
-Per-algorithm verifiers implement the `VerifierCallback` trait, so
-you can route verification through any crypto backend (Botan plugin,
-OpenSSL provider, in-process crate).
+Built-in verifiers ship for Ed25519 (`ed25519_verifier`) and
+ECDSA-P256 (`p256_verifier`). Route other algorithms through your
+own backend (Botan plugin, OpenSSL provider) inside the closure.
 
 ## Verification semantics
 
@@ -55,17 +60,17 @@ A composite signature is **valid** if and only if:
    jurisdictional policy may require ≥1 classical + ≥1 PQ algorithm).
 
 A missing verifier for any component is a hard failure, not a
-soft-accept. Configure `CompositeVerifier` to include every algorithm
-the deployment expects to encounter.
+soft-accept. Include every algorithm the deployment expects to
+encounter in your verify closure.
 
 ## Security notes
 
 - **No silent downgrade**: if a verifier is missing for a component,
   verification fails. The crate never silently accepts on the
   subset of components it can verify.
-- **Callback isolation**: per-algorithm verifiers run as isolated
-  callbacks. A panic or error in one does not corrupt the others;
-  each result is collected and AND-reduced at the end.
+- **Callback isolation**: per-algorithm verification runs as isolated
+  closure invocations. An error in one does not short-circuit the
+  others; each result is collected and AND-reduced at the end.
 - **Constant-time where it matters**: the per-algorithm verifiers
   supplied by the caller are responsible for their own constant-time
   guarantees. The composite layer does not introduce branches that

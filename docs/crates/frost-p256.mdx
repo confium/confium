@@ -21,29 +21,33 @@ Use `confium-tc-frost-p256` when:
 - You are building a Mode 2 PKI drop-in that must produce signatures
   indistinguishable from single-key ECDSA-P256.
 
+For production threshold ECDSA signing where the secret is never
+reconstructed, prefer `confium-tc-cmp20` (which implements the MtA
+sub-protocol this crate defers).
+
 ## Public API
 
 ```rust
-use confium_tc_frost_p256::FrostP256;
+use confium_tc_frost_p256::{generate_keypair, recover_secret,
+    sign_message, split_secret};
 
 // Generate a keypair.
-let kp = FrostP256::generate_keypair()?;
+let kp = generate_keypair();
+// kp.secret_scalar — p256::Scalar (zeroized on drop)
+// kp.public_key    — p256::AffinePoint
 
 // Split into 5 shares, threshold 3.
-let shares = FrostP256::split_secret(&kp.private_key, 3, 5)?;
+let shares = split_secret(&kp.secret_scalar, 3, 5);
 
 // Recover the secret from any 3 shares.
-let recovered = FrostP256::recover_secret(&[
-    shares[0].as_ref(),
-    shares[2].as_ref(),
-    shares[4].as_ref(),
-])?;
-assert_eq!(recovered, kp.private_key);
+let subset: Vec<&_> = vec![&shares[0], &shares[2], &shares[4]];
+let recovered = recover_secret(&subset).expect("recover");
+assert_eq!(recovered, kp.secret_scalar);
 
 // Sign with the original key.
-let sig = FrostP256::sign(&kp.private_key, b"threshold test")?;
-// sig.der     — DER-encoded ECDSA signature (RFC 3279)
-// sig.fixed   — fixed-length (r || s) encoding
+let signed = sign_message(&kp, b"threshold test").expect("sign");
+// signed.der_bytes   — DER-encoded ECDSA signature (RFC 3279)
+// signed.fixed_bytes — fixed-length (r || s) encoding
 ```
 
 ## Shamir secret sharing
@@ -70,12 +74,12 @@ is overdetermined and the crate verifies consistency.
 - **Share format**: shares are `(x, y)` pairs over the P-256 scalar
   field. The crate serializes them as fixed-length byte arrays.
 - **No network code**: the crate is pure crypto. Multi-party session
-  orchestration is provided by `confium-tc-coordinator`.
+  orchestration is provided by `confium-coordinator`.
 
 ## Related
 
 - [Threshold signing example](../examples/threshold-signing.mdx) —
   end-to-end demo using this crate.
-- [`confium-tc-coordinator`](https://docs.rs/confium-coordinator) — for multi-party
+- [`confium-coordinator`](https://docs.rs/confium-coordinator) — for multi-party
   sessions across network boundaries.
-- [`confium-tc-reshare`](https://docs.rs/confium-tc-core) — proactive share refresh.
+- [`confium-tc-core` reshare](https://docs.rs/confium-tc-core) — proactive share refresh.
