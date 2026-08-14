@@ -20,32 +20,39 @@ cargo add confium-tc-frost-p256
 ## Generate a keypair
 
 ```rust
-use confium_tc_frost_p256::FrostP256;
+use confium_tc_frost_p256::{generate_keypair, public_key_sec1};
 
-let kp = FrostP256::generate_keypair()?;
-println!("secret: {:x?}", &kp.private_key[..8]);
+let kp = generate_keypair();
+// kp.secret_scalar: p256::Scalar (zeroized on drop)
+// kp.public_key:    p256::AffinePoint
+println!("public key (SEC1): {}", hex::encode(public_key_sec1(&kp.public_key)));
 ```
+
+`Keypair` is a plain struct with two fields — `secret_scalar` and
+`public_key`. The secret is a `p256::Scalar` which zeroizes on drop
+via `elliptic_curve::SecretScope`.
 
 ## Split into 5 shares, threshold 3
 
 ```rust
-let shares = FrostP256::split_secret(&kp.private_key, 3, 5)?;
+use confium_tc_frost_p256::split_secret;
+
+let shares = split_secret(&kp.secret_scalar, 3, 5);
 println!("split into {} shares, threshold = 3", shares.len());
 for (i, s) in shares.iter().enumerate() {
-    println!("  share[{}]: x={}, y={:x?}", i, s.x, &s.y_bytes[..8]);
+    // s.x is the party index (1-based); s.y is the share value.
+    println!("  share[{}]: x={}", i, s.x);
 }
 ```
 
 ## Recover from any 3 of the 5
 
 ```rust
-let subset = [
-    shares[0].as_ref(),
-    shares[2].as_ref(),
-    shares[4].as_ref(),
-];
-let recovered = FrostP256::recover_secret(&subset)?;
-assert_eq!(recovered, kp.private_key);
+use confium_tc_frost_p256::recover_secret;
+
+let subset: Vec<&_> = vec![&shares[0], &shares[2], &shares[4]];
+let recovered = recover_secret(&subset).expect("recover");
+assert_eq!(recovered, kp.secret_scalar);
 println!("recovered from shares [0, 2, 4]: MATCH");
 ```
 
@@ -58,9 +65,9 @@ different polynomial that passes through `(0, secret')` for some
 random-looking `secret'`.
 
 ```rust
-let subset = [shares[0].as_ref(), shares[1].as_ref()];
-let wrong = FrostP256::recover_secret(&subset)?;
-assert_ne!(wrong, kp.private_key);
+let subset: Vec<&_> = vec![&shares[0], &shares[1]];
+let wrong = recover_secret(&subset).expect("interpolates to something");
+assert_ne!(wrong, kp.secret_scalar);
 println!("recovered from shares [0, 1]: WRONG (expected)");
 ```
 
@@ -71,16 +78,14 @@ the threshold in the orchestrating logic.
 ## Sign with the original key
 
 ```rust
-let sig = FrostP256::sign(&kp.private_key, b"threshold test")?;
-println!("signature: der.size={}, fixed.size={}",
-    sig.der.len(), sig.fixed.len());
+use confium_tc_frost_p256::sign_message;
+
+let signed = sign_message(&kp, b"threshold test").expect("sign");
+// signed.der_bytes:   DER-encoded per RFC 3279 (what X.509 and TLS expect)
+// signed.fixed_bytes: fixed-length 64-byte (r || s) (for compact protocols)
+println!("der: {} bytes, fixed: {} bytes",
+    signed.der_bytes.len(), signed.fixed_bytes.len());
 ```
-
-The signature is a standard ECDSA-P256 signature in two encodings:
-
-- `sig.der` — DER-encoded per RFC 3279 (what X.509 and TLS expect).
-- `sig.fixed` — fixed-length 64-byte `(r || s)` (what some protocols
-  prefer for compactness).
 
 Any standard ECDSA-P256 verifier (OpenSSL, BoringSSL, Botan, the
 `p256` crate's `verify` function) will accept this signature.
@@ -91,12 +96,12 @@ For real deployments, signers do not hold the full secret — they hold
 individual shares. A signing session collects T signature shares and
 aggregates them into the final signature without ever reconstructing
 the secret. That orchestration is handled by
-[`confium-tc-coordinator`](https://docs.rs/confium-coordinator).
+[`confium-coordinator`](https://docs.rs/confium-coordinator).
 
 ## Related
 
 - [`confium-tc-frost-p256` deep dive](../crates/frost-p256.mdx).
-- [`confium-tc-coordinator`](https://docs.rs/confium-coordinator) for the
+- [`confium-coordinator`](https://docs.rs/confium-coordinator) for the
   multi-party session protocol.
 - [Threshold crypto 101](https://www.confium.org/concepts/threshold-crypto-101/)
   on the public website.
