@@ -34,7 +34,11 @@ Verify with:
 
 ```sh
 sha256sum -c confium-X.Y.Z-linux-x86_64.tar.gz.sha256
-confium verify --signature checksum.sig --public-key release-pubkey.pem checksum.sha256
+confium verify composite \
+    --message checksum.sha256 \
+    --signature checksum.sig.cose \
+    --algorithm ed25519 \
+    --public-key release-pubkey.pub
 ```
 
 The release pubkey is published in the repo's `SECURITY.md` and

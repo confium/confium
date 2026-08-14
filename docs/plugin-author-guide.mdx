@@ -168,16 +168,20 @@ The output is `target/release/libmy_plugin.so` (Linux),
 
 ## Step 6: load and test
 
-Use the CLI to load your plugin and exercise it:
+For local testing, load the plugin via `libloading` in a test
+binary, or link it into the daemon. See
+`crates/confium-mock-plugin/` for a reference implementation and
+`crates/confium-test-harness/` for the NIST-style test vectors
+harness.
+
+Once the plugin is published to the registry (Step 7 below), the
+CLI can install and exercise it:
 
 ```sh
-confium load --path ./target/release/libmy_plugin.so --name my-hash
-confium hash --provider my-hash --algorithm sha256 --input "hello"
+confium install my-hash           # from the registry
+confium list
+confium info my-hash
 ```
-
-For automated testing, see `crates/confium-mock-plugin/` for a reference
-implementation and `crates/confium-test-harness/` for the NIST-style test
-vectors harness.
 
 ## Step 7: publish to the registry
 
