@@ -5,17 +5,22 @@
 //! - `MerkleTree::inclusion_proof(seq)` + verify round-trip
 //! - `MerkleTree::consistency_proof(old_size)` + verify round-trip
 
-use confium_transparency::{ArtifactType, Hash, MerkleEntry, MerkleTree};
+use confium_transparency::{ArtifactType, MerkleEntry, MerkleTree};
 use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 
 fn build_tree(n: usize) -> MerkleTree {
     let mut tree = MerkleTree::new();
+    // Pin the timestamp so a prefix tree built separately (e.g. the
+    // old tree for consistency benchmarks) has identical leaf hashes
+    // to the corresponding prefix of the larger tree.
+    let ts = chrono::TimeZone::with_ymd_and_hms(&chrono::Utc, 2026, 1, 1, 0, 0, 0).unwrap();
     for i in 0..n {
-        let entry = MerkleEntry::new(
+        let mut entry = MerkleEntry::new(
             i as u64,
             ArtifactType::CertificateIssuance,
             [(i as u8).wrapping_mul(7); 32],
         );
+        entry.timestamp = ts;
         tree.append(entry);
     }
     tree
@@ -77,7 +82,10 @@ fn bench_consistency_proof(c: &mut Criterion) {
     for size in [100usize, 1_000, 10_000] {
         let half = size / 2;
         let tree = build_tree(size);
-        let old_root = tree.root_at_size_for_bench(half);
+        // The old tree is just the first `half` entries of the same
+        // deterministic sequence — its root is the expected old_root.
+        let old_tree = build_tree(half);
+        let old_root = old_tree.root();
         let new_root = tree.root();
         let proof = tree.consistency_proof(half).unwrap();
 
@@ -104,19 +112,6 @@ fn bench_consistency_proof(c: &mut Criterion) {
         );
     }
     group.finish();
-}
-
-// The production crate doesn't expose `root_at_size` publicly (it's a
-// private impl detail). For benchmarks we just recompute the full root;
-// the verify_consistency hot path is what we actually want to measure.
-trait MerkleTreeBenchExt {
-    fn root_at_size_for_bench(&self, size: usize) -> Hash;
-}
-
-impl MerkleTreeBenchExt for MerkleTree {
-    fn root_at_size_for_bench(&self, _size: usize) -> Hash {
-        self.root()
-    }
 }
 
 criterion_group!(
