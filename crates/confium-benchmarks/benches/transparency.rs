@@ -1,12 +1,24 @@
 //! Transparency log benches.
 //!
 //! Measures:
+//! - `MerkleTree::append` (incremental O(log N) path) at tree sizes
+//!   100, 1000, 10000
 //! - `MerkleTree::root` computation at sizes 100, 1000, 10000
 //! - `MerkleTree::inclusion_proof(seq)` + verify round-trip
 //! - `MerkleTree::consistency_proof(old_size)` + verify round-trip
 
 use confium_transparency::{ArtifactType, MerkleEntry, MerkleTree};
 use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+
+fn pinned_entry(i: u64, ts: chrono::DateTime<chrono::Utc>) -> MerkleEntry {
+    let mut entry = MerkleEntry::new(
+        i,
+        ArtifactType::CertificateIssuance,
+        [(i as u8).wrapping_mul(7); 32],
+    );
+    entry.timestamp = ts;
+    entry
+}
 
 fn build_tree(n: usize) -> MerkleTree {
     let mut tree = MerkleTree::new();
@@ -15,15 +27,36 @@ fn build_tree(n: usize) -> MerkleTree {
     // to the corresponding prefix of the larger tree.
     let ts = chrono::TimeZone::with_ymd_and_hms(&chrono::Utc, 2026, 1, 1, 0, 0, 0).unwrap();
     for i in 0..n {
-        let mut entry = MerkleEntry::new(
-            i as u64,
-            ArtifactType::CertificateIssuance,
-            [(i as u8).wrapping_mul(7); 32],
-        );
-        entry.timestamp = ts;
-        tree.append(entry);
+        tree.append(pinned_entry(i as u64, ts));
     }
     tree
+}
+
+fn bench_append(c: &mut Criterion) {
+    let mut group = c.benchmark_group("transparency_append");
+    // Throughput is leaves appended per iteration.
+    group.throughput(Throughput::Elements(1));
+
+    for size in [100usize, 1_000, 10_000] {
+        // Pre-build to `size`, then measure appending the NEXT leaf —
+        // the incremental path's cost at that tree size.
+        let mut tree = build_tree(size);
+        let ts = chrono::TimeZone::with_ymd_and_hms(&chrono::Utc, 2026, 1, 1, 0, 0, 0).unwrap();
+        let seq = std::cell::Cell::new(size as u64);
+        group.bench_with_input(BenchmarkId::new("next_leaf", size), &(), |b, _| {
+            b.iter_batched(
+                || pinned_entry(seq.get(), ts),
+                |entry| {
+                    let t = black_box(&mut tree);
+                    t.append(entry);
+                    // Advance so each appended leaf is unique.
+                    seq.set(seq.get() + 1);
+                },
+                criterion::BatchSize::SmallInput,
+            )
+        });
+    }
+    group.finish();
 }
 
 fn bench_root(c: &mut Criterion) {
@@ -116,6 +149,7 @@ fn bench_consistency_proof(c: &mut Criterion) {
 
 criterion_group!(
     benches,
+    bench_append,
     bench_root,
     bench_inclusion_proof,
     bench_consistency_proof
