@@ -120,23 +120,76 @@ impl MerkleTree {
     }
 
     /// Append an entry.
+    ///
+    /// O(log N): updates only the path from the new leaf up to the
+    /// root. Each level either pairs its last two nodes (replacing the
+    /// promoted copy one level up) or promotes the new node as-is.
     pub fn append(&mut self, mut entry: MerkleEntry) -> u64 {
         if entry.sequence == 0 && !self.entries.is_empty() {
             entry.sequence = self.entries.len() as u64;
         }
         let hash = entry.entry_hash();
-        self.leaf_hashes.push(hash_leaf(hash));
+        let leaf = hash_leaf(hash);
+        self.leaf_hashes.push(leaf);
         self.entries.push(entry);
-        // Rebuild cached levels + root. Append is O(N) in the worst
-        // case (when N is just past a power of two, every level above
-        // the leaves changes); in exchange, every `inclusion_proof`
-        // call drops from O(N) to O(log N) because it walks the
-        // pre-computed levels instead of rebuilding them.
-        self.rebuild_levels();
+        self.append_level(leaf);
         (self.entries.len() - 1) as u64
     }
 
+    /// Place `current` into the level tree, walking up to the root.
+    ///
+    /// O(log N): each step derives the value that must sit at the tail
+    /// of the level above — the hash of the last two nodes when the
+    /// level has even count, or a promoted copy of the trailing node
+    /// when odd — and replaces/appends it there. Mirrors exactly what
+    /// [`rebuild_levels`](Self::rebuild_levels) computes.
+    fn append_level(&mut self, leaf: Hash) {
+        if self.levels.is_empty() {
+            // First leaf: single-level tree.
+            self.levels.push(vec![leaf]);
+            self.cached_root = leaf;
+            return;
+        }
+        self.levels[0].push(leaf);
+        let mut j = 0usize;
+        loop {
+            let n = self.levels[j].len();
+            // Value that must be the tail of level j+1.
+            let up = if n % 2 == 0 {
+                let lvl = &self.levels[j];
+                hash_internal(lvl[n - 2], lvl[n - 1])
+            } else {
+                self.levels[j][n - 1]
+            };
+            let target = n.div_ceil(2);
+            j += 1;
+            if j == self.levels.len() {
+                self.levels.push(vec![up]);
+            } else {
+                let above = &mut self.levels[j];
+                if above.len() == target {
+                    // Same slot count — the tail value changed.
+                    *above.last_mut().expect("non-empty level") = up;
+                } else {
+                    // The level below grew odd — its tail needs a new
+                    // promoted slot here.
+                    above.push(up);
+                }
+            }
+            if self.levels[j].len() == 1 {
+                // Root level reached.
+                self.cached_root = self.levels[j][0];
+                return;
+            }
+        }
+    }
+
     /// Recompute `levels` and `cached_root` from `leaf_hashes`.
+    ///
+    /// Test-only reference implementation: [`append`](Self::append)
+    /// maintains the levels incrementally; this full rebuild exists so
+    /// tests can verify the incremental path produces identical state.
+    #[cfg(test)]
     fn rebuild_levels(&mut self) {
         if self.leaf_hashes.is_empty() {
             self.levels.clear();
@@ -195,12 +248,11 @@ impl MerkleTree {
         if sequence as usize >= self.leaf_hashes.len() {
             return Err(MerkleError::OutOfRange(sequence, self.entries.len()));
         }
-        // If the cache hasn't been built (empty tree, or invariants
-        // violated), fall back to the O(N) builder.
-        if self.levels.is_empty() && !self.leaf_hashes.is_empty() {
-            // Defensive: rebuild_levels should always be called by
-            // append(). If we get here, the tree was constructed via
-            // a path that bypassed rebuild_levels. Bail out cleanly.
+        // If the levels are empty, every append populates them; a tree
+        // with leaves but no levels cannot be constructed via the
+        // public API. Bail out defensively rather than index out of
+        // bounds if that invariant is ever broken.
+        if self.levels.is_empty() {
             return Err(MerkleError::OutOfRange(sequence, self.entries.len()));
         }
         let mut steps = Vec::new();
@@ -599,6 +651,28 @@ mod consistency_tests {
 mod tests {
     use super::*;
     use crate::entry::ArtifactType;
+
+    #[test]
+    fn incremental_levels_match_rebuild_at_every_size() {
+        // The O(log N) incremental append must produce byte-identical
+        // levels + root to the full-rebuild reference, at every size.
+        let mut tree = MerkleTree::new();
+        for i in 0..64u64 {
+            tree.append(MerkleEntry::new(
+                i,
+                ArtifactType::CertificateIssuance,
+                [(i as u8).wrapping_mul(7); 32],
+            ));
+            let incremental_levels = tree.levels.clone();
+            let incremental_root = tree.cached_root;
+            tree.rebuild_levels();
+            assert_eq!(
+                incremental_levels, tree.levels,
+                "levels diverge after append {i}"
+            );
+            assert_eq!(incremental_root, tree.cached_root, "root diverges at {i}");
+        }
+    }
 
     #[test]
     fn empty_tree_has_zero_root() {
