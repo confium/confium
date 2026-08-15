@@ -18,6 +18,7 @@ confium-transparency = { path = "../confium-transparency", version = "0.4.0" }
 confium-tc-cmp20 = { path = "../confium-tc-cmp20", version = "0.4.0" }
 confium-tc-gg18 = { path = "../confium-tc-gg18", version = "0.4.0" }
 confium-tc-frost-p256 = { path = "../confium-tc-frost-p256", version = "0.4.0" }
+chrono = { workspace = true }
 criterion = { workspace = true }
 ed25519-dalek = { workspace = true }
 p256 = { workspace = true }

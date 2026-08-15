@@ -393,24 +393,15 @@ impl MerkleTree {
     /// Compute the Merkle root of the first `size` leaves. Used by
     /// [`verify_consistency`](Self::verify_consistency) for brute-force
     /// verification by recomputing the old tree's root directly.
+    ///
+    /// O(log N): delegates to [`subtree_root`](Self::subtree_root), whose
+    /// frontier decomposition reads each perfect-subtree root from the
+    /// cached levels in O(1).
     fn root_at_size(&self, size: usize) -> Hash {
         if size == 0 || size > self.leaf_hashes.len() {
             return [0u8; 32];
         }
-        let mut level: Vec<Hash> = self.leaf_hashes[..size].to_vec();
-        while level.len() > 1 {
-            let mut next = Vec::with_capacity(level.len() / 2 + 1);
-            let mut iter = level.iter();
-            loop {
-                match (iter.next(), iter.next()) {
-                    (Some(l), Some(r)) => next.push(hash_internal(*l, *r)),
-                    (Some(l), None) => next.push(*l),
-                    _ => break,
-                }
-            }
-            level = next;
-        }
-        level[0]
+        self.subtree_root(0, size)
     }
 
     /// Verify a consistency proof (RFC 6962 §2.1.2).

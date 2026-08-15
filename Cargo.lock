@@ -988,6 +988,7 @@ dependencies = [
 name = "confium-benchmarks"
 version = "0.4.7"
 dependencies = [
+ "chrono",
  "confium-composite",
  "confium-tc-cmp20",
  "confium-tc-frost-p256",
