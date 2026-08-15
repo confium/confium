@@ -349,17 +349,36 @@ impl MerkleTree {
     }
 
     /// Compute the root of a PERFECT binary subtree of `size` leaves
-    /// starting at `start`. `size` must be a power of 2. Used by
-    /// [`subtree_root`](Self::subtree_root) for each entry in the
-    /// compact frontier decomposition.
+    /// starting at `start`. `size` must be a power of 2 and `start` a
+    /// multiple of `size` (the alignment the consistency recursion
+    /// guarantees). Used by [`subtree_root`](Self::subtree_root) for each
+    /// entry in the compact frontier decomposition.
+    ///
+    /// O(1): reads the subtree root straight out of the cached tree
+    /// levels — an aligned perfect subtree of `size = 2^j` leaves rooted
+    /// at leaf offset `start` has its root at
+    /// `levels[j][start / 2^j]`. Falls back to rehashing from the leaves
+    /// when the cache is unavailable (empty tree edge cases).
     fn perfect_subtree_root(&self, start: usize, size: usize) -> Hash {
         debug_assert!(
             size.is_power_of_two(),
             "perfect_subtree_root: size must be pow2"
         );
+        debug_assert!(
+            start % size == 0,
+            "perfect_subtree_root: start must be size-aligned"
+        );
         if size == 1 {
             return self.leaf_hashes[start];
         }
+        let j = size.trailing_zeros() as usize; // log2(size)
+        if let Some(level) = self.levels.get(j) {
+            let idx = start / size;
+            if let Some(&h) = level.get(idx) {
+                return h;
+            }
+        }
+        // Cache miss (shouldn't happen for valid ranges) — recompute.
         let mut level: Vec<Hash> = self.leaf_hashes[start..start + size].to_vec();
         while level.len() > 1 {
             let mut next = Vec::with_capacity(level.len() / 2);
