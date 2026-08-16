@@ -46,3 +46,7 @@ path = "fuzz_targets/fuzz_attributes_predicate.rs"
 [[bin]]
 name = "fuzz_merkle_proof"
 path = "fuzz_targets/fuzz_merkle_proof.rs"
+
+[[bin]]
+name = "fuzz_cose_decode"
+path = "fuzz_targets/fuzz_cose_decode.rs"
