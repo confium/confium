@@ -30,18 +30,26 @@ jobs:
           - error_chain
           - keyfmt_parse
         include:
-          # LeakSanitizer found a real leak in the plugin_loader
-          # target (see TODO.complete/68). Until it is fixed, that
-          # one target runs with leak detection scoped off; the
-          # other three keep full ASan+LSan coverage.
+          # plugin_loader dlopen()s shared libraries; the dynamic
+          # loader + libstdc++ allocate per-library state that
+          # glibc never frees, so the exit-time LSan pass reports
+          # a leak whose stack is entirely ld-linux/libstdc++/libc
+          # — no confium frames. The libFuzzer -detect_leaks=0
+          # flag only disables per-iteration checking; the
+          # exit-time check needs LSAN_OPTIONS. Scoped to this one
+          # target; the other three keep full ASan+LSan.
           - target: plugin_loader
             libfuzzer_flags: "-detect_leaks=0"
+            lsan_options: "detect_leaks=0"
           - target: hash_interface
             libfuzzer_flags: ""
+            lsan_options: ""
           - target: error_chain
             libfuzzer_flags: ""
+            lsan_options: ""
           - target: keyfmt_parse
             libfuzzer_flags: ""
+            lsan_options: ""
     steps:
       - uses: actions/checkout@v7
 
@@ -77,6 +85,7 @@ jobs:
         # with the sanitizer runtime.
         env:
           RUSTUP_TOOLCHAIN: nightly
+          LSAN_OPTIONS: ${{ matrix.lsan_options }}
         run: >-
           cargo fuzz run ${{ matrix.target }}
           --target x86_64-unknown-linux-gnu
