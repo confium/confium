@@ -94,13 +94,14 @@ jobs:
         with:
           ruby-version: "3.3"
 
-      - name: Build with Jekyll (safe, no drafts)
+      - name: Build with Jekyll (safe)
         run: |
           bundle init >/dev/null 2>&1 || true
           bundle add jekyll --version "~> 4" --skip-install
           bundle install
+          # Drafts are excluded by default in safe mode; --no-drafts
+          # was removed in Jekyll 4.4 and errors out.
           bundle exec jekyll build \
             --safe \
-            --no-drafts \
             --destination "${RUNNER_TEMP}/_site"
           echo "Jekyll build OK."

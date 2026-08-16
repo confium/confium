@@ -48,7 +48,9 @@ jobs:
           key: ${{ runner.os }}-perf-${{ hashFiles('Cargo.lock') }}
 
       - name: Run benchmarks on PR
-        uses: CodSpeedHQ/action@v3
+        # @v3's pinned runner release no longer exists upstream (the
+        # installer 404s). v5 tracks the current runner.
+        uses: CodSpeedHQ/action@v5
         with:
           # confium-benchmarks uses criterion; CodSpeed wraps it.
           run: cargo bench -p confium-benchmarks
