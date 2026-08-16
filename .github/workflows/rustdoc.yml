@@ -76,7 +76,9 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: target/doc
-          name: rustdoc-pages
+          # actions/deploy-pages consumes the artifact literally named
+          # "github-pages"; the custom name made it invisible to the
+          # deploy job.
 
   deploy:
     needs: build
