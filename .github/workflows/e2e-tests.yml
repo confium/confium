@@ -79,12 +79,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
 
-      - name: Build examples
-        run: cargo build --examples --release
+      - name: Build example binaries
+        # The demos live under crates/confium-examples/src/bin/ (bin
+        # targets), not examples/. `--bins` scoped to the crate.
+        run: cargo build -p confium-examples --bins --release
 
       - name: "Smoke test: P-256 threshold signing"
         run: |
-          output=$(cargo run --release --example p256_threshold_signing 2>&1)
+          output=$(cargo run --release --bin p256_threshold_signing 2>&1)
           echo "$output"
           echo "$output" | grep -q "Signature VALID" || {
             echo "FAIL: P-256 threshold signing example did not produce valid signature"
@@ -94,7 +96,7 @@ jobs:
 
       - name: "Smoke test: Transparency log"
         run: |
-          output=$(cargo run --release --example transparency_log_demo 2>&1)
+          output=$(cargo run --release --bin transparency_log_demo 2>&1)
           echo "$output"
           echo "$output" | grep -q "PROOF VALID" || {
             echo "FAIL: Transparency log example did not produce valid inclusion proofs"
@@ -104,7 +106,7 @@ jobs:
 
       - name: "Smoke test: PKCS#11 server dispatch"
         run: |
-          output=$(cargo run --release --example pkcs11_server_demo 2>&1)
+          output=$(cargo run --release --bin pkcs11_server_demo 2>&1)
           echo "$output"
           echo "$output" | grep -q "dispatch layer operational" || {
             echo "FAIL: PKCS#11 server example did not complete successfully"
@@ -114,7 +116,7 @@ jobs:
 
       - name: "Smoke test: Mini CNML deployment"
         run: |
-          output=$(cargo run --release --example mini_cnml_demo 2>&1)
+          output=$(cargo run --release --bin mini_cnml_demo 2>&1)
           echo "$output"
           echo "$output" | grep -q "3-tier hierarchy operational" || {
             echo "FAIL: Mini CNML example did not complete successfully"
