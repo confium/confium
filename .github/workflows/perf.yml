@@ -50,12 +50,11 @@ jobs:
       - name: Run benchmarks
         # Plain criterion run: verifies every bench compiles and
         # completes, catching perf-relevant breakage. Full results
-        # print to the job log. --quick keeps CI bounded; run
-        # locally without it for real measurements.
+        # print to the job log (~10 min for this suite).
         #
         # CodSpeed integration is deliberately not wired: the
         # criterion-compat crate requires builds wrapped by
         # cargo-codspeed (its runner sets CODSPEED_* env), which
         # this workflow doesn't use. Re-add via that tool if
         # dashboard tracking is wanted.
-        run: cargo bench -p confium-benchmarks -- --quick
+        run: cargo bench -p confium-benchmarks
