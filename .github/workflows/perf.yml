@@ -48,10 +48,12 @@ jobs:
           key: ${{ runner.os }}-perf-${{ hashFiles('Cargo.lock') }}
 
       - name: Run benchmarks on PR
-        # @v3's pinned runner release no longer exists upstream (the
-        # installer 404s). v5 tracks the current runner.
+        # v5 requires an explicit `mode`: `walltime` for criterion
+        # wall-clock benches (this workspace), `simulation` for
+        # CodSpeed-instrumented builds.
         uses: CodSpeedHQ/action@v5
         with:
+          mode: walltime
           # confium-benchmarks uses criterion; CodSpeed wraps it.
           run: cargo bench -p confium-benchmarks
           token: ${{ secrets.CODSPEED_TOKEN }}
