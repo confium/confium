@@ -251,24 +251,46 @@ pub fn hkdf_extract(salt: &[u8], ikm: &[u8]) -> [u8; 32] {
     prk
 }
 
-pub fn hkdf_expand(prk: &[u8; 32], info: &[u8], length: usize) -> Vec<u8> {
+/// Maximum HKDF-SHA256 output length per RFC 5869 §2.3:
+/// 255 × HashLen = 255 × 32 bytes.
+pub const HKDF_SHA256_MAX_OUTPUT: usize = 255 * 32;
+
+/// Errors from HKDF expansion.
+#[derive(Debug, thiserror::Error)]
+pub enum HkdfError {
+    /// Requested output exceeds the RFC 5869 limit of 255 × HashLen.
+    /// The previous implementation's u8 block counter wrapped here,
+    /// silently producing repeating (non-uniform) key material.
+    #[error("HKDF output length {requested} exceeds RFC 5869 max of {max}")]
+    OutputTooLong { requested: usize, max: usize },
+}
+
+pub fn hkdf_expand(prk: &[u8; 32], info: &[u8], length: usize) -> Result<Vec<u8>, HkdfError> {
+    if length > HKDF_SHA256_MAX_OUTPUT {
+        return Err(HkdfError::OutputTooLong {
+            requested: length,
+            max: HKDF_SHA256_MAX_OUTPUT,
+        });
+    }
     let mut output = Vec::with_capacity(length);
     let mut previous: Vec<u8> = Vec::new();
-    let mut counter: u8 = 1;
+    // u16 so the trailing increment past the final (255th) block
+    // can't overflow the way a u8 counter would.
+    let mut counter: u16 = 1;
     while output.len() < length {
         let mut mac = Hmac::<Sha256>::new_from_slice(prk).expect("HMAC");
         mac.update(&previous);
         mac.update(info);
-        mac.update(&[counter]);
+        mac.update(&[counter as u8]);
         previous = mac.finalize().into_bytes().to_vec();
         let take = previous.len().min(length - output.len());
         output.extend_from_slice(&previous[..take]);
         counter += 1;
     }
-    output
+    Ok(output)
 }
 
-pub fn hkdf(salt: &[u8], ikm: &[u8], info: &[u8], length: usize) -> Vec<u8> {
+pub fn hkdf(salt: &[u8], ikm: &[u8], info: &[u8], length: usize) -> Result<Vec<u8>, HkdfError> {
     let prk = hkdf_extract(salt, ikm);
     hkdf_expand(&prk, info, length)
 }
@@ -754,22 +776,66 @@ mod tests {
     #[test]
     fn hkdf_expand_produces_output() {
         let prk = [0x42u8; 32];
-        let okm = hkdf_expand(&prk, b"info", 64);
+        let okm = hkdf_expand(&prk, b"info", 64).unwrap();
         assert_eq!(okm.len(), 64);
     }
 
     #[test]
+    fn hkdf_expand_rejects_over_rfc_limit() {
+        let prk = [0x42u8; 32];
+        // Exactly the RFC 5869 max: must succeed.
+        assert!(hkdf_expand(&prk, b"info", HKDF_SHA256_MAX_OUTPUT).is_ok());
+        // One past: must be a typed error, not counter wraparound.
+        let err = hkdf_expand(&prk, b"info", HKDF_SHA256_MAX_OUTPUT + 1).unwrap_err();
+        assert!(matches!(err, HkdfError::OutputTooLong { .. }));
+    }
+
+    #[test]
+    fn hkdf_expand_max_output_is_uniform() {
+        // The block counter must reach its last valid value (255)
+        // without wrapping; the tail must not repeat the head.
+        let prk = [0x07u8; 32];
+        let okm = hkdf_expand(&prk, b"info", HKDF_SHA256_MAX_OUTPUT).unwrap();
+        assert_eq!(okm.len(), HKDF_SHA256_MAX_OUTPUT);
+        let head = &okm[..32];
+        let tail = &okm[HKDF_SHA256_MAX_OUTPUT - 32..];
+        assert_ne!(head, tail, "tail block must differ from first block");
+    }
+
+    #[test]
     fn hkdf_full_round_trips() {
-        let okm1 = hkdf(b"salt", b"ikm", b"info", 32);
-        let okm2 = hkdf(b"salt", b"ikm", b"info", 32);
+        let okm1 = hkdf(b"salt", b"ikm", b"info", 32).unwrap();
+        let okm2 = hkdf(b"salt", b"ikm", b"info", 32).unwrap();
         assert_eq!(okm1, okm2); // deterministic
     }
 
     #[test]
     fn hkdf_different_info_different_output() {
-        let okm1 = hkdf(b"s", b"ikm", b"info1", 32);
-        let okm2 = hkdf(b"s", b"ikm", b"info2", 32);
+        let okm1 = hkdf(b"s", b"ikm", b"info1", 32).unwrap();
+        let okm2 = hkdf(b"s", b"ikm", b"info2", 32).unwrap();
         assert_ne!(okm1, okm2);
+    }
+
+    #[test]
+    fn hkdf_matches_rfc5869_test_vector_1() {
+        // RFC 5869 Appendix A.1 (SHA-256) — the canonical first
+        // test vector, verifying extract + expand end-to-end.
+        // OKM (42 octets):
+        //   3cb25f25faacd57a90434f64d0362f2a
+        //   2d2d0a90cf1a5a4c5db02d56ecc4c5bf
+        //   34007208d5b887185865
+        let ikm = [0x0bu8; 22];
+        let salt = [
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
+        ];
+        let info = [0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9];
+        let expected = [
+            0x3c, 0xb2, 0x5f, 0x25, 0xfa, 0xac, 0xd5, 0x7a, 0x90, 0x43, 0x4f, 0x64, 0xd0, 0x36,
+            0x2f, 0x2a, 0x2d, 0x2d, 0x0a, 0x90, 0xcf, 0x1a, 0x5a, 0x4c, 0x5d, 0xb0, 0x2d, 0x56,
+            0xec, 0xc4, 0xc5, 0xbf, 0x34, 0x00, 0x72, 0x08, 0xd5, 0xb8, 0x87, 0x18, 0x58, 0x65,
+        ];
+        let okm = hkdf(&salt, &ikm, &info, 42).unwrap();
+        assert_eq!(okm, expected);
     }
 
     // Key wrapping
