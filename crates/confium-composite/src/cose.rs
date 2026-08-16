@@ -244,12 +244,29 @@ impl<'a> CborReader<'a> {
     }
 
     fn read_bytes(&mut self, n: usize) -> Option<&'a [u8]> {
-        if self.pos + n > self.bytes.len() {
+        // checked_add: an adversarial CBOR length near usize::MAX must
+        // surface as a parse error, not an overflowing comparison that
+        // wraps and slices out of bounds.
+        let end = self.pos.checked_add(n)?;
+        if end > self.bytes.len() {
             return None;
         }
-        let result = &self.bytes[self.pos..self.pos + n];
-        self.pos += n;
+        let result = &self.bytes[self.pos..end];
+        self.pos = end;
         Some(result)
+    }
+
+    /// Sanity-check a declared array/map count against the remaining
+    /// input: every CBOR item needs at least one byte, so a count
+    /// larger than the bytes left can never be satisfied. Bounds the
+    /// Vec allocation to the input size instead of trusting an
+    /// adversarial length header (u64::MAX → capacity-overflow panic).
+    fn check_count(&self, count: usize) -> Option<()> {
+        if count > self.bytes.len() - self.pos {
+            None
+        } else {
+            Some(())
+        }
     }
 
     fn read(&mut self) -> Option<CborValue<'a>> {
@@ -273,6 +290,7 @@ impl<'a> CborReader<'a> {
             }
             4 => {
                 let count = self.read_uint(info)? as usize;
+                self.check_count(count)?;
                 let mut items = Vec::with_capacity(count);
                 for _ in 0..count {
                     items.push(self.read()?);
@@ -281,6 +299,7 @@ impl<'a> CborReader<'a> {
             }
             5 => {
                 let count = self.read_uint(info)? as usize;
+                self.check_count(count)?;
                 let mut entries = Vec::with_capacity(count);
                 for _ in 0..count {
                     let k = self.read()?;
@@ -400,6 +419,39 @@ fn decode_algorithm(protected_bytes: &[u8]) -> Result<i32, CoseError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn adversarial_u64_max_length_is_error_not_panic() {
+        // Byte-string header (major 2) with 8-byte length = u64::MAX.
+        // The old `pos + n` comparison overflowed, wrapped, and sliced
+        // out of bounds — a panic on adversarial input.
+        let evil = [0x5B, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
+        let result = std::panic::catch_unwind(|| CoseSign1::decode(&evil));
+        assert!(
+            result.is_ok(),
+            "decoder must not panic on adversarial length"
+        );
+        assert!(result.unwrap().is_err(), "u64::MAX length must not decode");
+    }
+
+    #[test]
+    fn adversarial_huge_length_at_offset_is_error_not_panic() {
+        // Same, but positioned after some valid bytes so pos > 0 when
+        // the overflowing length is read.
+        let mut evil = vec![0x83, 0x01]; // array(3), unsigned(1)
+        evil.extend_from_slice(&[0x5B, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE]);
+        let result = std::panic::catch_unwind(|| CoseSign1::decode(&evil));
+        assert!(result.is_ok(), "decoder must not panic");
+        assert!(result.unwrap().is_err());
+    }
+
+    #[test]
+    fn truncated_input_is_error_not_panic() {
+        for len in 0..8 {
+            let truncated = &b"\xD2\x84\x43\x01\x02\x03\x04\xA0"[..len];
+            assert!(CoseSign1::decode(truncated).is_err());
+        }
+    }
 
     #[test]
     fn create_and_extract_algorithm() {
