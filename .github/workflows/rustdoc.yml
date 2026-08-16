@@ -39,6 +39,11 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      - name: Install native TSS2 dev libraries
+        # --all-features pulls confium-store-tpm's `real-tss` feature,
+        # whose tss-esapi-sys build script requires tss2-sys.pc.
+        run: sudo apt-get update && sudo apt-get install -y tss2-dev
+
       - name: Configure cargo cache
         uses: Swatinem/rust-cache@v2
 
