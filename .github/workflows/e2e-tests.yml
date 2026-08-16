@@ -39,7 +39,7 @@ env:
 jobs:
   # Tier 5: Real network e2e (TCP coordinator + TCP signers, separate threads)
   e2e-network-signing:
-    name: Tier 5: Real TCP network e2e
+    name: "Tier 5: Real TCP network e2e"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -51,7 +51,7 @@ jobs:
 
   # Tier 4: E2E protocol tests (async simulated multi-node)
   e2e-threshold-signing:
-    name: Tier 4: E2E protocol tests
+    name: "Tier 4: E2E protocol tests"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -82,7 +82,7 @@ jobs:
       - name: Build examples
         run: cargo build --examples --release
 
-      - name: Smoke test: P-256 threshold signing
+      - name: "Smoke test: P-256 threshold signing"
         run: |
           output=$(cargo run --release --example p256_threshold_signing 2>&1)
           echo "$output"
@@ -92,7 +92,7 @@ jobs:
           }
           echo "PASS: P-256 threshold signing example produced valid real signature"
 
-      - name: Smoke test: Transparency log
+      - name: "Smoke test: Transparency log"
         run: |
           output=$(cargo run --release --example transparency_log_demo 2>&1)
           echo "$output"
@@ -102,7 +102,7 @@ jobs:
           }
           echo "PASS: Transparency log example produced valid RFC 6962 inclusion proofs"
 
-      - name: Smoke test: PKCS#11 server dispatch
+      - name: "Smoke test: PKCS#11 server dispatch"
         run: |
           output=$(cargo run --release --example pkcs11_server_demo 2>&1)
           echo "$output"
@@ -112,7 +112,7 @@ jobs:
           }
           echo "PASS: PKCS#11 server dispatch example operational"
 
-      - name: Smoke test: Mini CNML deployment
+      - name: "Smoke test: Mini CNML deployment"
         run: |
           output=$(cargo run --release --example mini_cnml_demo 2>&1)
           echo "$output"

@@ -57,7 +57,12 @@ jobs:
 
       - name: Configure Pages
         id: pages
+        # enablement: Pages was not enabled for this repo, so the
+        # "Get Pages site" lookup 404'd on every run. This makes the
+        # action create the Pages site (source: GitHub Actions).
         uses: actions/configure-pages@v6
+        with:
+          enablement: true
 
       - name: Build AsciiDoc to HTML
         run: |

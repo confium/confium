@@ -18,6 +18,13 @@ updates:
       cargo-dependencies:
         patterns:
           - "*"
+    ignore:
+      # p256 0.14 removed the `expose-field` feature that
+      # confium-tc-cmp20 (and siblings) build against. Until the
+      # workspace migrates off `expose-field`, a p256 bump makes the
+      # whole update group unresolvable and fails every Dependabot
+      # run. Re-enable once the migration lands.
+      - dependency-name: "p256"
     commit-message:
       prefix: "chore(deps)"
       include: "scope"
