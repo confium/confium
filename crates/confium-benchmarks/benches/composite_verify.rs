@@ -5,6 +5,7 @@
 //! - `CompositeSignature::verify` with one ECDSA-P256 component
 //! - `CompositeSignature::verify` with a hybrid Ed25519+ECDSA-P256 envelope
 
+use codspeed_criterion_compat as criterion;
 use confium_composite::{
     ComponentSignature, CompositeSignature, ECDSA_P256, ED25519, build_ed25519_component,
     build_p256_component, ed25519_verifier, p256_verifier,
