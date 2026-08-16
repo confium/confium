@@ -10,7 +10,6 @@
 //! a baseline (it's the same `p256::ecdsa::VerifyingKey::verify` call
 //! across all three protocols).
 
-use codspeed_criterion_compat as criterion;
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
 

@@ -7,7 +7,6 @@
 //! - `MerkleTree::inclusion_proof(seq)` + verify round-trip
 //! - `MerkleTree::consistency_proof(old_size)` + verify round-trip
 
-use codspeed_criterion_compat as criterion;
 use confium_transparency::{ArtifactType, MerkleEntry, MerkleTree};
 use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 
