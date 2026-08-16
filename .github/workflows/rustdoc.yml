@@ -39,17 +39,16 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - name: Install native TSS2 dev libraries
-        # --all-features pulls confium-store-tpm's `real-tss` feature,
-        # whose tss-esapi-sys build script requires tss2-sys.pc.
-        run: sudo apt-get update && sudo apt-get install -y libtss2-dev
-
       - name: Configure cargo cache
         uses: Swatinem/rust-cache@v2
 
       - name: Build RustDoc
+        # Default features only: --all-features pulls confium-store-tpm's
+        # `real-tss` (tss-esapi 8.0.0-alpha), whose generated bindings
+        # don't compile against distro libtss2-dev headers. The published
+        # crate surface is fully covered by default features.
         run: |
-          cargo doc --workspace --no-deps --all-features
+          cargo doc --workspace --no-deps
           # Generate top-level index page
           cat > target/doc/index.html <<'HTMLEOF'
           <!DOCTYPE html>
