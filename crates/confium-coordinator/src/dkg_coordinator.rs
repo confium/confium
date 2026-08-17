@@ -3,7 +3,8 @@
 //! Each party contributes randomness to generate a shared keypair
 //! without any single party knowing the full secret.
 
-use p256::elliptic_curve::rand_core::OsRng;
+use getrandom::SysRng;
+use p256::elliptic_curve::rand_core::UnwrapErr;
 use p256::elliptic_curve::{Field, PrimeField};
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
@@ -69,7 +70,9 @@ pub fn generate_contribution(
     party_count: u32,
 ) -> (DkgContribution, Scalar) {
     // Random polynomial: f(0) = secret, f(x) for x in 1..N
-    let coeffs: Vec<Scalar> = (0..threshold).map(|_| Scalar::random(&mut OsRng)).collect();
+    let coeffs: Vec<Scalar> = (0..threshold)
+        .map(|_| Scalar::random(&mut UnwrapErr(SysRng)))
+        .collect();
 
     let secret = coeffs[0];
 
@@ -83,8 +86,8 @@ pub fn generate_contribution(
 
     // VSS commitment: g^{coeffs[0]}
     let commitment = (ProjectivePoint::GENERATOR * secret).to_affine();
-    use p256::elliptic_curve::sec1::ToEncodedPoint;
-    let commitment_hex = hex::encode(commitment.to_encoded_point(true).as_bytes());
+    use p256::elliptic_curve::sec1::ToSec1Point;
+    let commitment_hex = hex::encode(commitment.to_sec1_point(true).as_bytes());
 
     (
         DkgContribution {
@@ -125,12 +128,13 @@ pub fn compute_joint_public_key(session: &DkgSession) -> Result<AffinePoint, Str
     if !session.is_complete() {
         return Err("DKG not complete".into());
     }
-    use p256::elliptic_curve::sec1::FromEncodedPoint;
+    use p256::elliptic_curve::sec1::FromSec1Point;
     let mut sum = ProjectivePoint::IDENTITY;
     for contrib in session.contributions.values() {
         let bytes = hex::decode(&contrib.commitment_hex).map_err(|e| e.to_string())?;
-        let encoded = p256::EncodedPoint::from_bytes(&bytes).map_err(|e| e.to_string())?;
-        let point = Option::<AffinePoint>::from(AffinePoint::from_encoded_point(&encoded))
+        let encoded = p256::elliptic_curve::sec1::Sec1Point::<p256::NistP256>::from_bytes(&bytes)
+            .map_err(|e| e.to_string())?;
+        let point = Option::<AffinePoint>::from(AffinePoint::from_sec1_point(&encoded))
             .ok_or_else(|| "invalid commitment point".to_string())?;
         sum += ProjectivePoint::from(point);
     }

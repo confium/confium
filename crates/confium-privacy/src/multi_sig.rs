@@ -6,7 +6,7 @@
 
 use p256::ecdsa::{Signature, VerifyingKey};
 use p256::elliptic_curve::PrimeField;
-use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
+use p256::elliptic_curve::sec1::{FromSec1Point, ToSec1Point};
 use p256::{AffinePoint, Scalar};
 use serde::{Deserialize, Serialize};
 
@@ -47,7 +47,7 @@ pub fn aggregate(
         .iter()
         .map(|vk| {
             let point = *vk.as_affine();
-            hex::encode(point.to_encoded_point(false).as_bytes())
+            hex::encode(point.to_sec1_point(false).as_bytes())
         })
         .collect();
 
@@ -82,11 +82,12 @@ pub fn verify_aggregate(agg: &AggregateSignature, _message: &[u8]) -> bool {
             Ok(b) => b,
             Err(_) => return false,
         };
-        let encoded = match p256::EncodedPoint::from_bytes(&pk_bytes) {
-            Ok(e) => e,
-            Err(_) => return false,
-        };
-        let affine = Option::<AffinePoint>::from(AffinePoint::from_encoded_point(&encoded));
+        let encoded =
+            match p256::elliptic_curve::sec1::Sec1Point::<p256::NistP256>::from_bytes(&pk_bytes) {
+                Ok(e) => e,
+                Err(_) => return false,
+            };
+        let affine = Option::<AffinePoint>::from(AffinePoint::from_sec1_point(&encoded));
         if affine.is_none() {
             return false;
         }
@@ -99,10 +100,10 @@ pub fn verify_aggregate(agg: &AggregateSignature, _message: &[u8]) -> bool {
 mod tests {
     use super::*;
     use p256::ecdsa::{SigningKey, signature::Signer};
-    use p256::elliptic_curve::rand_core::OsRng;
+    use p256::elliptic_curve::Generate;
 
     fn make_sig_pair(msg: &[u8]) -> (Signature, VerifyingKey) {
-        let signing = SigningKey::random(&mut OsRng);
+        let signing = SigningKey::generate();
         let sig: Signature = signing.sign(msg);
         (sig, *signing.verifying_key())
     }

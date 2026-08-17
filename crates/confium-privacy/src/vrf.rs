@@ -5,10 +5,11 @@
 //! the secret key. Used for leader election, lotteries, and
 //! verifiable randomness.
 
+use getrandom::SysRng;
 use p256::elliptic_curve::PrimeField;
-use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
+use p256::elliptic_curve::rand_core::{Rng, UnwrapErr};
+use p256::elliptic_curve::sec1::{FromSec1Point, ToSec1Point};
 use p256::{AffinePoint, ProjectivePoint, Scalar};
-use rand_core::{OsRng, RngCore};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -39,10 +40,10 @@ pub fn prove(secret: &Scalar, public: &AffinePoint, alpha: &[u8]) -> VrfOutput {
 
     // Pick random nonce k
     let mut k_bytes = [0u8; 32];
-    OsRng.fill_bytes(&mut k_bytes);
+    UnwrapErr(SysRng).fill_bytes(&mut k_bytes);
     let k_fb = p256::FieldBytes::from(k_bytes);
     let k = Option::<Scalar>::from(Scalar::from_repr(k_fb))
-        .unwrap_or_else(|| Scalar::random(&mut OsRng));
+        .unwrap_or_else(|| Scalar::random(&mut UnwrapErr(SysRng)));
 
     // k*G and k*H
     let k_g = (ProjectivePoint::GENERATOR * k).to_affine();
@@ -60,7 +61,7 @@ pub fn prove(secret: &Scalar, public: &AffinePoint, alpha: &[u8]) -> VrfOutput {
     VrfOutput {
         output_hex: hex::encode(output),
         proof: VrfProof {
-            gamma_hex: hex::encode(gamma.to_encoded_point(true).as_bytes()),
+            gamma_hex: hex::encode(gamma.to_sec1_point(true).as_bytes()),
             c_hex: hex::encode(scalar_to_bytes(&c)),
             s_hex: hex::encode(scalar_to_bytes(&s)),
         },
@@ -111,7 +112,7 @@ fn hash_to_curve(alpha: &[u8]) -> AffinePoint {
         hasher.update(counter.to_be_bytes());
         let hash = hasher.finalize();
 
-        let fb = p256::FieldBytes::from(hash);
+        let fb = p256::FieldBytes::try_from(&hash[..]).expect("digest is 32 bytes");
         let ct = Scalar::from_repr(fb);
         if let Some(scalar) = Option::<Scalar>::from(ct) {
             let point = ProjectivePoint::GENERATOR * scalar;
@@ -131,22 +132,22 @@ fn challenge(
 ) -> Scalar {
     let mut hasher = Sha256::new();
     hasher.update(b"confium-vrf-c");
-    hasher.update(public.to_encoded_point(true).as_bytes());
-    hasher.update(h.to_encoded_point(true).as_bytes());
-    hasher.update(gamma.to_encoded_point(true).as_bytes());
-    hasher.update(u.to_encoded_point(true).as_bytes());
-    hasher.update(v.to_encoded_point(true).as_bytes());
+    hasher.update(public.to_sec1_point(true).as_bytes());
+    hasher.update(h.to_sec1_point(true).as_bytes());
+    hasher.update(gamma.to_sec1_point(true).as_bytes());
+    hasher.update(u.to_sec1_point(true).as_bytes());
+    hasher.update(v.to_sec1_point(true).as_bytes());
     hasher.update(alpha);
     let hash = hasher.finalize();
 
-    let fb = p256::FieldBytes::from(hash);
+    let fb = p256::FieldBytes::try_from(&hash[..]).expect("digest is 32 bytes");
     Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
 }
 
 fn hash_output(gamma: &AffinePoint) -> [u8; 32] {
     let mut hasher = Sha256::new();
     hasher.update(b"confium-vrf-out");
-    hasher.update(gamma.to_encoded_point(true).as_bytes());
+    hasher.update(gamma.to_sec1_point(true).as_bytes());
     let result = hasher.finalize();
     let mut out = [0u8; 32];
     out.copy_from_slice(&result);
@@ -159,8 +160,9 @@ fn scalar_to_bytes(s: &Scalar) -> [u8; 32] {
 
 fn decode_point(hex_str: &str) -> Option<AffinePoint> {
     let bytes = hex::decode(hex_str).ok()?;
-    let encoded = p256::EncodedPoint::from_bytes(&bytes).ok()?;
-    Option::<AffinePoint>::from(AffinePoint::from_encoded_point(&encoded))
+    let encoded =
+        p256::elliptic_curve::sec1::Sec1Point::<p256::NistP256>::from_bytes(&bytes).ok()?;
+    Option::<AffinePoint>::from(AffinePoint::from_sec1_point(&encoded))
 }
 
 fn decode_scalar(hex_str: &str) -> Option<Scalar> {
@@ -179,12 +181,12 @@ mod tests {
     use p256::elliptic_curve::Field;
 
     fn random_keypair() -> (Scalar, AffinePoint) {
-        use p256::elliptic_curve::rand_core::RngCore;
+        use p256::elliptic_curve::rand_core::Rng;
         let mut buf = [0u8; 32];
-        OsRng.fill_bytes(&mut buf);
+        UnwrapErr(SysRng).fill_bytes(&mut buf);
         let fb = p256::FieldBytes::from(buf);
         let secret = Option::<Scalar>::from(Scalar::from_repr(fb))
-            .unwrap_or_else(|| Scalar::random(&mut OsRng));
+            .unwrap_or_else(|| Scalar::random(&mut UnwrapErr(SysRng)));
         let public = (ProjectivePoint::GENERATOR * secret).to_affine();
         (secret, public)
     }

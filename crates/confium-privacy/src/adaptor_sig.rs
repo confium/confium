@@ -5,9 +5,10 @@
 //! Revealing the completed signature also reveals `y`, enabling
 //! atomic swaps and payment channels.
 
+use getrandom::SysRng;
 use p256::ecdsa::{Signature, SigningKey, VerifyingKey};
-use p256::elliptic_curve::rand_core::OsRng;
-use p256::elliptic_curve::sec1::ToEncodedPoint;
+use p256::elliptic_curve::rand_core::UnwrapErr;
+use p256::elliptic_curve::sec1::ToSec1Point;
 use p256::elliptic_curve::{Field, PrimeField};
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use sha2::{Digest, Sha256};
@@ -29,7 +30,7 @@ pub struct WitnessStatement {
 
 /// Generate a witness statement from a secret witness.
 pub fn create_witness() -> (Scalar, WitnessStatement) {
-    let y = Scalar::random(&mut OsRng);
+    let y = Scalar::random(&mut UnwrapErr(SysRng));
     let y_point = (ProjectivePoint::GENERATOR * y).to_affine();
     (y, WitnessStatement { y_point })
 }
@@ -41,7 +42,7 @@ pub fn pre_sign(
     message: &[u8],
     witness: &WitnessStatement,
 ) -> Result<(AdaptorPreSig, Scalar), String> {
-    let k = Scalar::random(&mut OsRng);
+    let k = Scalar::random(&mut UnwrapErr(SysRng));
     let k_point = (ProjectivePoint::GENERATOR * k).to_affine();
 
     // R' = k*G + Y = (k+y)*G
@@ -142,7 +143,7 @@ pub fn verify_pre_sig(
 }
 
 fn x_coord(point: &AffinePoint) -> Scalar {
-    let encoded = point.to_encoded_point(false);
+    let encoded = point.to_sec1_point(false);
     if let Some(x_bytes) = encoded.x() {
         let mut arr = [0u8; 32];
         arr.copy_from_slice(x_bytes);
@@ -156,7 +157,7 @@ fn x_coord(point: &AffinePoint) -> Scalar {
 fn hash_msg(msg: &[u8]) -> Scalar {
     let mut h = Sha256::new();
     h.update(msg);
-    let fb = FieldBytes::from(h.finalize());
+    let fb = FieldBytes::try_from(&h.finalize()[..]).expect("digest is 32 bytes");
     Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
 }
 
@@ -168,10 +169,11 @@ fn invert(s: &Scalar) -> Scalar {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use p256::elliptic_curve::Generate;
 
     #[test]
     fn pre_sign_produces_valid_pre_sig() {
-        let signing = SigningKey::random(&mut OsRng);
+        let signing = SigningKey::generate();
         let vk = signing.verifying_key();
         let (y, witness) = create_witness();
         let (pre_sig, _k) = pre_sign(&signing, b"message", &witness).unwrap();
@@ -181,7 +183,7 @@ mod tests {
 
     #[test]
     fn complete_produces_signature() {
-        let signing = SigningKey::random(&mut OsRng);
+        let signing = SigningKey::generate();
         let (y, witness) = create_witness();
         let (pre_sig, _k) = pre_sign(&signing, b"payment", &witness).unwrap();
         let full_sig = complete(&pre_sig, &y).unwrap();
@@ -192,7 +194,7 @@ mod tests {
 
     #[test]
     fn different_messages_different_pre_sigs() {
-        let signing = SigningKey::random(&mut OsRng);
+        let signing = SigningKey::generate();
         let (_, w1) = create_witness();
         let (_, w2) = create_witness();
         let (ps1, _) = pre_sign(&signing, b"msg1", &w1).unwrap();
@@ -202,7 +204,7 @@ mod tests {
 
     #[test]
     fn wrong_witness_rejected() {
-        let signing = SigningKey::random(&mut OsRng);
+        let signing = SigningKey::generate();
         let vk = signing.verifying_key();
         let (_, w1) = create_witness();
         let (_, w2) = create_witness();
@@ -212,7 +214,7 @@ mod tests {
 
     #[test]
     fn witness_extraction() {
-        let signing = SigningKey::random(&mut OsRng);
+        let signing = SigningKey::generate();
         let (y, witness) = create_witness();
         let (pre_sig, _) = pre_sign(&signing, b"msg", &witness).unwrap();
         let full_sig = complete(&pre_sig, &y).unwrap();

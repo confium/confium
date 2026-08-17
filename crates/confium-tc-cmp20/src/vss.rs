@@ -13,8 +13,8 @@
 //! evaluation into the same message, so no second round is needed.
 
 use elliptic_curve::Field;
-use elliptic_curve::rand_core::CryptoRngCore;
-use elliptic_curve::sec1::ToEncodedPoint;
+use elliptic_curve::rand_core::CryptoRng;
+use elliptic_curve::sec1::ToSec1Point;
 use p256::{AffinePoint, ProjectivePoint, Scalar};
 
 /// One dealer's Feldman VSS output.
@@ -26,7 +26,7 @@ pub struct FeldmanVss {
 }
 
 impl FeldmanVss {
-    pub fn deal(rng: &mut impl CryptoRngCore, n: usize, t: usize) -> Self {
+    pub fn deal(rng: &mut impl CryptoRng, n: usize, t: usize) -> Self {
         debug_assert!(t >= 1 && t <= n);
         let mut coeffs: Vec<Scalar> = (0..t).map(|_| Scalar::random(&mut *rng)).collect();
         let secret = coeffs[0];
@@ -69,7 +69,7 @@ impl FeldmanVss {
     pub fn encode_commitments(commitments: &[AffinePoint]) -> Vec<u8> {
         let mut out = Vec::with_capacity(commitments.len() * 33);
         for c in commitments {
-            out.extend_from_slice(c.to_encoded_point(true).as_bytes());
+            out.extend_from_slice(c.to_sec1_point(true).as_bytes());
         }
         out
     }
@@ -79,12 +79,12 @@ impl FeldmanVss {
             return None;
         }
         use elliptic_curve::point::AffineCoordinates;
-        use elliptic_curve::sec1::FromEncodedPoint;
+        use elliptic_curve::sec1::FromSec1Point;
         use p256::NistP256;
         let mut out = Vec::with_capacity(bytes.len() / 33);
         for chunk in bytes.chunks_exact(33) {
-            let enc = elliptic_curve::sec1::EncodedPoint::<NistP256>::from_bytes(chunk).ok()?;
-            let pt: AffinePoint = Option::from(AffinePoint::from_encoded_point(&enc))?;
+            let enc = elliptic_curve::sec1::Sec1Point::<NistP256>::from_bytes(chunk).ok()?;
+            let pt: AffinePoint = Option::from(AffinePoint::from_sec1_point(&enc))?;
             let _ = pt.x();
             out.push(pt);
         }
@@ -99,11 +99,12 @@ impl FeldmanVss {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use elliptic_curve::rand_core::OsRng;
+    use elliptic_curve::rand_core::UnwrapErr;
+    use getrandom::SysRng;
 
     #[test]
     fn feldman_share_verifies() {
-        let vss = FeldmanVss::deal(&mut OsRng, 5, 3);
+        let vss = FeldmanVss::deal(&mut UnwrapErr(SysRng), 5, 3);
         for (i, &share) in vss.shares.iter().enumerate() {
             assert!(
                 FeldmanVss::verify_share(&vss.commitments, (i + 1) as u64, share),
@@ -115,20 +116,20 @@ mod tests {
 
     #[test]
     fn feldman_rejects_tampered_share() {
-        let vss = FeldmanVss::deal(&mut OsRng, 5, 3);
+        let vss = FeldmanVss::deal(&mut UnwrapErr(SysRng), 5, 3);
         let bad_share = vss.shares[0] + Scalar::from(1u64);
         assert!(!FeldmanVss::verify_share(&vss.commitments, 1, bad_share));
     }
 
     #[test]
     fn feldman_commitments_round_trip() {
-        let vss = FeldmanVss::deal(&mut OsRng, 5, 3);
+        let vss = FeldmanVss::deal(&mut UnwrapErr(SysRng), 5, 3);
         let enc = FeldmanVss::encode_commitments(&vss.commitments);
         let dec = FeldmanVss::decode_commitments(&enc).expect("decode");
         assert_eq!(dec.len(), vss.commitments.len());
         for (a, b) in vss.commitments.iter().zip(dec.iter()) {
-            let ab = a.to_encoded_point(true);
-            let bb = b.to_encoded_point(true);
+            let ab = a.to_sec1_point(true);
+            let bb = b.to_sec1_point(true);
             assert_eq!(ab.as_bytes(), bb.as_bytes());
         }
     }

@@ -4,11 +4,12 @@
 //! the signature itself. Uses a Schnorr-style proof tied to the
 //! verification equation.
 
+use getrandom::SysRng;
 use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
 use p256::elliptic_curve::PrimeField;
-use p256::elliptic_curve::rand_core::OsRng;
-use p256::elliptic_curve::rand_core::RngCore;
-use p256::elliptic_curve::sec1::ToEncodedPoint;
+use p256::elliptic_curve::rand_core::Rng;
+use p256::elliptic_curve::rand_core::UnwrapErr;
+use p256::elliptic_curve::sec1::ToSec1Point;
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -41,7 +42,7 @@ pub fn prove_possession(
     // The proof demonstrates knowledge of the signature scalars (r, s)
     // by showing a Schnorr-like proof tied to the verification equation.
     let pk_affine = *public_key.as_affine();
-    let pk_bytes = pk_affine.to_encoded_point(true);
+    let pk_bytes = pk_affine.to_sec1_point(true);
     let pk_hex = hex::encode(pk_bytes.as_bytes());
 
     // Hash the message
@@ -57,13 +58,13 @@ pub fn prove_possession(
 
     // Pick random nonce
     let mut nonce_bytes = [0u8; 32];
-    OsRng.fill_bytes(&mut nonce_bytes);
+    UnwrapErr(SysRng).fill_bytes(&mut nonce_bytes);
     let nonce_fb = FieldBytes::from(nonce_bytes);
     let nonce = Option::<Scalar>::from(Scalar::from_repr(nonce_fb)).unwrap_or(Scalar::ZERO);
 
     // Commitment: R = nonce * G
     let commitment = (ProjectivePoint::GENERATOR * nonce).to_affine();
-    let commitment_hex = hex::encode(commitment.to_encoded_point(true).as_bytes());
+    let commitment_hex = hex::encode(commitment.to_sec1_point(true).as_bytes());
 
     // Challenge: c = H(pk || msg || R || r)
     let r_bytes: [u8; 32] = r.to_repr().into();
@@ -71,10 +72,10 @@ pub fn prove_possession(
     challenge_hasher.update(b"sig-possession");
     challenge_hasher.update(pk_bytes.as_bytes());
     challenge_hasher.update(msg_hash);
-    challenge_hasher.update(commitment.to_encoded_point(true).as_bytes());
+    challenge_hasher.update(commitment.to_sec1_point(true).as_bytes());
     challenge_hasher.update(r_bytes);
     let challenge_bytes = challenge_hasher.finalize();
-    let challenge_fb = FieldBytes::from(challenge_bytes);
+    let challenge_fb = FieldBytes::try_from(&challenge_bytes[..]).expect("digest is 32 bytes");
     let challenge = Option::<Scalar>::from(Scalar::from_repr(challenge_fb)).unwrap_or(Scalar::ZERO);
 
     // Response: response = nonce + challenge * s
@@ -131,11 +132,12 @@ pub fn verify_possession(proof: &SignaturePossessionProof, message: &[u8]) -> bo
     // In a real implementation, r would be derived from the proof
     challenge_hasher.update([0u8; 32]);
     let challenge_bytes = challenge_hasher.finalize();
-    let _challenge =
-        match Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(challenge_bytes))) {
-            Some(s) => s,
-            None => return false,
-        };
+    let _challenge = match Option::<Scalar>::from(Scalar::from_repr(
+        FieldBytes::try_from(&challenge_bytes[..]).expect("digest is 32 bytes"),
+    )) {
+        Some(s) => s,
+        None => return false,
+    };
 
     // Verify: response * G == commitment + challenge * pk_point
     let lhs = ProjectivePoint::GENERATOR * response;
@@ -146,20 +148,22 @@ pub fn verify_possession(proof: &SignaturePossessionProof, message: &[u8]) -> bo
 }
 
 fn decode_point(hex_str: &str) -> Option<AffinePoint> {
-    use p256::elliptic_curve::sec1::FromEncodedPoint;
+    use p256::elliptic_curve::sec1::FromSec1Point;
     let bytes = hex::decode(hex_str).ok()?;
-    let encoded = p256::EncodedPoint::from_bytes(&bytes).ok()?;
-    Option::<AffinePoint>::from(AffinePoint::from_encoded_point(&encoded))
+    let encoded =
+        p256::elliptic_curve::sec1::Sec1Point::<p256::NistP256>::from_bytes(&bytes).ok()?;
+    Option::<AffinePoint>::from(AffinePoint::from_sec1_point(&encoded))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use p256::ecdsa::{SigningKey, signature::Signer};
+    use p256::elliptic_curve::Generate;
 
     #[test]
     fn valid_proof_generates() {
-        let signing = SigningKey::random(&mut OsRng);
+        let signing = SigningKey::generate();
         let vk = signing.verifying_key();
         let msg = b"test message";
         let sig: Signature = signing.sign(msg);
@@ -170,8 +174,8 @@ mod tests {
 
     #[test]
     fn invalid_signature_rejected() {
-        let signing = SigningKey::random(&mut OsRng);
-        let other = SigningKey::random(&mut OsRng);
+        let signing = SigningKey::generate();
+        let other = SigningKey::generate();
         let vk = signing.verifying_key();
         let msg = b"test";
         let sig: Signature = other.sign(msg); // signed with different key
@@ -180,7 +184,7 @@ mod tests {
 
     #[test]
     fn proof_does_not_reveal_signature() {
-        let signing = SigningKey::random(&mut OsRng);
+        let signing = SigningKey::generate();
         let vk = signing.verifying_key();
         let msg = b"secret message";
         let sig: Signature = signing.sign(msg);
@@ -193,7 +197,7 @@ mod tests {
 
     #[test]
     fn different_messages_different_proofs() {
-        let signing = SigningKey::random(&mut OsRng);
+        let signing = SigningKey::generate();
         let vk = signing.verifying_key();
         let sig1: Signature = signing.sign(b"msg1");
         let sig2: Signature = signing.sign(b"msg2");
@@ -204,7 +208,7 @@ mod tests {
 
     #[test]
     fn proof_serializes() {
-        let signing = SigningKey::random(&mut OsRng);
+        let signing = SigningKey::generate();
         let vk = signing.verifying_key();
         let sig: Signature = signing.sign(b"test");
         let proof = prove_possession(vk, b"test", &sig).unwrap();

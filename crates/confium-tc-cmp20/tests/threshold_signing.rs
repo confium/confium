@@ -288,10 +288,10 @@ fn dkg_completes_in_single_broadcast_round() {
         .public_key;
     for s in &shares[1..] {
         let pk = Cmp20Share::from_bytes(s).expect("share").public_key;
-        use elliptic_curve::sec1::ToEncodedPoint;
+        use elliptic_curve::sec1::ToSec1Point;
         assert_eq!(
-            pk0.to_encoded_point(true).as_bytes(),
-            pk.to_encoded_point(true).as_bytes(),
+            pk0.to_sec1_point(true).as_bytes(),
+            pk.to_sec1_point(true).as_bytes(),
             "joint public key must match across all parties"
         );
     }

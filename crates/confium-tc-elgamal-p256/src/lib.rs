@@ -17,7 +17,7 @@ pub mod shamir;
 
 use p256::elliptic_curve::PrimeField;
 use p256::elliptic_curve::rand_core;
-use p256::elliptic_curve::sec1::ToEncodedPoint;
+use p256::elliptic_curve::sec1::ToSec1Point;
 use p256::elliptic_curve::subtle::CtOption;
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
@@ -39,7 +39,7 @@ impl PublicKey {
     /// Construct from an affine point.
     pub fn from_affine(point: AffinePoint) -> Self {
         Self {
-            bytes: point.to_encoded_point(false).as_bytes().to_vec(),
+            bytes: point.to_sec1_point(false).as_bytes().to_vec(),
         }
     }
 }
@@ -102,21 +102,17 @@ pub enum ElGamalError {
 }
 
 fn decode_point(bytes: &[u8]) -> Result<ProjectivePoint, ElGamalError> {
-    use p256::elliptic_curve::sec1::FromEncodedPoint;
-    let ep = p256::EncodedPoint::from_bytes(bytes)
+    use p256::elliptic_curve::sec1::FromSec1Point;
+    let ep = p256::elliptic_curve::sec1::Sec1Point::<p256::NistP256>::from_bytes(bytes)
         .map_err(|e| ElGamalError::Sec1Decode(format!("encoded point: {e}")))?;
-    let ct_opt: CtOption<AffinePoint> = AffinePoint::from_encoded_point(&ep);
+    let ct_opt = AffinePoint::from_sec1_point(&ep);
     let affine = Option::<AffinePoint>::from(ct_opt)
         .ok_or_else(|| ElGamalError::Sec1Decode("point at infinity".into()))?;
     Ok(ProjectivePoint::from(affine))
 }
 
 fn encode_point(point: &ProjectivePoint) -> Vec<u8> {
-    point
-        .to_affine()
-        .to_encoded_point(false)
-        .as_bytes()
-        .to_vec()
+    point.to_affine().to_sec1_point(false).as_bytes().to_vec()
 }
 
 fn decode_scalar(bytes: &[u8]) -> Result<Scalar, ElGamalError> {
@@ -146,14 +142,14 @@ fn decode_scalar(bytes: &[u8]) -> Result<Scalar, ElGamalError> {
 pub fn encapsulate(
     recipient_public_key: &PublicKey,
 ) -> Result<(Ciphertext, Vec<u8>), ElGamalError> {
-    use p256::elliptic_curve::rand_core::RngCore;
+    use p256::elliptic_curve::rand_core::Rng;
 
     let recipient_pt = decode_point(&recipient_public_key.bytes)?;
 
     // Random ephemeral scalar
     let r = loop {
         let mut buf = [0u8; 32];
-        rand_core::OsRng.fill_bytes(&mut buf);
+        rand_core::UnwrapErr(getrandom::SysRng).fill_bytes(&mut buf);
         if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(buf))) {
             if s != Scalar::ZERO {
                 break s;
@@ -242,7 +238,7 @@ pub fn aggregate_partials(
 
 fn x_coordinate(point: &ProjectivePoint) -> Vec<u8> {
     let affine = point.to_affine();
-    let ep = affine.to_encoded_point(false);
+    let ep = affine.to_sec1_point(false);
     let bytes = ep.as_bytes();
     if bytes.len() == 65 {
         bytes[1..33].to_vec()

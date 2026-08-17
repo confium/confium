@@ -2,7 +2,7 @@
 
 use p256::elliptic_curve::PrimeField;
 use p256::elliptic_curve::rand_core;
-use p256::elliptic_curve::rand_core::RngCore;
+use p256::elliptic_curve::rand_core::Rng;
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 
 /// A P-256 keypair.
@@ -18,7 +18,7 @@ pub struct Keypair {
 pub fn generate_keypair() -> Keypair {
     let secret = loop {
         let mut buf = [0u8; 32];
-        rand_core::OsRng.fill_bytes(&mut buf);
+        rand_core::UnwrapErr(getrandom::SysRng).fill_bytes(&mut buf);
         if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(buf))) {
             if s != Scalar::ZERO {
                 break s;

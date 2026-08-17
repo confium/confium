@@ -70,7 +70,7 @@ pub fn recover_secret(shares: &[&Share]) -> Result<Scalar, ShamirError> {
 }
 
 fn random_scalar() -> Scalar {
-    Scalar::random(rand_core::OsRng)
+    Scalar::random(&mut rand_core::UnwrapErr(getrandom::SysRng))
 }
 
 fn evaluate_polynomial(coeffs: &[Scalar], x: &Scalar) -> Scalar {

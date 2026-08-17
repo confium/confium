@@ -50,7 +50,9 @@ pub fn scalar_invert(a: &Scalar) -> Scalar {
 
 /// Generate a random scalar.
 pub fn random_scalar() -> Scalar {
-    Scalar::random(rand_core::OsRng)
+    Scalar::random(&mut p256::elliptic_curve::rand_core::UnwrapErr(
+        getrandom::SysRng,
+    ))
 }
 
 #[cfg(test)]

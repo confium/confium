@@ -31,8 +31,9 @@
 //! let sig = inprocess::sign(&refreshed_shares[..2], 2, b"refreshed").unwrap();
 //! ```
 
-use elliptic_curve::rand_core::OsRng;
-use elliptic_curve::rand_core::RngCore;
+use elliptic_curve::rand_core::Rng;
+use elliptic_curve::rand_core::UnwrapErr;
+use getrandom::SysRng;
 use p256::{FieldBytes, Scalar, elliptic_curve::PrimeField};
 
 /// One party's refresh contribution: `(source_party_index, target_party_index, refresh_scalar_bytes)`.
@@ -172,7 +173,7 @@ fn evaluate_polynomial(coeffs: &[Scalar], x: u32) -> Scalar {
 fn random_scalar() -> Scalar {
     loop {
         let mut buf = [0u8; 32];
-        OsRng.fill_bytes(&mut buf);
+        UnwrapErr(SysRng).fill_bytes(&mut buf);
         let fb = FieldBytes::from(buf);
         if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(fb)) {
             if s != Scalar::ZERO {

@@ -1,7 +1,8 @@
 //! Pedersen VSS — verifiable secret sharing with hiding commitments.
 
-use p256::elliptic_curve::rand_core::OsRng;
-use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
+use getrandom::SysRng;
+use p256::elliptic_curve::rand_core::UnwrapErr;
+use p256::elliptic_curve::sec1::{FromSec1Point, ToSec1Point};
 use p256::elliptic_curve::{Field, PrimeField};
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
@@ -39,7 +40,7 @@ pub struct PedersenParams {
 impl PedersenParams {
     /// Generate h = g^alpha for random alpha (trapdoor discarded).
     pub fn generate() -> Self {
-        let alpha = Scalar::random(&mut OsRng);
+        let alpha = Scalar::random(&mut UnwrapErr(SysRng));
         let h = (ProjectivePoint::GENERATOR * alpha).to_affine();
         Self { h }
     }
@@ -59,11 +60,13 @@ pub fn deal(
             if i == 0 {
                 *secret
             } else {
-                Scalar::random(&mut OsRng)
+                Scalar::random(&mut UnwrapErr(SysRng))
             }
         })
         .collect();
-    let r_coeffs: Vec<Scalar> = (0..threshold).map(|_| Scalar::random(&mut OsRng)).collect();
+    let r_coeffs: Vec<Scalar> = (0..threshold)
+        .map(|_| Scalar::random(&mut UnwrapErr(SysRng)))
+        .collect();
 
     // Commitments: C_i = g^{f_i} * h^{r_i}, D_i = h^{r_i}
     let mut c_points = Vec::with_capacity(threshold as usize);
@@ -157,13 +160,14 @@ fn u32_to_scalar(v: u32) -> Scalar {
 }
 
 fn encode_point(p: &AffinePoint) -> String {
-    hex::encode(p.to_encoded_point(true).as_bytes())
+    hex::encode(p.to_sec1_point(true).as_bytes())
 }
 
 fn decode_point(hex_str: &str) -> Option<AffinePoint> {
     let bytes = hex::decode(hex_str).ok()?;
-    let encoded = p256::EncodedPoint::from_bytes(&bytes).ok()?;
-    Option::<AffinePoint>::from(AffinePoint::from_encoded_point(&encoded))
+    let encoded =
+        p256::elliptic_curve::sec1::Sec1Point::<p256::NistP256>::from_bytes(&bytes).ok()?;
+    Option::<AffinePoint>::from(AffinePoint::from_sec1_point(&encoded))
 }
 
 #[cfg(test)]
@@ -173,7 +177,7 @@ mod tests {
     #[test]
     fn deal_and_verify() {
         let params = PedersenParams::generate();
-        let secret = Scalar::random(&mut OsRng);
+        let secret = Scalar::random(&mut UnwrapErr(SysRng));
         let (commitment, shares) = deal(&secret, 3, 5, &params);
         for share in &shares {
             assert!(
@@ -187,7 +191,7 @@ mod tests {
     #[test]
     fn tampered_share_rejected() {
         let params = PedersenParams::generate();
-        let secret = Scalar::random(&mut OsRng);
+        let secret = Scalar::random(&mut UnwrapErr(SysRng));
         let (commitment, mut shares) = deal(&secret, 2, 3, &params);
         shares[0].value += Scalar::ONE;
         assert!(!verify_share(&shares[0], &commitment, &params));
@@ -196,7 +200,7 @@ mod tests {
     #[test]
     fn joint_public_key_extracted() {
         let params = PedersenParams::generate();
-        let secret = Scalar::random(&mut OsRng);
+        let secret = Scalar::random(&mut UnwrapErr(SysRng));
         let (commitment, _) = deal(&secret, 2, 3, &params);
         let pk = joint_public_key(&commitment).unwrap();
         // g^{secret} == pk
@@ -207,8 +211,8 @@ mod tests {
     #[test]
     fn different_secrets_different_commitments() {
         let params = PedersenParams::generate();
-        let s1 = Scalar::random(&mut OsRng);
-        let s2 = Scalar::random(&mut OsRng);
+        let s1 = Scalar::random(&mut UnwrapErr(SysRng));
+        let s2 = Scalar::random(&mut UnwrapErr(SysRng));
         let (c1, _) = deal(&s1, 2, 3, &params);
         let (c2, _) = deal(&s2, 2, 3, &params);
         assert_ne!(c1.c_points_hex[0], c2.c_points_hex[0]);
@@ -217,7 +221,7 @@ mod tests {
     #[test]
     fn threshold_one_works() {
         let params = PedersenParams::generate();
-        let secret = Scalar::random(&mut OsRng);
+        let secret = Scalar::random(&mut UnwrapErr(SysRng));
         let (commitment, shares) = deal(&secret, 1, 3, &params);
         assert_eq!(shares.len(), 3);
         for share in &shares {

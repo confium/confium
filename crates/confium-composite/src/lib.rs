@@ -350,7 +350,8 @@ mod real_ed25519_tests {
     #[test]
     fn real_p256_round_trip() {
         use p256::ecdsa::{Signature, SigningKey, signature::Signer};
-        let signing = SigningKey::random(&mut OsRng);
+        use p256::elliptic_curve::Generate;
+        let signing = SigningKey::generate();
         let verifying = signing.verifying_key();
         let message = b"composite p256 test message";
         let sig: Signature = signing.sign(message);
@@ -364,7 +365,8 @@ mod real_ed25519_tests {
     #[test]
     fn real_p256_rejects_wrong_message() {
         use p256::ecdsa::{Signature, SigningKey, signature::Signer};
-        let signing = SigningKey::random(&mut OsRng);
+        use p256::elliptic_curve::Generate;
+        let signing = SigningKey::generate();
         let verifying = signing.verifying_key();
         let sig: Signature = signing.sign(b"original");
         let sig_der = sig.to_der();

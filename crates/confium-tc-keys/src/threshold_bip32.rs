@@ -60,7 +60,7 @@ pub fn derive_child_scalar(parent: &Scalar, component: &PathIndex) -> Scalar {
     hasher.update(component.index.to_be_bytes());
     let hash = hasher.finalize();
 
-    let fb = FieldBytes::from(hash);
+    let fb = FieldBytes::try_from(&hash[..]).expect("digest is 32 bytes");
     let ct = Scalar::from_repr(fb);
     Option::<Scalar>::from(ct).unwrap_or(Scalar::ZERO)
 }
@@ -92,11 +92,12 @@ pub fn derive_party_share(parent_share: &Scalar, party_idx: u32, path: &Derivati
 #[cfg(test)]
 mod tests {
     use super::*;
+    use getrandom::SysRng;
     use p256::elliptic_curve::Field;
-    use p256::elliptic_curve::rand_core::OsRng;
+    use p256::elliptic_curve::rand_core::UnwrapErr;
 
     fn random_scalar() -> Scalar {
-        Scalar::random(&mut OsRng)
+        Scalar::random(&mut UnwrapErr(SysRng))
     }
 
     #[test]

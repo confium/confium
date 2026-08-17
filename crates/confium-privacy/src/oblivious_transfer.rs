@@ -6,9 +6,10 @@
 //!
 //! Based on the Bellare-Micali protocol using P-256.
 
+use getrandom::SysRng;
 use p256::elliptic_curve::Field;
-use p256::elliptic_curve::rand_core::OsRng;
-use p256::elliptic_curve::sec1::ToEncodedPoint;
+use p256::elliptic_curve::rand_core::UnwrapErr;
+use p256::elliptic_curve::sec1::ToSec1Point;
 use p256::{AffinePoint, ProjectivePoint, Scalar};
 use sha2::{Digest, Sha256};
 
@@ -44,14 +45,14 @@ pub struct OtReceiver {
 
 /// Phase 1: Sender initiates with a random point.
 pub fn sender_setup() -> (OtSetup, Scalar) {
-    let c_scalar = Scalar::random(&mut OsRng);
+    let c_scalar = Scalar::random(&mut UnwrapErr(SysRng));
     let c = (ProjectivePoint::GENERATOR * c_scalar).to_affine();
     (OtSetup { c }, c_scalar)
 }
 
 /// Phase 2: Receiver chooses bit b and generates choice message.
 pub fn receiver_choose(b: bool, setup: &OtSetup) -> (OtChoice, OtReceiver) {
-    let k = Scalar::random(&mut OsRng);
+    let k = Scalar::random(&mut UnwrapErr(SysRng));
     let k_g = (ProjectivePoint::GENERATOR * k).to_affine();
 
     // If b == 0: P = k*G
@@ -91,7 +92,7 @@ pub fn receiver_decrypt(enc: &OtEncrypted, receiver: &OtReceiver) -> Vec<u8> {
 fn xor_encrypt(key_point: &AffinePoint, data: &[u8]) -> Vec<u8> {
     let mut hasher = Sha256::new();
     hasher.update(b"ot-key");
-    hasher.update(key_point.to_encoded_point(true).as_bytes());
+    hasher.update(key_point.to_sec1_point(true).as_bytes());
     let key = hasher.finalize();
     let key = key.as_slice();
 

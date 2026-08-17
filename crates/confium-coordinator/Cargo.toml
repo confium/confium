@@ -16,6 +16,7 @@ keywords = ["crypto", "threshold", "coordinator", "confium"]
 crate-type = ["rlib"]
 
 [dependencies]
+getrandom = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
 serde = { workspace = true }
 serde_json = { workspace = true }

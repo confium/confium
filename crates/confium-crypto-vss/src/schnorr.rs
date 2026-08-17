@@ -4,10 +4,11 @@
 //! Uses the Fiat-Shamir heuristic: the challenge is derived from a
 //! hash of the protocol transcript, making the proof non-interactive.
 
+use getrandom::SysRng;
 use p256::elliptic_curve::PrimeField;
-use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
+use p256::elliptic_curve::rand_core::{Rng, UnwrapErr};
+use p256::elliptic_curve::sec1::{FromSec1Point, ToSec1Point};
 use p256::{AffinePoint, ProjectivePoint, Scalar};
-use rand_core::{OsRng, RngCore};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -38,10 +39,10 @@ pub enum SchnorrError {
 pub fn prove(secret: &Scalar, public: &AffinePoint, message: &[u8]) -> SchnorrProof {
     use p256::elliptic_curve::Field;
     let mut k_bytes = [0u8; 32];
-    OsRng.fill_bytes(&mut k_bytes);
+    UnwrapErr(SysRng).fill_bytes(&mut k_bytes);
     let k_fb = p256::FieldBytes::from(k_bytes);
     let k_ct = Scalar::from_repr(k_fb);
-    let k = Option::<Scalar>::from(k_ct).unwrap_or_else(|| Scalar::random(&mut OsRng));
+    let k = Option::<Scalar>::from(k_ct).unwrap_or_else(|| Scalar::random(&mut UnwrapErr(SysRng)));
 
     let r_point = ProjectivePoint::GENERATOR * k;
     let r_affine = r_point.to_affine();
@@ -49,7 +50,7 @@ pub fn prove(secret: &Scalar, public: &AffinePoint, message: &[u8]) -> SchnorrPr
     let c = fiat_shamir_challenge(public, &r_affine, message);
     let z = k + secret * &c;
 
-    let r_encoded = r_affine.to_encoded_point(true);
+    let r_encoded = r_affine.to_sec1_point(true);
     let z_bytes: [u8; 32] = z.to_repr().into();
 
     SchnorrProof {
@@ -82,8 +83,8 @@ pub fn verify(
 }
 
 fn fiat_shamir_challenge(public: &AffinePoint, r: &AffinePoint, message: &[u8]) -> Scalar {
-    let public_encoded = public.to_encoded_point(true);
-    let r_encoded = r.to_encoded_point(true);
+    let public_encoded = public.to_sec1_point(true);
+    let r_encoded = r.to_sec1_point(true);
 
     let mut hasher = Sha256::new();
     hasher.update(b"confium-schnorr-v1");
@@ -92,14 +93,15 @@ fn fiat_shamir_challenge(public: &AffinePoint, r: &AffinePoint, message: &[u8]) 
     hasher.update(message);
     let hash = hasher.finalize();
 
-    let fb = p256::FieldBytes::from(hash);
+    let fb = p256::FieldBytes::try_from(&hash[..]).expect("digest is 32 bytes");
     let ct = Scalar::from_repr(fb);
     Option::<Scalar>::from(ct).unwrap_or(Scalar::ZERO)
 }
 
 fn decode_point(bytes: &[u8]) -> Result<AffinePoint, SchnorrError> {
-    let encoded = p256::EncodedPoint::from_bytes(bytes).map_err(|_| SchnorrError::InvalidPoint)?;
-    Option::<AffinePoint>::from(AffinePoint::from_encoded_point(&encoded))
+    let encoded = p256::elliptic_curve::sec1::Sec1Point::<p256::NistP256>::from_bytes(bytes)
+        .map_err(|_| SchnorrError::InvalidPoint)?;
+    Option::<AffinePoint>::from(AffinePoint::from_sec1_point(&encoded))
         .ok_or(SchnorrError::InvalidPoint)
 }
 
@@ -116,10 +118,11 @@ mod tests {
 
     fn random_keypair() -> (Scalar, AffinePoint) {
         let mut buf = [0u8; 32];
-        OsRng.fill_bytes(&mut buf);
+        UnwrapErr(SysRng).fill_bytes(&mut buf);
         let fb = p256::FieldBytes::from(buf);
         let ct = Scalar::from_repr(fb);
-        let secret = Option::<Scalar>::from(ct).unwrap_or_else(|| Scalar::random(&mut OsRng));
+        let secret =
+            Option::<Scalar>::from(ct).unwrap_or_else(|| Scalar::random(&mut UnwrapErr(SysRng)));
         let public = (ProjectivePoint::GENERATOR * secret).to_affine();
         (secret, public)
     }

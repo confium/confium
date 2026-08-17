@@ -189,11 +189,13 @@ tokio-util = { version = "0.7", features = ["codec"] }
 x509-cert = { version = "0.2", features = ["builder"] }
 der = "0.7"
 spki = "0.7"
-p256 = { version = "0.13", features = ["ecdsa", "pem", "arithmetic"] }
-p384 = "0.13"
-ecdsa = "0.16"
+p256 = { version = "0.14", features = ["ecdsa", "pem", "arithmetic"] }
+p384 = "0.14"
+ecdsa = "0.17"
 signature = "2"
-elliptic-curve = "0.13"
+elliptic-curve = { version = "0.14", features = ["getrandom"] }
+crypto-bigint = "0.7"
+getrandom = { version = "0.4", features = ["sys_rng"] }
 openpgp-card = "0.5"
 card-backend-pcsc = "0.5"
 chrono = { version = "0.4", features = ["serde"] }

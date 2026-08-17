@@ -1,7 +1,8 @@
 //! Threshold Schnorr (MuSig-style) — 2-round threshold signing.
 
-use p256::elliptic_curve::rand_core::OsRng;
-use p256::elliptic_curve::sec1::ToEncodedPoint;
+use getrandom::SysRng;
+use p256::elliptic_curve::rand_core::UnwrapErr;
+use p256::elliptic_curve::sec1::ToSec1Point;
 use p256::elliptic_curve::{Field, PrimeField};
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use sha2::{Digest, Sha256};
@@ -79,10 +80,10 @@ impl MusigSession {
         let pk_sum = self.aggregate_public_key();
         let mut hasher = Sha256::new();
         hasher.update(b"musig-challenge");
-        hasher.update(r.to_encoded_point(true).as_bytes());
-        hasher.update(pk_sum.to_encoded_point(true).as_bytes());
+        hasher.update(r.to_sec1_point(true).as_bytes());
+        hasher.update(pk_sum.to_sec1_point(true).as_bytes());
         hasher.update(message);
-        let fb = FieldBytes::from(hasher.finalize());
+        let fb = FieldBytes::try_from(&hasher.finalize()[..]).expect("digest is 32 bytes");
         Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
     }
 
@@ -121,7 +122,7 @@ pub fn verify(s: &Scalar, r: &AffinePoint, agg_pk: &AffinePoint, challenge: &Sca
 
 /// Generate a random nonce for a party.
 pub fn generate_nonce(party_idx: u32) -> (Scalar, NonceCommitment) {
-    let k = Scalar::random(&mut OsRng);
+    let k = Scalar::random(&mut UnwrapErr(SysRng));
     let r_point = (ProjectivePoint::GENERATOR * k).to_affine();
     (k, NonceCommitment { party_idx, r_point })
 }
@@ -133,7 +134,7 @@ mod tests {
     fn make_keypairs(n: usize) -> Vec<(Scalar, AffinePoint)> {
         (0..n)
             .map(|_| {
-                let sk = Scalar::random(&mut OsRng);
+                let sk = Scalar::random(&mut UnwrapErr(SysRng));
                 let pk = (ProjectivePoint::GENERATOR * sk).to_affine();
                 (sk, pk)
             })
@@ -240,10 +241,10 @@ mod tests {
         let pairs = make_keypairs(2);
         let pks: Vec<AffinePoint> = pairs.iter().map(|(_, pk)| *pk).collect();
         let session = MusigSession::new(pks.clone(), 2);
-        let r = (ProjectivePoint::GENERATOR * Scalar::random(&mut OsRng)).to_affine();
+        let r = (ProjectivePoint::GENERATOR * Scalar::random(&mut UnwrapErr(SysRng))).to_affine();
         let agg_pk = session.aggregate_public_key();
         let c = session.challenge(b"test");
-        let wrong_s = Scalar::random(&mut OsRng);
+        let wrong_s = Scalar::random(&mut UnwrapErr(SysRng));
         assert!(!verify(&wrong_s, &r, &agg_pk, &c));
     }
 }

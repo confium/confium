@@ -22,19 +22,20 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
+getrandom = { workspace = true }
 confium-tc = { workspace = true }
 # Used by the `register_tc_scheme!` macro (absolute path).
 inventory = { workspace = true }
-crypto-bigint = "0.5"
-elliptic-curve = { version = "0.13", features = ["digest", "sec1"] }
+crypto-bigint = { workspace = true }
+elliptic-curve = { workspace = true, features = ["digest", "sec1"] }
 num-bigint = { workspace = true }
-p256 = { version = "0.13", features = ["arithmetic", "ecdsa", "expose-field", "pkcs8", "serde"] }
+p256 = { workspace = true, features = ["pkcs8", "serde"] }
 rand = { workspace = true }
 sha2 = { workspace = true }
 zeroize = { workspace = true }
 
 [dev-dependencies]
-p256 = { version = "0.13", features = ["arithmetic", "ecdsa", "expose-field", "pem", "pkcs8"] }
+p256 = { workspace = true, features = ["pkcs8"] }
 rand = { version = "0.8", default-features = false, features = ["std"] }
 rand_core = { version = "0.6", default-features = false }
 confium-transparency = { workspace = true }

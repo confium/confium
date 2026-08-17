@@ -12,7 +12,7 @@
 //! share `f(j)`. They verify: `g^{f(j)} == product(C_i^{j^i})`.
 
 use p256::elliptic_curve::PrimeField;
-use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
+use p256::elliptic_curve::sec1::{FromSec1Point, ToSec1Point};
 use p256::{AffinePoint, ProjectivePoint, Scalar};
 
 /// Public commitments from a Feldman VSS deal.
@@ -63,7 +63,7 @@ impl VssCommitment {
     pub fn encode(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(self.commitments.len() * 33);
         for c in &self.commitments {
-            let encoded = c.to_encoded_point(true);
+            let encoded = c.to_sec1_point(true);
             out.extend_from_slice(encoded.as_bytes());
         }
         out
@@ -77,8 +77,9 @@ impl VssCommitment {
         }
         let mut commitments = Vec::with_capacity(bytes.len() / 33);
         for chunk in bytes.chunks_exact(33) {
-            let point = p256::EncodedPoint::from_bytes(chunk).ok()?;
-            let affine = Option::<AffinePoint>::from(AffinePoint::from_encoded_point(&point))?;
+            let point =
+                p256::elliptic_curve::sec1::Sec1Point::<p256::NistP256>::from_bytes(chunk).ok()?;
+            let affine = Option::<AffinePoint>::from(AffinePoint::from_sec1_point(&point))?;
             commitments.push(affine);
         }
         Some(Self { commitments })
@@ -99,8 +100,8 @@ mod tests {
 
     fn random_scalar() -> Scalar {
         use p256::elliptic_curve::Field;
-        use p256::elliptic_curve::rand_core::OsRng;
-        Scalar::random(&mut OsRng)
+        use p256::elliptic_curve::rand_core::UnwrapErr;
+        Scalar::random(&mut UnwrapErr(getrandom::SysRng))
     }
 
     fn make_commitment_for_polynomial(coeffs: &[Scalar]) -> VssCommitment {

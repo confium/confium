@@ -6,9 +6,10 @@
 //!
 //! Uses the multiplicative blinding technique adapted for ECDSA.
 
+use getrandom::SysRng;
 use p256::Scalar;
 use p256::ecdsa::{Signature, SigningKey, signature::Signer};
-use p256::elliptic_curve::{Field, PrimeField, rand_core::OsRng};
+use p256::elliptic_curve::{Field, PrimeField, rand_core::UnwrapErr};
 use serde::{Deserialize, Serialize};
 
 /// A blind signature request (blinded hash sent to signer).
@@ -34,7 +35,7 @@ pub struct RawSignature {
 
 /// Blind a message hash for the signer.
 pub fn blind(message_hash: &[u8; 32]) -> (BlindedMessage, BlindFactor) {
-    let t = Scalar::random(&mut OsRng);
+    let t = Scalar::random(&mut UnwrapErr(SysRng));
     let e = bytes_to_scalar(message_hash);
     // Blinded hash = e * t (multiplicative blinding)
     let blinded = e * t;
@@ -87,10 +88,11 @@ fn bytes_to_scalar(bytes: &[u8; 32]) -> Scalar {
 mod tests {
     use super::*;
     use p256::ecdsa::signature::Verifier;
+    use p256::elliptic_curve::Generate;
 
     #[test]
     fn blind_sign_produces_valid_sig_on_blinded_hash() {
-        let signing = SigningKey::random(&mut OsRng);
+        let signing = SigningKey::generate();
         let vk = signing.verifying_key();
 
         let msg_hash = [0x42u8; 32];
@@ -136,7 +138,7 @@ mod tests {
 
     #[test]
     fn multiple_messages_each_produce_valid_sigs() {
-        let signing = SigningKey::random(&mut OsRng);
+        let signing = SigningKey::generate();
         let vk = signing.verifying_key();
 
         for i in 0u8..5 {

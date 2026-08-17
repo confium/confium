@@ -5,8 +5,9 @@
 //! value. Uses pairwise masking (each pair shares a mask that cancels
 //! when summed).
 
-use p256::elliptic_curve::rand_core::OsRng;
-use p256::elliptic_curve::rand_core::RngCore;
+use getrandom::SysRng;
+use p256::elliptic_curve::rand_core::Rng;
+use p256::elliptic_curve::rand_core::UnwrapErr;
 use std::collections::HashMap;
 
 /// A party in the secure aggregation.
@@ -49,7 +50,7 @@ impl SecureAggregation {
     /// When summed, masks cancel.
     pub fn establish_masks(&mut self) {
         let n = self.parties.len();
-        let mut rng = OsRng;
+        let mut rng = UnwrapErr(SysRng);
         for i in 0..n {
             for j in (i + 1)..n {
                 // Use small masks to avoid i64 overflow

@@ -5,9 +5,10 @@
 
 use crate::paillier_mta;
 use confium_tc::paillier::{self, PaillierKeypair};
+use getrandom::SysRng;
 use num_bigint::BigUint;
 use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
-use p256::elliptic_curve::rand_core::OsRng;
+use p256::elliptic_curve::rand_core::UnwrapErr;
 use p256::elliptic_curve::{Field, PrimeField};
 use p256::{AffinePoint, ProjectivePoint, Scalar};
 use sha2::{Digest, Sha256};
@@ -56,7 +57,9 @@ impl Cmp20SigningPipeline {
         let _t = self.threshold as usize;
 
         // Step 1: Each party generates a nonce k_i
-        let nonces: Vec<Scalar> = (0..n).map(|_| Scalar::random(&mut OsRng)).collect();
+        let nonces: Vec<Scalar> = (0..n)
+            .map(|_| Scalar::random(&mut UnwrapErr(SysRng)))
+            .collect();
 
         // Step 2: Run MtA for each pair (i, j) where i != j
         // Compute additive shares of k_i * x_j
@@ -153,8 +156,8 @@ fn biguint_to_scalar(b: &BigUint, _n: &BigUint) -> Scalar {
 }
 
 fn x_coordinate(point: &AffinePoint) -> Scalar {
-    use p256::elliptic_curve::sec1::ToEncodedPoint;
-    let encoded = point.to_encoded_point(false);
+    use p256::elliptic_curve::sec1::ToSec1Point;
+    let encoded = point.to_sec1_point(false);
     if let Some(x_bytes) = encoded.x() {
         let mut arr = [0u8; 32];
         arr.copy_from_slice(x_bytes);
@@ -170,7 +173,7 @@ fn hash_to_scalar(message: &[u8]) -> Scalar {
     let mut hasher = Sha256::new();
     hasher.update(message);
     let hash = hasher.finalize();
-    let fb = p256::FieldBytes::from(hash);
+    let fb = p256::FieldBytes::try_from(&hash[..]).expect("digest is 32 bytes");
     Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
 }
 
@@ -179,7 +182,7 @@ mod tests {
     use super::*;
 
     fn random_scalar() -> Scalar {
-        Scalar::random(&mut OsRng)
+        Scalar::random(&mut UnwrapErr(SysRng))
     }
 
     #[test]

@@ -1,7 +1,8 @@
 //! Stealth address derivation.
 
-use p256::elliptic_curve::rand_core::OsRng;
-use p256::elliptic_curve::sec1::ToEncodedPoint;
+use getrandom::SysRng;
+use p256::elliptic_curve::rand_core::UnwrapErr;
+use p256::elliptic_curve::sec1::ToSec1Point;
 use p256::elliptic_curve::{Field, PrimeField};
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use sha2::{Digest, Sha256};
@@ -30,14 +31,14 @@ pub struct StealthAddress {
 
 /// Generate a spending keypair.
 pub fn generate_spend_keypair() -> SpendKeypair {
-    let secret = Scalar::random(&mut OsRng);
+    let secret = Scalar::random(&mut UnwrapErr(SysRng));
     let public = (ProjectivePoint::GENERATOR * secret).to_affine();
     SpendKeypair { secret, public }
 }
 
 /// Generate a scanning keypair.
 pub fn generate_scan_keypair() -> (Scalar, ScanPubkey) {
-    let secret = Scalar::random(&mut OsRng);
+    let secret = Scalar::random(&mut UnwrapErr(SysRng));
     let public = (ProjectivePoint::GENERATOR * secret).to_affine();
     (secret, ScanPubkey { point: public })
 }
@@ -49,7 +50,7 @@ pub fn create_stealth_address(
     spend_pubkey: &AffinePoint,
 ) -> (StealthAddress, Scalar) {
     // Sender picks ephemeral key r
-    let r = Scalar::random(&mut OsRng);
+    let r = Scalar::random(&mut UnwrapErr(SysRng));
     let ephemeral = (ProjectivePoint::GENERATOR * r).to_affine();
 
     // Shared secret: r * scan_pubkey = scan_secret * ephemeral
@@ -98,8 +99,8 @@ pub fn scan_stealth_address(
 fn hash_to_scalar(point: &AffinePoint) -> Scalar {
     let mut hasher = Sha256::new();
     hasher.update(b"stealth-hash");
-    hasher.update(point.to_encoded_point(true).as_bytes());
-    let fb = FieldBytes::from(hasher.finalize());
+    hasher.update(point.to_sec1_point(true).as_bytes());
+    let fb = FieldBytes::try_from(&hasher.finalize()[..]).expect("digest is 32 bytes");
     Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
 }
 
@@ -125,7 +126,7 @@ mod tests {
         let spend_kp = generate_spend_keypair();
         let (address, _) = create_stealth_address(&scan_pubkey, &spend_kp.public);
 
-        let wrong_scan = Scalar::random(&mut OsRng);
+        let wrong_scan = Scalar::random(&mut UnwrapErr(SysRng));
         let result = scan_stealth_address(&wrong_scan, &spend_kp.secret, &address);
         assert!(result.is_none());
     }
@@ -136,7 +137,7 @@ mod tests {
         let spend_kp = generate_spend_keypair();
         let (address, _) = create_stealth_address(&scan_pubkey, &spend_kp.public);
 
-        let wrong_spend = Scalar::random(&mut OsRng);
+        let wrong_spend = Scalar::random(&mut UnwrapErr(SysRng));
         let result = scan_stealth_address(&scan_secret, &wrong_spend, &address);
         assert!(result.is_none());
     }
