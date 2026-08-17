@@ -20,6 +20,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 pq = ["dep:ml-dsa"]
+pq-slh = ["dep:slh-dsa", "dep:hybrid-array"]
 default = []
 # Wycheproof adversarial test vector integration. Off by default —
 # the vectors are 6 MB of JSON that callers download from
@@ -28,6 +29,8 @@ wycheproof = ["dep:hex"]
 
 [dependencies]
 ml-dsa = { workspace = true, optional = true }
+slh-dsa = { workspace = true, optional = true }
+hybrid-array = { version = "0.4", optional = true, features = ["extra-sizes"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

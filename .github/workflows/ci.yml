@@ -214,8 +214,8 @@ jobs:
       - name: Run tests
         run: cargo test --workspace --verbose
 
-      - name: Run tests (post-quantum feature)
-        run: cargo test -p confium-composite --features pq --verbose
+      - name: Run tests (post-quantum features)
+        run: cargo test -p confium-composite --features pq --verbose && cargo test -p confium-composite --features pq-slh --verbose
 
   # ============================================================================
   # C++ Binding Tests

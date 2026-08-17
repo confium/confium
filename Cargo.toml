@@ -192,6 +192,7 @@ x509-cert = { version = "0.2", features = ["builder"] }
 der = "0.7"
 spki = "0.7"
 ml-dsa = { version = "0.1", features = ["rand_core"] }
+slh-dsa = { version = "=0.2.0-rc.5" }
 p256 = { version = "0.14", features = ["ecdsa", "pem", "arithmetic"] }
 p384 = "0.14"
 ecdsa = "0.17"
