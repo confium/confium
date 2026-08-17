@@ -33,6 +33,7 @@ pub mod ceremony;
 pub mod coverage;
 pub mod discovery;
 pub mod error;
+pub mod fta;
 pub mod graph;
 pub mod jcs;
 pub mod multilog;
