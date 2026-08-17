@@ -180,9 +180,9 @@ pub fn conformance_claims() -> Vec<ConformanceClaim> {
         },
         ConformanceClaim {
             class: "/conf/post-quantum",
-            description: "ML-DSA and classical/PQC composite algorithms",
-            status: S::Partial,
-            implemented_in: "confium_composite::pq (feature pq)",
+            description: "ML-DSA-65 and SLH-DSA-128s verification, classical+PQC and PQC-only composites",
+            status: S::Implemented,
+            implemented_in: "confium_composite::pq (features pq, pq-slh)",
         },
     ]
 }
@@ -238,6 +238,6 @@ mod tests {
     fn report_is_serializable() {
         let report = conformance_report();
         assert!(report["claims"].as_array().unwrap().len() == 24);
-        assert!(report["implemented"].as_u64().unwrap() >= 23);
+        assert_eq!(report["implemented"].as_u64().unwrap(), 24);
     }
 }
