@@ -1132,6 +1132,10 @@ name = "confium-deployment"
 version = "0.4.7"
 dependencies = [
  "chrono",
+ "confium-signatif",
+ "ed25519-dalek",
+ "hex",
+ "rand_core 0.6.4",
  "serde",
  "serde_json",
  "thiserror 1.0.69",

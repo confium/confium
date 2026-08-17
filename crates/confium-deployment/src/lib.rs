@@ -17,6 +17,7 @@
 pub mod identity;
 pub mod manifest;
 pub mod mode;
+pub mod signatif;
 pub mod validate;
 
 pub use manifest::*;
