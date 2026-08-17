@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/confium-api",
     "crates/confium-attributes",
+    "crates/confium-signatif",
     "crates/confium-pki",
     "crates/confium-cli",
     "crates/confium-composite",
@@ -84,6 +85,7 @@ categories = ["authentication", "cryptography"]
 [workspace.dependencies]
 confium-api = { path = "crates/confium-api", version = "0.4.0" }
 confium-attributes = { path = "crates/confium-attributes", version = "0.4.0" }
+confium-signatif = { path = "crates/confium-signatif", version = "0.4.0" }
 confium-core = { path = "crates/confium-core", version = "0.4.0" }
 confium-composite = { path = "crates/confium-composite", version = "0.4.0" }
 confium-deployment = { path = "crates/confium-deployment", version = "0.4.0" }
