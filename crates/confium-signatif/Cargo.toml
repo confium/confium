@@ -20,6 +20,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 base64ct = { workspace = true }
 chrono = { workspace = true }
+confium-composite = { workspace = true }
 confium-pki = { workspace = true }
 qrcode = { workspace = true, optional = true }
 ed25519-dalek = { workspace = true }
