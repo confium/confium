@@ -10,7 +10,6 @@ repository.workspace = true
 categories = ["cryptography", "authentication"]
 keywords = ["crypto", "verify", "http", "confium"]
 description = "HTTP service for verifying threshold signatures and transparency proofs"
-publish = false
 
 [[bin]]
 name = "confium-verify-server"
