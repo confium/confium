@@ -73,6 +73,11 @@ subtle = { workspace = true }
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }
 
+# getrandom's default (sys_rng) backend doesn't exist on wasm32-unknown-unknown;
+# the wasm_js backend binds to the browser's Web Crypto for ambient entropy.
+[target.'cfg(target_family = "wasm")'.dependencies]
+getrandom = { workspace = true, features = ["wasm_js"] }
+
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
 
