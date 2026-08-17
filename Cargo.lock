@@ -1480,6 +1480,8 @@ dependencies = [
  "confium-pki",
  "ed25519-dalek",
  "hex",
+ "p256",
+ "qrcode",
  "rand_core 0.6.4",
  "serde",
  "serde_json",
@@ -4465,6 +4467,12 @@ dependencies = [
  "quote",
  "syn 2.0.119",
 ]
+
+[[package]]
+name = "qrcode"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d68782463e408eb1e668cf6152704bd856c78c5b6417adaee3203d8f4c1fc9ec"
 
 [[package]]
 name = "quick-error"

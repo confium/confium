@@ -211,8 +211,17 @@ impl<'a> Pipeline<'a> {
             }
         }
 
-        // Soft checks: accumulate into the coverage report.
+        // Soft checks: accumulate into the coverage report. Deprecated
+        // algorithms (§20) downgrade; retired already hard-failed in
+        // verify_self's registry check.
         let mut downgrades = self.transparency.downgrades.clone();
+        for block in &artifact.co_signatures {
+            if self.registry.algorithms.status(&block.algorithm)
+                == Some(crate::registry::Status::Deprecated)
+            {
+                downgrades.push(format!("deprecated_algorithm:{}", block.algorithm));
+            }
+        }
         if !self.transparency.artifact_included {
             downgrades.push("transparency_missing".into());
         }
@@ -469,6 +478,85 @@ mod tests {
         );
         let err = pipe.run(&broken, Utc::now()).unwrap_err();
         assert!(err.to_string().contains("signature_validity"));
+    }
+
+    #[test]
+    fn deprecated_algorithm_downgrades_and_caps_label() {
+        let f = build();
+        static NO_REVOCATIONS: NoRevocations = NoRevocations;
+        let mut agile = f.registry.clone();
+        agile
+            .algorithms
+            .set_status("Ed25519", crate::registry::Status::Deprecated)
+            .unwrap();
+        let accept_all =
+            AcceptancePolicy::accept(&["unverified", "basic", "verified", "attested", "certified"]);
+        // Full soft coverage: without deprecation this reaches
+        // "attested" (data + person? only data here -> "verified");
+        // with the deprecated algorithm the label stays "verified"
+        // but the downgrade is recorded. Person present would cap too.
+        let pipe = Pipeline::new(
+            &f.bundle,
+            &f.graph,
+            &agile,
+            &Ed25519Verifier,
+            &NO_REVOCATIONS,
+            TransparencyInputs {
+                artifact_included: true,
+                time_anchored: true,
+                multi_log_quorum: false,
+                downgrades: vec![],
+            },
+            &accept_all,
+        );
+        let out = pipe.run(&f.artifact, Utc::now()).unwrap();
+        assert!(
+            out.report
+                .downgrades
+                .iter()
+                .any(|d| d == "deprecated_algorithm:Ed25519"),
+            "downgrades: {:?}",
+            out.report.downgrades
+        );
+
+        // With a person dimension the cap bites: attested -> verified.
+        let person = ed25519_dalek::SigningKey::from_bytes(&{
+            use rand_core::RngCore as _;
+            let mut seed = [0u8; 32];
+            rand_core::OsRng.fill_bytes(&mut seed);
+            seed
+        });
+        use ed25519_dalek::Signer as _;
+        let mut rich = f.artifact.clone();
+        let input = rich.cosign_input(&DimensionTag::person());
+        rich.co_signatures.push(crate::artifact::CoSignatureBlock {
+            dimension: DimensionTag::person(),
+            algorithm: "Ed25519".into(),
+            signer_cert_ref: "end".into(),
+            signer_pubkey: person.verifying_key().as_bytes().to_vec(),
+            chain_ref: "root".into(),
+            signature: person.sign(&input).to_bytes().to_vec(),
+            timestamp: Utc::now(),
+        });
+        let out = pipe.run(&rich, Utc::now()).unwrap();
+        assert_eq!(out.label.0, "verified", "deprecated caps attested");
+
+        // Retired hard-fails outright.
+        let mut retired = agile.clone();
+        retired
+            .algorithms
+            .set_status("Ed25519", crate::registry::Status::Retired)
+            .unwrap();
+        let pipe = Pipeline::new(
+            &f.bundle,
+            &f.graph,
+            &retired,
+            &Ed25519Verifier,
+            &NO_REVOCATIONS,
+            TransparencyInputs::default(),
+            &accept_all,
+        );
+        assert!(pipe.run(&f.artifact, Utc::now()).is_err());
     }
 
     #[test]
