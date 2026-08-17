@@ -141,6 +141,66 @@ pub fn verify_detached_ed25519(
         })
 }
 
+/// Sign the detached input with ECDSA P-256 (`ES256`). JWS ES256
+/// signatures are the P1363-style fixed-width 64-byte `r || s`
+/// encoding (RFC 7515 §3.4), not DER.
+///
+/// # Errors
+///
+/// Encoding errors from the signing input.
+pub fn sign_detached_es256(
+    signing_key: &p256::ecdsa::SigningKey,
+    kid: Option<&str>,
+    external_payload: &[u8],
+) -> SignatifResult<String> {
+    use p256::ecdsa::signature::Signer as _;
+    let input = detached_signing_input(JwsAlg::Es256, kid, external_payload)?;
+    let sig: p256::ecdsa::Signature = signing_key.sign(input.as_bytes());
+    let header_b64 = input.split('.').next().expect("header segment").to_string();
+    Ok(format!("{}.{}", header_b64, b64url_encode(&sig.to_bytes())))
+}
+
+/// Verify a detached compact ES256 JWS against its external payload.
+///
+/// # Errors
+///
+/// Signature or format errors.
+pub fn verify_detached_es256(
+    jws: &str,
+    external_payload: &[u8],
+    public_key: &p256::ecdsa::VerifyingKey,
+) -> SignatifResult<()> {
+    use p256::ecdsa::signature::Verifier as _;
+    let (header_b64, sig_b64) = jws
+        .split_once('.')
+        .ok_or_else(|| SignatifError::ArtifactFormat("JWS must be header.signature".into()))?;
+    let header_bytes = b64url_decode(header_b64)?;
+    let header: serde_json::Value = serde_json::from_slice(&header_bytes)
+        .map_err(|e| SignatifError::ArtifactFormat(format!("JWS header: {e}")))?;
+    let alg = header
+        .get("alg")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| SignatifError::ArtifactFormat("JWS header lacks alg".into()))?;
+    if alg != JwsAlg::Es256.as_str() {
+        return Err(SignatifError::ArtifactFormat(format!(
+            "unsupported JWS alg {alg}"
+        )));
+    }
+    let kid = header.get("kid").and_then(|v| v.as_str());
+    let input = detached_signing_input(JwsAlg::Es256, kid, external_payload)?;
+    let sig_bytes = b64url_decode(sig_b64)?;
+    let sig = p256::ecdsa::Signature::from_slice(&sig_bytes).map_err(|_| {
+        SignatifError::BadSignature {
+            context: "ES256 signature must be 64-byte r||s".into(),
+        }
+    })?;
+    public_key
+        .verify(input.as_bytes(), &sig)
+        .map_err(|_| SignatifError::BadSignature {
+            context: "JWS detached ES256 signature".into(),
+        })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -174,6 +234,24 @@ mod tests {
         parts[1] = "";
         let tampered = format!("{}.{}", parts[0], b64url_encode(&sig));
         assert!(verify_detached_ed25519(&tampered, &payload, &pk).is_err());
+    }
+
+    #[test]
+    fn es256_round_trip() {
+        use p256::elliptic_curve::Generate;
+        let sk = p256::ecdsa::SigningKey::generate();
+        let payload = crate::jcs::canonicalize(&serde_json::json!({"dose":500}))
+            .unwrap()
+            .into_bytes();
+        let jws = sign_detached_es256(&sk, Some("end-p256"), &payload).unwrap();
+        // P1363: 64-byte signature -> 86 base64url chars, no padding.
+        let sig_len = b64url_decode(jws.split('.').nth(1).unwrap()).unwrap().len();
+        assert_eq!(sig_len, 64, "ES256 must be r||s, not DER");
+        assert!(verify_detached_es256(&jws, &payload, sk.verifying_key()).is_ok());
+        assert!(verify_detached_es256(&jws, b"other", sk.verifying_key()).is_err());
+        // Wrong key rejected.
+        let other: p256::ecdsa::SigningKey = p256::ecdsa::SigningKey::generate();
+        assert!(verify_detached_es256(&jws, &payload, other.verifying_key()).is_err());
     }
 
     #[test]

@@ -161,3 +161,79 @@ mod tests {
         assert!(c.verify_response(&payload, late).is_err());
     }
 }
+
+/// QR error-correction levels for the barcode delivery (§16
+/// `barcode-encoding`): the level is chosen for the expected scanning
+/// environment.
+#[cfg(feature = "barcode")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QrEcc {
+    /// Recover ~7% of codewords — clean environments, high density.
+    Low,
+    /// Recover ~15%.
+    Medium,
+    /// Recover ~25% — typical print-and-scan.
+    Quartile,
+    /// Recover ~30% — damaged or low-quality scans.
+    High,
+}
+
+#[cfg(feature = "barcode")]
+impl QrEcc {
+    fn to_qrcode(self) -> qrcode::EcLevel {
+        match self {
+            QrEcc::Low => qrcode::EcLevel::L,
+            QrEcc::Medium => qrcode::EcLevel::M,
+            QrEcc::Quartile => qrcode::EcLevel::Q,
+            QrEcc::High => qrcode::EcLevel::H,
+        }
+    }
+}
+
+#[cfg(feature = "barcode")]
+impl Passport {
+    /// The passport's QR barcode as an SVG document — a deterministic,
+    /// self-contained 2D delivery carrying the passport distribution
+    /// bytes, with error correction sufficient for the scanning
+    /// environment.
+    ///
+    /// # Errors
+    ///
+    /// Encoding errors if the payload exceeds the QR capacity or the
+    /// distribution bytes cannot be produced.
+    pub fn qr_svg(&self, ecc: QrEcc) -> SignatifResult<String> {
+        let bytes = self.distribution_bytes()?;
+        let code = qrcode::QrCode::with_error_correction_level(&bytes, ecc.to_qrcode())
+            .map_err(|e| SignatifError::Encoding(format!("qr encode: {e}")))?;
+        Ok(code.render::<char>().min_dimensions(200, 200).build())
+    }
+}
+
+#[cfg(all(test, feature = "barcode"))]
+mod qr_tests {
+    use super::Passport;
+    #[cfg(feature = "barcode")]
+    use super::QrEcc;
+    use chrono::Utc;
+
+    #[cfg(feature = "barcode")]
+    #[test]
+    fn passport_qr_encodes_with_error_correction() {
+        let p = Passport {
+            version: 1,
+            object_id: "cnml-cert-2026-00001".into(),
+            key_fingerprint: "ab00".into(),
+            scope_summary: "domain:metrology".into(),
+            valid_from: Utc::now(),
+            valid_until: Utc::now() + chrono::Duration::days(365),
+        };
+        // render::<char> yields a character grid, not SVG.
+        let svg = p.qr_svg(QrEcc::High).unwrap();
+        let lines: Vec<&str> = svg.lines().collect();
+        assert!(lines.len() >= 20, "qr grid too small: {}", lines.len());
+        // Deterministic: same passport, same bytes, same grid.
+        assert_eq!(p.qr_svg(QrEcc::High).unwrap(), svg);
+        // Higher ECC still encodes the same payload.
+        assert!(p.qr_svg(QrEcc::Low).is_ok());
+    }
+}

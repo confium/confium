@@ -94,12 +94,19 @@ impl ClassificationPolicy for ReferenceClassificationPolicy {
         if !report.time_anchored {
             return ClassificationLabel::new("basic");
         }
+        // Algorithm agility (§20): a deprecated algorithm caps the
+        // label — the artifact verifies but cannot reach the top
+        // grades until migrated.
+        let has_deprecated = report
+            .downgrades
+            .iter()
+            .any(|d| d.starts_with("deprecated_algorithm:"));
         let dims: Vec<&str> = report
             .dimensions_verified
             .iter()
             .map(|s| s.as_str())
             .collect();
-        let has_person = dims.contains(&"person");
+        let has_person = dims.contains(&"person") && !has_deprecated;
         if !has_person {
             return ClassificationLabel::new("verified");
         }
