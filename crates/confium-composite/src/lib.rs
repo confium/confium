@@ -32,6 +32,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod cache;
 pub mod cose;
+#[cfg(feature = "pq")]
 pub mod pq;
 
 #[cfg(test)]
@@ -261,6 +262,50 @@ pub fn ed25519_verifier(
 /// Use as the per-component verifier callback in
 /// [`CompositeSignature::verify`] when the composite contains an
 /// ECDSA-P256 component.
+/// The ML-DSA-65 algorithm identifier (FIPS 204, category 3).
+pub const MLDSA65: &str = "ML-DSA-65";
+
+/// Verify a single ML-DSA-65 component (requires the `pq` feature).
+///
+/// # Errors
+///
+/// Returns a human-readable error for wrong algorithm, malformed key
+/// or signature bytes, or verification failure.
+#[cfg(feature = "pq")]
+pub fn mldsa65_verifier(
+    algorithm: &str,
+    public_key: &[u8],
+    message: &[u8],
+    signature: &[u8],
+) -> Result<(), String> {
+    if algorithm != MLDSA65 {
+        return Err(format!("not ML-DSA-65: {algorithm}"));
+    }
+    crate::pq::verify_mldsa65(public_key, message, signature).map_err(|e| e.to_string())
+}
+
+/// Transition composite verifier: Ed25519 + ECDSA-P256 + ML-DSA-65 in
+/// one dispatch closure — the classical+PQC AND-composition of
+/// SIGNATIF §9.4 during the migration's composite phase.
+///
+/// # Errors
+///
+/// Returns the failing component's error.
+#[cfg(feature = "pq")]
+pub fn transition_verifier(
+    algorithm: &str,
+    public_key: &[u8],
+    message: &[u8],
+    signature: &[u8],
+) -> Result<(), String> {
+    match algorithm {
+        ED25519 => ed25519_verifier(algorithm, public_key, message, signature),
+        ECDSA_P256 => p256_verifier(algorithm, public_key, message, signature),
+        MLDSA65 => mldsa65_verifier(algorithm, public_key, message, signature),
+        other => Err(format!("unsupported algorithm: {other}")),
+    }
+}
+
 pub fn p256_verifier(
     algorithm: &str,
     public_key: &[u8],
