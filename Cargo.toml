@@ -199,6 +199,7 @@ signature = "2"
 elliptic-curve = { version = "0.14", features = ["getrandom"] }
 crypto-bigint = "0.7"
 getrandom = { version = "0.4", features = ["sys_rng"] }
+base64ct = { version = "1", features = ["alloc"] }
 openpgp-card = "0.5"
 card-backend-pcsc = "0.5"
 chrono = { version = "0.4", features = ["serde"] }

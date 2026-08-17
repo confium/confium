@@ -1475,7 +1475,9 @@ dependencies = [
 name = "confium-signatif"
 version = "0.4.7"
 dependencies = [
+ "base64ct",
  "chrono",
+ "confium-pki",
  "ed25519-dalek",
  "hex",
  "rand_core 0.6.4",

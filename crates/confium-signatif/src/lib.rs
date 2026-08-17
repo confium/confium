@@ -36,6 +36,7 @@ pub mod error;
 pub mod fta;
 pub mod graph;
 pub mod jcs;
+pub mod jws;
 pub mod multilog;
 pub mod passport;
 pub mod pipeline;
@@ -43,5 +44,6 @@ pub mod registry;
 pub mod revocation;
 pub mod scope;
 pub mod time;
+pub mod x509;
 
 pub use error::{SignatifError, SignatifResult};
