@@ -30,6 +30,7 @@
 pub mod artifact;
 pub mod bundle;
 pub mod ceremony;
+pub mod conformance;
 pub mod coverage;
 pub mod discovery;
 pub mod error;
