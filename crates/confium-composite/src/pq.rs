@@ -52,9 +52,25 @@ pub const MLDSA65_SIGNATURE_LEN: usize = 3309;
 ///
 /// # Errors
 ///
-/// Returns size errors for malformed inputs and
+/// Returns a human-readable error for wrong sizes and verification
+/// failures. (The `String` error type predates the placeholder
+/// removal and is kept for 0.4.x semver compatibility; the structured
+/// variant is [`verify_mldsa65_detailed`].)
+pub fn verify_mldsa65(public_key: &[u8], message: &[u8], signature: &[u8]) -> Result<(), String> {
+    verify_mldsa65_detailed(public_key, message, signature).map_err(|e| e.to_string())
+}
+
+/// Verify an ML-DSA-65 signature with structured errors.
+///
+/// # Errors
+///
+/// Size errors for malformed inputs;
 /// [`PqError::VerificationFailed`] when the signature does not verify.
-pub fn verify_mldsa65(public_key: &[u8], message: &[u8], signature: &[u8]) -> Result<(), PqError> {
+pub fn verify_mldsa65_detailed(
+    public_key: &[u8],
+    message: &[u8],
+    signature: &[u8],
+) -> Result<(), PqError> {
     if public_key.len() != MLDSA65_PUBLIC_KEY_LEN {
         return Err(PqError::InvalidPublicKey(public_key.len()));
     }
@@ -115,7 +131,7 @@ impl MlDsa65Keypair {
     ///
     /// Propagates verification errors.
     pub fn verify(&self, message: &[u8], signature: &[u8]) -> Result<(), PqError> {
-        verify_mldsa65(&self.public_key, message, signature)
+        verify_mldsa65_detailed(&self.public_key, message, signature)
     }
 }
 
