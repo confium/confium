@@ -4,9 +4,10 @@
 
 use crate::paillier_mta;
 use confium_tc::paillier::{self, PaillierKeypair};
+use getrandom::SysRng;
 use num_bigint::BigUint;
 use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
-use p256::elliptic_curve::rand_core::OsRng;
+use p256::elliptic_curve::rand_core::UnwrapErr;
 use p256::elliptic_curve::{Field, PrimeField};
 use p256::{AffinePoint, ProjectivePoint, Scalar};
 use sha2::{Digest, Sha256};
@@ -47,7 +48,9 @@ impl Gg18SigningPipeline {
         let n = self.party_count as usize;
 
         // Round 1: each party generates nonce pair (k_i, gamma_i)
-        let nonces: Vec<Scalar> = (0..n).map(|_| Scalar::random(&mut OsRng)).collect();
+        let nonces: Vec<Scalar> = (0..n)
+            .map(|_| Scalar::random(&mut UnwrapErr(SysRng)))
+            .collect();
 
         // Round 2: MtA for k_i * x_j (same as CMP20)
         for i in 0..n {
@@ -109,8 +112,8 @@ fn scalar_to_biguint(s: &Scalar) -> BigUint {
 }
 
 fn x_coordinate(point: &AffinePoint) -> Scalar {
-    use p256::elliptic_curve::sec1::ToEncodedPoint;
-    let encoded = point.to_encoded_point(false);
+    use p256::elliptic_curve::sec1::ToSec1Point;
+    let encoded = point.to_sec1_point(false);
     if let Some(x_bytes) = encoded.x() {
         let mut arr = [0u8; 32];
         arr.copy_from_slice(x_bytes);
@@ -124,7 +127,7 @@ fn x_coordinate(point: &AffinePoint) -> Scalar {
 fn hash_to_scalar(message: &[u8]) -> Scalar {
     let mut hasher = Sha256::new();
     hasher.update(message);
-    let fb = p256::FieldBytes::from(hasher.finalize());
+    let fb = p256::FieldBytes::try_from(&hasher.finalize()[..]).expect("digest is 32 bytes");
     Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
 }
 
@@ -137,7 +140,7 @@ mod tests {
     use super::*;
 
     fn random_scalar() -> Scalar {
-        Scalar::random(&mut OsRng)
+        Scalar::random(&mut UnwrapErr(SysRng))
     }
 
     #[test]

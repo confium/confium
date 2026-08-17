@@ -10,7 +10,8 @@
 //! 2. Proxy transforms: (c1, c2) → (c1 * rk, c2)  [point multiplication]
 //! 3. Bob decrypts with his secret key
 
-use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
+use getrandom::SysRng;
+use p256::elliptic_curve::sec1::{FromSec1Point, ToSec1Point};
 use p256::{AffinePoint, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
 
@@ -40,13 +41,13 @@ pub fn generate_rk(alice_sk: &Scalar, _bob_pk: &AffinePoint) -> ReEncryptionKey 
 /// Encrypt a point under public key `pk`.
 pub fn encrypt_point(pk: &AffinePoint, message: &AffinePoint) -> Ciphertext {
     use p256::elliptic_curve::Field;
-    use p256::elliptic_curve::rand_core::OsRng;
-    let r = Scalar::random(&mut OsRng);
+    use p256::elliptic_curve::rand_core::UnwrapErr;
+    let r = Scalar::random(&mut UnwrapErr(SysRng));
     let c1 = (ProjectivePoint::GENERATOR * r).to_affine();
     let c2 = (ProjectivePoint::from(*pk) * r + ProjectivePoint::from(*message)).to_affine();
     Ciphertext {
-        c1_hex: hex::encode(c1.to_encoded_point(true).as_bytes()),
-        c2_hex: hex::encode(c2.to_encoded_point(true).as_bytes()),
+        c1_hex: hex::encode(c1.to_sec1_point(true).as_bytes()),
+        c2_hex: hex::encode(c2.to_sec1_point(true).as_bytes()),
     }
 }
 
@@ -66,25 +67,26 @@ pub fn re_encrypt(rk: &ReEncryptionKey, ct: &Ciphertext) -> Ciphertext {
     // Transform: multiply c1 by rk
     let new_c1 = (ProjectivePoint::from(c1) * rk.rk).to_affine();
     Ciphertext {
-        c1_hex: hex::encode(new_c1.to_encoded_point(true).as_bytes()),
+        c1_hex: hex::encode(new_c1.to_sec1_point(true).as_bytes()),
         c2_hex: ct.c2_hex.clone(),
     }
 }
 
 fn decode_point(hex_str: &str) -> Option<AffinePoint> {
     let bytes = hex::decode(hex_str).ok()?;
-    let encoded = p256::EncodedPoint::from_bytes(&bytes).ok()?;
-    Option::<AffinePoint>::from(AffinePoint::from_encoded_point(&encoded))
+    let encoded =
+        p256::elliptic_curve::sec1::Sec1Point::<p256::NistP256>::from_bytes(&bytes).ok()?;
+    Option::<AffinePoint>::from(AffinePoint::from_sec1_point(&encoded))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use p256::elliptic_curve::Field;
-    use p256::elliptic_curve::rand_core::OsRng;
+    use p256::elliptic_curve::rand_core::UnwrapErr;
 
     fn random_keypair() -> (Scalar, AffinePoint) {
-        let sk = Scalar::random(&mut OsRng);
+        let sk = Scalar::random(&mut UnwrapErr(SysRng));
         let pk = (ProjectivePoint::GENERATOR * sk).to_affine();
         (sk, pk)
     }

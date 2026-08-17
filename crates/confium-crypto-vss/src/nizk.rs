@@ -1,8 +1,9 @@
 //! General-purpose NIZK proof system using Fiat-Shamir transform.
 
+use getrandom::SysRng;
 use p256::elliptic_curve::PrimeField;
-use p256::elliptic_curve::rand_core::{OsRng, RngCore};
-use p256::elliptic_curve::sec1::ToEncodedPoint;
+use p256::elliptic_curve::rand_core::{Rng, UnwrapErr};
+use p256::elliptic_curve::sec1::ToSec1Point;
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use sha2::{Digest, Sha256};
 
@@ -17,7 +18,7 @@ pub struct NizkProof {
 /// Prove knowledge of a discrete log: know x such that Y = x * G.
 pub fn prove_dlog(secret: &Scalar) -> NizkProof {
     let mut nonce_bytes = [0u8; 32];
-    OsRng.fill_bytes(&mut nonce_bytes);
+    UnwrapErr(SysRng).fill_bytes(&mut nonce_bytes);
     let nonce = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(nonce_bytes)))
         .unwrap_or(Scalar::ZERO);
 
@@ -54,7 +55,7 @@ pub fn prove_dlog_equality(
     g2: &AffinePoint,
 ) -> (NizkProof, NizkProof) {
     let mut nonce_bytes = [0u8; 32];
-    OsRng.fill_bytes(&mut nonce_bytes);
+    UnwrapErr(SysRng).fill_bytes(&mut nonce_bytes);
     let nonce = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(nonce_bytes)))
         .unwrap_or(Scalar::ZERO);
 
@@ -112,9 +113,9 @@ fn fiat_shamir_challenge(public: &AffinePoint, commitment: &AffinePoint, domain:
     let mut hasher = Sha256::new();
     hasher.update(b"nizk");
     hasher.update(domain);
-    hasher.update(public.to_encoded_point(true).as_bytes());
-    hasher.update(commitment.to_encoded_point(true).as_bytes());
-    let fb = FieldBytes::from(hasher.finalize());
+    hasher.update(public.to_sec1_point(true).as_bytes());
+    hasher.update(commitment.to_sec1_point(true).as_bytes());
+    let fb = FieldBytes::try_from(&hasher.finalize()[..]).expect("digest is 32 bytes");
     Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
 }
 
@@ -126,11 +127,11 @@ fn equality_challenge(
 ) -> Scalar {
     let mut hasher = Sha256::new();
     hasher.update(b"nizk-equality");
-    hasher.update(y1.to_encoded_point(true).as_bytes());
-    hasher.update(y2.to_encoded_point(true).as_bytes());
-    hasher.update(c1.to_encoded_point(true).as_bytes());
-    hasher.update(c2.to_encoded_point(true).as_bytes());
-    let fb = FieldBytes::from(hasher.finalize());
+    hasher.update(y1.to_sec1_point(true).as_bytes());
+    hasher.update(y2.to_sec1_point(true).as_bytes());
+    hasher.update(c1.to_sec1_point(true).as_bytes());
+    hasher.update(c2.to_sec1_point(true).as_bytes());
+    let fb = FieldBytes::try_from(&hasher.finalize()[..]).expect("digest is 32 bytes");
     Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
 }
 
@@ -141,7 +142,7 @@ mod tests {
 
     #[test]
     fn dlog_proof_verifies() {
-        let secret = Scalar::random(&mut OsRng);
+        let secret = Scalar::random(&mut UnwrapErr(SysRng));
         let proof = prove_dlog(&secret);
         let public = (ProjectivePoint::GENERATOR * secret).to_affine();
         assert!(verify_dlog(&public, &proof));
@@ -149,15 +150,16 @@ mod tests {
 
     #[test]
     fn dlog_wrong_public_rejected() {
-        let secret = Scalar::random(&mut OsRng);
+        let secret = Scalar::random(&mut UnwrapErr(SysRng));
         let proof = prove_dlog(&secret);
-        let wrong = (ProjectivePoint::GENERATOR * Scalar::random(&mut OsRng)).to_affine();
+        let wrong =
+            (ProjectivePoint::GENERATOR * Scalar::random(&mut UnwrapErr(SysRng))).to_affine();
         assert!(!verify_dlog(&wrong, &proof));
     }
 
     #[test]
     fn dlog_tampered_response_rejected() {
-        let secret = Scalar::random(&mut OsRng);
+        let secret = Scalar::random(&mut UnwrapErr(SysRng));
         let mut proof = prove_dlog(&secret);
         let public = (ProjectivePoint::GENERATOR * secret).to_affine();
         proof.response += Scalar::ONE;
@@ -166,7 +168,7 @@ mod tests {
 
     #[test]
     fn dlog_proof_non_deterministic() {
-        let secret = Scalar::random(&mut OsRng);
+        let secret = Scalar::random(&mut UnwrapErr(SysRng));
         let p1 = prove_dlog(&secret);
         let p2 = prove_dlog(&secret);
         assert_ne!(p1.commitment, p2.commitment);
@@ -174,7 +176,7 @@ mod tests {
 
     #[test]
     fn equality_proof_verifies() {
-        let secret = Scalar::random(&mut OsRng);
+        let secret = Scalar::random(&mut UnwrapErr(SysRng));
         let g1 = AffinePoint::GENERATOR;
         let g2 = (ProjectivePoint::GENERATOR * Scalar::from(2u32)).to_affine();
 
@@ -187,12 +189,12 @@ mod tests {
 
     #[test]
     fn equality_wrong_secret_rejected() {
-        let secret = Scalar::random(&mut OsRng);
+        let secret = Scalar::random(&mut UnwrapErr(SysRng));
         let g1 = AffinePoint::GENERATOR;
         let g2 = (ProjectivePoint::GENERATOR * Scalar::from(2u32)).to_affine();
 
         let (p1, p2) = prove_dlog_equality(&secret, &g1, &g2);
-        let wrong = Scalar::random(&mut OsRng);
+        let wrong = Scalar::random(&mut UnwrapErr(SysRng));
         let y1 = (ProjectivePoint::from(g1) * wrong).to_affine();
         let y2 = (ProjectivePoint::from(g2) * secret).to_affine();
 
@@ -201,7 +203,7 @@ mod tests {
 
     #[test]
     fn nizk_proof_serializes() {
-        let secret = Scalar::random(&mut OsRng);
+        let secret = Scalar::random(&mut UnwrapErr(SysRng));
         let proof = prove_dlog(&secret);
         // Just verify it has the right structure
         assert!(proof.challenge != Scalar::ZERO || proof.response != Scalar::ZERO);

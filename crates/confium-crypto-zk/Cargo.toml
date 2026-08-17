@@ -16,6 +16,7 @@ keywords = ["crypto", "zk", "proof", "confium"]
 crate-type = ["rlib"]
 
 [dependencies]
+getrandom = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
 sha2 = { workspace = true }
 serde = { workspace = true }

@@ -23,7 +23,7 @@
 //! stub. This driver inherits that property. See
 //! [`crate::mta`] for the gap.
 
-use elliptic_curve::sec1::ToEncodedPoint;
+use elliptic_curve::sec1::ToSec1Point;
 use p256::AffinePoint;
 
 use confium_tc::Result;
@@ -50,7 +50,7 @@ pub struct KeygenOutput {
 pub fn keygen(threshold: u32, party_count: usize) -> Result<KeygenOutput> {
     let shares = driver::run_dkg(crate::DKG_SCHEME_NAME, threshold, party_count)?;
     let first = Cmp20Share::from_bytes(&shares[0])?;
-    let public_key: Vec<u8> = first.public_key.to_encoded_point(true).as_bytes().to_vec();
+    let public_key: Vec<u8> = first.public_key.to_sec1_point(true).as_bytes().to_vec();
     Ok(KeygenOutput { shares, public_key })
 }
 
@@ -95,15 +95,15 @@ pub fn sign_batch(
 /// Decode a 33-byte SEC1 compressed P-256 point. Public so bindings can
 /// verify the DKG-produced joint public key out-of-band.
 pub fn decode_public_key(bytes: &[u8]) -> Result<AffinePoint> {
-    use elliptic_curve::sec1::FromEncodedPoint;
+    use elliptic_curve::sec1::FromSec1Point;
     if bytes.len() != 33 {
         return Err(crate::error::scheme_error(
             crate::error::Cmp20ErrorCode::BAD_SHARE,
         ));
     }
-    let enc = elliptic_curve::sec1::EncodedPoint::<p256::NistP256>::from_bytes(bytes)
+    let enc = elliptic_curve::sec1::Sec1Point::<p256::NistP256>::from_bytes(bytes)
         .map_err(|_| crate::error::scheme_error(crate::error::Cmp20ErrorCode::BAD_SHARE))?;
-    Option::<AffinePoint>::from(AffinePoint::from_encoded_point(&enc))
+    Option::<AffinePoint>::from(AffinePoint::from_sec1_point(&enc))
         .ok_or_else(|| crate::error::scheme_error(crate::error::Cmp20ErrorCode::BAD_SHARE))
 }
 

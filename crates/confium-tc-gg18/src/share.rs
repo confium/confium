@@ -1,6 +1,6 @@
 //! Per-party share material produced by GG18 DKG and consumed by signing.
 
-use elliptic_curve::sec1::ToEncodedPoint;
+use elliptic_curve::sec1::ToSec1Point;
 use p256::{AffinePoint, FieldBytes, NonZeroScalar, Scalar};
 use zeroize::Zeroize;
 
@@ -44,7 +44,7 @@ impl Gg18Share {
         out.extend_from_slice(&SHARE_MAGIC);
         out.push(SHARE_VERSION);
         out.extend_from_slice(&self.x_i.to_bytes());
-        out.extend_from_slice(self.public_key.to_encoded_point(true).as_bytes());
+        out.extend_from_slice(self.public_key.to_sec1_point(true).as_bytes());
         out.push(self.party_idx as u8);
         out
     }
@@ -90,13 +90,13 @@ impl Gg18Share {
 /// Decode a 33-byte SEC1 compressed point into an [`AffinePoint`].
 pub(crate) fn decode_affine(bytes: &[u8]) -> Result<AffinePoint> {
     use elliptic_curve::point::AffineCoordinates;
-    use elliptic_curve::sec1::FromEncodedPoint;
+    use elliptic_curve::sec1::FromSec1Point;
     if bytes.len() != 33 {
         return Err(scheme_error(Gg18ErrorCode::BAD_SHARE));
     }
-    let enc = elliptic_curve::sec1::EncodedPoint::<p256::NistP256>::from_bytes(bytes)
+    let enc = elliptic_curve::sec1::Sec1Point::<p256::NistP256>::from_bytes(bytes)
         .map_err(|_| scheme_error(Gg18ErrorCode::BAD_SHARE))?;
-    let pt: AffinePoint = Option::from(AffinePoint::from_encoded_point(&enc))
+    let pt: AffinePoint = Option::from(AffinePoint::from_sec1_point(&enc))
         .ok_or_else(|| scheme_error(Gg18ErrorCode::BAD_SHARE))?;
     let _ = pt.x();
     Ok(pt)
@@ -105,10 +105,10 @@ pub(crate) fn decode_affine(bytes: &[u8]) -> Result<AffinePoint> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use elliptic_curve::rand_core::OsRng;
+    use elliptic_curve::Generate;
 
     fn random_share(idx: u32) -> Gg18Share {
-        let x_i = NonZeroScalar::random(&mut OsRng);
+        let x_i = NonZeroScalar::generate();
         let g = p256::ProjectivePoint::GENERATOR;
         let pk = (g * *x_i).to_affine();
         Gg18Share::from_parts(x_i, pk, idx)

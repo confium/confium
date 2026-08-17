@@ -21,8 +21,8 @@
 //! multiple signatures over the same secret. Production GG18 hides `k`
 //! via Paillier-based MtA. See [`crate::mta`] for the gap.
 
-use elliptic_curve::rand_core::OsRng;
-use elliptic_curve::{PrimeField, ops::Invert, point::AffineCoordinates, sec1::ToEncodedPoint};
+use elliptic_curve::Generate;
+use elliptic_curve::{PrimeField, ops::Invert, point::AffineCoordinates, sec1::ToSec1Point};
 use p256::{AffinePoint, NonZeroScalar, ProjectivePoint, Scalar};
 use sha2::{Digest, Sha256};
 
@@ -49,7 +49,7 @@ impl Gg18SignP256 {
             .ok_or_else(|| scheme_error(Gg18ErrorCode::BAD_SHARE))?;
         let share = Gg18Share::from_bytes(&share_bytes)?;
 
-        let k_i = NonZeroScalar::random(&mut OsRng);
+        let k_i = NonZeroScalar::generate();
         let r_i_point = (ProjectivePoint::GENERATOR * *k_i).to_affine();
 
         Ok(Box::new(Gg18SignSession {
@@ -95,7 +95,7 @@ impl Gg18SignSession {
         let mut payload = Vec::with_capacity(1 + 1 + 33);
         payload.push(TAG_NONCE_POINT);
         payload.push(self.share.party_idx as u8);
-        payload.extend_from_slice(self.r_i_point.to_encoded_point(true).as_bytes());
+        payload.extend_from_slice(self.r_i_point.to_sec1_point(true).as_bytes());
         Ok(RoundResult::new(
             vec![Message::broadcast(&self.party_id, 1, payload)],
             false,
@@ -340,15 +340,14 @@ fn hash_to_scalar(message: &[u8]) -> Scalar {
 }
 
 fn normalize_s_low(s: Scalar) -> Scalar {
-    use crypto_bigint::Encoding as _;
     use crypto_bigint::Limb;
     use elliptic_curve::Curve;
     use p256::NistP256;
-    let n = <NistP256 as Curve>::ORDER;
-    let half = n >> 1usize;
+    let n_u = <NistP256 as Curve>::ORDER.get();
+    let half = n_u >> 1usize;
     let s_u = decode_scalar_to_uint(s);
     if s_u > half {
-        let (s_prime, _) = n.sbb(&s_u, Limb::ZERO);
+        let (s_prime, _) = n_u.borrowing_sub(&s_u, Limb::ZERO);
         let be = s_prime.to_be_bytes();
         let src: &[u8] = be.as_slice();
         let mut bytes = [0u8; 32];
@@ -370,13 +369,13 @@ fn decode_scalar_to_uint(s: Scalar) -> p256::U256 {
 }
 
 fn decode_affine(bytes: &[u8]) -> Result<AffinePoint> {
-    use elliptic_curve::sec1::FromEncodedPoint;
+    use elliptic_curve::sec1::FromSec1Point;
     if bytes.len() != 33 {
         return Err(scheme_error(Gg18ErrorCode::BAD_ROUND_MESSAGE));
     }
-    let enc = elliptic_curve::sec1::EncodedPoint::<p256::NistP256>::from_bytes(bytes)
+    let enc = elliptic_curve::sec1::Sec1Point::<p256::NistP256>::from_bytes(bytes)
         .map_err(|_| scheme_error(Gg18ErrorCode::BAD_ROUND_MESSAGE))?;
-    let pt: AffinePoint = Option::from(AffinePoint::from_encoded_point(&enc))
+    let pt: AffinePoint = Option::from(AffinePoint::from_sec1_point(&enc))
         .ok_or_else(|| scheme_error(Gg18ErrorCode::BAD_ROUND_MESSAGE))?;
     let _ = pt.x();
     Ok(pt)

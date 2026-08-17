@@ -92,10 +92,10 @@ fn reduce_mod_order(bytes: &[u8; 32]) -> Scalar {
 mod tests {
     use super::*;
     use p256::elliptic_curve::Field;
-    use p256::elliptic_curve::rand_core::OsRng;
+    use p256::elliptic_curve::rand_core::UnwrapErr;
 
     fn random_scalar() -> Scalar {
-        Scalar::random(&mut OsRng)
+        Scalar::random(&mut UnwrapErr(getrandom::SysRng))
     }
 
     #[test]

@@ -22,7 +22,8 @@
 //!   and compute the joint public key. Complete.
 
 use elliptic_curve::PrimeField;
-use elliptic_curve::rand_core::OsRng;
+use elliptic_curve::rand_core::UnwrapErr;
+use getrandom::SysRng;
 use p256::{AffinePoint, ProjectivePoint, Scalar};
 
 use confium_tc::Result;
@@ -50,7 +51,7 @@ impl Cmp20DkgP256 {
             .map(|p| p.id.clone())
             .collect();
 
-        let vss = FeldmanVss::deal(&mut OsRng, n, t);
+        let vss = FeldmanVss::deal(&mut UnwrapErr(SysRng), n, t);
 
         Ok(Box::new(Cmp20DkgSession {
             party_id,
@@ -287,7 +288,7 @@ mod tests {
     use super::*;
     use confium_tc::party::{Party, PartyList};
     use confium_tc::share::Share;
-    use elliptic_curve::sec1::ToEncodedPoint;
+    use elliptic_curve::sec1::ToSec1Point;
 
     fn params(n: usize, t: u32, idx: usize) -> SessionParams {
         let roster: Vec<Party> = (0..n).map(|i| Party::inproc(format!("p{}", i))).collect();
@@ -363,8 +364,8 @@ mod tests {
         assert_eq!(shares.len(), 3);
         let pk0 = shares[0].public_key;
         for s in &shares[1..] {
-            let a = pk0.to_encoded_point(true);
-            let b = s.public_key.to_encoded_point(true);
+            let a = pk0.to_sec1_point(true);
+            let b = s.public_key.to_sec1_point(true);
             assert_eq!(a.as_bytes(), b.as_bytes(), "joint public key must match");
         }
         let secret_01 = reconstruct_secret_for_test(&shares[0..2]);
@@ -374,8 +375,8 @@ mod tests {
         assert_eq!(secret_02, secret_12);
         let g = ProjectivePoint::GENERATOR;
         let expected_pk = (g * secret_01).to_affine();
-        let got_pk = shares[0].public_key.to_encoded_point(true);
-        let want_pk = expected_pk.to_encoded_point(true);
+        let got_pk = shares[0].public_key.to_sec1_point(true);
+        let want_pk = expected_pk.to_sec1_point(true);
         assert_eq!(got_pk.as_bytes(), want_pk.as_bytes());
     }
 
@@ -384,10 +385,10 @@ mod tests {
         let shares = run_dkg(3, 3);
         let secret = reconstruct_secret_for_test(&shares);
         let g = ProjectivePoint::GENERATOR;
-        let pk = (g * secret).to_affine().to_encoded_point(true);
+        let pk = (g * secret).to_affine().to_sec1_point(true);
         assert_eq!(
             pk.as_bytes(),
-            shares[0].public_key.to_encoded_point(true).as_bytes()
+            shares[0].public_key.to_sec1_point(true).as_bytes()
         );
     }
 

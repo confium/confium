@@ -4,7 +4,7 @@ use crate::scalar;
 use p256::{
     AffinePoint, ProjectivePoint, Scalar,
     ecdsa::{SigningKey, VerifyingKey},
-    elliptic_curve::sec1::ToEncodedPoint,
+    elliptic_curve::sec1::ToSec1Point,
 };
 
 /// A P-256 keypair.
@@ -53,7 +53,7 @@ pub fn public_key_for(secret: &Scalar) -> AffinePoint {
 
 /// SEC1-encoded public key bytes (uncompressed, 65 bytes).
 pub fn public_key_sec1(affine: &AffinePoint) -> Vec<u8> {
-    affine.to_encoded_point(false).as_bytes().to_vec()
+    affine.to_sec1_point(false).as_bytes().to_vec()
 }
 
 #[cfg(test)]

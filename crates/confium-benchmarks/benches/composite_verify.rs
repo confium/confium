@@ -12,6 +12,7 @@ use confium_composite::{
 use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 use ed25519_dalek::SigningKey;
 use p256::ecdsa::SigningKey as P256SigningKey;
+use p256::elliptic_curve::Generate;
 use rand_core::OsRng;
 
 fn make_ed25519_component(message: &[u8]) -> ComponentSignature {
@@ -20,7 +21,7 @@ fn make_ed25519_component(message: &[u8]) -> ComponentSignature {
 }
 
 fn make_p256_component(message: &[u8]) -> ComponentSignature {
-    let signing = P256SigningKey::random(&mut OsRng);
+    let signing = P256SigningKey::generate();
     build_p256_component(&signing, message).expect("p256 build")
 }
 

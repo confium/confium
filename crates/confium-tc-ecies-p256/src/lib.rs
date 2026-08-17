@@ -26,10 +26,11 @@ pub mod shamir;
 use aes_gcm::{AeadInPlace, Aes256Gcm, KeyInit, Nonce};
 use p256::elliptic_curve::PrimeField;
 use p256::elliptic_curve::rand_core;
-use p256::elliptic_curve::rand_core::RngCore;
-use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
+use p256::elliptic_curve::rand_core::Rng;
+use p256::elliptic_curve::sec1::Sec1Point;
+use p256::elliptic_curve::sec1::{FromSec1Point, ToSec1Point};
 use p256::elliptic_curve::subtle::CtOption;
-use p256::{AffinePoint, EncodedPoint, FieldBytes, ProjectivePoint, Scalar};
+use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
 
 pub use keys::generate_keypair;
@@ -49,7 +50,7 @@ impl PublicKey {
     /// Construct from an affine point.
     pub fn from_affine(point: AffinePoint) -> Self {
         Self {
-            bytes: point.to_encoded_point(false).as_bytes().to_vec(),
+            bytes: point.to_sec1_point(false).as_bytes().to_vec(),
         }
     }
 }
@@ -111,20 +112,16 @@ pub enum EciesError {
 }
 
 fn decode_point(bytes: &[u8]) -> Result<ProjectivePoint, EciesError> {
-    let ep = EncodedPoint::from_bytes(bytes)
+    let ep = Sec1Point::<p256::NistP256>::from_bytes(bytes)
         .map_err(|e| EciesError::Sec1Decode(format!("encoded point: {e}")))?;
-    let ct_opt: CtOption<AffinePoint> = AffinePoint::from_encoded_point(&ep);
+    let ct_opt = AffinePoint::from_sec1_point(&ep);
     let affine = Option::<AffinePoint>::from(ct_opt)
         .ok_or_else(|| EciesError::Sec1Decode("point at infinity".into()))?;
     Ok(ProjectivePoint::from(affine))
 }
 
 fn encode_point(point: &ProjectivePoint) -> Vec<u8> {
-    point
-        .to_affine()
-        .to_encoded_point(false)
-        .as_bytes()
-        .to_vec()
+    point.to_affine().to_sec1_point(false).as_bytes().to_vec()
 }
 
 fn decode_scalar(bytes: &[u8]) -> Result<Scalar, EciesError> {
@@ -142,7 +139,7 @@ fn decode_scalar(bytes: &[u8]) -> Result<Scalar, EciesError> {
 }
 
 fn x_coordinate(point: &ProjectivePoint) -> [u8; 32] {
-    let ep = point.to_affine().to_encoded_point(false);
+    let ep = point.to_affine().to_sec1_point(false);
     let bytes = ep.as_bytes();
     if bytes.len() == 65 {
         let mut arr = [0u8; 32];
@@ -173,7 +170,7 @@ pub fn encrypt(recipient: &PublicKey, plaintext: &[u8]) -> Result<EncryptedBlob,
     // Ephemeral scalar
     let r = loop {
         let mut buf = [0u8; 32];
-        rand_core::OsRng.fill_bytes(&mut buf);
+        rand_core::UnwrapErr(getrandom::SysRng).fill_bytes(&mut buf);
         if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(buf))) {
             if s != Scalar::ZERO {
                 break s;
@@ -195,7 +192,7 @@ pub fn encrypt(recipient: &PublicKey, plaintext: &[u8]) -> Result<EncryptedBlob,
 
     // Generate nonce
     let mut nonce_bytes = [0u8; 12];
-    rand_core::OsRng.fill_bytes(&mut nonce_bytes);
+    rand_core::UnwrapErr(getrandom::SysRng).fill_bytes(&mut nonce_bytes);
     let nonce = Nonce::from_slice(&nonce_bytes);
 
     // Encrypt

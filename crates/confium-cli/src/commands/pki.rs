@@ -72,7 +72,11 @@ fn composite_sign(args: PkiCompositeSignArgs) -> Result<(), String> {
 
     let p256_key_bytes = std::fs::read(&args.p256_key)
         .map_err(|e| format!("read {}: {e}", args.p256_key.display()))?;
-    let p256_key = p256::ecdsa::SigningKey::from_bytes(p256_key_bytes.as_slice().into())
+    let p256_key_bytes: [u8; 32] = p256_key_bytes
+        .as_slice()
+        .try_into()
+        .map_err(|_| "P-256 key must be exactly 32 bytes".to_string())?;
+    let p256_key = p256::ecdsa::SigningKey::from_bytes(&p256_key_bytes.into())
         .map_err(|e| format!("parse P-256 signing key: {e}"))?;
     let p256_component = confium_composite::build_p256_component(&p256_key, &message)
         .map_err(|e| format!("p256 component: {e}"))?;
