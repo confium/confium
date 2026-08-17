@@ -32,7 +32,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod cache;
 pub mod cose;
-#[cfg(feature = "pq")]
+#[cfg(any(feature = "pq", feature = "pq-slh"))]
 pub mod pq;
 
 #[cfg(test)]
@@ -284,9 +284,34 @@ pub fn mldsa65_verifier(
     crate::pq::verify_mldsa65(public_key, message, signature).map_err(|e| e.to_string())
 }
 
+/// The SLH-DSA-SHA2-128s algorithm identifier (FIPS 205, category 1).
+#[cfg(feature = "pq-slh")]
+pub const SLHDSA128S: &str = "SLH-DSA-128s";
+
+/// Verify a single SLH-DSA-SHA2-128s component (feature `pq-slh`).
+///
+/// # Errors
+///
+/// Human-readable errors for wrong algorithm, malformed inputs, or
+/// verification failure.
+#[cfg(feature = "pq-slh")]
+pub fn slhdsa128s_verifier(
+    algorithm: &str,
+    public_key: &[u8],
+    message: &[u8],
+    signature: &[u8],
+) -> Result<(), String> {
+    if algorithm != SLHDSA128S {
+        return Err(format!("not SLH-DSA-128s: {algorithm}"));
+    }
+    crate::pq::verify_slhdsa128s(public_key, message, signature)
+}
+
 /// Transition composite verifier: Ed25519 + ECDSA-P256 + ML-DSA-65 in
 /// one dispatch closure — the classical+PQC AND-composition of
-/// SIGNATIF §9.4 during the migration's composite phase.
+/// SIGNATIF §9.4 during the migration's composite phase. With the
+/// `pq-slh` feature it additionally accepts SLH-DSA-128s, enabling
+/// PQC-only composites (two post-quantum algorithms AND-composed).
 ///
 /// # Errors
 ///
@@ -302,6 +327,8 @@ pub fn transition_verifier(
         ED25519 => ed25519_verifier(algorithm, public_key, message, signature),
         ECDSA_P256 => p256_verifier(algorithm, public_key, message, signature),
         MLDSA65 => mldsa65_verifier(algorithm, public_key, message, signature),
+        #[cfg(feature = "pq-slh")]
+        SLHDSA128S => slhdsa128s_verifier(algorithm, public_key, message, signature),
         other => Err(format!("unsupported algorithm: {other}")),
     }
 }
