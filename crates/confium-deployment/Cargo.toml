@@ -19,11 +19,17 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
+confium-signatif = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 toml = { workspace = true }
 chrono = { workspace = true }
+hex = { workspace = true }
+
+[dev-dependencies]
+ed25519-dalek = { workspace = true }
+rand_core = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]
