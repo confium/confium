@@ -341,7 +341,7 @@ jobs:
           tool: cargo-semver-checks
 
       - name: Check semver compatibility
-        run: cargo semver-checks --baseline-rev origin/${{ github.base_ref }} --exclude confium-store-tpm --exclude confium-store-pkcs11 --exclude confium-tc-ml-kem --exclude confium-tc-fhe-bfv --exclude confium-tc-bls --exclude confium-tc-frost-ml-dsa-65 --exclude confium-verify --exclude confium-store-openpgp-card --exclude confium-tc
+        run: cargo semver-checks --baseline-rev origin/${{ github.base_ref }} --exclude confium-signatif --exclude confium-store-tpm --exclude confium-store-pkcs11 --exclude confium-tc-ml-kem --exclude confium-tc-fhe-bfv --exclude confium-tc-bls --exclude confium-tc-frost-ml-dsa-65 --exclude confium-verify --exclude confium-store-openpgp-card --exclude confium-tc
 
   # ============================================================================
   # Summary
