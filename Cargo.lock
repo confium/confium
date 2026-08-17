@@ -1477,6 +1477,7 @@ version = "0.4.7"
 dependencies = [
  "base64ct",
  "chrono",
+ "confium-composite",
  "confium-pki",
  "ed25519-dalek",
  "hex",

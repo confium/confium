@@ -30,3 +30,23 @@ schemes (e.g. CNML for metrology) adopt the framework through this crate:
 
 Everything verifies offline against a trust anchor bundle: no phone-home,
 no proprietary component.
+
+## Composing domain data models
+
+Two worked examples compose external data models with the framework
+(the informative annexes G and H):
+
+- **W3C Verifiable Credentials** (Annex G): the VC is the SIGNATIF
+  payload and co-signatures serve as its proof — see
+  `examples/cnml_profile.rs`.
+- **EU Digital Product Passport** (Annex H): the DPP record is the
+  payload, manufacturer + engineer attestations converge on it, and
+  the DPP registry maps to the M-of-K multi-operator transparency
+  policy — see `examples/dpp_composition.rs`.
+
+Run them:
+
+```sh
+cargo run -p confium-signatif --example cnml_profile
+cargo run -p confium-signatif --example dpp_composition
+```
