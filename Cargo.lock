@@ -1467,6 +1467,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "confium-signatif"
+version = "0.4.7"
+dependencies = [
+ "chrono",
+ "ed25519-dalek",
+ "hex",
+ "rand_core 0.6.4",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "confium-signerd"
 version = "0.4.7"
 dependencies = [
@@ -1807,6 +1821,7 @@ dependencies = [
  "confium-tc-gg18",
  "confium-transparency",
  "getrandom 0.2.17",
+ "getrandom 0.4.3",
  "js-sys",
  "p256",
  "serde",
