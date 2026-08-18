@@ -11,6 +11,11 @@ pub fn run(cmd: KeylessCommand) {
         KeylessCommand::Verify => {
             eprintln!("confium keyless verify: coming soon — see https://www.confium.org/keyless/")
         }
+        KeylessCommand::Configure => {
+            eprintln!(
+                "confium keyless configure: coming soon — the OIDC issuer/subject allowlist format is being finalized; see https://www.confium.org/keyless/"
+            )
+        }
     }
 }
 

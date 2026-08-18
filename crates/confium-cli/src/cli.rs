@@ -287,6 +287,9 @@ pub enum KeylessCommand {
     Sign,
     /// Verify a keyless signature (placeholder).
     Verify,
+    /// Configure the keyless workflow (OIDC issuer and subject allowlists;
+    /// placeholder until the config file format lands).
+    Configure,
 }
 
 /// Subcommands under `confium privacy`.
