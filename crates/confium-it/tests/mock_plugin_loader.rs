@@ -11,11 +11,9 @@
 //! attributes. These tests confirm both load through the real loader.
 //!
 //! The mock plugin is built as a cdylib in the same workspace. Cargo
-//! exposes its path via the `CARGO_CDYLIB_FILE_confium_mock_plugin`
-//! environment variable, which is set when this crate is listed as a
-//! dev-dependency of itself via the `[[test]]` target. Because the
-//! crate exports both a cdylib and an rlib, cargo arranges the env var
-//! automatically.
+//! doesn't expose its artifact path to test binaries, so
+//! `confium-it/build.rs` computes the expected path from the target
+//! dir and passes it via the `CONFIUM_MOCK_PLUGIN_PATH` env var.
 
 #![allow(clippy::implied_bounds_in_impls, clippy::missing_safety_doc)]
 #![allow(non_snake_case)]
@@ -37,7 +35,7 @@ use confium::hash::Hash;
 use confium::options::Options;
 
 /// Path to the macro-built mock plugin's compiled cdylib. Set by the
-/// build script in `confium-test-harness/build.rs` (which computes the
+/// build script in `confium-it/build.rs` (which computes the
 /// expected path from the target dir and platform file naming).
 const MOCK_PLUGIN_PATH: &str = env!("CONFIUM_MOCK_PLUGIN_PATH");
 

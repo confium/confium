@@ -16,10 +16,6 @@ documentation = "https://docs.rs/confium-test-harness"
 [lib]
 crate-type = ["rlib"]
 
-[build-dependencies]
-# (no extra deps; build.rs is std-only)
-
-
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
@@ -36,7 +32,6 @@ toml = { workspace = true }
 
 [dev-dependencies]
 confium-api = { workspace = true }
-confium-mock-plugin = { workspace = true }
 criterion = { workspace = true }
 libloading = { workspace = true }
 

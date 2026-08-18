@@ -38,5 +38,4 @@ num-traits = { workspace = true }
 rand_core = { workspace = true }
 
 [dev-dependencies]
-confium-tc-frost-p256 = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }

@@ -5,7 +5,7 @@
 // test reads via `env!`.
 //
 // The plugin crate is built by cargo before this crate's tests run
-// (because it's a dev-dependency). We compute the expected cdylib path
+// (because it's a dependency). We compute the expected cdylib path
 // from the target dir and platform file naming.
 
 use std::env;
