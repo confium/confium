@@ -349,6 +349,8 @@ pub enum VerifyCommand {
     Inclusion(VerifyInclusionArgs),
     /// Verify a certificate chain (leaf + intermediates + anchor).
     CertChain(VerifyCertChainArgs),
+    /// Verify a SIGNATIF trusted artifact through the full pipeline.
+    Signatif(VerifySignatifArgs),
 }
 
 #[derive(Args, Debug)]
@@ -375,6 +377,35 @@ pub struct VerifyInclusionArgs {
     /// Entry JSON file (the leaf being proven).
     #[arg(long)]
     pub entry: std::path::PathBuf,
+}
+
+#[derive(Args, Debug)]
+pub struct VerifySignatifArgs {
+    /// Trusted artifact JSON file.
+    #[arg(long)]
+    pub artifact: std::path::PathBuf,
+    /// Trust anchor bundle JSON file.
+    #[arg(long)]
+    pub bundle: std::path::PathBuf,
+    /// Trust graph JSON file.
+    #[arg(long)]
+    pub graph: std::path::PathBuf,
+    /// Scheme registry JSON file (omit for the default registry).
+    #[arg(long)]
+    pub registry: Option<std::path::PathBuf>,
+    /// Comma-separated accepted classification labels.
+    #[arg(long, value_delimiter = ',')]
+    pub accept: Vec<String>,
+    /// Transparency inclusion was verified for this artifact.
+    #[arg(long, default_value_t = false)]
+    pub transparency: bool,
+    /// An external time anchor was verified for this artifact.
+    #[arg(long, default_value_t = false)]
+    pub time: bool,
+    /// Externally-attested time (RFC 3339) from a verified time
+    /// authority attestation.
+    #[arg(long)]
+    pub time_attested_at: Option<String>,
 }
 
 #[derive(Args, Debug)]

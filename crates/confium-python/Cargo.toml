@@ -23,6 +23,7 @@ confium-pki = { path = "../confium-pki", version = "0.4.0", features = ["cms"] }
 confium-attributes = { path = "../confium-attributes", version = "0.4.0" }
 confium-deployment = { path = "../confium-deployment", version = "0.4.0" }
 confium-tc-cmp20 = { path = "../confium-tc-cmp20", version = "0.4.0" }
+confium-signatif = { path = "../confium-signatif", version = "0.4.0" }
 confium-tc-elgamal-p256 = { path = "../confium-tc-elgamal-p256", version = "0.4.0" }
 confium-tc-frost-p256 = { path = "../confium-tc-frost-p256", version = "0.4.0" }
 confium-tc-gg18 = { path = "../confium-tc-gg18", version = "0.4.0" }
@@ -33,7 +34,7 @@ subtle = "2"
 chrono = "0.4"
 hex = "0.4"
 ed25519-dalek = "2"
-p256 = { workspace = true }
+p256 = { version = "0.14", features = ["ecdsa", "pem", "arithmetic"] }
 
 [package.metadata.maturin]
 python-source = "python"
