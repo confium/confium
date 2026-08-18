@@ -358,7 +358,12 @@ jobs:
           tool: cargo-semver-checks
 
       - name: Check semver compatibility
-        run: cargo semver-checks --baseline-rev origin/${{ github.base_ref }}
+        # confium-store-tpm is excluded because its `tpm` feature pulls
+        # tss-esapi-sys, whose build script cannot build on CI runners
+        # (no TSS system libraries / unsupported target tuple). The
+        # crate publishes; its semver baseline just cannot be built
+        # there.
+        run: cargo semver-checks --baseline-rev origin/${{ github.base_ref }} --exclude confium-store-tpm
 
   # ============================================================================
   # Summary
