@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: crate-ci/typos@v1.48.0
+      - uses: crate-ci/typos@v1.49.0
 
   # ============================================================================
   # Pre-flight: skip CI when only docs/markdown changed
@@ -255,7 +255,7 @@ jobs:
           tool: cbindgen
 
       - name: Install cmake
-        uses: lukka/get-cmake@v4.4.0
+        uses: lukka/get-cmake@v4.4.2
 
       - name: Install boost
         uses: MarkusJx/install-boost@v2.6.0
