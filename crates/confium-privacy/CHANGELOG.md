@@ -9,6 +9,14 @@ For cross-product changes, see the workspace CHANGELOG at <https://github.com/co
 
 ### Fixed
 
+- Migrate to the RustCrypto 0.11 wave and dalek/napi/ureq majors by @[object]
+
+### Other
+
+- Release v0.5.0 by @[object]
+
+### Fixed
+
 - Replace deprecated generic-array slice methods by @[object]
 
 No unreleased changes yet.

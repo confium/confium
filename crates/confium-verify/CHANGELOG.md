@@ -7,6 +7,10 @@ For cross-product changes, see the workspace CHANGELOG at <https://github.com/co
 
 ## [Unreleased]
 
+### Other
+
+- Release v0.5.0 by @[object]
+
 ### Added
 
 - The framework layer reaches the Verify product and the browser by @[object]
