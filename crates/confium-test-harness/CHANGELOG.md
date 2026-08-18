@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Other
+
+- Release v0.5.0 by @[object]
+
 ### Fixed
 
 - Re-point e2e jobs and align versions after the extraction by @[object]

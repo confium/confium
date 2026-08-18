@@ -7,6 +7,10 @@ For cross-product changes, see the workspace CHANGELOG at <https://github.com/co
 
 ## [Unreleased]
 
+### Other
+
+- Chore(deps)(deps): bump the cargo-dependencies group across 1 directory with 23 updates by @[object]
+
 No unreleased changes yet.
 
 ## [0.4.0] — 2026-08-07

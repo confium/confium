@@ -26,9 +26,9 @@ rustdoc-args = ["--cfg", "docsrs"]
 # The confium-core crate exposes its lib under the name `confium`
 # (matching the C ABI lib name `libconfium.so`). Rename it so Rust code
 # imports as `confium_core::*` for clarity.
-confium_core = { package = "confium-core", path = "../confium-core", version = "0.5.0" }
-confium-composite = { path = "../confium-composite", version = "0.5.0" }
-confium-attributes = { path = "../confium-attributes", version = "0.5.0" }
+confium_core = { package = "confium-core", path = "../confium-core", version = "0.5.1" }
+confium-composite = { path = "../confium-composite", version = "0.5.1" }
+confium-attributes = { path = "../confium-attributes", version = "0.5.1" }
 clap = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
