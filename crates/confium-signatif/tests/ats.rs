@@ -102,6 +102,7 @@ fn build() -> Fixture {
         }],
         transparency_logs: vec![],
         bundle_signature: vec![],
+        update_log: None,
     };
     let msg = bundle.signing_bytes().unwrap();
     bundle.bundle_signature = root_sk.sign(&msg).to_bytes().to_vec();
@@ -151,6 +152,7 @@ fn ats_verifier_classes() {
         TransparencyInputs {
             artifact_included: true,
             time_anchored: true,
+            time_attested_at: None,
             multi_log_quorum: false,
             downgrades: vec![],
         },

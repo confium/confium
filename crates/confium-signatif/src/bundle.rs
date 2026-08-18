@@ -51,6 +51,11 @@ pub struct TrustAnchorBundle {
     pub roots: Vec<AnchorRoot>,
     /// Recognized transparency logs and mirrors.
     pub transparency_logs: Vec<AnchorLog>,
+    /// The transparency-log reference recording this bundle update
+    /// (§7: bundle updates shall be recorded in a transparency log).
+    /// Signed as part of the bundle body.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub update_log: Option<crate::discovery::LogRef>,
     /// Threshold signature of the issuing root over the canonical
     /// bundle body (all fields except this signature).
     pub bundle_signature: Vec<u8>,
@@ -175,6 +180,7 @@ mod tests {
             }],
             transparency_logs: Vec::new(),
             bundle_signature: Vec::new(),
+            update_log: None,
         };
         bundle.bundle_signature = sk
             .sign(&bundle.signing_bytes().unwrap())
@@ -182,6 +188,37 @@ mod tests {
             .to_vec();
         assert!(bundle.verify(Utc::now(), &Ed25519Verifier).is_ok());
         bundle.bundle_signature[3] ^= 1;
+        assert!(bundle.verify(Utc::now(), &Ed25519Verifier).is_err());
+    }
+
+    #[test]
+    fn update_log_reference_is_signed_content() {
+        let sk = generate_key();
+        let mut bundle = TrustAnchorBundle {
+            bundle_version: "2026.09".into(),
+            valid_from: Utc::now() - chrono::Duration::hours(1),
+            valid_until: Utc::now() + chrono::Duration::days(30),
+            roots: vec![AnchorRoot {
+                name: "root".into(),
+                aggregate_key: sk.verifying_key().as_bytes().to_vec(),
+                fingerprint: "00".into(),
+                quorum: None,
+            }],
+            transparency_logs: Vec::new(),
+            update_log: Some(crate::discovery::LogRef {
+                log: "nmi-log".into(),
+                sequence: 4242,
+            }),
+            bundle_signature: Vec::new(),
+        };
+        bundle.bundle_signature = sk
+            .sign(&bundle.signing_bytes().unwrap())
+            .to_bytes()
+            .to_vec();
+        assert!(bundle.verify(Utc::now(), &Ed25519Verifier).is_ok());
+        // Flipping the log reference breaks the signature: it is
+        // signed content.
+        bundle.update_log.as_mut().unwrap().sequence = 4243;
         assert!(bundle.verify(Utc::now(), &Ed25519Verifier).is_err());
     }
 
@@ -194,6 +231,7 @@ mod tests {
             roots: vec![],
             transparency_logs: vec![],
             bundle_signature: vec![],
+            update_log: None,
         };
         assert!(matches!(
             b.verify(Utc::now(), &AcceptAllVerifier),

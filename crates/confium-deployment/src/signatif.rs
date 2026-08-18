@@ -141,6 +141,27 @@ impl CrossRecognition {
         });
         Ok(jcs::canonicalize(&v)?.into_bytes())
     }
+
+    /// Verify the attesting root's signature over the credential
+    /// (§19 `mutual-recognition`).
+    ///
+    /// # Errors
+    ///
+    /// Signature errors when the attesting root's key does not verify.
+    pub fn verify(
+        &self,
+        from_root_key: &[u8],
+        verifier: &dyn SignatureVerifier,
+    ) -> SignatifResult<()> {
+        let msg = self.signing_bytes()?;
+        if verifier.verify(from_root_key, &msg, &self.signature) {
+            Ok(())
+        } else {
+            Err(SignatifError::BadSignature {
+                context: format!("cross-recognition {} -> {}", self.from_root, self.to_root),
+            })
+        }
+    }
 }
 
 /// The multi-log attestation policy.
@@ -478,6 +499,34 @@ mod tests {
         m.root_signature = sk.sign(&m.signing_bytes().unwrap()).to_bytes().to_vec();
         m.algorithms.push("ML-DSA-65".into());
         assert!(m.verify_signature(&Ed25519Verifier).is_err());
+    }
+
+    #[test]
+    fn cross_recognition_signature_verifies() {
+        use rand_core::RngCore;
+        let mut seed = [0u8; 32];
+        rand_core::OsRng.fill_bytes(&mut seed);
+        let root_a = ed25519_dalek::SigningKey::from_bytes(&seed);
+        let mut cred = CrossRecognition {
+            from_root: "root-a".into(),
+            to_root: "root-b".into(),
+            to_fingerprint: "fbb".into(),
+            recognized_scope: ScopeDimensions::unconstrained(),
+            signature: vec![],
+        };
+        cred.signature = root_a
+            .sign(&cred.signing_bytes().unwrap())
+            .to_bytes()
+            .to_vec();
+        assert!(
+            cred.verify(root_a.verifying_key().as_bytes(), &Ed25519Verifier)
+                .is_ok()
+        );
+        cred.to_root = "root-c".into();
+        assert!(
+            cred.verify(root_a.verifying_key().as_bytes(), &Ed25519Verifier)
+                .is_err()
+        );
     }
 
     #[test]
