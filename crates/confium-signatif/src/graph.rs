@@ -171,7 +171,7 @@ impl SignatureVerifier for AcceptAllVerifier {
 }
 
 /// The trust graph: authorities and delegation edges forming a DAG.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TrustGraph {
     nodes: BTreeMap<String, AuthorityNode>,
     edges: Vec<DelegationEdge>,

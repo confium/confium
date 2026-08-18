@@ -22,6 +22,7 @@ composite = ["dep:confium-composite"]
 transparency = ["dep:confium-transparency"]
 pki = ["dep:confium-pki"]
 attributes = ["dep:confium-attributes"]
+signatif = ["dep:confium-signatif"]
 server = ["dep:confium-verify-server"]
 full = ["composite", "transparency", "pki", "attributes", "server"]
 
@@ -34,4 +35,5 @@ confium-composite = { workspace = true, optional = true }
 confium-transparency = { workspace = true, optional = true }
 confium-pki = { workspace = true, optional = true }
 confium-attributes = { workspace = true, optional = true }
+confium-signatif = { workspace = true, optional = true }
 confium-verify-server = { workspace = true, optional = true }

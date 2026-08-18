@@ -28,6 +28,11 @@ pub use confium_pki as pki;
 /// Attribute-based predicate evaluation.
 pub use confium_attributes as attributes;
 
+#[cfg(feature = "signatif")]
+/// The SIGNATIF framework layer: trust graph, co-signed artifacts,
+/// verification pipeline, coverage reports, registries.
+pub use confium_signatif as signatif;
+
 #[cfg(feature = "server")]
 /// HTTP verification service.
 #[allow(rustdoc::broken_intra_doc_links)]

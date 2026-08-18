@@ -302,6 +302,9 @@ jobs:
       - name: Build confium-wasm for wasm32-unknown-unknown
         run: cargo build -p confium-wasm --target wasm32-unknown-unknown --verbose
 
+      - name: Build confium-wasm (verify-signatif feature)
+        run: cargo build -p confium-wasm --target wasm32-unknown-unknown --features verify-signatif --verbose
+
       - name: Install wasm-pack
         uses: jetli/wasm-pack-action@v0.4.0
 
@@ -316,6 +319,11 @@ jobs:
 
       - name: Run wasm-bindgen-test suite under Node
         run: wasm-pack test --node crates/confium-wasm --release
+
+      - name: Run wasm-bindgen-test suite under Node (verify-signatif)
+        run: >-
+          cd crates/confium-wasm && RUNNER="$(find "$HOME/.cargo" "$HOME/.cache" -name wasm-bindgen-test-runner -type f 2>/dev/null | head -1)" &&
+          test -n "$RUNNER" && CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER="$RUNNER" WASM_BINDGEN_TEST_ONLY_NODE=1 cargo test --target wasm32-unknown-unknown --features verify-signatif
 
   # ============================================================================
   # Semver Compatibility Check
