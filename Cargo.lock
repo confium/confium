@@ -1010,12 +1010,14 @@ dependencies = [
 name = "confium-cli"
 version = "0.4.7"
 dependencies = [
+ "chrono",
  "clap",
  "clap_complete",
  "confium-composite",
  "confium-pki",
  "confium-privacy",
  "confium-registry",
+ "confium-signatif",
  "confium-tc-cmp20",
  "confium-tc-gg18",
  "confium-transparency",
@@ -1808,10 +1810,14 @@ name = "confium-verify-server"
 version = "0.4.7"
 dependencies = [
  "axum",
+ "chrono",
  "clap",
  "confium-composite",
+ "confium-signatif",
  "confium-transparency",
+ "ed25519-dalek",
  "hex",
+ "rand_core 0.6.4",
  "serde",
  "serde_json",
  "tokio",

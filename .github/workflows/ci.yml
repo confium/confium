@@ -141,6 +141,12 @@ jobs:
       - name: Check for unused dependencies
         run: cargo machete
 
+      - name: Check the standalone Python-binding crate
+        # confium-python is a standalone workspace (own Cargo.lock) and
+        # is not a member of the root workspace, so --workspace checks
+        # skip it. Check it explicitly so it cannot rot silently.
+        run: cargo check --manifest-path crates/confium-python/Cargo.toml --all-targets
+
   # ============================================================================
   # Publish Check (Dry Run)
   # ============================================================================

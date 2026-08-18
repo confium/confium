@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 use confium_composite::{
     ComponentSignature, CompositeSignature, ECDSA_P256, ED25519, ed25519_verifier, p256_verifier,
 };
+use confium_signatif::graph::{SignatureVerifier, TrustGraph};
+use confium_signatif::{artifact::TrustedArtifact, bundle::TrustAnchorBundle, registry::Registry};
 use confium_transparency::entry::MerkleEntry;
 use confium_transparency::merkle::{Hash, InclusionProof, MerkleTree, ProofStep, Side};
 
@@ -204,6 +206,7 @@ mod tests {
     fn app() -> axum::Router {
         axum::Router::new()
             .route("/verify/composite", axum::routing::post(verify_composite))
+            .route("/verify/signatif", axum::routing::post(verify_signatif))
             .route("/verify/inclusion", axum::routing::post(verify_inclusion))
             .route("/healthz", axum::routing::get(healthz))
             .with_state(AppState)
@@ -316,5 +319,163 @@ mod tests {
     fn decode_hash_validates_length() {
         assert!(decode_hash("00").is_err());
         assert!(decode_hash(&"ab".repeat(32)).is_ok());
+    }
+}
+
+/// Request: verify a SIGNATIF trusted artifact through the full
+/// pipeline. The four framework objects arrive as embedded JSON.
+#[derive(Debug, Deserialize)]
+pub struct VerifySignatifRequest {
+    /// The trusted artifact.
+    pub artifact: serde_json::Value,
+    /// The trust anchor bundle.
+    pub bundle: serde_json::Value,
+    /// The trust graph.
+    pub graph: serde_json::Value,
+    /// The scheme registry; defaults to the initial values when absent.
+    #[serde(default)]
+    pub registry: Option<serde_json::Value>,
+    /// Verification options (transparency/time inputs, accepted
+    /// labels); defaults when absent.
+    #[serde(default)]
+    pub options: VerifySignatifOptions,
+}
+
+/// Options for the pipeline run.
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct VerifySignatifOptions {
+    /// Transparency inclusion was verified for this artifact.
+    #[serde(default)]
+    pub transparency_included: bool,
+    /// An external time anchor was verified.
+    #[serde(default)]
+    pub time_anchored: bool,
+    /// Externally-attested time (RFC 3339).
+    #[serde(default)]
+    pub time_attested_at: Option<String>,
+    /// Multi-log quorum met.
+    #[serde(default)]
+    pub multi_log_quorum: bool,
+    /// Accepted classification labels (empty = reject everything).
+    #[serde(default)]
+    pub accepted_labels: Vec<String>,
+}
+
+/// Response: the graduated verification outcome.
+#[derive(Debug, Serialize)]
+pub struct VerifySignatifResponse {
+    /// The scheme's classification label.
+    pub label: String,
+    /// The verifier's acceptance decision.
+    pub accept: bool,
+    /// The objective coverage report.
+    pub coverage: confium_signatif::coverage::CoverageReport,
+}
+
+/// The server's verifier fleet: the classical algorithms of the
+/// default registry.
+struct ServerVerifier;
+
+impl SignatureVerifier for ServerVerifier {
+    fn verify(&self, public_key: &[u8], message: &[u8], signature: &[u8]) -> bool {
+        ed25519_verifier(ED25519, public_key, message, signature).is_ok()
+            || p256_verifier(ECDSA_P256, public_key, message, signature).is_ok()
+    }
+}
+
+/// POST /verify/signatif
+pub async fn verify_signatif(
+    State(_state): State<AppState>,
+    Json(req): Json<VerifySignatifRequest>,
+) -> (StatusCode, Json<serde_json::Value>) {
+    let respond = |status: StatusCode, body: serde_json::Value| (status, Json(body));
+    let artifact: TrustedArtifact = match serde_json::from_value(req.artifact) {
+        Ok(a) => a,
+        Err(e) => {
+            return respond(
+                StatusCode::BAD_REQUEST,
+                serde_json::json!({"error": format!("artifact: {e}")}),
+            );
+        }
+    };
+    let bundle: TrustAnchorBundle = match serde_json::from_value(req.bundle) {
+        Ok(b) => b,
+        Err(e) => {
+            return respond(
+                StatusCode::BAD_REQUEST,
+                serde_json::json!({"error": format!("bundle: {e}")}),
+            );
+        }
+    };
+    let graph: TrustGraph = match serde_json::from_value(req.graph) {
+        Ok(g) => g,
+        Err(e) => {
+            return respond(
+                StatusCode::BAD_REQUEST,
+                serde_json::json!({"error": format!("graph: {e}")}),
+            );
+        }
+    };
+    let registry: Registry = match req.registry {
+        Some(v) => match serde_json::from_value(v) {
+            Ok(r) => r,
+            Err(e) => {
+                return respond(
+                    StatusCode::BAD_REQUEST,
+                    serde_json::json!({"error": format!("registry: {e}")}),
+                );
+            }
+        },
+        None => Registry::with_initial_values(),
+    };
+    let time_attested_at = match &req.options.time_attested_at {
+        None => None,
+        Some(s) => match chrono::DateTime::parse_from_rfc3339(s) {
+            Ok(t) => Some(t.with_timezone(&chrono::Utc)),
+            Err(e) => {
+                return respond(
+                    StatusCode::BAD_REQUEST,
+                    serde_json::json!({"error": format!("time_attested_at: {e}")}),
+                );
+            }
+        },
+    };
+    let no_revocations = confium_signatif::revocation::NoRevocations;
+    let acceptance = confium_signatif::coverage::AcceptancePolicy {
+        accepted_labels: req.options.accepted_labels,
+    };
+    let pipe = confium_signatif::pipeline::Pipeline::new(
+        &bundle,
+        &graph,
+        &registry,
+        &ServerVerifier,
+        &no_revocations,
+        confium_signatif::pipeline::TransparencyInputs {
+            artifact_included: req.options.transparency_included,
+            time_anchored: req.options.time_anchored,
+            time_attested_at,
+            multi_log_quorum: req.options.multi_log_quorum,
+            downgrades: vec![],
+        },
+        &acceptance,
+    );
+    match pipe.run(&artifact, chrono::Utc::now()) {
+        Ok(outcome) => {
+            let accept = outcome.acceptance == confium_signatif::coverage::Acceptance::Accept;
+            respond(
+                StatusCode::OK,
+                serde_json::to_value(VerifySignatifResponse {
+                    label: outcome.label.0,
+                    accept,
+                    coverage: outcome.report,
+                })
+                .unwrap_or_default(),
+            )
+        }
+        Err(e) => respond(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            serde_json::json!({"error": format!("{e}"), "label": "rejected"}),
+        ),
     }
 }

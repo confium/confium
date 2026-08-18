@@ -1,6 +1,9 @@
 //! `confium verify` — verification umbrella subcommands.
 
-use crate::cli::{VerifyCertChainArgs, VerifyCommand, VerifyCompositeArgs, VerifyInclusionArgs};
+use crate::cli::{
+    VerifyCertChainArgs, VerifyCommand, VerifyCompositeArgs, VerifyInclusionArgs,
+    VerifySignatifArgs,
+};
 use confium_pki::{Certificate, path::CertPath};
 
 pub fn run(cmd: VerifyCommand) {
@@ -12,6 +15,7 @@ pub fn run(cmd: VerifyCommand) {
         VerifyCommand::Composite(args) => verify_composite(args),
         VerifyCommand::Inclusion(args) => verify_inclusion(args),
         VerifyCommand::CertChain(args) => verify_cert_chain(args),
+        VerifyCommand::Signatif(args) => verify_signatif(args),
     };
     if let Err(e) = result {
         eprintln!("confium verify: {e}");
@@ -160,4 +164,87 @@ fn print_version() {
     println!("  docs:    https://www.confium.org/verify/");
     println!("  specs:   https://www.confium.org/specs/PRODUCTS");
     println!("  quickstart: https://www.confium.org/verify/quickstart/");
+}
+
+fn verify_signatif(args: VerifySignatifArgs) -> Result<(), String> {
+    let read_json = |path: &std::path::PathBuf| -> Result<serde_json::Value, String> {
+        let bytes = std::fs::read(path).map_err(|e| format!("read {}: {e}", path.display()))?;
+        serde_json::from_slice(&bytes).map_err(|e| format!("parse {}: {e}", path.display()))
+    };
+    let artifact: confium_signatif::artifact::TrustedArtifact = {
+        let v = read_json(&args.artifact)?;
+        serde_json::from_value(v).map_err(|e| format!("artifact: {e}"))?
+    };
+    let bundle: confium_signatif::bundle::TrustAnchorBundle = {
+        let v = read_json(&args.bundle)?;
+        serde_json::from_value(v).map_err(|e| format!("bundle: {e}"))?
+    };
+    let graph: confium_signatif::graph::TrustGraph = {
+        let v = read_json(&args.graph)?;
+        serde_json::from_value(v).map_err(|e| format!("graph: {e}"))?
+    };
+    let registry: confium_signatif::registry::Registry = match &args.registry {
+        Some(path) => {
+            let v = read_json(path)?;
+            serde_json::from_value(v).map_err(|e| format!("registry: {e}"))?
+        }
+        None => confium_signatif::registry::Registry::with_initial_values(),
+    };
+    let time_attested_at = match &args.time_attested_at {
+        Some(s) => Some(
+            chrono::DateTime::parse_from_rfc3339(s)
+                .map_err(|e| format!("time_attested_at: {e}"))?
+                .with_timezone(&chrono::Utc),
+        ),
+        None => None,
+    };
+    let acceptance = confium_signatif::coverage::AcceptancePolicy {
+        accepted_labels: args.accept,
+    };
+    let no_revocations = confium_signatif::revocation::NoRevocations;
+    let verifier = CliVerifier;
+    let pipe = confium_signatif::pipeline::Pipeline::new(
+        &bundle,
+        &graph,
+        &registry,
+        &verifier,
+        &no_revocations,
+        confium_signatif::pipeline::TransparencyInputs {
+            artifact_included: args.transparency,
+            time_anchored: args.time,
+            time_attested_at,
+            multi_log_quorum: false,
+            downgrades: vec![],
+        },
+        &acceptance,
+    );
+    let outcome = pipe
+        .run(&artifact, chrono::Utc::now())
+        .map_err(|e| format!("{e}"))?;
+    let accept = outcome.acceptance == confium_signatif::coverage::Acceptance::Accept;
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "label": outcome.label.0,
+            "accept": accept,
+            "coverage": outcome.report,
+        }))
+        .map_err(|e| format!("encode: {e}"))?
+    );
+    if !accept {
+        std::process::exit(2);
+    }
+    Ok(())
+}
+
+/// The CLI verifier fleet: Ed25519 and ECDSA-P256, matching the
+/// classical algorithms in the default registry.
+struct CliVerifier;
+
+impl confium_signatif::graph::SignatureVerifier for CliVerifier {
+    fn verify(&self, public_key: &[u8], message: &[u8], signature: &[u8]) -> bool {
+        confium_composite::ed25519_verifier("Ed25519", public_key, message, signature).is_ok()
+            || confium_composite::p256_verifier("ECDSA-P256", public_key, message, signature)
+                .is_ok()
+    }
 }

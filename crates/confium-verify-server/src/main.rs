@@ -1,10 +1,7 @@
 //! `confium-verify-server` — HTTP service for verifying threshold
 //! signatures and transparency log inclusion proofs.
 
-mod handlers;
-
 use clap::Parser;
-use handlers::AppState;
 
 /// Command-line arguments.
 #[derive(Parser, Debug)]
@@ -24,17 +21,7 @@ struct Args {
 }
 
 fn build_router() -> axum::Router {
-    axum::Router::new()
-        .route(
-            "/verify/composite",
-            axum::routing::post(handlers::verify_composite),
-        )
-        .route(
-            "/verify/inclusion",
-            axum::routing::post(handlers::verify_inclusion),
-        )
-        .route("/healthz", axum::routing::get(handlers::healthz))
-        .with_state(AppState)
+    confium_verify_server::router()
 }
 
 #[tokio::main]

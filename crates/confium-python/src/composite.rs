@@ -147,9 +147,13 @@ impl CompositeSignature {
                 pk_bytes.len()
             )));
         }
-        let signing = p256::ecdsa::SigningKey::from_bytes(pk_bytes.into()).map_err(|e| {
-            pyo3::exceptions::PyValueError::new_err(format!("invalid P-256 key: {e}"))
-        })?;
+        let pk_array: [u8; 32] = pk_bytes
+            .try_into()
+            .map_err(|_| pyo3::exceptions::PyValueError::new_err("P-256 private key must be 32 bytes"))?;
+        let signing = p256::ecdsa::SigningKey::from_bytes(&pk_array.into())
+            .map_err(|e| {
+                pyo3::exceptions::PyValueError::new_err(format!("invalid P-256 key: {e}"))
+            })?;
         let msg = message.as_bytes().to_vec();
         let component = py
             .allow_threads(move || confium_composite::build_p256_component(&signing, &msg))
