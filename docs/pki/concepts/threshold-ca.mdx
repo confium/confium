@@ -1,0 +1,24 @@
+---
+title: "A CA without a single trusted key"
+description: "Threshold PKI: issuance and revocation gated by a quorum instead of one HSM slot."
+product: pki
+audience: ca-operator, security-engineer, platform-engineer
+---
+
+# A CA without a single trusted key
+
+A conventional CA concentrates its trust in one key — usually one HSM
+slot. Confium's PKI product replaces that with a *threshold* key:
+issuance requests are satisfied only when T of N directors
+participate, so a single compromised operator, HSM, or site cannot
+mint certificates.
+
+- **Issuance**: CSR in, threshold-signed certificate out — the
+  resulting certificate is an ordinary X.509 object.
+- **Revocation**: CRLs and OCSP responses are themselves
+  threshold-signed artifacts.
+- **Policy as code**: the deployment manifest declares who the
+  directors are, the quorum, and scope constraints.
+
+See [run the PKCS#11 bridge](../how-to/run-pkcs11-server.mdx) for
+wiring existing PKI software to the threshold backend.

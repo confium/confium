@@ -1,0 +1,21 @@
+---
+title: "Use the OpenSSL provider"
+description: "Let OpenSSL 3.x sign and verify through Confium."
+product: pki
+audience: ca-operator, security-engineer, platform-engineer
+---
+
+# Use the OpenSSL provider
+
+`confium-openssl-provider` registers as an OpenSSL 3.0 provider, so
+`openssl` CLI and any OpenSSL-linked application can use threshold
+keys.
+
+```sh
+OPENSSL_MODULES=/path/to/providers openssl list -providers
+openssl pkey -provider confium -in confium://threshold/root
+```
+
+Verify with `openssl verify` as usual — outputs are standard X.509
+and standard signatures. The provider never exposes share material;
+every operation is a threshold ceremony under the hood.

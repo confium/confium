@@ -1,0 +1,25 @@
+---
+title: "Run a local 3-of-5 DKG"
+description: "Generate a 3-of-5 threshold key with the CLI and inspect the share envelope."
+product: threshold
+audience: security-engineer, devsecops, blockchain-dev
+---
+
+# Run a local DKG
+
+Prerequisites: the [confium CLI](../../installation.mdx).
+
+```sh
+confium threshold dkg --scheme cmp20 --threshold 3 --parties 5 --out shares.json
+```
+
+The output is a JSON *share envelope*: the joint public key plus all
+five shares. In a real deployment each party keeps exactly one share
+and the envelope is never written to a shared file — see the scheme
+crates' session APIs (`confium-tc-frost-p256`) for per-party runs.
+
+Verify the envelope round-trips:
+
+```sh
+confium threshold sign --shares shares.json --message "hello" --out signature.hex
+```

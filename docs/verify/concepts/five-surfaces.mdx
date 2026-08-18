@@ -1,0 +1,22 @@
+---
+title: "Five verification surfaces"
+description: "The same verdict from the CLI, HTTP, the browser, Python, and Rust."
+product: verify
+audience: web-developer, devsecops, app-developer
+---
+
+# Five verification surfaces
+
+A verification result is only useful if it runs where your users are.
+Confium ships the same pipeline five ways:
+
+| Surface | Entry point |
+|---|---|
+| CLI | `confium verify ...` |
+| HTTP | `POST /verify/signatif` on `confium-verify-server` |
+| Browser | `verifyTrustedArtifact` in `@confium/confium-wasm` |
+| Python | `confium.signatif.verify_trusted_artifact` |
+| Rust | `confium-signatif::pipeline::Pipeline` |
+
+Signing needs keys and stays server-side; verification is safe to
+ship anywhere — the WASM package is verifier-only by design.

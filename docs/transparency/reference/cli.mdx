@@ -1,0 +1,20 @@
+---
+title: "Transparency CLI reference"
+description: "The transparency and related verify subcommands."
+product: transparency
+audience: compliance, ca-operator, security-engineer
+---
+
+# Transparency CLI reference
+
+| Subcommand | Purpose |
+|---|---|
+| `confium transparency append` | Append an artifact hash (`--db`, `--artifact-hash`) |
+| `confium transparency prove` | Produce an inclusion proof (`--seq`, `--out`) |
+| `confium transparency verify` | Verify a proof against a tree head (`--proof`, `--head`) |
+
+To serve a log over HTTP, run the `confium-log-server` binary — see
+[serve a log](../how-to/serve-log.mdx).
+
+Product docs: <https://www.confium.org/transparency/>. API reference:
+[docs.rs/confium-transparency](https://docs.rs/confium-transparency).

@@ -1,0 +1,20 @@
+---
+title: "Threshold CLI reference"
+description: "The confium threshold subcommand tree."
+product: threshold
+audience: security-engineer, devsecops, blockchain-dev
+---
+
+# `confium threshold` reference
+
+| Subcommand | Purpose |
+|---|---|
+| `version` | Product + component crate versions |
+| `dkg` | Generate a T-of-N key (`--scheme cmp20\|gg18`); writes a JSON share envelope |
+| `sign` | Sign a message from a share envelope |
+| `refresh` | Rerandomize shares (same public key) |
+| `recover` | Recover a lost share (in development) |
+| `migrate-shares` | Migrate 0.2.x share files to the 0.3+ envelope |
+
+Run `confium threshold <subcommand> --help` for the full argument
+list. Product docs: <https://www.confium.org/threshold/>.

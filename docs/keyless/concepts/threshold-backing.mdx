@@ -1,0 +1,18 @@
+---
+title: "Threshold backing"
+description: "The keyless CA is itself a T-of-N Confium threshold key — no single operator can forge identities."
+product: keyless
+audience: oss-maintainer, devsecops
+---
+
+# Threshold backing
+
+A keyless system concentrates trust in its CA. Confium backs that CA
+with the [Threshold product](../../threshold/): the identity key is a
+T-of-N threshold key shared by independent directors (maintainers,
+foundation, partner organizations). Forging a countersignature
+requires corrupting a quorum — a compromise of any single operator,
+including the CI provider account, is not enough.
+
+This is the same machinery as the [PKI product](../../pki/); keyless
+is the opinionated deployment of it for release signing.

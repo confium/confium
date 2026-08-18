@@ -1,0 +1,20 @@
+---
+title: "Serve a log"
+description: "Run the HTTP log server so verifiers can fetch heads and proofs."
+product: transparency
+audience: compliance, ca-operator, security-engineer
+---
+
+# Serve a log
+
+The `confium-log-server` binary (from the `confium-log-server` crate)
+exposes a growing log over HTTP: clients submit entries, fetch signed
+heads, and download inclusion proofs.
+
+1. Provision the server's signing key through the Threshold product
+   (a threshold-signed head survives the compromise of any single
+   operator).
+2. Point monitors (`confium-log-monitor`) at the head endpoint; they
+   check consistency across restarts and alert on any gap.
+3. Publish the head fingerprint out-of-band (docs, release notes) so
+   first-time clients can bootstrap trust.

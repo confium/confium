@@ -1,0 +1,19 @@
+---
+title: "Differential privacy"
+description: "Adding calibrated noise so a released statistic protects the individuals inside it."
+product: privacy
+audience: privacy-engineer, researcher, app-developer
+---
+
+# Differential privacy
+
+A differentially private mechanism releases a statistic with enough
+noise that any single individual's presence changes the output
+distribution by at most a factor of e^epsilon. Choosing epsilon is a
+governance decision: smaller epsilon = stronger privacy = noisier
+results; the *sensitivity* of the query (how much one record can move
+the result) scales the noise.
+
+Confium ships Laplace and Gaussian mechanisms in `confium-privacy`
+(`confium privacy dp --value ... --sensitivity ... --epsilon ...`).
+Track budgets across releases — privacy loss composes.

@@ -1,0 +1,18 @@
+---
+title: "Long-term archival (ERS)"
+description: "RFC 4998 evidence records: keeping signatures verifiable after algorithms age out."
+product: transparency
+audience: compliance, ca-operator, security-engineer
+---
+
+# Long-term archival (ERS)
+
+Signatures expire cryptographically: algorithms get broken and keys
+get retired. RFC 4998 Evidence Record Syntax chains periodic
+re-timestamps so an archive can demonstrate a signature was valid
+*at the time it was made*, each link sealed before the previous one
+could be doubted.
+
+`confium-transparency` ships ERS generation and verification. Pair it
+with [anchoring](./anchoring.mdx): the evidence chain is only as
+strong as its timestamps.

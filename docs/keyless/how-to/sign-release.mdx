@@ -1,0 +1,20 @@
+---
+title: "Sign a release"
+description: "Sign a release artifact keylessly from CI."
+product: keyless
+audience: oss-maintainer, devsecops
+---
+
+# Sign a release
+
+Status: the `confium keyless sign` surface is a placeholder while the
+allowlist format is finalized; today the flow runs through the
+[GitHub Action](https://github.com/confium/action), which:
+
+1. Exchanges the workflow's OIDC token for a countersignature from
+   the threshold CA.
+2. Generates the ephemeral key and signs the artifact digest.
+3. Attaches the identity + countersignature bundle to the release.
+
+Manual runs will mirror this via `confium keyless sign` once the
+`configure` surface (see [configure](./configure.mdx)) lands.

@@ -1,0 +1,22 @@
+---
+title: "Composite signatures for PQC migration"
+description: "Sign with a classical AND a post-quantum algorithm at once, and migrate verifiers gradually."
+product: pki
+audience: ca-operator, security-engineer, platform-engineer
+---
+
+# Composite signatures for PQC migration
+
+A composite signature carries two components — e.g. Ed25519 and
+ML-DSA-65 — over the same payload in one verifiable envelope
+(COSE-encoded). During migration:
+
+1. **Classical-only verifiers** keep working (they check the
+   component they know).
+2. **Hybrid verifiers** require both.
+3. When the classical algorithm is retired, hybrid keys downgrade
+   gracefully to the post-quantum component per your policy — the
+   registry's `deprecated`/`retired` statuses drive this.
+
+Crates: `confium-composite` (envelopes + verifiers) and
+`confium-composite::transition_verifier` (policy-driven checking).

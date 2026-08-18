@@ -1,0 +1,23 @@
+---
+title: "The append-only Merkle log"
+description: "RFC 6962 semantics: append-only entries, tree heads, and why history cannot be rewritten."
+product: transparency
+audience: compliance, ca-operator, security-engineer
+---
+
+# The append-only Merkle log
+
+A transparency log is a Merkle tree over append-only entries. Each
+entry gets a sequence number; the operator publishes a signed *tree
+head* after every append. Because each head commits to the entire
+prefix of history, an operator cannot insert, remove, or reorder
+entries without producing two heads that are mutually inconsistent —
+and anyone holding both can prove it.
+
+Confium's `confium-transparency` implements the RFC 6962 tree shape:
+entries are domain-separated, internal nodes hash
+`L || R` with the RFC's prefixes, and heads carry the tree size plus
+root hash.
+
+Related: [inclusion and consistency proofs](./proofs.mdx) and
+[consistency proof verification notes](../../faq/).

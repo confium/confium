@@ -1,0 +1,24 @@
+---
+title: "Distributed key generation"
+description: "How a threshold key is born without ever existing in one place: Pedersen/Feldman VSS over two rounds."
+product: threshold
+audience: security-engineer, devsecops, blockchain-dev
+---
+
+# Distributed key generation (DKG)
+
+DKG creates the threshold key. Each party samples a random polynomial
+and commits to it (Feldman VSS); the aggregate public key is the sum
+of all parties' constant-term commitments, and each party's share is
+the sum of the shares it received.
+
+1. **Round 1** — every party broadcasts its commitment list and sends
+   each peer a directed share of its polynomial.
+2. **Round 2** — each party verifies incoming shares against the
+   sender's commitments, rejects byzantine parties, and sums valid
+   fragments into its aggregate share.
+
+In Confium, `confium-tc-frost-ed25519` and `confium-tc-frost-p256`
+ship DKG sessions; the framework drives rounds via
+`confium-tc-core` sessions. For a working example see
+[run a local DKG](../how-to/local-dkg.mdx).

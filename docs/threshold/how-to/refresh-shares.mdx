@@ -1,0 +1,22 @@
+---
+title: "Refresh shares"
+description: "Rerandomize all shares for the same public key using the CLI."
+product: threshold
+audience: security-engineer, devsecops, blockchain-dev
+---
+
+# Refresh shares
+
+```sh
+confium threshold refresh --shares shares.json --out shares-new.json
+```
+
+The public key in `shares-new.json` is identical to the original;
+every share is different. Operationally:
+
+1. Schedule refresh on a calendar (see
+   [share refresh](../concepts/share-refresh.mdx) for window sizing).
+2. Treat the old envelope as compromised the moment refresh completes
+   and wipe it.
+3. Refresh is *not* recovery — a lost share needs the recovery flow
+   (threshold + 1 shares), which is currently in development.

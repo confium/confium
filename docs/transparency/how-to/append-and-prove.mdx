@@ -1,0 +1,20 @@
+---
+title: "Append entries and produce proofs"
+description: "Grow a transparency log and hand out inclusion proofs with the CLI."
+product: transparency
+audience: compliance, ca-operator, security-engineer
+---
+
+# Append entries and produce proofs
+
+```sh
+confium transparency append --artifact-hash "sha256:abc123..."
+confium transparency prove --seq 0 --out proof.json
+```
+
+- The log is a database file (`--db`, default `./transparency.db`);
+  append-only by construction — treat any truncation as a security
+  incident.
+- Every append prints the new signed tree head; publish it wherever
+  your witnesses look.
+- Proofs are standalone JSON: entry, index, audit path, and head.

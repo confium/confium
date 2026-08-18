@@ -1,0 +1,23 @@
+---
+title: "Inclusion and consistency proofs"
+description: "How a client proves an entry is in a log, and how an old head relates to a new one."
+product: transparency
+audience: compliance, ca-operator, security-engineer
+---
+
+# Inclusion and consistency proofs
+
+**Inclusion proof** — proves entry *i* is covered by tree head *H*:
+a chain of sibling hashes from the leaf to the root. The verifier
+recomputes the root and compares.
+
+**Consistency proof** — proves head *H1* (size *n*) is a prefix of
+head *H2* (size *m*): the operator supplies intermediate hashes from
+which the verifier re-derives both roots. Consistency proofs are how
+clients detect a split-brained or rewritten log even if they only
+check in occasionally.
+
+In Confium, generate proofs with `confium transparency prove` and
+verify with `confium transparency verify` (inclusion) or the
+`confium_transparency::MerkleTree` API (consistency — see the
+[transparency crate docs](https://docs.rs/confium-transparency)).

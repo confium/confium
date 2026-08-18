@@ -1,0 +1,20 @@
+---
+title: "Share refresh (proactive security)"
+description: "Herzberg refresh: periodically rerandomize shares so an attacker must compromise T parties within one refresh window."
+product: threshold
+audience: security-engineer, devsecops, blockchain-dev
+---
+
+# Share refresh (proactive security)
+
+Share refresh (Herzberg 1995) replaces every share with a fresh
+randomization of the same underlying key. Each party generates random
+polynomials with zero constant term and distributes the deltas; after
+applying them, all parties hold new shares for the **same public key**,
+and old shares are useless — an adversary that collects shares slowly,
+across compromise windows, never reaches the threshold.
+
+Confium ships refresh sessions for the FROST crates and the
+`confium threshold refresh` CLI. Operational guidance: choose the
+refresh window from your containment SLA (e.g. quarterly), and always
+refresh after any suspected share exposure.

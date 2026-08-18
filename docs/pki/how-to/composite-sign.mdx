@@ -1,0 +1,23 @@
+---
+title: "Produce a composite signature"
+description: "Sign a message with classical + post-quantum-style components via the pki umbrella."
+product: pki
+audience: ca-operator, security-engineer, platform-engineer
+---
+
+# Produce a composite signature
+
+```sh
+confium pki composite-sign \
+  --message @document.bin \
+  --ed25519-key ed.hex \
+  --p256-key ec.pem \
+  --out composite.hex
+```
+
+- `--message` accepts a literal or `@file` for exact file bytes.
+- The envelope is COSE-encoded; both components cover the same
+  payload, so classical-only verifiers keep working during migration
+  (see [composite signatures](../concepts/composite-signatures.mdx)).
+- Verify with `confium verify composite --message ... --signature
+  composite.hex --algorithm ed25519 --public-key pk.hex`.

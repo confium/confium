@@ -1,0 +1,20 @@
+---
+title: "The SIGNATIF pipeline"
+description: "Hard checks that must pass, soft checks that downgrade, and the coverage report they produce."
+product: verify
+audience: web-developer, devsecops, app-developer
+---
+
+# The SIGNATIF pipeline
+
+For co-signed, multi-dimensional artifacts Confium implements the
+SIGNATIF verification pipeline: every input (artifact, trust anchors,
+trust graph, registry) feeds a sequence of checks. **Hard checks**
+(signature validity, payload integrity, trust-graph paths) fail the
+run outright; **soft checks** (transparency inclusion, time
+anchoring, algorithm deprecation) instead downgrade the
+classification label.
+
+The output report records each check's outcome, so a downstream
+verifier can see *why* an artifact earned its label. See the
+[SIGNATIF docs](../../signatif/) for the full model.

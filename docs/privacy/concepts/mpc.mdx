@@ -1,0 +1,20 @@
+---
+title: "Secure computation (MPC/OT)"
+description: "Computing on secret-shared inputs so no party sees another's data."
+product: privacy
+audience: privacy-engineer, researcher, app-developer
+---
+
+# Secure computation (MPC and OT)
+
+Multi-party computation lets N parties jointly evaluate a function
+over secret-shared inputs: each party holds a share of every input,
+the protocol computes shares of the output, and nobody learns more
+than the revealed result. Oblivious transfer (OT) is the fundamental
+building block many protocols reduce to.
+
+`confium-privacy` provides the toolkit — secret sharing, OT, secure
+aggregation, threshold decryption — used to compose such flows. The
+MPC orchestration surface (`confium privacy mpc`) is a placeholder
+while multi-process transport integration lands; the primitives are
+available from Rust today.

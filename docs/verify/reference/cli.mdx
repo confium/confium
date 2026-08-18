@@ -1,0 +1,19 @@
+---
+title: "Verify CLI reference"
+description: "The confium verify subcommand tree."
+product: verify
+audience: web-developer, devsecops, app-developer
+---
+
+# Verify CLI reference
+
+| Subcommand | Purpose |
+|---|---|
+| `confium verify composite` | Verify a composite (COSE) signature |
+| `confium verify inclusion` | Verify a transparency inclusion proof |
+| `confium verify cert-chain` | Verify a certificate chain |
+| `confium verify signatif` | Full SIGNATIF pipeline over a trusted artifact |
+
+Exit code 2 means "verification ran, acceptance policy rejected" —
+distinct from 1 (bad input) in scripts. Product docs:
+<https://www.confium.org/verify/>
