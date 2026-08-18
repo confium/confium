@@ -4,7 +4,7 @@
 //! XOR of partial evaluations. Used for threshold key derivation
 //! without reconstructing the underlying secret.
 
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 

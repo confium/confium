@@ -10,7 +10,7 @@
 //! them. Each scheme (CMP20, FROST, etc.) serializes its own share type
 //! to bytes, then the envelope adds the versioning and integrity layer.
 
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use subtle::ConstantTimeEq;

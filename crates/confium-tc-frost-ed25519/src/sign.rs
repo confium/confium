@@ -48,9 +48,9 @@
 //!   reproducible and side-channel-resistant under repeated inputs.
 
 use curve25519_dalek::edwards::EdwardsPoint;
+use curve25519_dalek::rand_core::UnwrapErr;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::traits::Identity;
-use rand_core::OsRng;
 
 use crate::error::{
     CODE_AGG_VERIFY_FAILED, CODE_BELOW_THRESHOLD, CODE_INVALID_COMMITMENT, CODE_INVALID_SHARE_SIG,
@@ -117,8 +117,9 @@ struct NoncePair {
 
 impl NoncePair {
     fn generate() -> Self {
-        let d = Scalar::random(&mut OsRng);
-        let e = Scalar::random(&mut OsRng);
+        let mut rng = UnwrapErr(getrandom::SysRng);
+        let d = Scalar::random(&mut rng);
+        let e = Scalar::random(&mut rng);
         let d_point = group::mul_base(&d);
         let e_point = group::mul_base(&e);
         NoncePair {

@@ -82,7 +82,7 @@ fn extract_ski_extension(cert_der: &[u8]) -> Option<Vec<u8>> {
         Ok(c) => c,
         Err(_) => return None,
     };
-    if let Some(exts) = &cert.as_inner().tbs_certificate.extensions {
+    if let Some(exts) = cert.as_inner().tbs_certificate().extensions() {
         for ext in exts.iter() {
             // OID 2.5.29.14 = subjectKeyIdentifier
             if ext.extn_id.to_string() == "2.5.29.14" {

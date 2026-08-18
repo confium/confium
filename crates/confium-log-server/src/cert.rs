@@ -23,8 +23,8 @@ pub struct CertMetadata {
 pub fn parse_der(der_bytes: &[u8]) -> Result<CertMetadata> {
     let cert =
         confium_pki::cert::Certificate::from_der(der_bytes).context("parsing DER certificate")?;
-    let issuer = cert.as_inner().tbs_certificate.issuer.to_string();
-    let subject = cert.as_inner().tbs_certificate.subject.to_string();
+    let issuer = cert.as_inner().tbs_certificate().issuer().to_string();
+    let subject = cert.as_inner().tbs_certificate().subject().to_string();
     Ok(CertMetadata {
         fingerprint_sha256: cert.fingerprint_sha256(),
         issuer_distinguished_name: issuer,

@@ -14,7 +14,10 @@
 //! *signing* surface for Node consumers: CI release pipelines,
 //! signing microservices, scheduled-ceremony workers.
 
-#![forbid(unsafe_code)]
+// `deny`, not `forbid`: napi-derive 3 emits `#[allow(unsafe_code)]` on
+// its generated FFI glue, which a crate-level `forbid` would reject.
+// Hand-written unsafe in this crate remains a hard error.
+#![deny(unsafe_code)]
 #![allow(missing_docs)] // TODO: document before 1.0
 
 use napi::bindgen_prelude::Buffer;

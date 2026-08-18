@@ -16,16 +16,14 @@ use rcgen::{
     BasicConstraints, CertificateParams, DistinguishedName, DnType, IsCa, KeyPair, KeyUsagePurpose,
 };
 
-/// A cert plus the key it was issued with. The `rcgen::Certificate`
-/// is kept around so we can use it to sign child certs (rcgen requires
-/// `&Certificate`, not just the DER bytes).
+/// A cert plus the key it was issued with. The `CertifiedIssuer` is
+/// kept around so we can use it to sign child certs (rcgen requires
+/// an `Issuer`, not just the DER bytes).
 struct CertWithKey {
-    /// The signing-able rcgen form (also stores the issuer-relevant SPKI).
-    rcgen: rcgen::Certificate,
+    /// The signing-able rcgen form (certificate + issuer params + key).
+    issuer: rcgen::CertifiedIssuer<'static, KeyPair>,
     /// The confium-pki wrapper around the same DER bytes, used for path validation.
     cfm: Certificate,
-    /// The key pair this cert's subject public key corresponds to.
-    key: KeyPair,
 }
 
 /// Build a self-signed root with the given validity window.
@@ -39,13 +37,12 @@ fn make_root(not_before: chrono::DateTime<Utc>, not_after: chrono::DateTime<Utc>
     params.distinguished_name = dn;
     params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
     params.key_usages = vec![KeyUsagePurpose::KeyCertSign];
-    let rcgen_cert = params.self_signed(&key).expect("self-signed");
-    let der = rcgen_cert.der().to_vec();
+    let certified = rcgen::CertifiedIssuer::self_signed(params, key).expect("self-signed");
+    let der = certified.as_ref().der().to_vec();
     let cfm = Certificate::from_der(&der).expect("DER parse");
     CertWithKey {
-        rcgen: rcgen_cert,
+        issuer: certified,
         cfm,
-        key,
     }
 }
 
@@ -67,15 +64,13 @@ fn make_issued(
         params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
         params.key_usages = vec![KeyUsagePurpose::KeyCertSign];
     }
-    let rcgen_cert = params
-        .signed_by(&key, &issuer.rcgen, &issuer.key)
-        .expect("signed_by");
-    let der = rcgen_cert.der().to_vec();
+    let certified =
+        rcgen::CertifiedIssuer::signed_by(params, key, &issuer.issuer).expect("signed_by");
+    let der = certified.as_ref().der().to_vec();
     let cfm = Certificate::from_der(&der).expect("DER parse");
     CertWithKey {
-        rcgen: rcgen_cert,
+        issuer: certified,
         cfm,
-        key,
     }
 }
 

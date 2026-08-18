@@ -1,6 +1,6 @@
 //! Probabilistic data structures + efficient primitives + crypto utilities.
 
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use sha2::{Digest, Sha256};
 use std::collections::VecDeque;
 use std::sync::Mutex;

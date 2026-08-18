@@ -38,6 +38,7 @@ snafu = { workspace = true }
 base64 = "0.23"
 
 [dev-dependencies]
+getrandom = { workspace = true }
 tempfile = { workspace = true }
 ed25519-dalek = { workspace = true }
 rand_core = { workspace = true }

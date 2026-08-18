@@ -5,7 +5,7 @@
 //! This is a simplified implementation suitable for testing;
 //! production should use the `noise-rust` or `snow` crate.
 
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use sha2::{Digest, Sha256};
 
 type HmacSha256 = Hmac<Sha256>;

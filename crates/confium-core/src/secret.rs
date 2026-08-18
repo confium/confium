@@ -38,8 +38,8 @@
 use std::fmt;
 use std::sync::OnceLock;
 
-use aes_gcm::aead::{Aead, KeyInit, OsRng as AeadOsRng};
-use aes_gcm::{Aes256Gcm, Nonce};
+use aes_gcm::aead::{Aead, KeyInit};
+use aes_gcm::{Aes256Gcm, Key, Nonce};
 use rand::RngCore;
 use zeroize::Zeroize;
 
@@ -105,14 +105,17 @@ impl SecretBytes for String {
 fn process_key() -> &'static Aes256Gcm {
     static KEY: OnceLock<Aes256Gcm> = OnceLock::new();
     KEY.get_or_init(|| {
-        // 256-bit key from the OS CSPRNG. `Aes256Gcm::generate_key`
-        // uses `OsRng` internally on platforms where `rand_core`'s
-        // `getrandom` is available (every Tier 1/2 target we ship).
-        let key_bytes = Aes256Gcm::generate_key(&mut AeadOsRng);
+        // 256-bit key from the OS CSPRNG. `generate_key` needs a
+        // rand-core-0.10 RNG from the aead stack; the workspace `rand`
+        // is 0.8, so fill the key bytes directly and construct the
+        // cipher from the array.
+        let mut key_bytes = [0u8; 32];
+        rand::rngs::OsRng.fill_bytes(&mut key_bytes);
+        let key: Key<Aes256Gcm> = key_bytes.into();
         // Pin the key pages so the OS doesn't page them to swap.
         // Best-effort: failures are ignored (see `mlock`).
-        let _ = mlock::mlock_bytes(&key_bytes[..]);
-        Aes256Gcm::new(&key_bytes)
+        let _ = mlock::mlock_bytes(&key[..]);
+        Aes256Gcm::new(&key)
     })
 }
 
@@ -307,7 +310,9 @@ mod tests {
         // an ad-hoc key, then try to open it through a Secret built
         // from that ciphertext, which will use the *process* key and
         // therefore fail AEAD verification.
-        let foreign_key = Aes256Gcm::generate_key(&mut AeadOsRng);
+        let mut foreign_key_bytes = [0u8; 32];
+        rand::rngs::OsRng.fill_bytes(&mut foreign_key_bytes);
+        let foreign_key: Key<Aes256Gcm> = foreign_key_bytes.into();
         let foreign_cipher = Aes256Gcm::new(&foreign_key);
         let mut nonce_bytes = [0u8; NONCE_LEN];
         rand::rngs::OsRng.fill_bytes(&mut nonce_bytes);

@@ -181,7 +181,7 @@ fn sha256_via_shasum(path: &std::path::Path) -> String {
         use sha2::{Digest, Sha256};
         let mut h = Sha256::new();
         h.update(&bytes);
-        return format!("{:x}", h.finalize());
+        return hex::encode(h.finalize());
     } else {
         Command::new("sha256sum")
             .arg(path)

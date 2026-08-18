@@ -11,9 +11,9 @@
 //! ```
 //! use confium_composite::{CompositeSignature, build_ed25519_component, ed25519_verifier, ED25519};
 //! use ed25519_dalek::{Signer, SigningKey};
-//! use rand_core::OsRng;
+//! use ed25519_dalek::rand_core::UnwrapErr;
 //!
-//! let signing = SigningKey::generate(&mut OsRng);
+//! let signing = SigningKey::generate(&mut UnwrapErr(getrandom::SysRng));
 //! let message = b"hybrid sig demo";
 //! let component = build_ed25519_component(&signing, message)?;
 //! let composite = CompositeSignature::new(vec![component]);
@@ -390,11 +390,11 @@ pub fn build_p256_component(
 mod real_ed25519_tests {
     use super::*;
     use ed25519_dalek::SigningKey;
-    use rand_core::OsRng;
+    use ed25519_dalek::rand_core::UnwrapErr;
 
     #[test]
     fn real_ed25519_round_trip() {
-        let signing = SigningKey::generate(&mut OsRng);
+        let signing = SigningKey::generate(&mut UnwrapErr(getrandom::SysRng));
         let message = b"composite signature test message";
         let component = build_ed25519_component(&signing, message).unwrap();
         let result = ed25519_verifier(
@@ -408,7 +408,7 @@ mod real_ed25519_tests {
 
     #[test]
     fn real_ed25519_rejects_wrong_message() {
-        let signing = SigningKey::generate(&mut OsRng);
+        let signing = SigningKey::generate(&mut UnwrapErr(getrandom::SysRng));
         let component = build_ed25519_component(&signing, b"original").unwrap();
         let result = ed25519_verifier(
             &component.algorithm,
@@ -450,7 +450,7 @@ mod real_ed25519_tests {
 
     #[test]
     fn composite_with_real_ed25519_verifies() {
-        let signing = SigningKey::generate(&mut OsRng);
+        let signing = SigningKey::generate(&mut UnwrapErr(getrandom::SysRng));
         let message = b"composite with real crypto";
         let component = build_ed25519_component(&signing, message).unwrap();
         let composite = CompositeSignature::new(vec![component]);
@@ -465,7 +465,7 @@ mod real_ed25519_tests {
 
     #[test]
     fn composite_with_real_ed25519_plus_mock_ml_dsa() {
-        let signing = SigningKey::generate(&mut OsRng);
+        let signing = SigningKey::generate(&mut UnwrapErr(getrandom::SysRng));
         let message = b"PQ migration composite";
         let ed_component = build_ed25519_component(&signing, message).unwrap();
         // Mock ML-DSA component (always verifies for now)
@@ -502,8 +502,8 @@ mod proptests {
         #[test]
         fn ed25519_roundtrip_json_verifies(msg in proptest::collection::vec(any::<u8>(), 0..256)) {
             use ed25519_dalek::SigningKey;
-            use rand_core::OsRng;
-            let signing = SigningKey::generate(&mut OsRng);
+            use ed25519_dalek::rand_core::UnwrapErr;
+            let signing = SigningKey::generate(&mut UnwrapErr(getrandom::SysRng));
             let verifying: ed25519_dalek::VerifyingKey = signing.verifying_key();
             let component = build_ed25519_component(&signing, &msg)?;
             let composite = CompositeSignature::new(vec![component]);
@@ -531,8 +531,8 @@ mod proptests {
             flip_index in 0usize..256,
         ) {
             use ed25519_dalek::SigningKey;
-            use rand_core::OsRng;
-            let signing = SigningKey::generate(&mut OsRng);
+            use ed25519_dalek::rand_core::UnwrapErr;
+            let signing = SigningKey::generate(&mut UnwrapErr(getrandom::SysRng));
             let component = build_ed25519_component(&signing, &msg)?;
             let composite = CompositeSignature::new(vec![component]);
 

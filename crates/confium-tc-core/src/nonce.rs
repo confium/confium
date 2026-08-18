@@ -15,7 +15,7 @@
 //! and non-interactive signing modes. Production CMP20/GG18 signing
 //! uses interactive nonce generation for stronger security guarantees.
 
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use p256::elliptic_curve::PrimeField;
 use p256::{FieldBytes, Scalar};
 use sha2::Sha256;

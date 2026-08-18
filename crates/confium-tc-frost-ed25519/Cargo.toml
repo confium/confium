@@ -22,6 +22,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
+getrandom = { workspace = true }
 confium-tc = { workspace = true }
 curve25519-dalek = { workspace = true }
 # `inventory` is referenced via the `register_tc_scheme!` macro's
@@ -29,7 +30,6 @@ curve25519-dalek = { workspace = true }
 # cargo-machete's source scan therefore can't see the dependency even
 # though the crate fails to link without it.
 inventory = { workspace = true }
-rand_core = { workspace = true }
 sha2 = { workspace = true }
 snafu = { workspace = true }
 
@@ -37,7 +37,6 @@ snafu = { workspace = true }
 curve25519-dalek = { workspace = true }
 ed25519-dalek = { workspace = true }
 hex = { workspace = true }
-rand_core = { workspace = true }
 sha2 = { workspace = true }
 
 # `inventory` is referenced via the `register_tc_scheme!` macro's
