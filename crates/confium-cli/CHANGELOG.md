@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add keyless configure placeholder by @[object]
+
+### Other
+
+- Release v0.5.1 by @[object]
+
 ### Other
 
 - Release v0.5.1 by @[object]
