@@ -1,0 +1,26 @@
+---
+title: "Threshold signing"
+description: "What T-of-N means: share generation, signing quorum, and why compromising T-1 parties is not enough."
+product: threshold
+audience: security-engineer, devsecops, blockchain-dev
+---
+
+# Threshold signing
+
+A threshold signature scheme splits one logical key into N shares so
+that any T of them can produce a signature, while fewer than T learn
+nothing about the key. The produced signature is an *ordinary*
+signature: anyone with the public key and a standard verifier accepts
+it — no special tooling on the verifying side.
+
+- **T-of-N**: sign when at least T parties participate; the signature
+  is identical no matter *which* T participated.
+- **No reconstruction**: the secret key never exists in one place at
+  any point in the lifecycle — DKG, signing, refresh, and recovery all
+  operate on shares.
+- **Standard outputs**: CMP20/GG18 produce ECDSA-P256 signatures;
+  FROST-ed25519 produces RFC 8032 signatures verifiable by any
+  ed25519 library.
+
+See also [distributed key generation](./dkg.mdx) and
+[share refresh](./share-refresh.mdx).

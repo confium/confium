@@ -1,0 +1,20 @@
+---
+title: "Run the PKCS#11 bridge"
+description: "Expose the threshold key store to PKCS#11 applications."
+product: pki
+audience: ca-operator, security-engineer, platform-engineer
+---
+
+# Run the PKCS#11 bridge
+
+`confium-pkcs11-server` implements PKCS#11 v3.0 against the threshold
+key store, so existing applications (TLS terminations, HSM-aware
+CLIs) work without code changes.
+
+1. Configure the deployment manifest (directors, quorum, key scope).
+2. Start the server; it exposes a PKCS#11 module.
+3. Point the application at the module path (for OpenSC tooling:
+   `PKCS11_MODULE_PATH=... pkcs11-tool --list-slots`).
+
+Signing through the slot transparently convenes the threshold quorum;
+the application sees a normal private-key object.

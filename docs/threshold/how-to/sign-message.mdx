@@ -1,0 +1,18 @@
+---
+title: "Sign a message"
+description: "Produce a threshold signature from a share envelope with the CLI."
+product: threshold
+audience: security-engineer, devsecops, blockchain-dev
+---
+
+# Sign a message
+
+```sh
+confium threshold sign --shares shares.json --message "payment:acct-9:f67a" --out signature.hex
+```
+
+- `--message` may be `@file` to sign a file's exact bytes.
+- The output is a standard DER-encoded ECDSA-P256 signature — verify
+  it with any ordinary verifier.
+- Signing consumes nonces; never reuse a share envelope's nonce state
+  across sessions (the scheme crates handle nonce derivation).

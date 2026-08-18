@@ -1,0 +1,19 @@
+---
+title: "PKI CLI reference"
+description: "The confium pki subcommand tree."
+product: pki
+audience: ca-operator, security-engineer, platform-engineer
+---
+
+# PKI CLI reference
+
+| Subcommand | Purpose |
+|---|---|
+| `confium pki parse-cert` | Parse an X.509 certificate (DER or PEM) |
+| `confium pki verify` | Verify a certificate chain (leaf + intermediates + anchor) |
+| `confium pki composite-sign` | Sign with classical + PQ components in one envelope |
+
+Related: `confium verify cert-chain` mirrors `pki verify` under the
+[Verify product](../../verify/). Run `confium pki --help` for the full
+argument list. Product docs: <https://www.confium.org/pki/>. API
+reference: [docs.rs/confium-pki](https://docs.rs/confium-pki).

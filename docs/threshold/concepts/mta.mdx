@@ -1,0 +1,19 @@
+---
+title: "Multiplicative-to-additive (MtA)"
+description: "The Paillier-based MtA conversion that lets ECDSA threshold protocols multiply shares without revealing them."
+product: threshold
+audience: security-engineer, devsecops, blockchain-dev
+---
+
+# Multiplicative-to-additive conversion (MtA)
+
+Threshold ECDSA protocols (GG18, CMP20) need to compute a product of
+two secrets without either party learning the other's value. The
+MtA trick uses Paillier homomorphic encryption: one party encrypts
+its share, the other multiplies the ciphertext by an additive mask,
+and a zero-knowledge range proof keeps everything in bounds.
+
+`confium-crypto-vss` ships the Paillier primitives (keygen,
+encryption, range proofs) used by the CMP20 and GG18 scheme crates.
+You rarely invoke MtA directly; it is listed here because it is the
+performance and security heart of threshold ECDSA.

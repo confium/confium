@@ -1,0 +1,18 @@
+---
+title: "Timestamp anchoring (OTS)"
+description: "Bridging a log head to the Bitcoin blockchain for external time authentication."
+product: transparency
+audience: compliance, ca-operator, security-engineer
+---
+
+# Timestamp anchoring (OTS)
+
+A tree head only proves *ordering* relative to other entries. To
+prove *when* it existed, Confium anchors heads to the Bitcoin
+blockchain using the OpenTimestamps format: an OTS proof commits to
+the head hash, and Bitcoin's proof-of-work supplies an attested time
+bound.
+
+`confium-transparency` builds and verifies OTS proofs. Anchor cadence
+is your call: hourly anchoring is a common default; the proof size
+and verification cost do not depend on cadence.

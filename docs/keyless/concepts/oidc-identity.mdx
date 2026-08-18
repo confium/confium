@@ -1,0 +1,19 @@
+---
+title: "OIDC identity"
+description: "Why a release signer's identity is an OIDC token from your CI provider, not a long-lived key."
+product: keyless
+audience: oss-maintainer, devsecops
+---
+
+# OIDC identity
+
+Keyless signing removes the thing maintainers lose or leak: the
+long-lived signing key. Instead, the signer proves *who it is* with an
+OIDC token minted by the CI provider (GitHub Actions, GitLab, and
+others issue them natively). The token's issuer and subject — for a
+workflow, the repository and ref — become the signing identity, and a
+threshold CA countersigns only for allowlisted pairs.
+
+`confium-oidc` parses and validates these tokens. The trust decision
+(issuer + subject allowlists) is policy, not code — see
+[configure](../how-to/configure.mdx).

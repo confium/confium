@@ -1,0 +1,18 @@
+---
+title: "Ephemeral keys"
+description: "Each signing run generates a fresh key, uses it once, and throws it away."
+product: keyless
+audience: oss-maintainer, devsecops
+---
+
+# Ephemeral keys
+
+In the keyless model a signing job generates an ephemeral key pair,
+signs the artifact, and immediately discards the private half. The
+*commitment* that makes the signature meaningful long-term is the
+threshold CA's countersignature binding that ephemeral public key to
+the OIDC identity — recorded with an expiry so the identity, not the
+key, is what verifiers track.
+
+Nothing secret persists between releases; there is no key rotation
+ceremony because there is no key to rotate.

@@ -1,0 +1,23 @@
+---
+title: "Verify a release"
+description: "Check a downloaded artifact against its keyless identity."
+product: keyless
+audience: oss-maintainer, devsecops
+---
+
+# Verify a release
+
+Status: `confium keyless verify` is a placeholder; verification today
+works through the same surfaces as every other Confium signature:
+
+```sh
+confium verify composite \
+  --message @artifact.tar.gz \
+  --signature bundle.cose \
+  --algorithm ed25519 \
+  --public-key ephemeral-pk.hex
+```
+
+plus an allowlist check of the bundle's OIDC issuer/subject against
+your project's policy. Browsers and CI can do the same via
+`@confium/confium-wasm` (see the [Verify product](../../verify/)).

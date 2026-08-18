@@ -1,0 +1,25 @@
+---
+title: "Verify over HTTP"
+description: "Run the verification server for services that should not embed the pipeline."
+product: verify
+audience: web-developer, devsecops, app-developer
+---
+
+# Verify over HTTP
+
+`confium-verify-server` exposes the pipeline as JSON-over-HTTP:
+
+```sh
+confium-verify-server --listen 127.0.0.1:9420
+```
+
+```sh
+curl -s localhost:9420/verify/signatif \
+  -H 'content-type: application/json' \
+  -d @request.json
+```
+
+The response carries the same `coverage` / `label` / `accept` triple
+as every other surface. Keep the server stateless — all trust inputs
+arrive with each request, so verifiers pin exactly the anchors and
+registry they intend.

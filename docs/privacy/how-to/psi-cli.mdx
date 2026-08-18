@@ -1,0 +1,22 @@
+---
+title: "Run a PSI intersection"
+description: "Intersect two sets from the CLI with cardinality-only as the low-leak option."
+product: privacy
+audience: privacy-engineer, researcher, app-developer
+---
+
+# Run a PSI intersection
+
+```sh
+confium privacy psi \
+  --set-a customers.txt \
+  --set-b watchlist.txt \
+  --cardinality-only
+```
+
+- Inputs are one entry per line; pre-hash them upstream if entries
+  are sensitive in your environment.
+- `--cardinality-only` prints just the count — the default minimum
+  when you only need "how much overlap".
+- `--salt` overrides the default salt source (`/dev/urandom`) for
+  reproducible test runs; never fix a salt in production.

@@ -1,0 +1,19 @@
+---
+title: "Add calibrated DP noise"
+description: "Release a statistic with an explicit epsilon budget."
+product: privacy
+audience: privacy-engineer, researcher, app-developer
+---
+
+# Add calibrated DP noise
+
+```sh
+confium privacy dp --value 1337.0 --sensitivity 1.0 --epsilon 0.5
+confium privacy dp --value 88.1 --sensitivity 10 --epsilon 0.1 \
+  --distribution gaussian --delta 0.00001
+```
+
+- Laplace is the default and needs only epsilon; Gaussian adds delta
+  and suits higher-sensitivity queries.
+- Log (value, sensitivity, epsilon, delta) with every release — the
+  privacy budget composes across releases and auditors will ask.

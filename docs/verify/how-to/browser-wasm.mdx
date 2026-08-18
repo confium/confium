@@ -1,0 +1,26 @@
+---
+title: "Verify in the browser"
+description: "Ship verification to web clients with the WASM package."
+product: verify
+audience: web-developer, devsecops, app-developer
+---
+
+# Verify in the browser
+
+```js
+import init, { verifyTrustedArtifact } from "@confium/confium-wasm";
+
+await init();
+const out = JSON.parse(
+  await verifyTrustedArtifact(artifactJson, bundleJson, graphJson,
+                              registryJson, optionsJson)
+);
+// out.coverage — objective report
+// out.label    — classification
+// out.accept   — acceptance vs your acceptedLabels
+```
+
+The package is **verifier-only**: it links no signing code, so the
+WASM binary stays small and nothing dangerous ships to the client.
+Rust/HTTP/CLI/Python run the identical pipeline — see
+[five surfaces](../concepts/five-surfaces.mdx).

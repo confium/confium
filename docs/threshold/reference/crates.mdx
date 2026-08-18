@@ -1,0 +1,23 @@
+---
+title: "Threshold crate reference"
+description: "Which crates make up the Threshold product and where their docs live."
+product: threshold
+audience: security-engineer, devsecops, blockchain-dev
+---
+
+# Threshold crates
+
+| Crate | Role |
+|---|---|
+| `confium-tc-core` | Session/share/registry primitives all schemes build on |
+| `confium-tc-cmp20` | CMP20 threshold ECDSA (P-256) |
+| `confium-tc-gg18` | GG18 threshold ECDSA (legacy interop) |
+| `confium-tc-frost-ed25519` | FROST over Ed25519 (DKG + signing) |
+| `confium-tc-frost-p256` | FROST over P-256 + Shamir + ECDSA |
+| `confium-crypto-vss` | VSS, Paillier, Schnorr, range proofs |
+| `confium-coordinator` | Coordinator service, WAL, transports |
+| `confium-tc-keys` | HSM/KMS share protection, threshold BIP32 |
+| `confium-signerd` | Production signing daemon (unpublished) |
+
+API docs: <https://docs.rs/confium-tc-core> and per-crate links from
+the [workspace map](../../workspace-map.mdx).

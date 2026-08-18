@@ -1,0 +1,17 @@
+---
+title: "Sign with a ring signature"
+description: "Sign while hiding which member of a group produced the signature."
+product: privacy
+audience: privacy-engineer, researcher, app-developer
+---
+
+# Sign with a ring signature
+
+A ring signature proves "some member of this group signed" without
+revealing which — useful for whistleblowing, anonymous credentials,
+and blockchain privacy. Confium's `confium-ring` ships the threshold
+ring-signature construction (a T-of-N subgroup can jointly produce a
+ring signature without any single member being identifiable).
+
+The CLI surface for rings is part of the privacy umbrella's planned
+expansion; consume `confium-ring` from Rust today.

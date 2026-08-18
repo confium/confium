@@ -1,0 +1,19 @@
+---
+title: "Private set intersection"
+description: "Two parties learn the intersection of their sets — and nothing else."
+product: privacy
+audience: privacy-engineer, researcher, app-developer
+---
+
+# Private set intersection (PSI)
+
+PSI answers "which entries do our sets share?" without either side
+learning the non-matching entries. The classic construction blinds
+each side's entries with a commutative hash/ECDH transformation, so
+only items present in both sets produce comparable outputs.
+
+Confium's `confium-privacy` ships a PSI surface (the CLI demo uses
+salted hashing; the ECDH variant is the production path). Typical
+uses: contact discovery, fraud-list checks, ad conversion
+measurement. When the *cardinality* is enough, prefer cardinality-only
+mode — it leaks less.

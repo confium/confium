@@ -1,0 +1,23 @@
+---
+title: "Configure the allowlist"
+description: "Declare which CI issuer/subject pairs may obtain countersignatures."
+product: keyless
+audience: oss-maintainer, devsecops
+---
+
+# Configure the allowlist
+
+Status: `confium keyless configure` is a placeholder. The intended
+shape:
+
+```toml
+# keyless.toml (draft)
+[[allow]]
+issuer   = "https://token.actions.githubusercontent.com"
+subject  = "repo:org/repo:ref:refs/tags/v*"
+```
+
+The allowlist lives with the threshold CA's deployment manifest, so
+changing it is a director-governed action — a compromised maintainer
+account cannot widen it unilaterally. Track the final format in the
+[product docs](https://www.confium.org/keyless/).

@@ -1,0 +1,22 @@
+---
+title: "Graduated verification"
+description: "Every verdict is an objective report plus a label plus your acceptance decision."
+product: verify
+audience: web-developer, devsecops, app-developer
+---
+
+# Graduated verification
+
+Confium separates three things most tooling conflates:
+
+1. **The coverage report** — what was actually checked (signatures,
+   chain, revocation, transparency, time anchoring). Objective facts.
+2. **The classification label** — the scheme's pure function from
+   report to label (the reference ladder runs
+   `unverified → basic → verified → attested → certified`).
+3. **The acceptance decision** — *your* policy: which labels this
+   verifier accepts, per decision context.
+
+Because the report is separate, two verifiers with different risk
+postures can consume the same artifact data and legitimately reach
+different accept/reject outcomes.

@@ -1,0 +1,22 @@
+---
+title: "Verify an inclusion proof"
+description: "Check a proof against a published head with the CLI."
+product: transparency
+audience: compliance, ca-operator, security-engineer
+---
+
+# Verify an inclusion proof
+
+```sh
+confium transparency verify --proof proof.json --head head.json
+```
+
+The verifier recomputes the root from the entry and audit path and
+compares it against the head embedded in the proof. For high-assurance
+checking, compare that head against one you learned out-of-band (or
+from a witness) rather than trusting the proof file's copy.
+
+The same check is available from every surface: the
+[Verify product](../../verify/) CLI, `@confium/confium-wasm` in the
+browser, and `confium_transparency::verify_inclusion_with_head` in
+Rust.

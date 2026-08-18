@@ -1,0 +1,21 @@
+---
+title: "Legacy XML and XMLDSig"
+description: "Bringing an existing XMLDSig estate into the artifact model without rewriting payloads."
+product: pki
+audience: ca-operator, security-engineer, platform-engineer
+---
+
+# Legacy XML and XMLDSig
+
+Existing XML estates (metrology and OASIS-style document families)
+do not need to migrate payloads to JSON. The bridge:
+
+1. Canonicalize the signed subtree with Exclusive C14N
+   (`confium-pki::xmldsig`).
+2. Hash the canonical bytes — that hash *is* the artifact's payload
+   hash.
+3. Attach composite/threshold co-signatures over that hash; the
+   self-description layer wraps the payload without altering it.
+
+The original XMLDSig signature keeps verifying with legacy tooling
+while the threshold layer adds multi-stakeholder assurance on top.
