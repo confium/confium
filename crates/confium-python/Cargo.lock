@@ -91,14 +91,14 @@ checksum = "0c9ea0ac24bc397ab3c98583a3c9ba74fa56b09a4449bbe172b9b1ddb016027a"
 
 [[package]]
 name = "confium-attributes"
-version = "0.4.7"
+version = "0.5.0"
 dependencies = [
  "thiserror",
 ]
 
 [[package]]
 name = "confium-composite"
-version = "0.4.7"
+version = "0.5.0"
 dependencies = [
  "ed25519-dalek",
  "p256",
@@ -111,7 +111,7 @@ dependencies = [
 
 [[package]]
 name = "confium-deployment"
-version = "0.4.7"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "confium-signatif",
@@ -124,7 +124,7 @@ dependencies = [
 
 [[package]]
 name = "confium-pki"
-version = "0.4.7"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "data-encoding",
@@ -138,7 +138,7 @@ dependencies = [
 
 [[package]]
 name = "confium-python"
-version = "0.4.7"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "confium-attributes",
@@ -162,7 +162,7 @@ dependencies = [
 
 [[package]]
 name = "confium-signatif"
-version = "0.4.7"
+version = "0.5.0"
 dependencies = [
  "base64ct",
  "chrono",
@@ -180,7 +180,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc"
-version = "0.4.7"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "confium-tc-core",
@@ -200,7 +200,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-cmp20"
-version = "0.4.7"
+version = "0.5.0"
 dependencies = [
  "confium-tc",
  "crypto-bigint",
@@ -216,7 +216,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-core"
-version = "0.4.7"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "getrandom 0.4.3",
@@ -236,7 +236,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-elgamal-p256"
-version = "0.4.7"
+version = "0.5.0"
 dependencies = [
  "getrandom 0.4.3",
  "p256",
@@ -247,7 +247,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-frost-p256"
-version = "0.4.7"
+version = "0.5.0"
 dependencies = [
  "elliptic-curve",
  "getrandom 0.4.3",
@@ -258,7 +258,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-gg18"
-version = "0.4.7"
+version = "0.5.0"
 dependencies = [
  "confium-tc",
  "crypto-bigint",
@@ -272,7 +272,7 @@ dependencies = [
 
 [[package]]
 name = "confium-transparency"
-version = "0.4.7"
+version = "0.5.0"
 dependencies = [
  "chrono",
  "hex",

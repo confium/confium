@@ -47,7 +47,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Run real network e2e tests (TCP coordinator + signers)
-        run: cargo test -p confium-tc --test e2e_network -- --nocapture --test-threads=1
+        run: cargo test -p confium-it --test tc_frost_p256_network -- --nocapture --test-threads=1
 
   # Tier 4: E2E protocol tests (async simulated multi-node)
   e2e-threshold-signing:
@@ -59,7 +59,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Run e2e threshold signing tests
-        run: cargo test -p confium-tc --test e2e_threshold_signing -- --nocapture
+        run: cargo test -p confium-it --test tc_frost_p256_e2e -- --nocapture
 
       - name: Run e2e frost-p256 integration tests
         run: cargo test -p confium-tc-frost-p256 --test integration -- --nocapture
