@@ -1,0 +1,102 @@
+---
+title: "Decisions your scheme makes"
+description: The five decision points every SIGNATIF scheme owns — topology, format, algorithms, dimensions and registry, policies — and the Confium module that implements each option.
+audience: security-engineer, devsecops
+---
+
+# Decisions your scheme makes
+
+Signatif is deliberately choice-preserving: the framework fixes the
+*semantics* (what a trust chain, an artifact, a coverage report, a
+classification mean) while your scheme fixes the *instantiation*. A
+scheme that adopts the framework through Confium makes five decisions.
+Nothing here is mandated — every row is wired, tested, and
+interchangeable.
+
+> Confium is one implementation of every option below. The normative
+> definitions live in the Signatif specification; this page maps each
+> choice to the Confium code that realizes it.
+
+## 1. Trust topology
+
+How authorities relate — declared in your
+`confium_deployment::signatif::SignatifManifest` and enforced by the
+`confium_signatif::graph` path-finder.
+
+| Option | Conformance class | When to choose | Confium |
+|---|---|---|---|
+| Hierarchical | `/conf/hierarchical` | One root, strict delegation (regulators, NMI-style) | `TrustGraph` single-root DAG |
+| Federated | `/conf/federated` | M-of-K organizations share one aggregate key | `confium_signatif::fta::FederatedTrustAuthority` |
+| Cross-recognized | `/conf/cross-recognized` | Independent roots attesting each other | `CrossRecognition` credentials |
+| Mesh | `/conf/mesh` | Many-to-many peer recognition | multi-root, multi-path `find_paths` |
+
+Mixtures are conforming: the trust graph is a DAG, so a federated
+authority can sit inside a hierarchy, and hierarchy-spanning FTAs act
+as bridges.
+
+## 2. Artifact format profile
+
+The envelope carrying co-signatures. Multiple profiles may coexist in
+one deployment — verify all of them through one pipeline.
+
+| Option | Conformance class | Notes | Confium |
+|---|---|---|---|
+| JWS + JCS | `/conf/format-jws` | Detached-content JWS (EdDSA, ES256); RFC 8785 canonical JSON | `confium_signatif::jws`, `jcs` |
+| COSE | `/conf/format-cose` | COSE_Sign1 chains with dimension/cert/chain refs in headers | `confium_signatif::cose`, `confium_composite::cose` |
+| XMLDSig + Exc-C14N | `/conf/format-xmldsig` | See [bringing legacy XML](#bringing-legacy-xml) below | `confium_pki::xmldsig` |
+
+### Bringing legacy XML
+
+Schemes with an XML estate (CNML families, OASIS/metrology documents)
+do not need to migrate payloads to JSON. Wrap the existing
+XMLDSig-signed subtree in the artifact model: canonicalize with
+Exclusive C14N, hash the canonical bytes as the artifact's canonical
+payload hash, and attach dimension co-signatures over that hash. The
+JCS layer is used only for the *self-description* around the payload,
+never for the payload itself. See the
+[adoption guide](/docs/signatif/adoption-guide) step 3.
+
+## 3. Algorithms and migration phase
+
+Declare the active set and the phase (`classical_only`, `composite`,
+`post_quantum_only`) in the manifest. Algorithm lifecycle is
+registry-driven: `Active` signs and verifies; `Deprecated` downgrades
+the classification label during your migration window; `Retired`
+hard-fails.
+
+| Choice | Options | Confium |
+|---|---|---|
+| Classical | Ed25519, ECDSA-P256 | every surface's verifier fleet |
+| Post-quantum | ML-DSA-65, SLH-DSA-128s | `confium_composite::pq` (features `pq`, `pq-slh`) |
+| Composite | classical∧PQC, PQC-only | `confium_composite::transition_verifier` |
+
+## 4. Trust dimensions and your registry
+
+The eight registered dimensions (data, person, time, location,
+environment, authorization, identity, oracle) cover common ground;
+your scheme registers extensions (e.g. `cnml:instrument-class`) in a
+**scheme-maintained registry** that you publish. See the
+[registry publication convention](/docs/signatif/registry).
+
+| Choice | Confium |
+|---|---|
+| Which dimensions your artifacts attest | `DimensionTag` per co-signature block |
+| Your registry values | `Registry` + `register_dimension` / published JSON |
+| Scheme-specific scope dimensions | `ScopeDimensions::extra` (extensible, ignored by verifiers that don't know them) |
+| Executable scope conditions | `confium_signatif::conditions` (JSON Logic subset, hard check) |
+
+## 5. Policies
+
+Two layers, two owners. The **classification policy** is the scheme's
+pure function from coverage report to label (the reference ladder —
+`unverified → basic → verified → attested → certified` — ships as
+`ReferenceClassificationPolicy`; replace it with your own `ClassificationPolicy`
+implementation). The **acceptance policy** is each verifier's risk
+posture: which labels it accepts, per decision context
+(`AcceptancePolicy`).
+
+## What Confium never decides for you
+
+Registry contents, payload schemas, classification labels and their
+semantics, topology shape, and governance. Those are yours; the
+framework and this implementation keep them open.

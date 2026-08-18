@@ -1,0 +1,62 @@
+---
+title: "Publishing your scheme registry"
+description: The Annex C publication convention — your scheme publishes registry.json at a stable URL and every verification surface loads the same bytes.
+audience: security-engineer, devsecops
+---
+
+# Publishing your scheme registry
+
+Signatif's Annex C requires each scheme to **maintain and publish**
+its five registries (trust dimensions, algorithms, ceremony types,
+format profiles, scope dimensions) at "a publicly accessible location".
+Confium implements that as a single deterministic JSON document:
+
+- **Format**: the JSON serialization of `confium_signatif::Registry`
+  (deterministic — `publication_bytes()` produces the JCS form, so
+  every publish of the same registry yields identical bytes).
+- **Location**: your scheme publishes `registry.json` at a stable URL
+  you control (e.g. `https://cnml.example/signatif/registry.json`).
+  Distribute the URL through your deployment manifest and docs;
+  out-of-band distribution (bundled files, fingerprints) works
+  identically, since the registry is self-describing.
+- **Integrity**: like any trust input, pair publication with a
+  fingerprint (SHA-256 of the published bytes) wherever your threat
+  model needs it — in the manifest, the anchor bundle, or your docs.
+
+## Authoring
+
+```rust
+use confium_signatif::registry::Registry;
+
+let mut registry = Registry::with_initial_values();
+registry.register_dimension("cnml:instrument-class", "CNML instrument classification");
+// … algorithm status transitions, ceremony types, format profiles …
+
+std::fs::write("registry.json", registry.publication_bytes()?)?;
+```
+
+## Loading on every surface
+
+Rust:
+
+```rust
+let bytes = client.get(REGISTRY_URL).send().await?.bytes().await?;
+let registry = Registry::from_published_bytes(&bytes)?;
+```
+
+The other four surfaces take the same document as JSON — pass the
+parsed object as the `registry` input to
+[verifyTrustedArtifact (browser)](/docs/signatif/quickstarts/browser),
+[POST /verify/signatif (HTTP)](/docs/signatif/quickstarts/http),
+[confium verify signatif --registry (CLI)](/docs/signatif/quickstarts/cli),
+or [signatif.verify_trusted_artifact (Python)](/docs/signatif/quickstarts/python).
+Omit it to fall back to Confium's initial registry values.
+
+## Lifecycle
+
+Algorithm entries carry a status — `active`, `deprecated`, `retired` —
+and the [deprecation process](/docs/signatif/decisions) is enforced
+from the registry you publish: deprecated algorithms downgrade the
+classification label, retired ones hard-fail. Changing a status is a
+registry republication, not a code change; publish with a dated commit
+and record the rationale your registration policy requires.

@@ -339,6 +339,19 @@ impl Registry {
         }
     }
 
+    /// Load a registry from its published bytes (the Annex C
+    /// publication convention: schemes publish `registry.json` at a
+    /// stable URL; every verification surface loads the same bytes).
+    /// Round-trips with [`Registry::publication_bytes`].
+    ///
+    /// # Errors
+    ///
+    /// Returns an encoding error on malformed JSON.
+    pub fn from_published_bytes(bytes: &[u8]) -> SignatifResult<Self> {
+        serde_json::from_slice(bytes)
+            .map_err(|e| SignatifError::Encoding(format!("published registry: {e}")))
+    }
+
     /// Deterministic publication bytes for a registry (JCS).
     ///
     /// # Errors
@@ -388,6 +401,17 @@ mod tests {
             .unwrap();
         assert!(r.algorithms.usable("ECDSA-P256").is_none());
         assert!(r.algorithms.set_status("nope", Status::Active).is_err());
+    }
+
+    #[test]
+    fn published_registry_round_trips() {
+        let mut r = Registry::with_initial_values();
+        r.register_dimension("cnml:instrument-class", "CNML classification");
+        let published = r.publication_bytes().unwrap();
+        let back = Registry::from_published_bytes(&published).unwrap();
+        assert!(back.dimensions.contains("cnml:instrument-class"));
+        assert_eq!(back.publication_bytes().unwrap(), published);
+        assert!(Registry::from_published_bytes(b"not json").is_err());
     }
 
     #[test]

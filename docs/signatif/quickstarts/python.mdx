@@ -1,0 +1,34 @@
+---
+title: "Quickstart: verify from Python"
+description: The confium.signatif module — the full pipeline from Python, returning coverage, label, and acceptance.
+audience: devsecops
+---
+
+# Quickstart: verify from Python
+
+```sh
+pip install confium
+```
+
+```python
+from confium import signatif
+
+result = signatif.verify_trusted_artifact(
+    artifact,   # dict: the trusted artifact
+    bundle,     # dict: the trust anchor bundle
+    graph,      # dict: the trust graph
+    registry=cnml_registry,          # dict or None for defaults
+    transparency_included=True,
+    time_anchored=True,
+    time_attested_at="2026-08-18T09:00:00Z",
+    accepted_labels=["verified", "attested"],
+)
+
+if result["accept"]:
+    print(result["label"], result["coverage"]["dimensions_verified"])
+```
+
+Malformed inputs raise `ValueError` naming the offending object;
+hard-check failures raise `ValueError` naming the failing check.
+See also the [HTTP quickstart](/docs/signatif/quickstarts/http) for a
+service without the native extension.

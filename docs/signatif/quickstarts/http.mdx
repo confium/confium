@@ -1,0 +1,56 @@
+---
+title: "Quickstart: verify over HTTP"
+description: POST a trusted artifact to confium-verify-server and get the coverage report, label, and acceptance decision back.
+audience: devsecops
+---
+
+# Quickstart: verify over HTTP
+
+Run the service and POST the four framework objects:
+
+```sh
+confium-verify-server --addr 127.0.0.1 --port 8082
+```
+
+```sh
+curl -s http://127.0.0.1:8082/verify/signatif \
+  -H 'content-type: application/json' \
+  -d @request.json | jq
+```
+
+```json
+{
+  "artifact":  { "...": "trusted artifact" },
+  "bundle":    { "...": "trust anchor bundle" },
+  "graph":     { "...": "trust graph" },
+  "registry":  { "...": "your published scheme registry" },
+  "options": {
+    "transparency_included": true,
+    "time_anchored": true,
+    "time_attested_at": "2026-08-18T09:00:00Z",
+    "accepted_labels": ["verified", "attested"]
+  }
+}
+```
+
+Response — the graduated outcome:
+
+```json
+{
+  "label": "attested",
+  "accept": true,
+  "coverage": {
+    "hard_checks": "pass",
+    "transparency_included": true,
+    "time_anchored": true,
+    "dimensions_verified": ["data", "person"],
+    "independent_roots": 1,
+    "paths_found": 2,
+    "downgrades": []
+  }
+}
+```
+
+Hard failures return `422` with `label: "rejected"` and the failing
+check named in `error`. The registry field is optional — omit it to
+use Confium's initial registry values.

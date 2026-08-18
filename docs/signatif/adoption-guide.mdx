@@ -8,7 +8,10 @@ audience: security-engineer, devsecops
 
 SIGNATIF is the framework; Confium is the implementation tool; your
 domain scheme (CNML, DPP, supply chain, …) is the adopting technology.
-This guide walks a scheme from zero to a conformance claim. Runnable
+This guide walks a scheme from zero to a conformance claim along one
+spine (the CNML choices); every step marks the **decision forks** your
+scheme owns — the full option menus live in
+[Decisions your scheme makes](/docs/signatif/decisions). Runnable
 companions: `examples/cnml_profile.rs` and `examples/dpp_composition.rs`
 in the `confium-signatif` crate.
 
@@ -20,7 +23,8 @@ cargo add confium-signatif
 
 A scheme customizes the framework through the registries — never by
 forking technology. Start from the initial values and register your
-extension dimensions:
+extension dimensions (then publish the result per the
+[registry publication convention](/docs/signatif/registry)):
 
 ```rust
 use confium_signatif::registry::Registry;
@@ -37,6 +41,9 @@ Algorithm lifecycle is registry-driven: `Active` signs and verifies,
 window, `Retired` hard-fails.
 
 ## 2. Build the trust topology
+
+> **Fork — topology:** hierarchical, federated, cross-recognized, or
+> mesh (plus mixtures). This spine uses a hierarchy with quorums.
 
 Authorities form a directed acyclic graph: a root trust authority
 (declare its quorum), delegated authorities with narrowed scopes, end
@@ -62,6 +69,12 @@ threshold authorities (nested threshold), and join/leave re-shares
 preserve the aggregate key.
 
 ## 3. Issue trusted artifacts
+
+> **Fork — format profile:** this spine serializes artifacts through
+> the generic JSON model; JWS+JCS and COSE envelopes are both wired,
+> and schemes with an XML estate carry legacy XMLDSig payloads via
+> Exclusive C14N — the canonical payload hash covers the C14N bytes
+> and JCS is used only for the self-description around them.
 
 An artifact is the convergence point of independent attestations.
 Every co-signature — regardless of trust dimension, organization, or
@@ -122,6 +135,10 @@ feature) carry certificate summaries; challenge-response binds a
 embedded, by transparency-log reference, or hybrid — all offline
 verifiable.
 
+> **Fork — algorithms and migration phase:** this spine stays
+> classical; the composite and post-quantum-only phases are declared
+> the same way.
+
 ## 6. Ride the post-quantum migration
 
 Declare your phase (`classical_only`, `composite`, `post_quantum_only`)
@@ -131,7 +148,16 @@ SLH-DSA-128s (features `pq`, `pq-slh`) in AND-composition — new
 artifacts carry classical+PQC composites while classical-only
 artifacts keep verifying.
 
-## 7. Claim conformance
+## 7. Verify anywhere
+
+One pipeline, five surfaces — pick by architecture, not by trust:
+[browser](/docs/signatif/quickstarts/browser),
+[HTTP](/docs/signatif/quickstarts/http),
+[CLI](/docs/signatif/quickstarts/cli),
+[Python](/docs/signatif/quickstarts/python),
+[Rust](/docs/signatif/quickstarts/rust).
+
+## 8. Claim conformance
 
 `confium_signatif::conformance::conformance_report()` emits the
 machine-readable claim list — all 24 `/conf` classes implemented by

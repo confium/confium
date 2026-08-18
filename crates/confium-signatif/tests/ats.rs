@@ -333,3 +333,48 @@ fn ats_passport() {
     let bytes = p.distribution_bytes().unwrap();
     assert!(Passport::from_distribution_bytes(&bytes).is_ok());
 }
+
+/// The docs conformance page must match the implementation: regenerate
+/// the table and compare it against the committed MDX (item 36 — the
+/// claim can never silently drift).
+#[test]
+fn conformance_page_matches_docs() {
+    use confium_signatif::conformance::{ConformanceStatus, conformance_claims};
+
+    let committed = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../docs/signatif/conformance.mdx"
+    ));
+
+    let claims = conformance_claims();
+    let implemented = claims
+        .iter()
+        .filter(|c| c.status == ConformanceStatus::Implemented)
+        .count();
+    let partial = claims.len() - implemented;
+
+    let mut generated =
+        String::from("| Class | Status | Implemented in | Description |\n|---|---|---|---|\n");
+    for c in &claims {
+        let status = match c.status {
+            ConformanceStatus::Implemented => "implemented",
+            ConformanceStatus::Partial => "partial",
+            ConformanceStatus::Planned => "planned",
+        };
+        generated.push_str(&format!(
+            "| `{}` | {} | {} | {} |\n",
+            c.class, status, c.implemented_in, c.description
+        ));
+    }
+    generated.push_str(&format!(
+        "\n_{implemented} of {} classes implemented, {partial} partial._\n",
+        claims.len()
+    ));
+
+    assert!(
+        committed.contains(&generated),
+        "docs/signatif/conformance.mdx is stale — regenerate with \
+         `cargo run -p confium-signatif --example conformance_page` \
+         and update the table in the page"
+    );
+}
