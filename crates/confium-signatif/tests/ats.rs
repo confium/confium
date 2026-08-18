@@ -341,10 +341,12 @@ fn ats_passport() {
 fn conformance_page_matches_docs() {
     use confium_signatif::conformance::{ConformanceStatus, conformance_claims};
 
+    // Normalize line endings: Windows checkouts may carry CRLF.
     let committed = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../../docs/signatif/conformance.mdx"
-    ));
+    ))
+    .replace("\r\n", "\n");
 
     let claims = conformance_claims();
     let implemented = claims
