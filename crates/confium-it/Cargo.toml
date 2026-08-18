@@ -13,7 +13,6 @@ publish = false
 [dependencies]
 confium-composite = { workspace = true }
 confium-mock-plugin = { workspace = true }
-confium-test-harness = { workspace = true }
 confium-tc = { workspace = true }
 confium-tc-cmp20 = { workspace = true }
 confium-tc-frost-p256 = { workspace = true }
@@ -35,4 +34,7 @@ sha2 = { workspace = true }
 # `confium-core` exposes the lib under the name `confium` (see
 # `[lib] name = "confium"` in its Cargo.toml). Machete scans by
 # `use confium_core::`, which doesn't match.
-ignored = ["confium-core"]
+#
+# `confium-mock-plugin` is never imported — the tests load its compiled
+# cdylib by path. The dependency exists so cargo builds the artifact.
+ignored = ["confium-core", "confium-mock-plugin"]
