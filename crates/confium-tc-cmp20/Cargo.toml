@@ -38,7 +38,6 @@ zeroize = { workspace = true }
 p256 = { workspace = true, features = ["pkcs8"] }
 rand = { version = "0.8", default-features = false, features = ["std"] }
 rand_core = { version = "0.6", default-features = false }
-confium-transparency = { workspace = true }
 proptest = { workspace = true }
 
 [package.metadata.cargo-machete]

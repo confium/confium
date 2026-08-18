@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/confium-api",
     "crates/confium-attributes",
+    "crates/confium-it",
     "crates/confium-signatif",
     "crates/confium-pki",
     "crates/confium-cli",
