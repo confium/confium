@@ -19,8 +19,8 @@ crate-type = ["cdylib"]
 confium-tc-cmp20 = { workspace = true }
 confium-tc-gg18 = { workspace = true }
 confium-tc-frost-p256 = { workspace = true }
-napi = { version = "2", features = ["napi8"] }
-napi-derive = "2"
+napi = { version = "3", features = ["napi8"] }
+napi-derive = "3"
 
 [build-dependencies]
 napi-build = "2"

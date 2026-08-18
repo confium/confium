@@ -30,7 +30,7 @@ hex = { workspace = true }
 [dev-dependencies]
 tokio = { workspace = true }
 proptest = { workspace = true }
-criterion = { version = "0.5", default-features = false, features = ["plotters", "cargo_bench_support"] }
+criterion = { version = "0.8", default-features = false, features = ["plotters", "cargo_bench_support"] }
 
 [[bench]]
 name = "inclusion_proof"
