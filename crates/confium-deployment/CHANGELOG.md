@@ -11,3 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Executable scope conditions, time-key freshness, governance verification by @[object]
 - SIGNATIF deployment manifests — topology profiles, root signature, graph validation by @[object]
+
+### Other
+
+- Release v0.5.0 by @[object]
+
+### Added
+
+- Executable scope conditions, time-key freshness, governance verification by @[object]
+- SIGNATIF deployment manifests — topology profiles, root signature, graph validation by @[object]

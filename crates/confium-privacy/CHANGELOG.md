@@ -7,6 +7,10 @@ For cross-product changes, see the workspace CHANGELOG at <https://github.com/co
 
 ## [Unreleased]
 
+### Fixed
+
+- Replace deprecated generic-array slice methods by @[object]
+
 No unreleased changes yet.
 
 ## [0.4.0] — 2026-08-07

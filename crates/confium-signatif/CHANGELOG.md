@@ -23,5 +23,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
+- Release v0.5.0 by @[object]
+- The adoption story — decisions, quickstarts, conformance page, registry convention by @[object]
+- /conf/post-quantum now implemented — SLH-DSA-128s landed by @[object]
+
+### Added
+
+- The framework layer reaches the Verify product and the browser by @[object]
+- Executable scope conditions, time-key freshness, governance verification by @[object]
+- COSE artifact encoding and DPP composition by @[object]
+- JWS ES256, passport QR barcodes, algorithm-agility downgrades by @[object]
+- Conformance report, abstract test suite, CNML adoption demo by @[object]
+- JWS detached-content profile and X.509 scope bridge by @[object]
+- Federated trust authorities, nested threshold, ceremony robustness by @[object]
+
+### Fixed
+
+- Normalize CRLF when guarding the conformance page by @[object]
+
+### Other
+
 - The adoption story — decisions, quickstarts, conformance page, registry convention by @[object]
 - /conf/post-quantum now implemented — SLH-DSA-128s landed by @[object]
