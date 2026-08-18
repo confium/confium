@@ -138,6 +138,12 @@ fn decode_scalar(bytes: &[u8]) -> Result<Scalar, EciesError> {
     Option::<Scalar>::from(ct).ok_or_else(|| EciesError::InvalidScalar("out of range".into()))
 }
 
+fn slice_to_array<const N: usize>(bytes: &[u8]) -> Result<[u8; N], EciesError> {
+    bytes
+        .try_into()
+        .map_err(|_| EciesError::Aead(format!("expected {N} bytes, got {}", bytes.len())))
+}
+
 fn x_coordinate(point: &ProjectivePoint) -> [u8; 32] {
     let ep = point.to_affine().to_sec1_point(false);
     let bytes = ep.as_bytes();
@@ -193,12 +199,12 @@ pub fn encrypt(recipient: &PublicKey, plaintext: &[u8]) -> Result<EncryptedBlob,
     // Generate nonce
     let mut nonce_bytes = [0u8; 12];
     rand_core::UnwrapErr(getrandom::SysRng).fill_bytes(&mut nonce_bytes);
-    let nonce = Nonce::from_slice(&nonce_bytes);
+    let nonce = Nonce::from(nonce_bytes);
 
     // Encrypt
     let mut buffer = plaintext.to_vec();
     let tag = cipher
-        .encrypt_in_place_detached(nonce, b"", &mut buffer)
+        .encrypt_in_place_detached(&nonce, b"", &mut buffer)
         .map_err(|e| EciesError::Aead(e.to_string()))?;
 
     Ok(EncryptedBlob {
@@ -274,11 +280,11 @@ pub fn aggregate_partials(
     let cipher = Aes256Gcm::new_from_slice(&key).map_err(|e| EciesError::Aead(e.to_string()))?;
 
     // AEAD decrypt
-    let nonce = Nonce::from_slice(&blob.nonce);
-    let tag = aes_gcm::Tag::from_slice(&blob.tag);
+    let nonce = Nonce::from(slice_to_array::<12>(&blob.nonce)?);
+    let tag = aes_gcm::Tag::from(slice_to_array::<16>(&blob.tag)?);
     let mut buffer = blob.ciphertext.clone();
     cipher
-        .decrypt_in_place_detached(nonce, b"", &mut buffer, tag)
+        .decrypt_in_place_detached(&nonce, b"", &mut buffer, &tag)
         .map_err(|e| EciesError::Aead(format!("decrypt: {e}")))?;
 
     Ok(buffer)

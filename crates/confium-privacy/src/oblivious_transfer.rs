@@ -94,7 +94,7 @@ fn xor_encrypt(key_point: &AffinePoint, data: &[u8]) -> Vec<u8> {
     hasher.update(b"ot-key");
     hasher.update(key_point.to_sec1_point(true).as_bytes());
     let key = hasher.finalize();
-    let key = key.as_slice();
+    let key = &key[..];
 
     data.iter()
         .enumerate()

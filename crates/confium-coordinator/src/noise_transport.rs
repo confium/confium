@@ -116,7 +116,7 @@ pub fn encrypt(plaintext: &[u8], key: &[u8; 32]) -> Vec<u8> {
     let mut hasher = Sha256::new();
     hasher.update(b"noise-encrypt-key");
     let derived = hasher.finalize();
-    let k = derived.as_slice();
+    let k = &derived[..];
 
     // Simplified "stream cipher": XOR with key-derived stream
     let mut output = Vec::with_capacity(plaintext.len() + 16);
@@ -158,7 +158,7 @@ pub fn decrypt(ciphertext: &[u8], key: &[u8; 32]) -> Option<Vec<u8>> {
     let mut hasher = Sha256::new();
     hasher.update(b"noise-encrypt-key");
     let derived = hasher.finalize();
-    let k = derived.as_slice();
+    let k = &derived[..];
     let mut mac = HmacSha256::new_from_slice(k).expect("HMAC");
     let mut keystream = Vec::new();
     for _chunk in body.chunks(32) {
