@@ -1,0 +1,46 @@
+---
+title: "Quickstart: verify from Rust"
+description: The confium-signatif pipeline from Rust — the reference surface every other quickstart wraps.
+audience: security-engineer
+---
+
+# Quickstart: verify from Rust
+
+```sh
+cargo add confium-signatif
+```
+
+```rust
+use confium_signatif::coverage::AcceptancePolicy;
+use confium_signatif::pipeline::{Pipeline, TransparencyInputs};
+use confium_signatif::revocation::NoRevocations;
+
+let pipe = Pipeline::new(
+    &bundle,   // TrustAnchorBundle
+    &graph,    // TrustGraph
+    &registry, // Registry (yours or the initial values)
+    &verifier, // your SignatureVerifier fleet
+    &NoRevocations,
+    TransparencyInputs {
+        artifact_included: true,
+        time_anchored: true,
+        time_attested_at: Some(attestation.attested_at),
+        ..Default::default()
+    },
+    &AcceptancePolicy::accept(&["verified", "attested"]),
+);
+
+match pipe.run(&artifact, chrono::Utc::now()) {
+    Ok(outcome) if outcome.accept => {
+        println!("{} {:?}", outcome.label.0, outcome.report.dimensions_verified);
+    }
+    Ok(outcome) => println!("rejected: {}", outcome.label.0),
+    Err(hard) => eprintln!("hard check failed: {hard}"),
+}
+```
+
+Bring your own `SignatureVerifier` to widen the fleet (threshold
+aggregates, ML-DSA/SLH-DSA through `confium-composite`'s features),
+or take `confium-verify --features signatif` for the product facade.
+The complete runnable version — issuance included — is
+`crates/confium-signatif/examples/cnml_profile.rs`.

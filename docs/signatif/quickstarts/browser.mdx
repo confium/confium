@@ -1,0 +1,52 @@
+---
+title: "Quickstart: verify in the browser"
+description: Verify a SIGNATIF trusted artifact in a browser or Node.js with @confium/confium-wasm — no phone-home, everything runs client-side.
+audience: devsecops
+---
+
+# Quickstart: verify in the browser
+
+The wasm package runs the full pipeline client-side: hard checks,
+coverage report, classification, acceptance — against a trust anchor
+bundle your app ships or caches.
+
+```sh
+npm install @confium/confium-wasm
+```
+
+```js
+import init, { verifyTrustedArtifact } from "@confium/confium-wasm";
+
+await init();
+
+const result = JSON.parse(await verifyTrustedArtifact(
+  artifactJson,   // the trusted artifact
+  bundleJson,     // the signed trust anchor bundle
+  graphJson,      // the trust graph (nodes + delegation edges)
+  registryJson,   // your scheme's published registry
+  JSON.stringify({
+    transparency_included: true,
+    time_anchored: true,
+    time_attested_at: attestation.attested_at, // from a verified time authority
+    accepted_labels: ["verified", "attested"],
+  }),
+));
+
+if (result.accept) {
+  console.log(result.label, result.coverage.dimensions_verified);
+} else {
+  console.error(result.label, result.coverage.downgrades);
+}
+```
+
+Tampered payloads hard-fail with an error naming the failing check;
+rejections return the `rejected` label. Build with
+`verify-signatif` for the tree-shaking profile:
+
+```sh
+wasm-pack build crates/confium-wasm --target web --features verify-signatif
+```
+
+The verifier fleet covers Ed25519 and ECDSA-P256; threshold aggregate
+and post-quantum verification are server-side concerns — use the
+[HTTP quickstart](/docs/signatif/quickstarts/http) for those.

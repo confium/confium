@@ -1,0 +1,58 @@
+---
+title: "Confium's Signatif conformance"
+description: The machine-checked conformance claim — every /conf class, its status, and where it is implemented. Generated from the code; drift fails CI.
+audience: security-engineer, devsecops
+---
+
+# Confium's Signatif conformance
+
+Confium claims conformance to the SIGNATIF framework (ISO/TC 154
+working draft) through the `confium-signatif` crate. This page is
+**generated from the code** — `cargo run -p confium-signatif
+--example conformance_page` regenerates the table below, and a CI
+test asserts the committed page matches the implementation, so the
+claim can never silently drift.
+
+Verify it yourself:
+
+```sh
+cargo run -p confium-signatif --example conformance_page
+cargo test -p confium-signatif conformance_page_matches_docs
+```
+
+The abstract test suite witnessing the implemented classes is
+`crates/confium-signatif/tests/ats.rs` — every class below is
+exercised through its public surface.
+
+_Specification basis: the SIGNATIF working draft as of August 2026.
+When the draft evolves, this page and the underlying claims move with
+it — the tests move first._
+
+| Class | Status | Implemented in | Description |
+|---|---|---|---|
+| `/conf/basic-verifier` | implemented | confium_signatif::pipeline | Verify artifacts offline against an anchor bundle: hard checks, coverage report, acceptance policy |
+| `/conf/full-verifier` | implemented | confium_signatif::pipeline + graph + coverage | Basic verifier plus trust-graph path-finding, multi-dimension verification, classification policies |
+| `/conf/issuing-authority` | implemented | confium_signatif::artifact + ceremony | Issue end certificates and produce trusted artifacts with dimension attestations |
+| `/conf/root-authority` | implemented | confium_signatif::bundle + confium_deployment::signatif | Operate a root: anchor bundles, deployment manifests, cross-recognition |
+| `/conf/transparency-operator` | implemented | confium_transparency + confium-log-server | Operate an append-only log with inclusion and consistency proofs |
+| `/conf/mirror` | implemented | confium_transparency::witness + confium-log-monitor | Mirror a log: verify append-only continuity, serve proofs |
+| `/conf/device-signer` | implemented | confium_signatif::passport (Challenge) | Device signs fresh nonce-bound artifacts under challenge |
+| `/conf/hierarchical` | implemented | confium_signatif::graph + deployment::signatif | Single-root hierarchy topology |
+| `/conf/federated` | implemented | confium_signatif::fta | Threshold groups of independent organizations |
+| `/conf/cross-recognized` | implemented | confium_deployment::signatif::CrossRecognition | Roots attesting each other via signed credentials |
+| `/conf/mesh` | implemented | confium_signatif::graph (multi-root, multi-path) | Many-to-many peer recognition |
+| `/conf/format-cose` | implemented | confium_composite::cose | COSE Sig_Structure envelope |
+| `/conf/format-jws` | implemented | confium_signatif::jws | JWS compact, detached content |
+| `/conf/format-xmldsig` | implemented | confium_pki::xmldsig | XML Signature with Exclusive C14N |
+| `/conf/dimension-data` | implemented | confium_signatif::artifact + registry | Data dimension attestation |
+| `/conf/dimension-person` | implemented | confium_signatif::artifact + registry | Person dimension attestation |
+| `/conf/dimension-time` | implemented | confium_signatif::time | Time dimension with external anchor |
+| `/conf/dimension-location` | implemented | confium_signatif::artifact + registry | Location dimension attestation |
+| `/conf/dimension-environment` | implemented | confium_signatif::artifact + registry | Environment dimension attestation |
+| `/conf/dimension-authorization` | implemented | confium_signatif::artifact + registry | Authorization dimension attestation |
+| `/conf/dimension-identity` | implemented | confium_signatif::artifact + registry | Identity dimension attestation |
+| `/conf/dimension-oracle` | implemented | confium_signatif::artifact + registry | Oracle dimension attestation |
+| `/conf/multi-dimensional` | implemented | confium_signatif::artifact (living artifacts) | Multiple independent dimensions converging on one artifact |
+| `/conf/post-quantum` | implemented | confium_composite::pq (features pq, pq-slh) | ML-DSA-65 and SLH-DSA-128s verification, classical+PQC and PQC-only composites |
+
+_24 of 24 classes implemented, 0 partial._
