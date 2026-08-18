@@ -22,7 +22,7 @@ jobs:
       - uses: actions/first-interaction@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          pr-message: |
+          pr_message: |
             👋 Thanks for opening your first PR on Confium!
 
             A maintainer will review this soon. In the meantime:
@@ -31,7 +31,7 @@ jobs:
             - If this is a non-trivial change, consider linking to a spec or design discussion
 
             We're glad you're here.
-          issue-message: |
+          issue_message: |
             👋 Thanks for your first issue on Confium!
 
             A maintainer will triage this within a few days. If it's urgent, ping us in [Discussions](https://github.com/confium/confium/discussions).
