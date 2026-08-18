@@ -1,0 +1,140 @@
+---
+title: "Adoption guide: SIGNATIF with Confium"
+description: How a domain scheme such as CNML adopts the SIGNATIF framework by building on Confium — registries, trust topology, artifact issuance, verification pipeline, delivery, and conformance claims.
+audience: security-engineer, devsecops
+---
+
+# Adoption guide: SIGNATIF with Confium
+
+SIGNATIF is the framework; Confium is the implementation tool; your
+domain scheme (CNML, DPP, supply chain, …) is the adopting technology.
+This guide walks a scheme from zero to a conformance claim. Runnable
+companions: `examples/cnml_profile.rs` and `examples/dpp_composition.rs`
+in the `confium-signatif` crate.
+
+```sh
+cargo add confium-signatif
+```
+
+## 1. Declare your scheme profile
+
+A scheme customizes the framework through the registries — never by
+forking technology. Start from the initial values and register your
+extension dimensions:
+
+```rust
+use confium_signatif::registry::Registry;
+
+let mut registry = Registry::with_initial_values();
+registry.register_dimension(
+    "cnml:instrument-class",
+    "CNML instrument classification (mass, volume, length)",
+);
+```
+
+Algorithm lifecycle is registry-driven: `Active` signs and verifies,
+`Deprecated` downgrades the classification label during the migration
+window, `Retired` hard-fails.
+
+## 2. Build the trust topology
+
+Authorities form a directed acyclic graph: a root trust authority
+(declare its quorum), delegated authorities with narrowed scopes, end
+certificates for signing keys. Every delegation is the parent's
+signature over the child's binding — key, quorum, scope, and scope
+conditions — so scope is cryptographically enforced at every link.
+
+```rust
+use confium_signatif::graph::{AuthorityKind, AuthorityNode, TrustGraph};
+```
+
+Declare the whole deployment in a root-signed
+`confium_deployment::signatif::SignatifManifest` — topology profile
+(hierarchical, federated, cross-recognized, mesh), authorities,
+algorithms, migration phase, transparency logs, and the M-of-K
+multi-log policy. Manifest validation rejects cycles, scope widening,
+and inconsistent quorums.
+
+For multi-organization authorities, use
+`confium_signatif::fta::FederatedTrustAuthority` — M-of-K
+organizations share one aggregate key, members may themselves be
+threshold authorities (nested threshold), and join/leave re-shares
+preserve the aggregate key.
+
+## 3. Issue trusted artifacts
+
+An artifact is the convergence point of independent attestations.
+Every co-signature — regardless of trust dimension, organization, or
+root — signs the same canonical payload hash (RFC 8785 JCS), bound to
+the artifact id so blocks cannot be replayed across artifacts.
+
+```rust
+use confium_signatif::artifact::{ArtifactVersion, TrustedArtifact};
+use confium_signatif::registry::DimensionTag;
+
+let mut artifact = TrustedArtifact::new(
+    ArtifactVersion { major: 1, minor: 0 },
+    "cnml-cert-2026-00001",
+    payload,            // your domain schema's JSON
+    Some("https://cnml.example/schema/certificate.json".into()),
+)?;
+artifact.sign(DimensionTag::data(), "Ed25519", /* … */)?;
+artifact.sign(DimensionTag::person(), "Ed25519", /* … */)?; // living artifact
+```
+
+Artifacts are living: dimensions accumulate over time, each attesting
+the *original* canonical bytes. Scope conditions (a deterministic
+JSON Logic subset) ride in the authority's scope and are evaluated at
+verification time — an artifact outside its signer's conditions fails
+hard even with valid signatures.
+
+Envelope formats: JWS detached-content (`jws`), COSE chains (`cose`),
+and X.509 certificates carrying scopes as extensions (`x509`).
+
+## 4. Verify through the pipeline
+
+The verifier holds a signed trust anchor bundle (versioned, validity
+bounded, its updates log-recorded) and runs
+`confium_signatif::pipeline::Pipeline`:
+
+- **Hard checks** short-circuit to the rejected label: format
+  validity and version, every co-signature, chain path-finding with
+  per-link signature and scope-narrowing, scope conditions,
+  revocation.
+- **Soft checks** accumulate into the objective **coverage report**:
+  transparency inclusion, external time anchor, verified dimensions,
+  independent-root count, multi-log quorum, downgrades (including
+  deprecated algorithms).
+- The scheme's **classification policy** (pure function) maps the
+  report to a graduated label; the verifier's **acceptance policy**
+  turns labels into accept/reject decisions.
+
+Revocation uses signed CRLs plus artifact-to-authority-state hash
+bindings; propagation marks every transitively bound artifact
+(reversibly), with forward and reverse queries. Offline verification
+runs on cached CRLs within the grace period.
+
+## 5. Deliver and discover
+
+Machine-readable passports (with QR barcodes under the `barcode`
+feature) carry certificate summaries; challenge-response binds a
+256-bit nonce and freshness window for device signers; chains travel
+embedded, by transparency-log reference, or hybrid — all offline
+verifiable.
+
+## 6. Ride the post-quantum migration
+
+Declare your phase (`classical_only`, `composite`, `post_quantum_only`)
+in the manifest. During the composite phase, `confium-composite`'s
+`transition_verifier` accepts Ed25519 + ECDSA-P256 + ML-DSA-65 +
+SLH-DSA-128s (features `pq`, `pq-slh`) in AND-composition — new
+artifacts carry classical+PQC composites while classical-only
+artifacts keep verifying.
+
+## 7. Claim conformance
+
+`confium_signatif::conformance::conformance_report()` emits the
+machine-readable claim list — all 24 `/conf` classes implemented by
+Confium — witnessed by the abstract test suite
+(`tests/ats.rs`). Your scheme claims conformance by pointing at that
+report plus your own profile tests.
