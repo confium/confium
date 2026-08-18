@@ -29,6 +29,7 @@ verify-composite = ["dep:confium-composite"]
 verify-transparency = ["dep:confium-transparency"]
 verify-attributes = ["dep:confium-attributes"]
 verify-pki = ["dep:confium-pki"]
+verify-signatif = ["dep:confium-signatif"]
 # The `sign` feature gates the signing surface. **Off by default** for
 # the browser build — browsers verify, servers sign. Enable this when
 # building for a WASI host (Cloudflare Workers, Fastly Compute@Edge,
@@ -48,6 +49,7 @@ confium-composite = { workspace = true, optional = true }
 confium-transparency = { workspace = true, optional = true }
 confium-attributes = { workspace = true, optional = true }
 confium-pki = { workspace = true, optional = true }
+confium-signatif = { workspace = true, optional = true }
 confium-tc-cmp20 = { workspace = true, optional = true }
 confium-tc-gg18 = { workspace = true, optional = true }
 # Optional signing surface — pulled in only by the `sign` feature for
@@ -59,6 +61,7 @@ confium-tc-elgamal-p256 = { workspace = true, optional = true }
 wasm-bindgen = "0.2"
 serde = { workspace = true }
 serde_json = { workspace = true }
+ed25519-dalek = { workspace = true }
 js-sys = "0.3"
 chrono = { workspace = true }
 
@@ -79,6 +82,8 @@ getrandom = { version = "0.2", features = ["js"] }
 getrandom = { workspace = true, features = ["wasm_js"] }
 
 [dev-dependencies]
+hex = { workspace = true }
+rand_core = { workspace = true }
 wasm-bindgen-test = "0.3"
 
 [package.metadata.cargo-machete]

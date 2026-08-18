@@ -38,6 +38,9 @@ mod attributes;
 #[cfg(feature = "verify-attributes")]
 pub use attributes::Predicate;
 
+#[cfg(feature = "verify-signatif")]
+pub mod signatif;
+
 #[cfg(feature = "verify-pki")]
 mod pki;
 

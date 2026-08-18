@@ -65,7 +65,7 @@ fn main() {
     let root_sk = generate_key();
     let lab_sk = generate_key();
     let device_sk = generate_key();
-    let _time_authority_sk = generate_key();
+    let time_authority_sk = generate_key();
 
     let mut root_scope = ScopeDimensions::unconstrained();
     root_scope.set("domain", ScopeValue::Single("metrology".into()));
@@ -188,7 +188,35 @@ fn main() {
         .unwrap();
 
     // ----------------------------------------------------------------
-    // 5. Verify through the pipeline: coverage report + label ladder.
+    // 5. Time authority: a real time key attests the artifact's
+    //    existence, anchored to an external source (Annex E's OTS
+    //    commitment shape).
+    // ----------------------------------------------------------------
+    use confium_signatif::time::TimeAttestation;
+    let mut time_att = TimeAttestation {
+        authority: "time-authority-1".into(),
+        artifact_hash: hex::encode(artifact.canonical_payload_hash),
+        attested_at: Utc::now(),
+        external_anchor: b"ots://bitcoin-commitment".to_vec(),
+        signature: vec![],
+    };
+    time_att.signature = time_authority_sk
+        .sign(&time_att.signing_bytes().unwrap())
+        .to_bytes()
+        .to_vec();
+    assert!(
+        time_att
+            .verify(
+                time_authority_sk.verifying_key().as_bytes(),
+                &Ed25519Verifier
+            )
+            .is_ok(),
+        "time authority attestation verifies"
+    );
+    let time_attested_at = time_att.attested_at;
+
+    // ----------------------------------------------------------------
+    // 6. Verify through the pipeline: coverage report + label ladder.
     // ----------------------------------------------------------------
     let no_revocations = NoRevocations;
     let acceptance =
@@ -203,7 +231,7 @@ fn main() {
             TransparencyInputs {
                 artifact_included: transparency,
                 time_anchored,
-                time_attested_at: time_anchored.then(Utc::now),
+                time_attested_at: time_anchored.then_some(time_attested_at),
                 multi_log_quorum: false,
                 downgrades: vec![],
             },
