@@ -139,6 +139,7 @@ fn main() {
             endpoint: "https://log.nmi.example".into(),
         }],
         bundle_signature: vec![],
+        update_log: None,
     };
     let bundle_msg = bundle.signing_bytes().unwrap();
     bundle.bundle_signature = root_sk.sign(&bundle_msg).to_bytes().to_vec();
@@ -202,6 +203,7 @@ fn main() {
             TransparencyInputs {
                 artifact_included: transparency,
                 time_anchored,
+                time_attested_at: time_anchored.then(Utc::now),
                 multi_log_quorum: false,
                 downgrades: vec![],
             },
@@ -227,6 +229,7 @@ fn main() {
         TransparencyInputs {
             artifact_included: true,
             time_anchored: true,
+            time_attested_at: None,
             multi_log_quorum: false,
             downgrades: vec![],
         },

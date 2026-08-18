@@ -67,6 +67,10 @@ pub struct ScopeDimensions {
     /// Scheme-registered extension dimensions.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub extra: BTreeMap<String, ScopeValue>,
+    /// Executable scope conditions (JSON Logic subset) evaluated at
+    /// verification time against the artifact and its chain (§11).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub conditions: Vec<serde_json::Value>,
 }
 
 impl ScopeDimensions {

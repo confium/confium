@@ -414,6 +414,7 @@ mod tests {
             }],
             transparency_logs: Vec::new(),
             bundle_signature: Vec::new(),
+            update_log: None,
         }
     }
 

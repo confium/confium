@@ -30,6 +30,7 @@
 pub mod artifact;
 pub mod bundle;
 pub mod ceremony;
+pub mod conditions;
 pub mod conformance;
 pub mod cose;
 pub mod coverage;

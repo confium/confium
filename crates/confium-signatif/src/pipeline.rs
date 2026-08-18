@@ -32,6 +32,10 @@ pub struct TransparencyInputs {
     pub multi_log_quorum: bool,
     /// Whether a time-anchor attestation was verified (see [`crate::time`]).
     pub time_anchored: bool,
+    /// The externally-attested time from a verified [`crate::time::
+    /// TimeAttestation`] — the freshness source preferred over the
+    /// signer's self-asserted block timestamps (§8.8).
+    pub time_attested_at: Option<DateTime<Utc>>,
     /// Downgrade reasons the caller's soft checks produced (e.g.
     /// "transparency_missing", "time_anchor_absent").
     pub downgrades: Vec<String>,
@@ -192,7 +196,25 @@ impl<'a> Pipeline<'a> {
             }
         }
 
-        // Hard 4: revocation of every authority on every valid path.
+        // Hard 4: scope conditions — every signer node's executable
+        // conditions are evaluated against the artifact and its chain
+        // (§11): failing conditions hard-fail regardless of signature
+        // validity.
+        for block in &artifact.co_signatures {
+            if let Some(node) = self.graph.node(&block.signer_cert_ref) {
+                let ctx = crate::conditions::ConditionContext::new(
+                    &artifact.payload,
+                    &artifact.artifact_id,
+                    &block.signer_cert_ref,
+                    block.dimension.as_str(),
+                    &block.timestamp.to_rfc3339(),
+                );
+                crate::conditions::evaluate_all(&node.scope.conditions, &ctx)
+                    .map_err(|e| SignatifError::HardCheck(format!("scope_conditions: {e}")))?;
+            }
+        }
+
+        // Hard 5: revocation of every authority on every valid path.
         for block in &artifact.co_signatures {
             let status = self
                 .revocation
@@ -231,14 +253,18 @@ impl<'a> Pipeline<'a> {
         if self.revocation.max_crl_age(now) > DEFAULT_GRACE_PERIOD {
             downgrades.push("crl_stale".into());
         }
-        // Freshness: newest time-dimension attestation inside window?
-        if let Some(newest) = artifact
-            .co_signatures
-            .iter()
-            .filter(|b| b.dimension.as_str() == crate::registry::DimensionTag::TIME)
-            .map(|b| b.timestamp)
-            .max()
-        {
+        // Freshness: the externally-attested time when a verified time
+        // authority attestation exists; otherwise the newest
+        // time-dimension block timestamp.
+        let freshness_source = self.transparency.time_attested_at.or_else(|| {
+            artifact
+                .co_signatures
+                .iter()
+                .filter(|b| b.dimension.as_str() == crate::registry::DimensionTag::TIME)
+                .map(|b| b.timestamp)
+                .max()
+        });
+        if let Some(newest) = freshness_source {
             let age = now.signed_duration_since(newest);
             if age > self.freshness.window + self.freshness.grace {
                 return Err(SignatifError::HardCheck(
@@ -325,6 +351,7 @@ mod tests {
         registry: Registry,
         artifact: TrustedArtifact,
         end_sk: SigningKey,
+        root_sk: SigningKey,
     }
 
     fn build() -> Fixture {
@@ -371,6 +398,7 @@ mod tests {
             }],
             transparency_logs: vec![],
             bundle_signature: vec![],
+            update_log: None,
         };
         // Bundle signature unused by pipeline? It verifies signatures —
         // sign the bundle with the root key so hard check 1 passes.
@@ -405,6 +433,7 @@ mod tests {
             registry,
             artifact,
             end_sk,
+            root_sk,
         }
     }
 
@@ -453,6 +482,7 @@ mod tests {
             TransparencyInputs {
                 artifact_included: transparency,
                 time_anchored: time,
+                time_attested_at: None,
                 multi_log_quorum: false,
                 downgrades: vec![],
             },
@@ -481,6 +511,51 @@ mod tests {
     }
 
     #[test]
+    fn scope_conditions_hard_fail_when_unmet() {
+        let f = build();
+        static NO_REVOCATIONS: NoRevocations = NoRevocations;
+        let accept_all = AcceptancePolicy::accept(&["verified"]);
+        // The end node carries an executable condition on the payload.
+        // The conditions are part of the node binding, so the root's
+        // delegation credential must cover them (four-layer scope
+        // enforcement, layers 1-2).
+        let mut end = f.graph.node("end").unwrap().clone();
+        end.scope.conditions = vec![serde_json::json!({
+            ">=": [ {"var": "payload.v"}, 5 ]
+        })];
+        let root_node = f.graph.node("root").unwrap().clone();
+        use ed25519_dalek::Signer as _;
+        let mut graph = TrustGraph::new();
+        graph.add_node(root_node);
+        graph.add_node(end.clone());
+        graph
+            .add_delegation(DelegationEdge {
+                parent: "root".into(),
+                child: "end".into(),
+                signature: f
+                    .root_sk
+                    .sign(&end.binding_bytes().unwrap())
+                    .to_bytes()
+                    .to_vec(),
+            })
+            .unwrap();
+        let pipe = Pipeline::new(
+            &f.bundle,
+            &graph,
+            &f.registry,
+            &Ed25519Verifier,
+            &NO_REVOCATIONS,
+            TransparencyInputs::default(),
+            &accept_all,
+        );
+        // payload.v == 1 -> condition unmet -> hard failure even though
+        // every signature and the chain verify. The positive path is
+        // exercised in the conditions module tests.
+        let err = pipe.run(&f.artifact, Utc::now()).unwrap_err();
+        assert!(err.to_string().contains("scope_conditions"), "got {err}");
+    }
+
+    #[test]
     fn deprecated_algorithm_downgrades_and_caps_label() {
         let f = build();
         static NO_REVOCATIONS: NoRevocations = NoRevocations;
@@ -504,6 +579,7 @@ mod tests {
             TransparencyInputs {
                 artifact_included: true,
                 time_anchored: true,
+                time_attested_at: None,
                 multi_log_quorum: false,
                 downgrades: vec![],
             },
@@ -573,6 +649,7 @@ mod tests {
             TransparencyInputs {
                 artifact_included: true,
                 time_anchored: true,
+                time_attested_at: None,
                 multi_log_quorum: false,
                 downgrades: vec![],
             },
