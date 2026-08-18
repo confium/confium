@@ -9,4 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
+- Release v0.5.1 by @[object]
+
+### Other
+
 - Update Cargo.toml dependencies by @[object]

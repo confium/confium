@@ -13,6 +13,15 @@ For cross-product changes, see the workspace CHANGELOG at <https://github.com/co
 
 ### Other
 
+- Release v0.5.1 by @[object]
+- Release v0.5.0 by @[object]
+
+### Fixed
+
+- Migrate to the RustCrypto 0.11 wave and dalek/napi/ureq majors by @[object]
+
+### Other
+
 - Release v0.5.0 by @[object]
 
 ### Fixed
