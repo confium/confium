@@ -56,5 +56,5 @@ crate-type = ["rlib"]
 
 [dev-dependencies]
 proptest = { workspace = true }
-rcgen = "0.13"
+rcgen = "0.14"
 time = "0.3"
