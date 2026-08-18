@@ -187,7 +187,6 @@ fn pythonize_dict(d: &Bound<'_, PyDict>) -> PyResult<serde_json::Value> {
 }
 
 fn pyobject_to_json(v: &Bound<'_, pyo3::types::PyAny>) -> PyResult<serde_json::Value> {
-    use pyo3::types::PyAny;
     if v.is_none() {
         return Ok(serde_json::Value::Null);
     }
