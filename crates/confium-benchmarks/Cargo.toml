@@ -13,11 +13,11 @@ description = "criterion benches for the confium hot paths"
 publish = false
 
 [dependencies]
-confium-composite = { path = "../confium-composite", version = "0.4.0" }
-confium-transparency = { path = "../confium-transparency", version = "0.4.0" }
-confium-tc-cmp20 = { path = "../confium-tc-cmp20", version = "0.4.0" }
-confium-tc-gg18 = { path = "../confium-tc-gg18", version = "0.4.0" }
-confium-tc-frost-p256 = { path = "../confium-tc-frost-p256", version = "0.4.0" }
+confium-composite = { path = "../confium-composite", version = "0.5.0" }
+confium-transparency = { path = "../confium-transparency", version = "0.5.0" }
+confium-tc-cmp20 = { path = "../confium-tc-cmp20", version = "0.5.0" }
+confium-tc-gg18 = { path = "../confium-tc-gg18", version = "0.5.0" }
+confium-tc-frost-p256 = { path = "../confium-tc-frost-p256", version = "0.5.0" }
 chrono = { workspace = true }
 criterion = { workspace = true }
 ed25519-dalek = { workspace = true }
