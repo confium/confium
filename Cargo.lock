@@ -1051,8 +1051,8 @@ dependencies = [
  "confium-transparency",
  "criterion",
  "ed25519-dalek",
+ "getrandom 0.4.3",
  "p256",
- "rand_core 0.6.4",
 ]
 
 [[package]]
@@ -1084,6 +1084,7 @@ name = "confium-composite"
 version = "0.5.0"
 dependencies = [
  "ed25519-dalek",
+ "getrandom 0.4.3",
  "hex",
  "hybrid-array",
  "ml-dsa",
@@ -1171,6 +1172,7 @@ dependencies = [
  "confium-composite",
  "confium-core",
  "ed25519-dalek",
+ "getrandom 0.4.3",
  "rand_core 0.6.4",
  "serde",
  "serde_json",
@@ -1239,6 +1241,7 @@ dependencies = [
  "confium-tc-frost-p256",
  "confium-transparency",
  "ed25519-dalek",
+ "getrandom 0.4.3",
  "libloading 0.9.0",
  "p256",
  "proptest",
@@ -1500,6 +1503,7 @@ name = "confium-publish"
 version = "0.5.0"
 dependencies = [
  "clap",
+ "hex",
  "libloading 0.9.0",
  "serde",
  "sha2 0.11.0",
@@ -1738,9 +1742,9 @@ dependencies = [
  "confium-tc",
  "curve25519-dalek",
  "ed25519-dalek",
+ "getrandom 0.4.3",
  "hex",
  "inventory",
- "rand_core 0.6.4",
  "sha2 0.11.0",
  "snafu",
 ]

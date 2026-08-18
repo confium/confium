@@ -73,21 +73,25 @@ impl Certificate {
 
     /// The serial number as a byte slice.
     pub fn serial_bytes(&self) -> &[u8] {
-        self.inner.tbs_certificate.serial_number.as_bytes()
+        self.inner.tbs_certificate().serial_number().as_bytes()
     }
 
     /// Not-before validity bound (raw `der::DateTime`).
     pub fn not_before(&self) -> der::DateTime {
         self.inner
-            .tbs_certificate
-            .validity
+            .tbs_certificate()
+            .validity()
             .not_before
             .to_date_time()
     }
 
     /// Not-after validity bound (raw `der::DateTime`).
     pub fn not_after(&self) -> der::DateTime {
-        self.inner.tbs_certificate.validity.not_after.to_date_time()
+        self.inner
+            .tbs_certificate()
+            .validity()
+            .not_after
+            .to_date_time()
     }
 
     /// Not-before as a chrono `DateTime<Utc>`.
@@ -110,8 +114,8 @@ impl Certificate {
     /// Raw subject public key bytes from the SPKI, if available.
     pub fn public_key_bytes(&self) -> &[u8] {
         self.inner
-            .tbs_certificate
-            .subject_public_key_info
+            .tbs_certificate()
+            .subject_public_key_info()
             .subject_public_key
             .as_bytes()
             .unwrap_or(&[])

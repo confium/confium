@@ -8,7 +8,8 @@
 //! - `MerkleTree::consistency_proof(old_size)` + verify round-trip
 
 use confium_transparency::{ArtifactType, MerkleEntry, MerkleTree};
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
+use std::hint::black_box;
 
 fn pinned_entry(i: u64, ts: chrono::DateTime<chrono::Utc>) -> MerkleEntry {
     let mut entry = MerkleEntry::new(

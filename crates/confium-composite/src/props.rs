@@ -4,11 +4,11 @@ use crate::{
     ComponentSignature, CompositeSignature, ED25519, build_ed25519_component, ed25519_verifier,
 };
 use ed25519_dalek::SigningKey;
+use ed25519_dalek::rand_core::UnwrapErr;
 use proptest::prelude::*;
-use rand_core::OsRng;
 
 fn make_valid_composite(message: &[u8]) -> (SigningKey, CompositeSignature) {
-    let signing = SigningKey::generate(&mut OsRng);
+    let signing = SigningKey::generate(&mut UnwrapErr(getrandom::SysRng));
     let component = build_ed25519_component(&signing, message).expect("build");
     let composite = CompositeSignature::new(vec![component]);
     (signing, composite)
@@ -93,7 +93,7 @@ proptest! {
     #[test]
     fn prop_component_count(n in 1usize..10) {
         let components: Vec<ComponentSignature> = (0..n).map(|i| {
-            let signing = SigningKey::generate(&mut OsRng);
+            let signing = SigningKey::generate(&mut UnwrapErr(getrandom::SysRng));
             let mut c = build_ed25519_component(&signing, b"msg").unwrap();
             c.algorithm = format!("{}-{}", ED25519, i);
             c
@@ -107,7 +107,7 @@ proptest! {
     fn prop_algorithms_list(n in 1usize..8) {
         let mut components = Vec::new();
         for i in 0..n {
-            let signing = SigningKey::generate(&mut OsRng);
+            let signing = SigningKey::generate(&mut UnwrapErr(getrandom::SysRng));
             let mut c = build_ed25519_component(&signing, b"msg").unwrap();
             c.algorithm = format!("alg{}", i);
             components.push(c);

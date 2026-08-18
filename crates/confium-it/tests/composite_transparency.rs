@@ -18,12 +18,12 @@ use confium_transparency::{
     entry::{ArtifactType, MerkleEntry},
 };
 use ed25519_dalek::SigningKey;
-use rand_core::OsRng;
+use ed25519_dalek::rand_core::UnwrapErr;
 use sha2::{Digest, Sha256};
 
 #[test]
 fn composite_signature_anchors_into_transparency_log() {
-    let signing = SigningKey::generate(&mut OsRng);
+    let signing = SigningKey::generate(&mut UnwrapErr(getrandom::SysRng));
     let message = b"cross-crate: composite sig + log";
     let component = build_ed25519_component(&signing, message).expect("build component");
     let composite = CompositeSignature::new(vec![component]);

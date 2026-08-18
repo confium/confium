@@ -52,9 +52,9 @@
 //!   separate concern" stance (see TODO.roadmap/05).
 
 use curve25519_dalek::edwards::EdwardsPoint;
+use curve25519_dalek::rand_core::UnwrapErr;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::traits::Identity;
-use rand_core::OsRng;
 
 use crate::error::{
     CODE_BELOW_THRESHOLD, CODE_MALFORMED_MESSAGE, CODE_MALFORMED_SHARE, CODE_ROSTER_CONFIG,
@@ -180,8 +180,9 @@ impl DkgSession {
         // this party's contribution to the aggregate secret; we never
         // reconstruct it.
         let mut coeff = Vec::with_capacity(threshold_usize);
+        let mut rng = UnwrapErr(getrandom::SysRng);
         for _ in 0..threshold_usize {
-            coeff.push(Scalar::random(&mut OsRng));
+            coeff.push(Scalar::random(&mut rng));
         }
         let poly = Polynomial::from_coefficients(coeff);
         let commits = poly

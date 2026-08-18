@@ -23,6 +23,7 @@ chrono = { workspace = true }
 confium-api = { workspace = true }
 confium-core = { workspace = true } # exposes the lib under the name `confium`
 ed25519-dalek = { workspace = true }
+getrandom = { workspace = true }
 libloading = { workspace = true }
 p256 = { workspace = true }
 proptest = { workspace = true }

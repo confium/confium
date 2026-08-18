@@ -130,7 +130,7 @@ const LIBRNP_CANDIDATES: &[&str] = &["librnp.dylib", "librnp.so", "rnp.dll", "li
 fn load_librnp() -> std::result::Result<libloading::Library, String> {
     let mut last: Option<String> = None;
     for name in LIBRNP_CANDIDATES {
-        match unsafe { libloading::Library::new(name) } {
+        match unsafe { libloading::Library::new(*name) } {
             Ok(lib) => return Ok(lib),
             Err(e) => last = Some(format!("{name}: {e}")),
         }

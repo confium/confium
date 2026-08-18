@@ -33,7 +33,7 @@ sha2 = "0.10"
 subtle = "2"
 chrono = "0.4"
 hex = "0.4"
-ed25519-dalek = "2"
+ed25519-dalek = "3"
 p256 = { version = "0.14", features = ["ecdsa", "pem", "arithmetic"] }
 
 [package.metadata.maturin]

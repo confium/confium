@@ -32,7 +32,7 @@
 //!   and the HMAC key are deterministic, this signature is identical on
 //!   every party regardless of coalition.
 
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use sha2::{Digest, Sha256};
 
 use crate::Result;

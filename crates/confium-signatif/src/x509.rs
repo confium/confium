@@ -56,9 +56,8 @@ pub fn decode_scope_extension(bytes: &[u8]) -> SignatifResult<ScopeDimensions> {
 pub fn scope_of(cert: &Certificate) -> SignatifResult<ScopeDimensions> {
     for ext in cert
         .as_inner()
-        .tbs_certificate
-        .extensions
-        .as_ref()
+        .tbs_certificate()
+        .extensions()
         .unwrap_or(&Vec::new())
     {
         if ext.extn_id.to_string() == SCOPE_EXTENSION_OID {

@@ -87,11 +87,12 @@ impl HttpDownloader {
 
     /// Build with a custom User-Agent string.
     pub fn with_agent(user_agent: &str) -> Self {
+        let config = ureq::config::Config::builder()
+            .user_agent(user_agent)
+            .timeout_global(Some(std::time::Duration::from_secs(30)))
+            .build();
         Self {
-            agent: ureq::AgentBuilder::new()
-                .timeout(std::time::Duration::from_secs(30))
-                .user_agent(user_agent)
-                .build(),
+            agent: ureq::Agent::new_with_config(config),
         }
     }
 }
@@ -104,13 +105,21 @@ impl Default for HttpDownloader {
 
 impl Downloader for HttpDownloader {
     fn download(&self, url: &str) -> Result<Vec<u8>> {
-        let response = self.agent.get(url).call().map_err(|e| Error::Download {
+        let mut response = self.agent.get(url).call().map_err(|e| Error::Download {
             message: format!("HTTP request to {url} failed: {e}"),
         })?;
+        // ureq 3 returns non-2xx responses as Ok; convert to an error so
+        // callers never see an error-page body as a successful download.
+        if !response.status().is_success() {
+            return Err(Error::Download {
+                message: format!("HTTP request to {url} returned {}", response.status()),
+            });
+        }
 
         let mut bytes = Vec::with_capacity(1024 * 64);
         response
-            .into_reader()
+            .body_mut()
+            .as_reader()
             .read_to_end(&mut bytes)
             .map_err(|e| Error::Download {
                 message: format!("reading body from {url} failed: {e}"),

@@ -23,7 +23,9 @@
 pub mod keys;
 pub mod shamir;
 
-use aes_gcm::{AeadInPlace, Aes256Gcm, KeyInit, Nonce};
+use aes_gcm::aead::AeadInOut;
+use aes_gcm::aead::inout::InOutBuf;
+use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
 use p256::elliptic_curve::PrimeField;
 use p256::elliptic_curve::rand_core;
 use p256::elliptic_curve::rand_core::Rng;
@@ -204,7 +206,7 @@ pub fn encrypt(recipient: &PublicKey, plaintext: &[u8]) -> Result<EncryptedBlob,
     // Encrypt
     let mut buffer = plaintext.to_vec();
     let tag = cipher
-        .encrypt_in_place_detached(&nonce, b"", &mut buffer)
+        .encrypt_inout_detached(&nonce, b"", InOutBuf::from(buffer.as_mut_slice()))
         .map_err(|e| EciesError::Aead(e.to_string()))?;
 
     Ok(EncryptedBlob {
@@ -284,7 +286,7 @@ pub fn aggregate_partials(
     let tag = aes_gcm::Tag::from(slice_to_array::<16>(&blob.tag)?);
     let mut buffer = blob.ciphertext.clone();
     cipher
-        .decrypt_in_place_detached(&nonce, b"", &mut buffer, &tag)
+        .decrypt_inout_detached(&nonce, b"", InOutBuf::from(buffer.as_mut_slice()), &tag)
         .map_err(|e| EciesError::Aead(format!("decrypt: {e}")))?;
 
     Ok(buffer)

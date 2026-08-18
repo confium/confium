@@ -93,11 +93,11 @@ mod tests {
     use super::*;
     use crate::test_util::test_confium;
     use base64::engine::general_purpose;
+    use ed25519_dalek::rand_core::UnwrapErr;
     use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
-    use rand_core::OsRng;
 
     fn make_ed25519_component(message: &[u8]) -> (Value, Vec<u8>) {
-        let signing = SigningKey::generate(&mut OsRng);
+        let signing = SigningKey::generate(&mut UnwrapErr(getrandom::SysRng));
         let sig: Signature = signing.sign(message);
         let vk: VerifyingKey = signing.verifying_key();
         let pk_bytes = vk.to_bytes().to_vec();
