@@ -10,3 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - The framework layer reaches the Verify product and the browser by @[object]
+
+### Other
+
+- Release v0.5.0 by @[object]
+
+### Added
+
+- The framework layer reaches the Verify product and the browser by @[object]

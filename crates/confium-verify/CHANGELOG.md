@@ -11,6 +11,14 @@ For cross-product changes, see the workspace CHANGELOG at <https://github.com/co
 
 - The framework layer reaches the Verify product and the browser by @[object]
 
+### Other
+
+- Release v0.5.0 by @[object]
+
+### Added
+
+- The framework layer reaches the Verify product and the browser by @[object]
+
 No unreleased changes yet.
 
 ## [0.4.0] — 2026-08-07
