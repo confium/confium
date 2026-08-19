@@ -1,0 +1,1 @@
+Archived legacy CLI command modules — superseded by the product umbrella subcommands and no longer declared in commands/mod.rs. Kept for reference; not compiled. See docs/<product>/ for the current CLI surface.
