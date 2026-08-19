@@ -19,11 +19,11 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
+default = []
 pq = ["dep:ml-dsa"]
 pq-slh = ["dep:slh-dsa", "dep:hybrid-array"]
-default = []
 # Wycheproof adversarial test vector integration. Off by default —
-# the vectors are 6 MB of JSON that callers download from
+# callers download the vector JSON from
 # https://github.com/google/wycheproof on demand.
 wycheproof = ["dep:hex"]
 
@@ -39,7 +39,7 @@ sha2 = { workspace = true }
 ed25519-dalek = { workspace = true, features = ["rand_core"] }
 rand_core = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa"] }
-hex = { version = "0.4", optional = true }
+hex = { workspace = true, optional = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
