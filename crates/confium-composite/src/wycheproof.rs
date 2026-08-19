@@ -142,6 +142,20 @@ fn load(path: &Path) -> Option<WycheproofFile> {
     serde_json::from_str(&raw).ok()
 }
 
+/// Compatibility wrapper for the original scaffold's signature,
+/// returning `(passed, failed, acceptable)`.
+#[deprecated(
+    since = "0.6.0",
+    note = "use run_vectors, which also reports failing tcIds"
+)]
+pub fn run_ecdsa_p256(
+    path: &Path,
+    verifier: impl Fn(&[u8], &[u8], &[u8]) -> bool,
+) -> (usize, usize, usize) {
+    let summary = run_vectors(path, verifier);
+    (summary.passed, summary.failed, summary.acceptable)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
