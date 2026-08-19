@@ -338,13 +338,44 @@ pub struct VerifySignatifRequest {
     /// Verification options (transparency/time inputs, accepted
     /// labels); defaults when absent.
     #[serde(default)]
-    pub options: confium_signatif::verify::VerifyOptions,
+    pub options: VerifySignatifOptions,
 }
 
-/// Deprecated alias for the pipeline options, which now live in
-/// `confium_signatif::verify::VerifyOptions`.
-#[deprecated(since = "0.5.3", note = "use confium_signatif::verify::VerifyOptions")]
-pub type VerifySignatifOptions = confium_signatif::verify::VerifyOptions;
+/// Options for the pipeline run. Mirrors
+/// `confium_signatif::verify::VerifyOptions`; the wire-facing struct
+/// stays put for API compatibility and converts at the pipeline call.
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct VerifySignatifOptions {
+    /// Transparency inclusion was verified for this artifact.
+    #[serde(default)]
+    pub transparency_included: bool,
+    /// An external time anchor was verified.
+    #[serde(default)]
+    pub time_anchored: bool,
+    /// Externally-attested time (RFC 3339).
+    #[serde(default)]
+    pub time_attested_at: Option<String>,
+    /// Multi-log quorum met.
+    #[serde(default)]
+    pub multi_log_quorum: bool,
+    /// Accepted classification labels (empty = reject everything).
+    #[serde(default)]
+    pub accepted_labels: Vec<String>,
+}
+
+impl From<&VerifySignatifOptions> for confium_signatif::verify::VerifyOptions {
+    fn from(o: &VerifySignatifOptions) -> Self {
+        Self {
+            transparency_included: o.transparency_included,
+            time_anchored: o.time_anchored,
+            time_attested_at: o.time_attested_at.clone(),
+            multi_log_quorum: o.multi_log_quorum,
+            accepted_labels: o.accepted_labels.clone(),
+            ..Self::default()
+        }
+    }
+}
 
 /// Response: the graduated verification outcome.
 #[derive(Debug, Serialize)]
@@ -402,12 +433,9 @@ pub async fn verify_signatif(
         },
         None => Registry::with_initial_values(),
     };
+    let options = confium_signatif::verify::VerifyOptions::from(&req.options);
     match confium_signatif::verify::verify_trusted_artifact(
-        &artifact,
-        &bundle,
-        &graph,
-        &registry,
-        &req.options,
+        &artifact, &bundle, &graph, &registry, &options,
     ) {
         Ok(verdict) => respond(
             StatusCode::OK,
