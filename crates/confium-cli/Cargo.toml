@@ -31,7 +31,6 @@ confium-transparency = { workspace = true }
 confium-pki = { workspace = true }
 confium-composite = { workspace = true }
 confium-signatif = { workspace = true }
-chrono = { workspace = true }
 confium-privacy = { workspace = true }
 ed25519-dalek = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa"] }
