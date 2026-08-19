@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Wycheproof vector harness behind a feature flag by @[object]
+
+### Fixed
+
+- Keep run_ecdsa_p256 as a deprecated shim by @[object]
+
 ### Other
 
 - Release v0.5.1 by @[object]
