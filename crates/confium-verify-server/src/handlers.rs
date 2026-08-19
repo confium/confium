@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use confium_composite::{
     ComponentSignature, CompositeSignature, ECDSA_P256, ED25519, ed25519_verifier, p256_verifier,
 };
-use confium_signatif::graph::{SignatureVerifier, TrustGraph};
+use confium_signatif::graph::TrustGraph;
 use confium_signatif::{artifact::TrustedArtifact, bundle::TrustAnchorBundle, registry::Registry};
 use confium_transparency::entry::MerkleEntry;
 use confium_transparency::merkle::{Hash, InclusionProof, MerkleTree, ProofStep, Side};
@@ -338,28 +338,7 @@ pub struct VerifySignatifRequest {
     /// Verification options (transparency/time inputs, accepted
     /// labels); defaults when absent.
     #[serde(default)]
-    pub options: VerifySignatifOptions,
-}
-
-/// Options for the pipeline run.
-#[derive(Debug, Default, Deserialize)]
-#[serde(default)]
-pub struct VerifySignatifOptions {
-    /// Transparency inclusion was verified for this artifact.
-    #[serde(default)]
-    pub transparency_included: bool,
-    /// An external time anchor was verified.
-    #[serde(default)]
-    pub time_anchored: bool,
-    /// Externally-attested time (RFC 3339).
-    #[serde(default)]
-    pub time_attested_at: Option<String>,
-    /// Multi-log quorum met.
-    #[serde(default)]
-    pub multi_log_quorum: bool,
-    /// Accepted classification labels (empty = reject everything).
-    #[serde(default)]
-    pub accepted_labels: Vec<String>,
+    pub options: confium_signatif::verify::VerifyOptions,
 }
 
 /// Response: the graduated verification outcome.
@@ -371,17 +350,6 @@ pub struct VerifySignatifResponse {
     pub accept: bool,
     /// The objective coverage report.
     pub coverage: confium_signatif::coverage::CoverageReport,
-}
-
-/// The server's verifier fleet: the classical algorithms of the
-/// default registry.
-struct ServerVerifier;
-
-impl SignatureVerifier for ServerVerifier {
-    fn verify(&self, public_key: &[u8], message: &[u8], signature: &[u8]) -> bool {
-        ed25519_verifier(ED25519, public_key, message, signature).is_ok()
-            || p256_verifier(ECDSA_P256, public_key, message, signature).is_ok()
-    }
 }
 
 /// POST /verify/signatif
@@ -429,50 +397,22 @@ pub async fn verify_signatif(
         },
         None => Registry::with_initial_values(),
     };
-    let time_attested_at = match &req.options.time_attested_at {
-        None => None,
-        Some(s) => match chrono::DateTime::parse_from_rfc3339(s) {
-            Ok(t) => Some(t.with_timezone(&chrono::Utc)),
-            Err(e) => {
-                return respond(
-                    StatusCode::BAD_REQUEST,
-                    serde_json::json!({"error": format!("time_attested_at: {e}")}),
-                );
-            }
-        },
-    };
-    let no_revocations = confium_signatif::revocation::NoRevocations;
-    let acceptance = confium_signatif::coverage::AcceptancePolicy {
-        accepted_labels: req.options.accepted_labels,
-    };
-    let pipe = confium_signatif::pipeline::Pipeline::new(
+    match confium_signatif::verify::verify_trusted_artifact(
+        &artifact,
         &bundle,
         &graph,
         &registry,
-        &ServerVerifier,
-        &no_revocations,
-        confium_signatif::pipeline::TransparencyInputs {
-            artifact_included: req.options.transparency_included,
-            time_anchored: req.options.time_anchored,
-            time_attested_at,
-            multi_log_quorum: req.options.multi_log_quorum,
-            downgrades: vec![],
-        },
-        &acceptance,
-    );
-    match pipe.run(&artifact, chrono::Utc::now()) {
-        Ok(outcome) => {
-            let accept = outcome.acceptance == confium_signatif::coverage::Acceptance::Accept;
-            respond(
-                StatusCode::OK,
-                serde_json::to_value(VerifySignatifResponse {
-                    label: outcome.label.0,
-                    accept,
-                    coverage: outcome.report,
-                })
-                .unwrap_or_default(),
-            )
-        }
+        &req.options,
+    ) {
+        Ok(verdict) => respond(
+            StatusCode::OK,
+            serde_json::to_value(VerifySignatifResponse {
+                label: verdict.label,
+                accept: verdict.accept,
+                coverage: verdict.coverage,
+            })
+            .unwrap_or_default(),
+        ),
         Err(e) => respond(
             StatusCode::UNPROCESSABLE_ENTITY,
             serde_json::json!({"error": format!("{e}"), "label": "rejected"}),

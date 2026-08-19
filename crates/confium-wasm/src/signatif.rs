@@ -1,37 +1,17 @@
 //! Browser/Node.js verification of SIGNATIF trusted artifacts.
+//!
+//! A thin transport adapter: JSON in, JSON out. The verification
+//! assembly (fleet, revocation view, transparency inputs, acceptance)
+//! lives in [`confium_signatif::verify`]; this binding pins the
+//! browser verifier profile (Ed25519-only) and translates types.
 
 use wasm_bindgen::prelude::*;
 
 use confium_signatif::artifact::TrustedArtifact;
 use confium_signatif::bundle::TrustAnchorBundle;
-use confium_signatif::coverage::AcceptancePolicy;
-use confium_signatif::graph::{SignatureVerifier, TrustGraph};
-use confium_signatif::pipeline::{Pipeline, TransparencyInputs};
+use confium_signatif::graph::TrustGraph;
 use confium_signatif::registry::Registry;
-use confium_signatif::revocation::NoRevocations;
-
-/// The Ed25519-only verifier fleet for the browser. Threshold
-/// aggregate verification and PQC algorithms are server-side
-/// concerns; browser verification of classical signatures is the
-/// verifier profile this package ships.
-struct Ed25519OnlyVerifier;
-
-impl SignatureVerifier for Ed25519OnlyVerifier {
-    fn verify(&self, public_key: &[u8], message: &[u8], signature: &[u8]) -> bool {
-        use ed25519_dalek::Signature;
-        use ed25519_dalek::Verifier;
-        let Ok(key) = <[u8; 32]>::try_from(public_key) else {
-            return false;
-        };
-        let Ok(vk) = ed25519_dalek::VerifyingKey::from_bytes(&key) else {
-            return false;
-        };
-        let Ok(sig) = Signature::from_slice(signature) else {
-            return false;
-        };
-        vk.verify(message, &sig).is_ok()
-    }
-}
+use confium_signatif::verify::{Fleet, VerifyOptions, verify_trusted_artifact};
 
 /// The full verification outcome as one JSON object: `coverage` (the
 /// objective report), `label` (the scheme's classification), and
@@ -59,61 +39,17 @@ pub fn verify_trusted_artifact(
     let registry: Registry =
         serde_json::from_str(registry_json).map_err(|e| JsError::new(&format!("registry: {e}")))?;
 
-    #[derive(serde::Deserialize, Default)]
-    #[serde(default)]
-    struct Options {
-        transparency_included: bool,
-        time_anchored: bool,
-        #[serde(default)]
-        time_attested_at: Option<String>,
-        multi_log_quorum: bool,
-        accepted_labels: Vec<String>,
-    }
-    let options: Options = if options_json.trim().is_empty() {
-        Options::default()
+    let mut options: VerifyOptions = if options_json.trim().is_empty() {
+        VerifyOptions::default()
     } else {
         serde_json::from_str(options_json).map_err(|e| JsError::new(&format!("options: {e}")))?
     };
-    let time_attested_at = match &options.time_attested_at {
-        None => None,
-        Some(s) => Some(
-            chrono::DateTime::parse_from_rfc3339(s)
-                .map_err(|e| JsError::new(&format!("time_attested_at: {e}")))?
-                .with_timezone(&chrono::Utc),
-        ),
-    };
-    let acceptance = AcceptancePolicy {
-        accepted_labels: options.accepted_labels,
-    };
+    // The browser verifier profile is Ed25519-only by design.
+    options.fleet = Fleet::Ed25519;
 
-    let no_revocations = NoRevocations;
-    let pipe = Pipeline::new(
-        &bundle,
-        &graph,
-        &registry,
-        &Ed25519OnlyVerifier,
-        &no_revocations,
-        TransparencyInputs {
-            artifact_included: options.transparency_included,
-            time_anchored: options.time_anchored,
-            time_attested_at,
-            multi_log_quorum: options.multi_log_quorum,
-            downgrades: vec![],
-        },
-        &acceptance,
-    );
-    let now = chrono::Utc::now();
-    let outcome = pipe
-        .run(&artifact, now)
+    let verdict = verify_trusted_artifact(&artifact, &bundle, &graph, &registry, &options)
         .map_err(|e| JsError::new(&format!("{e}")))?;
-
-    let accept = outcome.acceptance == confium_signatif::coverage::Acceptance::Accept;
-    let result = serde_json::json!({
-        "coverage": outcome.report,
-        "label": outcome.label.0,
-        "accept": accept,
-    });
-    serde_json::to_string(&result).map_err(|e| JsError::new(&format!("encode: {e}")))
+    serde_json::to_string(&verdict).map_err(|e| JsError::new(&format!("encode: {e}")))
 }
 
 #[cfg(test)]
