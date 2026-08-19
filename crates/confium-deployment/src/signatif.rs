@@ -306,10 +306,9 @@ impl SignatifManifest {
         }
 
         // Acyclic: DFS from every authority following parents.
+        // Unvisited nodes are absent from `marks` (tri-color DFS).
         #[derive(PartialEq, Clone, Copy)]
         enum Mark {
-            #[allow(dead_code)]
-            White,
             Grey,
             Black,
         }

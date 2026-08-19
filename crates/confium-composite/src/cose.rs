@@ -231,11 +231,6 @@ impl<'a> CborReader<'a> {
         Self { bytes, pos: 0 }
     }
 
-    #[allow(dead_code)]
-    fn peek(&self) -> Option<u8> {
-        self.bytes.get(self.pos).copied()
-    }
-
     fn read_u8(&mut self) -> Option<u8> {
         self.bytes.get(self.pos).map(|&b| {
             self.pos += 1;
