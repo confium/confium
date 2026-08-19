@@ -26,7 +26,8 @@
 //! # }
 //! ```
 //!
-//! Revocation checking currently runs with [`NoRevocations`]; this
+//! Revocation checking currently runs with
+//! [`NoRevocations`](crate::revocation::NoRevocations); this
 //! function is the single place that changes when a surface grows a
 //! revocation input. Schemes that need a [`CrlView`](crate::revocation::CrlView)
 //! today assemble the [`Pipeline`] directly.

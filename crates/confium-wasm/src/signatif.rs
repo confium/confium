@@ -11,7 +11,7 @@ use confium_signatif::artifact::TrustedArtifact;
 use confium_signatif::bundle::TrustAnchorBundle;
 use confium_signatif::graph::TrustGraph;
 use confium_signatif::registry::Registry;
-use confium_signatif::verify::{Fleet, VerifyOptions, verify_trusted_artifact};
+use confium_signatif::verify::{Fleet, VerifyOptions};
 
 /// The full verification outcome as one JSON object: `coverage` (the
 /// objective report), `label` (the scheme's classification), and
@@ -47,8 +47,10 @@ pub fn verify_trusted_artifact(
     // The browser verifier profile is Ed25519-only by design.
     options.fleet = Fleet::Ed25519;
 
-    let verdict = verify_trusted_artifact(&artifact, &bundle, &graph, &registry, &options)
-        .map_err(|e| JsError::new(&format!("{e}")))?;
+    let verdict = confium_signatif::verify::verify_trusted_artifact(
+        &artifact, &bundle, &graph, &registry, &options,
+    )
+    .map_err(|e| JsError::new(&format!("{e}")))?;
     serde_json::to_string(&verdict).map_err(|e| JsError::new(&format!("encode: {e}")))
 }
 
