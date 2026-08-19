@@ -33,8 +33,6 @@
 //!   verifying or rejecting are both defensible (e.g. signature
 //!   value `s = 0`); either outcome counts as acceptable.
 
-#![cfg(feature = "wycheproof")]
-
 use serde::Deserialize;
 use std::path::Path;
 
@@ -80,8 +78,6 @@ struct TestCase {
     msg: String,    // hex
     sig: String,    // hex (DER for ECDSA)
     result: String, // "valid" | "invalid" | "acceptable"
-    #[allow(dead_code)]
-    flags: Option<Vec<String>>,
 }
 
 /// The outcome of one vector-file run. `failed` is the number that
