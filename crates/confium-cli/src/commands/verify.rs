@@ -190,61 +190,24 @@ fn verify_signatif(args: VerifySignatifArgs) -> Result<(), String> {
         }
         None => confium_signatif::registry::Registry::with_initial_values(),
     };
-    let time_attested_at = match &args.time_attested_at {
-        Some(s) => Some(
-            chrono::DateTime::parse_from_rfc3339(s)
-                .map_err(|e| format!("time_attested_at: {e}"))?
-                .with_timezone(&chrono::Utc),
-        ),
-        None => None,
+    let options = confium_signatif::verify::VerifyOptions {
+        transparency_included: args.transparency,
+        time_anchored: args.time,
+        time_attested_at: args.time_attested_at.clone(),
+        multi_log_quorum: false,
+        accepted_labels: args.accept.clone(),
+        ..confium_signatif::verify::VerifyOptions::default()
     };
-    let acceptance = confium_signatif::coverage::AcceptancePolicy {
-        accepted_labels: args.accept,
-    };
-    let no_revocations = confium_signatif::revocation::NoRevocations;
-    let verifier = CliVerifier;
-    let pipe = confium_signatif::pipeline::Pipeline::new(
-        &bundle,
-        &graph,
-        &registry,
-        &verifier,
-        &no_revocations,
-        confium_signatif::pipeline::TransparencyInputs {
-            artifact_included: args.transparency,
-            time_anchored: args.time,
-            time_attested_at,
-            multi_log_quorum: false,
-            downgrades: vec![],
-        },
-        &acceptance,
-    );
-    let outcome = pipe
-        .run(&artifact, chrono::Utc::now())
-        .map_err(|e| format!("{e}"))?;
-    let accept = outcome.acceptance == confium_signatif::coverage::Acceptance::Accept;
+    let verdict = confium_signatif::verify::verify_trusted_artifact(
+        &artifact, &bundle, &graph, &registry, &options,
+    )
+    .map_err(|e| format!("{e}"))?;
     println!(
         "{}",
-        serde_json::to_string_pretty(&serde_json::json!({
-            "label": outcome.label.0,
-            "accept": accept,
-            "coverage": outcome.report,
-        }))
-        .map_err(|e| format!("encode: {e}"))?
+        serde_json::to_string_pretty(&verdict).map_err(|e| format!("encode: {e}"))?
     );
-    if !accept {
+    if !verdict.accept {
         std::process::exit(2);
     }
     Ok(())
-}
-
-/// The CLI verifier fleet: Ed25519 and ECDSA-P256, matching the
-/// classical algorithms in the default registry.
-struct CliVerifier;
-
-impl confium_signatif::graph::SignatureVerifier for CliVerifier {
-    fn verify(&self, public_key: &[u8], message: &[u8], signature: &[u8]) -> bool {
-        confium_composite::ed25519_verifier("Ed25519", public_key, message, signature).is_ok()
-            || confium_composite::p256_verifier("ECDSA-P256", public_key, message, signature)
-                .is_ok()
-    }
 }

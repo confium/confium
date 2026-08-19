@@ -21,6 +21,8 @@
 //! - [`revocation`]: signed CRLs, hash bindings, transitive propagation.
 //! - [`ceremony`]: verifiable ceremony transcripts and their audit.
 //! - [`registry`]: the five scheme-maintained registries.
+//! - [`verify`]: the deep verification entry — fleet, options, and
+//!   verdict in one interface, so transport adapters stay thin.
 //!
 //! All verification is offline-capable against a trust anchor bundle.
 
@@ -47,6 +49,8 @@ pub mod registry;
 pub mod revocation;
 pub mod scope;
 pub mod time;
+pub mod verify;
 pub mod x509;
 
 pub use error::{SignatifError, SignatifResult};
+pub use verify::{Fleet, Verdict, VerifyOptions, verify_trusted_artifact};

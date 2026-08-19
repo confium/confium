@@ -24,23 +24,9 @@ use pyo3::types::PyDict;
 
 use confium_signatif::artifact::TrustedArtifact;
 use confium_signatif::bundle::TrustAnchorBundle;
-use confium_signatif::coverage::AcceptancePolicy;
-use confium_signatif::graph::{SignatureVerifier, TrustGraph};
-use confium_signatif::pipeline::{Pipeline, TransparencyInputs};
+use confium_signatif::graph::TrustGraph;
 use confium_signatif::registry::Registry;
-use confium_signatif::revocation::NoRevocations;
-
-/// The Python-facing verifier fleet: Ed25519 and ECDSA-P256, the
-/// classical algorithms of the default registry.
-struct PyVerifier;
-
-impl SignatureVerifier for PyVerifier {
-    fn verify(&self, public_key: &[u8], message: &[u8], signature: &[u8]) -> bool {
-        confium_composite::ed25519_verifier("Ed25519", public_key, message, signature).is_ok()
-            || confium_composite::p256_verifier("ECDSA-P256", public_key, message, signature)
-                .is_ok()
-    }
-}
+use confium_signatif::verify::VerifyOptions;
 
 /// Verify a SIGNATIF trusted artifact through the full pipeline.
 ///
@@ -99,44 +85,25 @@ pub fn verify_trusted_artifact(
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("registry: {e}")))?,
         None => Registry::with_initial_values(),
     };
-    let time_attested_at = match &time_attested_at {
-        None => None,
-        Some(s) => Some(
-            chrono::DateTime::parse_from_rfc3339(s)
-                .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("time_attested_at: {e}")))?
-                .with_timezone(&chrono::Utc),
-        ),
-    };
-    let acceptance = AcceptancePolicy {
+    let options = VerifyOptions {
+        transparency_included,
+        time_anchored,
+        time_attested_at,
+        multi_log_quorum,
         accepted_labels: accepted_labels.unwrap_or_default(),
+        ..VerifyOptions::default()
     };
-    let no_revocations = NoRevocations;
-    let pipe = Pipeline::new(
+    let verdict = confium_signatif::verify::verify_trusted_artifact(
+        &artifact,
         &bundle,
         &graph,
         &registry,
-        &PyVerifier,
-        &no_revocations,
-        TransparencyInputs {
-            artifact_included: transparency_included,
-            time_anchored,
-            time_attested_at,
-            multi_log_quorum,
-            downgrades: vec![],
-        },
-        &acceptance,
-    );
-    let outcome = pipe
-        .run(&artifact, chrono::Utc::now())
+        &options,
+    )
         .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("{e}")))?;
-    let accept = outcome.acceptance == confium_signatif::coverage::Acceptance::Accept;
-    let coverage_json = serde_json::to_value(&outcome.report)
+    let verdict_json = serde_json::to_value(&verdict)
         .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("encode: {e}")))?;
-    let out = PyDict::new_bound(py);
-    out.set_item("label", outcome.label.0)?;
-    out.set_item("accept", accept)?;
-    out.set_item("coverage", json_to_py(py, &coverage_json)?)?;
-    Ok(out.into())
+    Ok(json_to_py(py, &verdict_json)?)
 }
 
 /// JSON value -> Python object.
