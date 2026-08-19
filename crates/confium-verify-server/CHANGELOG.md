@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Deep verification entry — one interface for every surface by @[object]
+
+### Fixed
+
+- Restore VerifySignatifOptions as a real struct by @[object]
+- Keep VerifySignatifOptions as a deprecated alias by @[object]
+
 ### Other
 
 - Release v0.5.1 by @[object]
