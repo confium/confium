@@ -12,9 +12,7 @@ use confium_signatif::artifact::{ArtifactVersion, TrustedArtifact};
 use confium_signatif::bundle::{AnchorRoot, TrustAnchorBundle};
 use confium_signatif::conformance::{ConformanceStatus, conformance_claims};
 use confium_signatif::coverage::{AcceptancePolicy, HardCheckStatus};
-use confium_signatif::graph::{
-    AuthorityKind, AuthorityNode, DelegationEdge, SignatureVerifier, TrustGraph,
-};
+use confium_signatif::graph::{AuthorityKind, AuthorityNode, DelegationEdge, TrustGraph};
 use confium_signatif::jcs;
 use confium_signatif::passport::Passport;
 use confium_signatif::pipeline::{Pipeline, TransparencyInputs};
@@ -27,22 +25,6 @@ fn generate_key() -> ed25519_dalek::SigningKey {
     let mut seed = [0u8; 32];
     rand_core::OsRng.fill_bytes(&mut seed);
     ed25519_dalek::SigningKey::from_bytes(&seed)
-}
-
-struct Ed25519Verifier;
-
-impl SignatureVerifier for Ed25519Verifier {
-    fn verify(&self, pk: &[u8], msg: &[u8], sig: &[u8]) -> bool {
-        use ed25519_dalek::Signature;
-        use ed25519_dalek::Verifier;
-        let Ok(vk) = ed25519_dalek::VerifyingKey::from_bytes(pk.try_into().unwrap()) else {
-            return false;
-        };
-        let Ok(signature) = Signature::from_slice(sig) else {
-            return false;
-        };
-        vk.verify(msg, &signature).is_ok()
-    }
 }
 
 struct Fixture {
@@ -147,7 +129,7 @@ fn ats_verifier_classes() {
         &f.bundle,
         &f.graph,
         &f.registry,
-        &Ed25519Verifier,
+        &confium_signatif::verify::Fleet::Ed25519,
         &no_revocations,
         TransparencyInputs {
             artifact_included: true,
@@ -180,7 +162,11 @@ fn ats_issuing_authority() {
             &f.registry,
         )
         .unwrap();
-    assert!(living.verify_self(&f.registry, &Ed25519Verifier).is_ok());
+    assert!(
+        living
+            .verify_self(&f.registry, &confium_signatif::verify::Fleet::Ed25519)
+            .is_ok()
+    );
     assert_eq!(living.dimensions_verified().len(), 2);
 }
 
@@ -188,7 +174,11 @@ fn ats_issuing_authority() {
 #[test]
 fn ats_root_authority() {
     let f = build();
-    assert!(f.bundle.verify(Utc::now(), &Ed25519Verifier).is_ok());
+    assert!(
+        f.bundle
+            .verify(Utc::now(), &confium_signatif::verify::Fleet::Ed25519)
+            .is_ok()
+    );
 }
 
 /// `/conf/hierarchical`: narrowing enforced along the chain.
@@ -197,7 +187,7 @@ fn ats_hierarchical_topology() {
     let f = build();
     let paths = f
         .graph
-        .find_paths("end", &f.bundle, &Ed25519Verifier)
+        .find_paths("end", &f.bundle, &confium_signatif::verify::Fleet::Ed25519)
         .unwrap();
     assert_eq!(paths.len(), 1);
     assert_eq!(paths[0].root.id, "root");
@@ -288,7 +278,7 @@ fn ats_transparency_gossip() {
         .collect();
     assert!(
         GossipQuorum { min_sources: 2 }
-            .check(&cosigns, &Ed25519Verifier)
+            .check(&cosigns, &confium_signatif::verify::Fleet::Ed25519)
             .unwrap()
     );
 }

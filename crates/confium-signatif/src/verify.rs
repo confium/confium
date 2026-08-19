@@ -189,85 +189,14 @@ pub fn verify_trusted_artifact(
 mod tests {
     use super::*;
 
-    fn fixture() -> (TrustedArtifact, TrustAnchorBundle, TrustGraph, Registry) {
-        use crate::bundle::AnchorRoot;
-        use crate::graph::{AuthorityKind, AuthorityNode, DelegationEdge};
-        use crate::scope::ScopeDimensions;
-        use ed25519_dalek::Signer;
-
-        let mut seed = [0u8; 32];
-        rand_core::RngCore::fill_bytes(&mut rand_core::OsRng, &mut seed);
-        let root_sk = ed25519_dalek::SigningKey::from_bytes(&seed);
-        let mut seed = [0u8; 32];
-        rand_core::RngCore::fill_bytes(&mut rand_core::OsRng, &mut seed);
-        let end_sk = ed25519_dalek::SigningKey::from_bytes(&seed);
-
-        let registry = Registry::with_initial_values();
-        let root = AuthorityNode {
-            id: "root".into(),
-            kind: AuthorityKind::Root,
-            public_key: root_sk.verifying_key().as_bytes().to_vec(),
-            quorum: None,
-            scope: ScopeDimensions::unconstrained(),
-        };
-        let end = AuthorityNode {
-            id: "end".into(),
-            kind: AuthorityKind::EndCertificate,
-            public_key: end_sk.verifying_key().as_bytes().to_vec(),
-            quorum: None,
-            scope: ScopeDimensions::unconstrained(),
-        };
-        let mut graph = TrustGraph::new();
-        graph.add_node(root.clone());
-        graph.add_node(end.clone());
-        graph
-            .add_delegation(DelegationEdge {
-                parent: "root".into(),
-                child: "end".into(),
-                signature: root_sk
-                    .sign(&end.binding_bytes().unwrap())
-                    .to_bytes()
-                    .to_vec(),
-            })
-            .unwrap();
-
-        let mut bundle = TrustAnchorBundle {
-            bundle_version: "1".into(),
-            valid_from: chrono::Utc::now() - chrono::Duration::hours(1),
-            valid_until: chrono::Utc::now() + chrono::Duration::days(30),
-            roots: vec![AnchorRoot {
-                name: "root".into(),
-                aggregate_key: root.public_key.clone(),
-                fingerprint: hex::encode(&root.public_key),
-                quorum: None,
-            }],
-            transparency_logs: vec![],
-            update_log: None,
-            bundle_signature: vec![],
-        };
-        let msg = bundle.signing_bytes().unwrap();
-        bundle.bundle_signature = root_sk.sign(&msg).to_bytes().to_vec();
-
-        let mut artifact = TrustedArtifact::new(
-            crate::artifact::ArtifactVersion { major: 1, minor: 0 },
-            "v-1",
-            serde_json::json!({"dose": 500}),
-            None,
-        )
-        .unwrap();
-        artifact
-            .sign(
-                crate::registry::DimensionTag::data(),
-                "Ed25519",
-                "end",
-                end_sk.verifying_key().as_bytes().to_vec(),
-                "root",
-                &|m| end_sk.sign(m).to_bytes().to_vec(),
-                &registry,
-            )
-            .unwrap();
-
-        (artifact, bundle, graph, registry)
+    fn fixture() -> (
+        crate::artifact::TrustedArtifact,
+        crate::bundle::TrustAnchorBundle,
+        crate::graph::TrustGraph,
+        crate::registry::Registry,
+    ) {
+        let f = crate::testing::Fixture::valid();
+        (f.artifact, f.bundle, f.graph, f.registry)
     }
 
     #[test]

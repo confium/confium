@@ -60,87 +60,12 @@ mod tests {
     use wasm_bindgen_test::wasm_bindgen_test;
 
     fn fixture() -> (String, String, String, String) {
-        use ed25519_dalek::Signer;
-        use rand_core::RngCore;
-
-        fn generate_key() -> ed25519_dalek::SigningKey {
-            let mut seed = [0u8; 32];
-            rand_core::OsRng.fill_bytes(&mut seed);
-            ed25519_dalek::SigningKey::from_bytes(&seed)
-        }
-
-        let registry = Registry::with_initial_values();
-        let root_sk = generate_key();
-        let end_sk = generate_key();
-        let root = confium_signatif::graph::AuthorityNode {
-            id: "root".into(),
-            kind: confium_signatif::graph::AuthorityKind::Root,
-            public_key: root_sk.verifying_key().as_bytes().to_vec(),
-            quorum: None,
-            scope: confium_signatif::scope::ScopeDimensions::unconstrained(),
-        };
-        let end = confium_signatif::graph::AuthorityNode {
-            id: "end".into(),
-            kind: confium_signatif::graph::AuthorityKind::EndCertificate,
-            public_key: end_sk.verifying_key().as_bytes().to_vec(),
-            quorum: None,
-            scope: confium_signatif::scope::ScopeDimensions::unconstrained(),
-        };
-        let mut graph = TrustGraph::new();
-        graph.add_node(root.clone());
-        graph.add_node(end.clone());
-        use confium_signatif::graph::DelegationEdge;
-        graph
-            .add_delegation(DelegationEdge {
-                parent: "root".into(),
-                child: "end".into(),
-                signature: root_sk
-                    .sign(&end.binding_bytes().unwrap())
-                    .to_bytes()
-                    .to_vec(),
-            })
-            .unwrap();
-        let mut bundle = TrustAnchorBundle {
-            bundle_version: "1".into(),
-            valid_from: chrono::Utc::now() - chrono::Duration::hours(1),
-            valid_until: chrono::Utc::now() + chrono::Duration::days(30),
-            roots: vec![confium_signatif::bundle::AnchorRoot {
-                name: "root".into(),
-                aggregate_key: root.public_key.clone(),
-                fingerprint: hex::encode(&root.public_key),
-                quorum: None,
-            }],
-            transparency_logs: vec![],
-            update_log: None,
-            bundle_signature: vec![],
-        };
-        let msg = bundle.signing_bytes().unwrap();
-        bundle.bundle_signature = root_sk.sign(&msg).to_bytes().to_vec();
-
-        let mut artifact = TrustedArtifact::new(
-            confium_signatif::artifact::ArtifactVersion { major: 1, minor: 0 },
-            "wasm-1",
-            serde_json::json!({"dose": 500}),
-            None,
-        )
-        .unwrap();
-        artifact
-            .sign(
-                confium_signatif::registry::DimensionTag::data(),
-                "Ed25519",
-                "end",
-                end_sk.verifying_key().as_bytes().to_vec(),
-                "root",
-                &|m| end_sk.sign(m).to_bytes().to_vec(),
-                &registry,
-            )
-            .unwrap();
-
+        let f = confium_signatif::testing::Fixture::valid();
         (
-            serde_json::to_string(&artifact).unwrap(),
-            serde_json::to_string(&bundle).unwrap(),
-            serde_json::to_string(&graph).unwrap(),
-            serde_json::to_string(&registry).unwrap(),
+            serde_json::to_string(&f.artifact).unwrap(),
+            serde_json::to_string(&f.bundle).unwrap(),
+            serde_json::to_string(&f.graph).unwrap(),
+            serde_json::to_string(&f.registry).unwrap(),
         )
     }
 

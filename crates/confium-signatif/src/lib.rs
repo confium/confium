@@ -23,6 +23,7 @@
 //! - [`registry`]: the five scheme-maintained registries.
 //! - [`verify`]: the deep verification entry — fleet, options, and
 //!   verdict in one interface, so transport adapters stay thin.
+//! - [`testing`]: specimen builders every test surface composes from.
 //!
 //! All verification is offline-capable against a trust anchor bundle.
 
@@ -48,6 +49,7 @@ pub mod pipeline;
 pub mod registry;
 pub mod revocation;
 pub mod scope;
+pub mod testing;
 pub mod time;
 pub mod verify;
 pub mod x509;
