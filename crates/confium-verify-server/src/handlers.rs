@@ -341,6 +341,11 @@ pub struct VerifySignatifRequest {
     pub options: confium_signatif::verify::VerifyOptions,
 }
 
+/// Deprecated alias for the pipeline options, which now live in
+/// `confium_signatif::verify::VerifyOptions`.
+#[deprecated(since = "0.5.3", note = "use confium_signatif::verify::VerifyOptions")]
+pub type VerifySignatifOptions = confium_signatif::verify::VerifyOptions;
+
 /// Response: the graduated verification outcome.
 #[derive(Debug, Serialize)]
 pub struct VerifySignatifResponse {
