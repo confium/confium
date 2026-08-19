@@ -18,6 +18,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
+- Release v0.5.3 by @[object]
+
+### Added
+
+- Specimen kit for the abstract test suite by @[object]
+- Deep verification entry — one interface for every surface by @[object]
+
+### Fixed
+
+- Resolve wasm name collision and a broken doc link by @[object]
+
+### Other
+
 - Release v0.5.1 by @[object]
 
 ### Other
