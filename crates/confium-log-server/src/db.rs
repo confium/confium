@@ -21,8 +21,18 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{Context, Result, anyhow};
+use confium_transparency::entry::ArtifactType;
 use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
+
+/// One stored entry, parsed into the shape the Merkle rebuild needs.
+/// The sequence is the 0-based leaf index (rowid minus one).
+pub struct RebuildRow {
+    pub sequence: u64,
+    pub timestamp: chrono::DateTime<chrono::Utc>,
+    pub artifact_type: ArtifactType,
+    pub artifact_hash: [u8; 32],
+}
 
 /// OTS proof row: encoded proof bytes, optional Bitcoin block height,
 /// anchor timestamp (ISO 8601).
@@ -136,7 +146,9 @@ impl Database {
                 entry.valid_to,
             ],
         )?;
-        Ok(conn.last_insert_rowid() as u64)
+        // Rowids are 1-based; entry sequences are 0-based to match the
+        // Merkle leaf index used by the proof endpoints.
+        Ok((conn.last_insert_rowid() - 1) as u64)
     }
 
     pub fn entry_at(&self, sequence: u64) -> Result<Option<Entry>> {
@@ -145,7 +157,7 @@ impl Database {
             "SELECT sequence, artifact_type, artifact_hash, timestamp,
                     issuer_dn, subject_dn, fingerprint_sha256,
                     valid_from, valid_to
-             FROM entries WHERE sequence = ?1",
+             FROM entries WHERE sequence = ?1 + 1",
         )?;
         let rows = stmt.query_row(params![sequence as i64], |row| {
             Ok(Entry {
@@ -251,6 +263,54 @@ impl Database {
             let mut arr = [0u8; 32];
             arr.copy_from_slice(&bytes);
             out.push(arr);
+        }
+        Ok(out)
+    }
+
+    /// Every entry in append order, with the stored timestamp and
+    /// type parsed back into domain types. The Merkle rebuild uses
+    /// exactly these values so that leaf hashes — which cover the
+    /// sequence, timestamp, and artifact hash — are identical before
+    /// and after a restart.
+    pub fn all_entries_for_rebuild(&self) -> Result<Vec<RebuildRow>> {
+        let conn = self.conn.lock();
+        let mut stmt = conn.prepare(
+            "SELECT sequence, artifact_type, artifact_hash, timestamp
+             FROM entries ORDER BY sequence ASC",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+            ))
+        })?;
+        let mut out = Vec::new();
+        for (i, row) in rows.enumerate() {
+            let (rowid, artifact_type, artifact_hash, timestamp) = row?;
+            let bytes = hex::decode(&artifact_hash)
+                .map_err(|e| anyhow!("hash hex decode at row {rowid}: {e}"))?;
+            if bytes.len() != 32 {
+                return Err(anyhow!(
+                    "hash must be 32 bytes at row {rowid}, got {}",
+                    bytes.len()
+                ));
+            }
+            let mut arr = [0u8; 32];
+            arr.copy_from_slice(&bytes);
+            out.push(RebuildRow {
+                // Rowids are 1-based; the tree's leaf index is the
+                // 0-based position in append order.
+                sequence: i as u64,
+                timestamp: chrono::DateTime::parse_from_rfc3339(&timestamp)
+                    .with_context(|| format!("parsing timestamp at row {rowid}"))?
+                    .with_timezone(&chrono::Utc),
+                artifact_type: artifact_type
+                    .parse()
+                    .map_err(|e| anyhow!("artifact type at row {rowid}: {e}"))?,
+                artifact_hash: arr,
+            });
         }
         Ok(out)
     }

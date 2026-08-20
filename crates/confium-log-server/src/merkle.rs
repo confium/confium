@@ -19,21 +19,48 @@ pub struct MerkleState {
 }
 
 impl MerkleState {
-    /// Rebuild the Merkle tree from every leaf hash in the database.
+    /// Rebuild the Merkle tree from every entry in the database.
     /// O(N) on startup; subsequent appends are O(log N).
+    ///
+    /// Leaf hashes cover the entry's sequence, timestamp, and
+    /// artifact hash, so the rebuild reuses the *stored* timestamps
+    /// — freshly stamped ones would silently change every leaf and
+    /// invalidate every proof issued before the restart.
     pub fn from_db(db: &Database) -> Result<Self> {
-        let leaves = db.all_leaf_hashes().context("loading leaf hashes")?;
+        let rows = db
+            .all_entries_for_rebuild()
+            .context("loading entries for rebuild")?;
         let mut tree = MerkleTree::new();
-        for leaf in leaves {
-            let entry = MerkleEntry::new(0, ArtifactType::CertificateIssuance, leaf);
+        for row in rows {
+            let entry = MerkleEntry {
+                sequence: row.sequence,
+                timestamp: row.timestamp,
+                artifact_type: row.artifact_type,
+                artifact_hash: row.artifact_hash,
+                metadata: serde_json::Value::Null,
+            };
             tree.append(entry);
         }
         tracing::info!(count = tree.len(), "rebuilt Merkle tree");
         Ok(MerkleState { tree })
     }
 
-    pub fn append(&mut self, leaf: Hash) -> u64 {
-        let entry = MerkleEntry::new(0, ArtifactType::CertificateIssuance, leaf);
+    /// Append one leaf. The timestamp must be the same one stored in
+    /// the database for this entry — the two must never diverge or
+    /// a later rebuild produces a different tree.
+    pub fn append(
+        &mut self,
+        leaf: Hash,
+        artifact_type: ArtifactType,
+        timestamp: chrono::DateTime<chrono::Utc>,
+    ) -> u64 {
+        let entry = MerkleEntry {
+            sequence: 0,
+            timestamp,
+            artifact_type,
+            artifact_hash: leaf,
+            metadata: serde_json::Value::Null,
+        };
         self.tree.append(entry)
     }
 

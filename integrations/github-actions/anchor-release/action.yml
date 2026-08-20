@@ -1,0 +1,37 @@
+name: "Confium anchor release"
+description: >-
+  Anchor release artifacts into a Confium transparency log and attach
+  verifiable Merkle inclusion proofs as sidecar files. Proofs are
+  recomputed client-side before the step succeeds, so a lying log
+  server fails the build.
+inputs:
+  artifacts:
+    description: "Glob of release artifacts to anchor (e.g. 'dist/*')."
+    required: true
+  log-url:
+    description: "Base URL of the Confium transparency log server."
+    required: true
+  artifact-type:
+    description: "Artifact type label recorded in the log entry."
+    required: false
+    default: "threshold_signature"
+  token:
+    description: "Optional bearer token forwarded to the log server."
+    required: false
+    default: ""
+outputs:
+  anchored:
+    description: >-
+      JSON map from artifact path to {sequence, root, tree_size, proof-file}.
+    value: ${{ steps.anchor.outputs.anchored }}
+runs:
+  using: composite
+  steps:
+    - id: anchor
+      shell: bash
+      run: python3 "${{ github.action_path }}/anchor.py"
+      env:
+        CONFIUM_ANCHOR_GLOB: ${{ inputs.artifacts }}
+        CONFIUM_ANCHOR_LOG_URL: ${{ inputs.log-url }}
+        CONFIUM_ANCHOR_TYPE: ${{ inputs.artifact-type }}
+        CONFIUM_ANCHOR_TOKEN: ${{ inputs.token }}

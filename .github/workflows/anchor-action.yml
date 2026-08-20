@@ -1,0 +1,112 @@
+name: Anchor action
+
+on:
+  pull_request:
+    paths:
+      - integrations/github-actions/anchor-release/**
+      - .github/workflows/anchor-action.yml
+      - crates/confium-log-server/**
+  push:
+    branches: [main]
+    paths:
+      - integrations/github-actions/anchor-release/**
+      - .github/workflows/anchor-action.yml
+      - crates/confium-log-server/**
+
+permissions:
+  contents: read
+
+jobs:
+  end-to-end:
+    name: Anchor against a live log
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: Swatinem/rust-cache@v2
+      - name: Build the log server
+        run: cargo build -p confium-log-server
+      - name: Run the log server
+        run: |
+          ./target/debug/confium-log-server \
+            --db "$RUNNER_TEMP/log.db" \
+            --listen 127.0.0.1:8099 &
+          echo $! > "$RUNNER_TEMP/log.pid"
+          for _ in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8099/v1/head >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:8099/v1/head >/dev/null
+      - name: Create release artifacts
+        run: |
+          mkdir -p dist
+          printf 'confium release candidate 1\n' > dist/app.tar.gz
+          printf 'checksums\n' > dist/checksums.txt
+      - name: Anchor them
+        uses: ./integrations/github-actions/anchor-release
+        with:
+          artifacts: "dist/*"
+          log-url: "http://127.0.0.1:8099"
+      - name: Verify the sidecars independently
+        run: |
+          python3 - <<'PY'
+          import glob, hashlib, json, sys
+          from datetime import datetime, timezone
+
+          def micros(dt):
+              d = dt.astimezone(timezone.utc) - datetime(1970, 1, 1, tzinfo=timezone.utc)
+              return (d.days * 86400 + d.seconds) * 1_000_000 + d.microseconds
+
+          sidecars = sorted(glob.glob("dist/*.confium-proof.json"))
+          assert len(sidecars) == 2, sidecars
+
+          for path in sidecars:
+              sidecar = json.load(open(path))
+              artifact = sidecar["artifact"]
+              digest = hashlib.sha256(open(artifact, "rb").read()).hexdigest()
+              assert digest == sidecar["sha256"], artifact
+
+              ts = sidecar["entry_timestamp"].replace("Z", "+00:00")
+              eh = hashlib.sha256(
+                  sidecar["sequence"].to_bytes(8, "little", signed=True)
+                  + micros(datetime.fromisoformat(ts)).to_bytes(8, "little", signed=True)
+                  + bytes.fromhex(digest)
+              ).digest()
+              assert eh.hex() == sidecar["entry_hash"], artifact
+
+              cur = hashlib.sha256(b"\x01" + eh).digest()
+              for step in sidecar["steps"]:
+                  sib = bytes.fromhex(step["sibling"])
+                  left, right = (sib, cur) if step["side"] == "left" else (cur, sib)
+                  cur = hashlib.sha256(b"\x02" + left + right).digest()
+              assert cur.hex() == sidecar["root"], artifact
+              print(f"verified {artifact} sequence={sidecar['sequence']}")
+          PY
+      - name: Check the log head advanced
+        run: |
+          tree_size=$(curl -sf http://127.0.0.1:8099/v1/head | python3 -c 'import json,sys; print(json.load(sys.stdin)["tree_size"])')
+          test "$tree_size" -ge 2
+      - name: Proofs survive a server restart
+        run: |
+          before=$(curl -sf http://127.0.0.1:8099/v1/proof/1 | python3 -c 'import json,sys; print(json.load(sys.stdin)["root"])')
+          pid="$(cat "$RUNNER_TEMP/log.pid")"
+          kill "$pid"
+          while kill -0 "$pid" 2>/dev/null; do sleep 1; done
+          ./target/debug/confium-log-server \
+            --db "$RUNNER_TEMP/log.db" \
+            --listen 127.0.0.1:8099 &
+          echo $! > "$RUNNER_TEMP/log.pid"
+          for _ in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8099/v1/head >/dev/null && break
+            sleep 1
+          done
+          after=$(curl -sf http://127.0.0.1:8099/v1/proof/1 | python3 -c 'import json,sys; print(json.load(sys.stdin)["root"])')
+          test "$before" = "$after"
+      - name: A tampered artifact must fail verification
+        run: |
+          printf 'tampered\n' > dist/app.tar.gz
+          ! python3 - <<'PY'
+          import hashlib, json
+          sidecar = json.load(open("dist/app.tar.gz.confium-proof.json"))
+          digest = hashlib.sha256(open("dist/app.tar.gz", "rb").read()).hexdigest()
+          assert digest == sidecar["sha256"]
+          PY
