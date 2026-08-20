@@ -55,17 +55,17 @@ pub fn router(state: Arc<AppState>) -> Router {
         // Generic hash-entry API.
         .route("/v1/append", post(append_hash))
         .route("/v1/head", get(head))
-        .route("/v1/proof/:sequence", get(proof))
-        .route("/v1/consistency/:old_size", get(consistency))
+        .route("/v1/proof/{sequence}", get(proof))
+        .route("/v1/consistency/{old_size}", get(consistency))
         // Cert-aware API.
         .route("/v1/certificates", post(append_certificate))
-        .route("/v1/certificates/:fingerprint", get(lookup_certificate))
-        .route("/v1/issuers/:issuer/certificates", get(list_by_issuer))
+        .route("/v1/certificates/{fingerprint}", get(lookup_certificate))
+        .route("/v1/issuers/{issuer}/certificates", get(list_by_issuer))
         // OTS anchoring.
-        .route("/v1/head/:sequence/ots", get(get_ots_proof))
+        .route("/v1/head/{sequence}/ots", get(get_ots_proof))
         // Witness gossip.
-        .route("/v1/head/:sequence/witness", post(post_witness))
-        .route("/v1/head/:sequence/witnesses", get(list_witnesses))
+        .route("/v1/head/{sequence}/witness", post(post_witness))
+        .route("/v1/head/{sequence}/witnesses", get(list_witnesses))
         .route("/v1/health", get(health))
         .route("/metrics", get(metrics))
         .with_state(state)
@@ -88,7 +88,15 @@ async fn append_hash(
     let mut arr = [0u8; 32];
     arr.copy_from_slice(&hash_bytes);
 
-    let timestamp = chrono::Utc::now().to_rfc3339();
+    let artifact_type: confium_transparency::entry::ArtifactType = req
+        .artifact_type
+        .parse()
+        .map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, format!("artifact_type: {e}")))?;
+
+    // One clock reading feeds both the database row and the Merkle
+    // leaf; a rebuild must reproduce this exact leaf.
+    let now = chrono::Utc::now();
+    let timestamp = now.to_rfc3339();
     let entry = Entry {
         sequence: 0,
         artifact_type: req.artifact_type,
@@ -103,7 +111,7 @@ async fn append_hash(
     let seq = state.db.append(&entry).map_err(internal_error)?;
     {
         let mut merkle = state.merkle.lock();
-        merkle.append(arr);
+        merkle.append(arr, artifact_type, now);
     }
 
     let root = state.merkle.lock().root();
@@ -137,6 +145,14 @@ async fn proof(
         .map_err(|e| ApiError::new(StatusCode::NOT_FOUND, e.to_string()))?;
     let root = merkle.root();
     let size = merkle.len();
+    // The leaf pre-image data: with sequence, timestamp, and
+    // entry_hash, an offline verifier can recompute the leaf from the
+    // artifact's SHA-256 and walk the proof to the root without
+    // trusting this server at all.
+    let entry = merkle
+        .tree
+        .entry(sequence)
+        .map_err(|e| ApiError::new(StatusCode::NOT_FOUND, e.to_string()))?;
     let steps: Vec<Value> = proof
         .steps
         .iter()
@@ -155,6 +171,8 @@ async fn proof(
         "steps": steps,
         "root": hex::encode(root),
         "tree_size": size,
+        "entry_hash": hex::encode(entry.entry_hash()),
+        "entry_timestamp": entry.timestamp.to_rfc3339(),
     })))
 }
 
@@ -192,7 +210,13 @@ async fn append_certificate(
     let artifact_type = classify_cert(&der_bytes, &meta);
     let fingerprint_hex = hex::encode(fingerprint(&der_bytes));
 
-    let timestamp = chrono::Utc::now().to_rfc3339();
+    let typed: confium_transparency::entry::ArtifactType = artifact_type
+        .parse()
+        .map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, format!("artifact_type: {e}")))?;
+    // One clock reading feeds both the database row and the Merkle
+    // leaf; a rebuild must reproduce this exact leaf.
+    let now = chrono::Utc::now();
+    let timestamp = now.to_rfc3339();
     let entry = Entry {
         sequence: 0,
         artifact_type: artifact_type.clone(),
@@ -207,7 +231,7 @@ async fn append_certificate(
     let seq = state.db.append(&entry).map_err(internal_error)?;
     {
         let mut merkle = state.merkle.lock();
-        merkle.append(fingerprint(&der_bytes));
+        merkle.append(fingerprint(&der_bytes), typed, now);
     }
 
     let root = state.merkle.lock().root();
@@ -401,5 +425,175 @@ impl IntoResponse for ApiError {
     fn into_response(self) -> axum::response::Response {
         let body = Json(json!({"error": self.message}));
         (self.status, body).into_response()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    //! Router-level round-trips: append an entry and immediately
+    //! fetch its inclusion proof. Regression coverage for the two
+    //! integration bugs the anchor action surfaced: axum 0.8
+    //! rejecting `:param` routes at startup, and the append response
+    //! reporting 1-based rowids while the proof endpoint indexes
+    //! 0-based Merkle leaves.
+
+    use super::*;
+    use axum::body::Body;
+    use axum::http::{Method, Request, StatusCode};
+    use tower::ServiceExt;
+
+    fn app() -> Router {
+        let db = Database::open(std::path::Path::new(":memory:")).unwrap();
+        db.init_schema().unwrap();
+        let merkle = MerkleState::from_db(&db).unwrap();
+        let state = Arc::new(AppState {
+            db,
+            merkle: parking_lot::Mutex::new(merkle),
+            page_size: 100,
+        });
+        router(state)
+    }
+
+    async fn send(app: &Router, method: Method, uri: &str, body: Option<Value>) -> Value {
+        let builder = Request::builder().method(method.clone()).uri(uri);
+        let request = match body {
+            Some(v) => builder
+                .header("content-type", "application/json")
+                .body(Body::from(v.to_string()))
+                .unwrap(),
+            None => builder.body(Body::empty()).unwrap(),
+        };
+        let response = app.clone().oneshot(request).await.unwrap();
+        let status = response.status();
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: Value = if bytes.is_empty() {
+            Value::Null
+        } else {
+            serde_json::from_slice(&bytes)
+                .unwrap_or(Value::String(String::from_utf8_lossy(&bytes).into_owned()))
+        };
+        assert_eq!(status, StatusCode::OK, "{method} {uri} -> {status}: {json}");
+        json
+    }
+
+    #[tokio::test]
+    async fn append_then_proof_round_trip() {
+        let app = app();
+
+        let first = send(
+            &app,
+            Method::POST,
+            "/v1/append",
+            Some(json!({
+                "artifact_type": "threshold_signature",
+                "artifact_hash": "ab".repeat(32),
+            })),
+        )
+        .await;
+        assert_eq!(first["sequence"], 0, "first entry must be sequence 0");
+        assert_eq!(first["tree_size"], 1);
+
+        let second = send(
+            &app,
+            Method::POST,
+            "/v1/append",
+            Some(json!({
+                "artifact_type": "threshold_signature",
+                "artifact_hash": "cd".repeat(32),
+            })),
+        )
+        .await;
+        assert_eq!(second["sequence"], 1);
+        assert_eq!(second["tree_size"], 2);
+
+        // The sequence the append response reported must be immediately
+        // usable on the proof endpoint — no off-by-one, no 404 window.
+        for sequence in [0u64, 1] {
+            let proof = send(&app, Method::GET, &format!("/v1/proof/{sequence}"), None).await;
+            assert_eq!(proof["sequence"], sequence);
+            assert_eq!(proof["root"], second["root"]);
+            assert_eq!(proof["tree_size"], 2);
+            // The leaf pre-image lets an offline verifier recompute
+            // the leaf from the artifact hash.
+            assert!(proof["entry_hash"].as_str().is_some_and(|h| h.len() == 64));
+            assert!(proof["entry_timestamp"].as_str().is_some());
+        }
+
+        let head = send(&app, Method::GET, "/v1/head", None).await;
+        assert_eq!(head["tree_size"], 2);
+        assert_eq!(head["root"], second["root"]);
+    }
+
+    #[tokio::test]
+    async fn proof_of_out_of_range_sequence_is_404() {
+        let app = app();
+        let request = Request::builder()
+            .method(Method::GET)
+            .uri("/v1/proof/0")
+            .body(Body::empty())
+            .unwrap();
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    /// Leaf hashes cover sequence, timestamp, and artifact hash. A
+    /// restart rebuilds the tree from the database — if the rebuild
+    /// stamped fresh timestamps, every leaf would change and every
+    /// proof issued before the restart would silently stop verifying.
+    /// The root must be identical across a rebuild.
+    #[tokio::test]
+    async fn rebuild_reproduces_the_same_root() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = Database::open(&dir.path().join("log.db")).unwrap();
+        db.init_schema().unwrap();
+        let merkle = parking_lot::Mutex::new(MerkleState::from_db(&db).unwrap());
+        let state = Arc::new(AppState {
+            db,
+            merkle,
+            page_size: 100,
+        });
+        let app = router(state.clone());
+        for hash in ["ab".to_string(), "cd".to_string(), "ef".to_string()] {
+            send(
+                &app,
+                Method::POST,
+                "/v1/append",
+                Some(json!({
+                    "artifact_type": "threshold_signature",
+                    "artifact_hash": hash.repeat(32),
+                })),
+            )
+            .await;
+        }
+        let before = {
+            let m = state.merkle.lock();
+            (m.root(), m.len())
+        };
+
+        let rebuilt = MerkleState::from_db(&state.db).unwrap();
+        assert_eq!(rebuilt.root(), before.0, "rebuild must not change the root");
+        assert_eq!(rebuilt.len(), before.1);
+        assert_eq!(rebuilt.len(), 3);
+    }
+
+    #[tokio::test]
+    async fn append_rejects_unknown_artifact_type() {
+        let app = app();
+        let request = Request::builder()
+            .method(Method::POST)
+            .uri("/v1/append")
+            .header("content-type", "application/json")
+            .body(Body::from(
+                json!({
+                    "artifact_type": "not-a-type",
+                    "artifact_hash": "ab".repeat(32),
+                })
+                .to_string(),
+            ))
+            .unwrap();
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     }
 }
