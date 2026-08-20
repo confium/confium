@@ -7,6 +7,10 @@
       url = "github:oxalica/rust-overlay";
       inputs = { nixpkgs.follows = "nixpkgs"; };
     };
+    crane = {
+      url = "github:ipetkov/crane";
+      inputs = { nixpkgs.follows = "nixpkgs"; };
+    };
     devshell.url = "github:numtide/devshell/master";
     flake-compat = {
       url = "github:edolstra/flake-compat";
@@ -14,13 +18,22 @@
     };
   };
   outputs =
-    { self, nixpkgs, rust-overlay, flake-utils, devshell, flake-compat, ... }:
+    { self, nixpkgs, rust-overlay, crane, flake-utils, devshell, flake-compat, ... }:
     flake-utils.lib.eachDefaultSystem (system:
     let
       cwd = builtins.toString ./.;
       overlays = [ devshell.overlay rust-overlay.overlays.default ];
       pkgs = import nixpkgs { inherit system overlays; };
       rust = pkgs.rust-bin.fromRustupToolchainFile "${cwd}/rust-toolchain.toml";
+      craneLib = (crane.mkLib pkgs).overrideToolchain rust;
+      # The FFI cdylib (libconfium.so / .dylib) that plugin hosts load.
+      libconfium = craneLib.buildPackage {
+        src = craneLib.cleanCargoSource ./.;
+        strictDeps = true;
+        cargoExtraArgs = "--package confium-core";
+        copyLibs = true;
+        doCheck = false; # the workspace test suite runs in main CI
+      };
     in
     with pkgs; {
       devShells.default = clangStdenv.mkDerivation {
@@ -41,6 +54,10 @@
         OPENSSL_DIR = "${openssl.bin}/bin";
         OPENSSL_LIB_DIR = "${openssl.out}/lib";
         OPENSSL_INCLUDE_DIR = "${openssl.out.dev}/include";
+      };
+      packages = {
+        default = libconfium;
+        inherit libconfium;
       };
     });
 }
