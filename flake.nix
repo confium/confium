@@ -7,22 +7,14 @@
       url = "github:oxalica/rust-overlay";
       inputs = { nixpkgs.follows = "nixpkgs"; };
     };
-    crane = {
-      url = "github:ipetkov/crane";
-      inputs = { nixpkgs.follows = "nixpkgs"; };
-    };
-    devshell.url = "github:numtide/devshell/master";
-    flake-compat = {
-      url = "github:edolstra/flake-compat";
-      flake = false;
-    };
+    crane.url = "github:ipetkov/crane";
   };
   outputs =
-    { self, nixpkgs, rust-overlay, crane, flake-utils, devshell, flake-compat, ... }:
+    { self, nixpkgs, rust-overlay, crane, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
     let
       cwd = builtins.toString ./.;
-      overlays = [ devshell.overlay rust-overlay.overlays.default ];
+      overlays = [ rust-overlay.overlays.default ];
       pkgs = import nixpkgs { inherit system overlays; };
       rust = pkgs.rust-bin.fromRustupToolchainFile "${cwd}/rust-toolchain.toml";
       craneLib = (crane.mkLib pkgs).overrideToolchain rust;
