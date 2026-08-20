@@ -22,32 +22,16 @@ jobs:
         run: |
           nix flake check
           nix build .#libconfium --no-link --print-out-paths
-      - name: Open a pull request when the lock changed
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet flake.lock; then
-            echo "flake.lock is already current; nothing to do."
-            exit 0
-          fi
-          BRANCH=nix/flake-lock-update
-          git checkout -b "$BRANCH"
-          git add flake.lock
-          git commit -m "chore(nix): update flake.lock"
-          git push --force-with-lease origin "$BRANCH"
-          cat > pr-body.md <<'BODY'
-          Scheduled refresh of the flake inputs. This lock was built and
-          verified by the workflow run that opened this PR (nix flake
-          check + nix build .#libconfium both passed on it).
-          BODY
-          # The verification above ran against exactly this lock, so the
-          # PR needs no further CI (GITHUB_TOKEN-created pull requests do
-          # not trigger workflows anyway).
-          gh pr create \
-            --title "chore(nix): update flake.lock" \
-            --body-file pr-body.md \
-            --base main \
-            --head "$BRANCH" \
-            || echo "PR for $BRANCH likely already open"
+      # Only reaches this step when verification passed, so the PR
+      # carries the job's own green build as its review evidence
+      # (GITHUB_TOKEN-created pull requests do not trigger workflows).
+      - uses: peter-evans/create-pull-request@v8
+        with:
+          branch: nix/flake-lock-update
+          title: "chore(nix): update flake.lock"
+          commit-message: "chore(nix): update flake.lock"
+          body: |
+            Scheduled refresh of the flake inputs. This lock was built and
+            verified by the workflow run that opened this PR (`nix flake
+            check` and `nix build .#libconfium` both passed on it).
+          delete-branch: true
