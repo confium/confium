@@ -132,7 +132,9 @@ impl PostgresBackend {
             )
             .await?;
         let seq: i64 = rows.get(0);
-        Ok(seq as u64)
+        // Postgres SERIAL ids are 1-based; entry sequences are 0-based
+        // to match the Merkle leaf index used by the proof endpoints.
+        Ok((seq - 1) as u64)
     }
 
     pub async fn entry_count(&self) -> Result<u64> {
