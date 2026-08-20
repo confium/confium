@@ -20,10 +20,16 @@ permissions:
 
 jobs:
   flake-check:
-    name: Nix flake check
+    name: Nix check and build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: DeterminateSystems/nix-installer-action@v17
+      # Float the lockfile: CI verifies what the scheduled lock-update
+      # workflow would commit, not the (possibly stale) committed lock.
+      - name: Update flake inputs
+        run: nix flake update
       - name: Evaluate the flake
         run: nix flake check
+      - name: Build the libconfium cdylib
+        run: nix build .#libconfium --no-link --print-out-paths

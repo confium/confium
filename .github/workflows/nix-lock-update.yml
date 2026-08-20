@@ -1,0 +1,53 @@
+name: Nix lock update
+
+on:
+  schedule:
+    - cron: "0 4 * * 1" # Mondays 04:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-lock:
+    name: Refresh flake.lock
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/nix-installer-action@v17
+      - name: Update flake inputs
+        run: nix flake update
+      - name: Verify the updated lock
+        run: |
+          nix flake check
+          nix build .#libconfium --no-link --print-out-paths
+      - name: Open a pull request when the lock changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet flake.lock; then
+            echo "flake.lock is already current; nothing to do."
+            exit 0
+          fi
+          BRANCH=nix/flake-lock-update
+          git checkout -b "$BRANCH"
+          git add flake.lock
+          git commit -m "chore(nix): update flake.lock"
+          git push --force-with-lease origin "$BRANCH"
+          cat > pr-body.md <<'BODY'
+          Scheduled refresh of the flake inputs. This lock was built and
+          verified by the workflow run that opened this PR (nix flake
+          check + nix build .#libconfium both passed on it).
+          BODY
+          # The verification above ran against exactly this lock, so the
+          # PR needs no further CI (GITHUB_TOKEN-created pull requests do
+          # not trigger workflows anyway).
+          gh pr create \
+            --title "chore(nix): update flake.lock" \
+            --body-file pr-body.md \
+            --base main \
+            --head "$BRANCH" \
+            || echo "PR for $BRANCH likely already open"
