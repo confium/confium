@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
+- Release v0.5.5 by @[object]
+- Remove stale code by @[object]
+
+### Other
+
 - Remove stale code by @[object]
 
 ### Added
