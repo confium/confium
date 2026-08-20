@@ -1303,6 +1303,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "tokio-postgres",
+ "tower 0.5.3",
  "tracing",
  "tracing-subscriber",
 ]
