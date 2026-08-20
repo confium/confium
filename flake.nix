@@ -20,10 +20,10 @@
       cwd = builtins.toString ./.;
       overlays = [ devshell.overlay rust-overlay.overlays.default ];
       pkgs = import nixpkgs { inherit system overlays; };
-      rust = pkgs.rust-bin.fromRustupToolchainFile "${cwd}/rust-toolchain";
+      rust = pkgs.rust-bin.fromRustupToolchainFile "${cwd}/rust-toolchain.toml";
     in
     with pkgs; {
-      devShell = clangStdenv.mkDerivation {
+      devShells.default = clangStdenv.mkDerivation {
         name = "rust";
         nativeBuildInputs = [
           binutils

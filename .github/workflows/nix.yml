@@ -1,0 +1,29 @@
+name: Nix
+
+on:
+  pull_request:
+    paths:
+      - flake.nix
+      - flake.lock
+      - rust-toolchain.toml
+      - .github/workflows/nix.yml
+  push:
+    branches: [main]
+    paths:
+      - flake.nix
+      - flake.lock
+      - rust-toolchain.toml
+      - .github/workflows/nix.yml
+
+permissions:
+  contents: read
+
+jobs:
+  flake-check:
+    name: Nix flake check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/nix-installer-action@v17
+      - name: Evaluate the flake
+        run: nix flake check
