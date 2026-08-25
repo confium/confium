@@ -38,6 +38,18 @@ pub enum CertError {
     Invalid(String),
 }
 
+impl CertError {
+    /// Byte offset into the input where a DER decode failed, when the
+    /// underlying decoder reports one. Bindings surface this as a
+    /// structured parse-error field instead of a string-only message.
+    pub fn der_offset(&self) -> Option<usize> {
+        match self {
+            Self::Der(e) => e.position().map(|p| u32::from(p) as usize),
+            _ => None,
+        }
+    }
+}
+
 impl Certificate {
     /// Parse a certificate from DER bytes.
     pub fn from_der(der_bytes: &[u8]) -> Result<Self, CertError> {
@@ -223,6 +235,28 @@ fn der_to_pem(der: &[u8], label: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    use super::CertError;
+
+    #[test]
+    fn der_offset_reports_the_truncation_point() {
+        let der = rcgen::generate_simple_self_signed(vec!["offset-test.confium".into()])
+            .expect("keygen")
+            .cert
+            .der()
+            .to_vec();
+
+        let truncated = &der[..20];
+        let err = Certificate::from_der(truncated).expect_err("truncated DER must fail");
+        assert!(err.der_offset().is_some(), "offset missing for: {err}");
+    }
+
+    #[test]
+    fn der_offset_is_none_for_non_der_errors() {
+        let err = Certificate::from_pem("not a pem block").expect_err("garbage PEM must fail");
+        assert!(matches!(&err, CertError::Pem(_)), "unexpected: {err}");
+        assert_eq!(err.der_offset(), None);
+    }
+
     use super::*;
 
     #[test]
