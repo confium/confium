@@ -39,6 +39,8 @@
 use std::ffi::c_void;
 
 use aws_sdk_kms::Client as KmsClient;
+use aws_sdk_kms::primitives::Blob;
+use aws_sdk_kms::types::MessageType;
 use confium_store::backend::{Compartment, Options, StoreBackend, StoreInstance};
 use confium_store::error::{Error, Result};
 use confium_store::register_backend;
@@ -226,6 +228,52 @@ impl StoreInstance for AwsKmsInstance {
         }
         Ok(out)
     }
+
+    fn sign(
+        &self,
+        _module: &str,
+        _app: &str,
+        key_id: &str,
+        algorithm: &str,
+        message: &[u8],
+    ) -> Result<Vec<u8>> {
+        let id = if key_id.is_empty() {
+            self.config
+                .key_id
+                .as_deref()
+                .ok_or_else(|| Error::Wrapped {
+                    message: "aws-kms sign: no key_id given and no default 'key_id' option"
+                        .to_string(),
+                })?
+        } else {
+            key_id
+        };
+        if algorithm.is_empty() {
+            return Err(Error::Wrapped {
+                message: "aws-kms sign: algorithm is required (e.g. ECDSA_SHA_256)".to_string(),
+            });
+        }
+        let client = self.ensure_client()?;
+        let resp = self
+            .rt
+            .block_on(
+                client
+                    .sign()
+                    .key_id(id)
+                    .signing_algorithm(algorithm.into())
+                    .message_type(MessageType::Raw)
+                    .message(Blob::new(message.to_vec()))
+                    .send(),
+            )
+            .map_err(|e| Error::Wrapped {
+                message: format!("aws-kms Sign: {e}"),
+            })?;
+        resp.signature()
+            .map(|b| b.as_ref().to_vec())
+            .ok_or_else(|| Error::Wrapped {
+                message: "aws-kms Sign: response carried no signature".to_string(),
+            })
+    }
 }
 
 // SAFETY: `aws_sdk_kms::Client` is `Send + Sync` (it wraps an Arc'd
@@ -324,6 +372,67 @@ mod tests {
         assert_eq!(ids.len(), 2, "ids: {ids:?}");
         assert!(ids.contains(&"1234abcd-12ab-34cd-56ef-1234567890ab".to_string()));
         assert!(ids.contains(&"abcd1234-ab12-cd34-ef56-ab1234567890ab".to_string()));
+    }
+
+    #[test]
+    fn sign_round_trips_through_the_kms_stub() {
+        let _env = ENV_LOCK.lock().unwrap();
+        let _creds = EnvVarGuard::set("AWS_ACCESS_KEY_ID", "test");
+        let _secret = EnvVarGuard::set("AWS_SECRET_ACCESS_KEY", "test");
+        let _no_imds = EnvVarGuard::set("AWS_EC2_METADATA_DISABLED", "true");
+        let _region = EnvVarGuard::set("AWS_REGION", "us-east-1");
+        let _certs = EnvVarGuard::set("SSL_CERT_FILE", "/etc/ssl/cert.pem");
+
+        // 64 arbitrary bytes as the "signature" the stub returns.
+        let expected: Vec<u8> = (0u8..64).collect();
+        use base64::Engine as _;
+        let sig_b64 = base64::engine::general_purpose::STANDARD.encode(&expected);
+
+        let server = tokio::runtime::Runtime::new()
+            .expect("test runtime")
+            .block_on(async {
+                let server = wiremock::MockServer::start().await;
+                wiremock::Mock::given(wiremock::matchers::method("POST"))
+                    .and(wiremock::matchers::path("/"))
+                    .and(wiremock::matchers::header(
+                        "X-Amz-Target",
+                        "TrentService.Sign",
+                    ))
+                    .respond_with(wiremock::ResponseTemplate::new(200).set_body_string(
+                        format!(r#"{{"KeyId":"alias/test","Signature":"{sig_b64}","SigningAlgorithm":"ECDSA_SHA_256"}}"#),
+                    ))
+                    .mount(&server)
+                    .await;
+                server
+            });
+
+        let mut opts = Options::new();
+        opts.insert(OPT_ENDPOINT.to_string(), server.uri());
+        let instance = AwsKmsBackend.open(&opts).expect("open");
+        let sig = instance
+            .sign(
+                "m",
+                "a",
+                "alias/test",
+                "ECDSA_SHA_256",
+                b"hello, remote world",
+            )
+            .expect("sign");
+        assert_eq!(sig, expected);
+    }
+
+    #[test]
+    fn sign_requires_a_key_id() {
+        let instance = AwsKmsBackend.open(&Options::new()).expect("open");
+        let err = instance
+            .sign("m", "a", "", "ECDSA_SHA_256", b"msg")
+            .unwrap_err();
+        match err {
+            Error::Wrapped { message } => {
+                assert!(message.contains("key_id"), "message: {message}");
+            }
+            other => panic!("expected Wrapped, got {other:?}"),
+        }
     }
 
     #[test]

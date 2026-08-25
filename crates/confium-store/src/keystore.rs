@@ -83,6 +83,19 @@ impl Keystore {
         self.instance.get_public(module, app, identity)
     }
 
+    /// Sign a message with a remotely-held key (see
+    /// [`StoreInstance::sign`](crate::backend::StoreInstance::sign)).
+    pub fn sign(
+        &self,
+        module: &str,
+        app: &str,
+        key_id: &str,
+        algorithm: &str,
+        message: &[u8],
+    ) -> Result<Vec<u8>> {
+        self.instance.sign(module, app, key_id, algorithm, message)
+    }
+
     pub fn enumerate(
         &self,
         module: &str,

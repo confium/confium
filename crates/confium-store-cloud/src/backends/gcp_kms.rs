@@ -162,6 +162,37 @@ impl GcpKmsInstance {
             })?;
         Ok(self.client.get_or_init(|| built))
     }
+    /// Resolve the crypto key version resource name. Accepts a full
+    /// `projects/.../cryptoKeyVersions/N` path, or a bare crypto key
+    /// name combined with the `project`/`location`/`key_ring` options
+    /// and the `key_version` option (default `1`).
+    fn crypto_key_version_path(&self, key_id: &str) -> Result<String> {
+        if key_id.starts_with("projects/") {
+            if key_id.contains("/cryptoKeyVersions/") {
+                return Ok(key_id.to_string());
+            }
+            return Ok(format!("{key_id}/cryptoKeyVersions/1"));
+        }
+        let project = self
+            .config
+            .project
+            .as_deref()
+            .ok_or_else(|| Error::Wrapped {
+                message: "gcp-kms sign: option 'project' is required for a bare key id".to_string(),
+            })?;
+        let location = self.config.location.as_deref().unwrap_or("global");
+        let key_ring = self
+            .config
+            .key_ring
+            .as_deref()
+            .ok_or_else(|| Error::Wrapped {
+                message: "gcp-kms sign: option 'key_ring' is required for a bare key id"
+                    .to_string(),
+            })?;
+        Ok(format!(
+            "projects/{project}/locations/{location}/keyRings/{key_ring}/cryptoKeys/{key_id}/cryptoKeyVersions/1"
+        ))
+    }
 }
 
 impl StoreInstance for GcpKmsInstance {
@@ -223,6 +254,35 @@ impl StoreInstance for GcpKmsInstance {
         Err(Error::NotImplemented {
             what: "gcp-kms enumerate",
         })
+    }
+    fn sign(
+        &self,
+        _module: &str,
+        _app: &str,
+        key_id: &str,
+        algorithm: &str,
+        message: &[u8],
+    ) -> Result<Vec<u8>> {
+        if algorithm.is_empty() {
+            return Err(Error::Wrapped {
+                message: "gcp-kms sign: algorithm is required (it is only a hint for ".to_string()
+                    + "logging; the key version's own algorithm signs)",
+            });
+        }
+        let name = self.crypto_key_version_path(key_id)?;
+        let client = self.ensure_client()?;
+        let req = google_cloud_kms::grpc::kms::v1::AsymmetricSignRequest {
+            name,
+            data: message.to_vec(),
+            ..Default::default()
+        };
+        let resp = self
+            .rt
+            .block_on(client.asymmetric_sign(req, None))
+            .map_err(|e| Error::Wrapped {
+                message: format!("gcp-kms AsymmetricSign: {e}"),
+            })?;
+        Ok(resp.signature)
     }
 }
 
@@ -308,6 +368,43 @@ mod tests {
         match err {
             Error::Wrapped { message } => {
                 assert!(message.contains("credentials json"), "message: {message}");
+            }
+            other => panic!("expected Wrapped, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn sign_rejects_a_bare_key_id_without_project_options() {
+        let _env = ENV_LOCK.lock().unwrap();
+        let _g1 = EnvVarGuard::remove("GOOGLE_APPLICATION_CREDENTIALS");
+        let _g2 = EnvVarGuard::remove("GOOGLE_APPLICATION_CREDENTIALS_JSON");
+        let instance = GcpKmsBackend.open(&Options::new()).expect("open");
+        let err = instance
+            .sign("m", "a", "my-key", "EC_SIGN_P256_SHA256", b"msg")
+            .unwrap_err();
+        match err {
+            Error::Wrapped { message } => {
+                assert!(message.contains("project"), "message: {message}");
+            }
+            other => panic!("expected Wrapped, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn sign_requires_an_algorithm() {
+        let instance = GcpKmsBackend.open(&Options::new()).expect("open");
+        let err = instance
+            .sign(
+                "m",
+                "a",
+                "projects/p/locations/l/keyRings/r/cryptoKeys/k/cryptoKeyVersions/1",
+                "",
+                b"msg",
+            )
+            .unwrap_err();
+        match err {
+            Error::Wrapped { message } => {
+                assert!(message.contains("algorithm"), "message: {message}");
             }
             other => panic!("expected Wrapped, got {other:?}"),
         }
