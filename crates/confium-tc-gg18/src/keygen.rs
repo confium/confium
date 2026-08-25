@@ -235,9 +235,7 @@ impl SessionImpl for Gg18DkgSession {
         for (_, s) in self.received_shares.drain(..) {
             let _ = s;
         }
-        for s in &mut self.our_vss.shares {
-            *s = Scalar::ZERO;
-        }
+        self.our_vss.shares.fill(Scalar::ZERO);
     }
 }
 
