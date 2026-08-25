@@ -25,12 +25,16 @@
 //!
 //! # KMS API status
 //!
-//! Construction builds a real [`aws_sdk_kms::Client`]. The
-//! [`StoreInstance`](confium_store::backend::StoreInstance) methods are
-//! stubbed to return [`NotImplemented`](confium_store::error::Error::NotImplemented)
-//! until the `cfmp_sign_with_handle` plugin contract (TODO #03) lands,
-//! because AWS KMS never exports raw key bytes — it returns opaque key
-//! ARNs that the signature plugin must invoke via `Sign` / `Verify`.
+//! Construction builds a real [`aws_sdk_kms::Client`] on first use
+//! (credentials/region/endpoint resolved from the environment plus
+//! the `region` / `endpoint` options). Secret and public put/get stay
+//! [`NotImplemented`](confium_store::error::Error::NotImplemented)
+//! until the `cfmp_sign_with_handle` plugin contract (TODO #03)
+//! lands: AWS KMS never exports raw key bytes — it returns opaque
+//! key ARNs that the signature plugin must invoke via `Sign` /
+//! `Verify`. `enumerate` of the private compartment lists real KMS
+//! key IDs via `ListKeys` (remote keys have no local handle, so the
+//! handle slot is null and the index string is the key ID).
 
 use std::ffi::c_void;
 
@@ -59,29 +63,23 @@ impl StoreBackend for AwsKmsBackend {
     }
 
     fn open(&self, opts: &Options) -> Result<Box<dyn StoreInstance>> {
-        // The ConfigLoader is the standard AWS SDK entry point. We
-        // honour `region` if set; everything else (credentials, retry)
-        // is left to the SDK's default chain so we behave like every
-        // other AWS SDK consumer.
-        let mut loader = aws_config::defaults(aws_config::BehaviorVersion::latest());
-        if let Some(region) = opts.get(OPT_REGION) {
-            loader = loader.region(aws_sdk_kms::config::Region::new(region.clone()));
-        }
-        // We can't await inside `open` (the trait is synchronous), so we
-        // stash the loader and materialise the client lazily on first
-        // use. The `aws_sdk_kms::Client::builder()` accepts a
-        // `&SdkConfig` synchronously once `load().await` has produced
-        // one; for the skeleton we keep the loader around and let the
-        // first `StoreInstance` call drive it to completion via the
-        // per-instance tokio runtime.
-        let _ = loader;
+        // `open` must not touch the network (see the tests): the client
+        // is built lazily on first use from the captured config, so
+        // credentials/region resolution — which may consult IMDS —
+        // happens on the first StoreInstance call, not here.
         Ok(Box::new(AwsKmsInstance {
             config: AwsKmsConfig {
                 region: opts.get(OPT_REGION).cloned(),
                 key_id: opts.get(OPT_KEY_ID).cloned(),
                 endpoint: opts.get(OPT_ENDPOINT).cloned(),
             },
-            client: None,
+            rt: tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .map_err(|e| Error::Wrapped {
+                    message: format!("aws-kms tokio runtime: {e}"),
+                })?,
+            client: std::sync::OnceLock::new(),
         }))
     }
 }
@@ -111,39 +109,31 @@ struct AwsKmsConfig {
 #[allow(dead_code)]
 pub struct AwsKmsInstance {
     config: AwsKmsConfig,
-    client: Option<KmsClient>,
+    rt: tokio::runtime::Runtime,
+    client: std::sync::OnceLock<KmsClient>,
 }
 
 impl AwsKmsInstance {
-    /// Lazily build the KMS client on first use. Construction is
-    /// deferred because `aws_config::defaults(...).load()` is async and
-    /// the `StoreInstance` trait is not. Returns
-    /// [`Error::NotImplemented`] for now — the actual `Sign` / `Verify`
-    /// calls depend on the `cfmp_sign_with_handle` plugin contract
-    /// (TODO #03) and will replace this stub.
-    fn ensure_client(&mut self) -> Result<&KmsClient> {
-        if self.client.is_none() {
-            // The real construction goes here once the plugin contract
-            // is finalised. Kept as a comment so the wiring is visible:
-            //
-            // let rt = tokio::runtime::Runtime::new()?;
-            // let mut loader = aws_config::defaults(
-            //     aws_config::BehaviorVersion::latest(),
-            // );
-            // if let Some(region) = &self.config.region {
-            //     loader = loader.region(Region::new(region.clone()));
-            // }
-            // let sdk_cfg = rt.block_on(loader.load());
-            // let mut builder = aws_sdk_kms::config::Builder::from(&sdk_cfg);
-            // if let Some(endpoint) = &self.config.endpoint {
-            //     builder = builder.endpoint_url(endpoint);
-            // }
-            // self.client = Some(KmsClient::from_conf(builder.build()));
-            return Err(Error::NotImplemented {
-                what: "aws-kms client construction",
-            });
+    /// Build the KMS client on first use: credentials, region, and
+    /// retry policy from the environment (env vars, shared config,
+    /// IMDS, SSO, ...), then the `region` / `endpoint` option
+    /// overrides. `OnceLock` lets read-side calls (`&self`)
+    /// construct it too.
+    fn ensure_client(&self) -> Result<&KmsClient> {
+        if let Some(client) = self.client.get() {
+            return Ok(client);
         }
-        Ok(self.client.as_ref().expect("client just constructed"))
+        let mut loader = aws_config::defaults(aws_config::BehaviorVersion::latest());
+        if let Some(region) = &self.config.region {
+            loader = loader.region(aws_config::Region::new(region.clone()));
+        }
+        let sdk_cfg = self.rt.block_on(loader.load());
+        let mut builder = aws_sdk_kms::config::Builder::from(&sdk_cfg);
+        if let Some(endpoint) = &self.config.endpoint {
+            builder = builder.endpoint_url(endpoint);
+        }
+        let built = KmsClient::from_conf(builder.build());
+        Ok(self.client.get_or_init(|| built))
     }
 }
 
@@ -157,7 +147,7 @@ impl StoreInstance for AwsKmsInstance {
     ) -> Result<()> {
         // Force client construction so misconfiguration surfaces here
         // rather than at the first read.
-        let _ = self.ensure_client()?;
+        self.ensure_client()?;
         // AWS KMS keys are created out-of-band (CloudFormation, CLI,
         // console). `put_secret` will translate to either `CreateKey`
         // (when no `key_id` is configured) or `PutKeyPolicy` /
@@ -204,13 +194,37 @@ impl StoreInstance for AwsKmsInstance {
         &self,
         _module: &str,
         _app: &str,
-        _compartment: Compartment,
+        compartment: Compartment,
     ) -> Result<Vec<(*mut c_void, String)>> {
-        // `aws_sdk_kms::Client::list_keys()` is the eventual backing
-        // call; returns paginated key ARNs. Stubbed for now.
-        Err(Error::NotImplemented {
-            what: "aws-kms enumerate",
-        })
+        if matches!(compartment, Compartment::Public) {
+            return Err(Error::NotImplemented {
+                what: "aws-kms enumerate (public compartment)",
+            });
+        }
+        let client = self.ensure_client()?;
+        let mut out = Vec::new();
+        let mut marker: Option<String> = None;
+        loop {
+            let mut req = client.list_keys().limit(100);
+            if let Some(m) = marker.as_deref() {
+                req = req.marker(m);
+            }
+            let page = self.rt.block_on(req.send()).map_err(|e| Error::Wrapped {
+                message: format!("aws-kms ListKeys: {e}"),
+            })?;
+            for key in page.keys() {
+                if let Some(id) = key.key_id() {
+                    // Remote KMS keys have no local handle; the index
+                    // string (the KMS key ID) is the resource identity.
+                    out.push((std::ptr::null_mut(), id.to_string()));
+                }
+            }
+            marker = page.next_marker().map(|m| m.to_string());
+            if marker.is_none() {
+                break;
+            }
+        }
+        Ok(out)
     }
 }
 
@@ -233,6 +247,31 @@ mod tests {
         n as *mut c_void
     }
 
+    // The credential chain reads process env; tests that trigger client
+    // construction must pin it to a hermetic, offline configuration.
+    static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    struct EnvVarGuard(&'static str, Option<String>);
+
+    impl EnvVarGuard {
+        fn set(name: &'static str, value: &str) -> Self {
+            // SAFETY: every env-touching test holds ENV_LOCK, and no
+            // other test in this binary reads the environment.
+            unsafe { std::env::set_var(name, value) };
+            Self(name, None)
+        }
+    }
+
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            // SAFETY: as above.
+            match &self.1 {
+                Some(v) => unsafe { std::env::set_var(self.0, v) },
+                None => unsafe { std::env::remove_var(self.0) },
+            }
+        }
+    }
+
     #[test]
     fn name_is_stable_wire_name() {
         assert_eq!(AwsKmsBackend.name(), "aws-kms");
@@ -248,7 +287,63 @@ mod tests {
     }
 
     #[test]
-    fn put_secret_is_not_implemented() {
+    fn enumerate_private_lists_kms_keys_over_the_wire() {
+        let _env = ENV_LOCK.lock().unwrap();
+        let _creds = EnvVarGuard::set("AWS_ACCESS_KEY_ID", "test");
+        let _secret = EnvVarGuard::set("AWS_SECRET_ACCESS_KEY", "test");
+        let _no_imds = EnvVarGuard::set("AWS_EC2_METADATA_DISABLED", "true");
+        let _region = EnvVarGuard::set("AWS_REGION", "us-east-1");
+        // rustls-native-certs reads SSL_CERT_FILE on unix; macOS CI and
+        // dev machines otherwise hit the keychain from the test process.
+        let _certs = EnvVarGuard::set("SSL_CERT_FILE", "/etc/ssl/cert.pem");
+
+        // wiremock's server setup is async; give the test a one-shot
+        // runtime for it. The instance under test drives its own.
+        let server = tokio::runtime::Runtime::new()
+            .expect("test runtime")
+            .block_on(async {
+                let server = wiremock::MockServer::start().await;
+                wiremock::Mock::given(wiremock::matchers::method("POST"))
+                    .and(wiremock::matchers::path("/"))
+                    .respond_with(wiremock::ResponseTemplate::new(200).set_body_string(
+                        r#"{"Keys":[{"KeyId":"1234abcd-12ab-34cd-56ef-1234567890ab"},
+                             {"KeyId":"abcd1234-ab12-cd34-ef56-ab1234567890ab"}]}"#,
+                    ))
+                    .mount(&server)
+                    .await;
+                server
+            });
+
+        let mut opts = Options::new();
+        opts.insert(OPT_ENDPOINT.to_string(), server.uri());
+        let instance = AwsKmsBackend.open(&opts).expect("open");
+        let entries = instance
+            .enumerate("m", "a", Compartment::Private)
+            .expect("enumerate");
+        let ids: Vec<String> = entries.into_iter().map(|(_, id)| id).collect();
+        assert_eq!(ids.len(), 2, "ids: {ids:?}");
+        assert!(ids.contains(&"1234abcd-12ab-34cd-56ef-1234567890ab".to_string()));
+        assert!(ids.contains(&"abcd1234-ab12-cd34-ef56-ab1234567890ab".to_string()));
+    }
+
+    #[test]
+    fn enumerate_public_compartment_is_not_implemented() {
+        let instance = AwsKmsBackend.open(&Options::new()).expect("open");
+        let err = instance
+            .enumerate("m", "a", Compartment::Public)
+            .unwrap_err();
+        assert!(matches!(err, Error::NotImplemented { .. }));
+    }
+
+    #[test]
+    fn put_secret_still_not_implemented_but_client_builds() {
+        let _env = ENV_LOCK.lock().unwrap();
+        let _creds = EnvVarGuard::set("AWS_ACCESS_KEY_ID", "test");
+        let _secret = EnvVarGuard::set("AWS_SECRET_ACCESS_KEY", "test");
+        let _no_imds = EnvVarGuard::set("AWS_EC2_METADATA_DISABLED", "true");
+        let _region = EnvVarGuard::set("AWS_REGION", "us-east-1");
+        let _certs = EnvVarGuard::set("SSL_CERT_FILE", "/etc/ssl/cert.pem");
+
         let mut instance = AwsKmsBackend.open(&Options::new()).expect("open");
         let err = instance.put_secret("m", "a", "k", sentinel(1)).unwrap_err();
         assert!(matches!(err, Error::NotImplemented { .. }));

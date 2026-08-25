@@ -68,7 +68,7 @@ impl StoreBackend for AzureKeyVaultBackend {
                 client_id: opts.get(OPT_CLIENT_ID).cloned(),
                 client_secret: opts.get(OPT_CLIENT_SECRET).cloned(),
             },
-            client: None,
+            client: std::sync::OnceLock::new(),
         }))
     }
 }
@@ -76,7 +76,7 @@ impl StoreBackend for AzureKeyVaultBackend {
 register_backend!(AzureKeyVaultBackend);
 
 /// Resolved Azure-side configuration captured at `open` time. Read once
-/// `ensure_client` is un-stubbed (TODO #03).
+/// Held by the instance for the lazy client construction.
 #[allow(dead_code)]
 #[derive(Clone, Debug, Default)]
 struct AzureKeyVaultConfig {
@@ -93,41 +93,50 @@ struct AzureKeyVaultConfig {
 /// async-capable; this stub defers it so the synchronous trait stays
 /// honoured.
 ///
-/// `config` is read once `ensure_client` is un-stubbed (TODO #03).
-#[allow(dead_code)]
+/// Read by the lazy client construction on first use.
 pub struct AzureKeyVaultInstance {
     config: AzureKeyVaultConfig,
-    client: Option<azure_security_keyvault::KeyvaultClient>,
+    client: std::sync::OnceLock<azure_security_keyvault::KeyvaultClient>,
 }
 
 impl AzureKeyVaultInstance {
-    /// Lazily build the Key Vault client. Returns
-    /// [`Error::NotImplemented`] for now — the actual `Sign` /
-    /// `GetKey` calls depend on the `cfmp_sign_with_handle` plugin
-    /// contract (TODO #03).
-    fn ensure_client(&mut self) -> Result<&azure_security_keyvault::KeyvaultClient> {
-        if self.client.is_none() {
-            // The real construction goes here once the plugin contract
-            // is finalised. Kept as a comment so the wiring is visible:
-            //
-            // let cred = azure_identity::token_credential::
-            //     ClientSecretCredential::new(
-            //         self.config.tenant_id.clone()?,
-            //         self.config.client_id.clone()?,
-            //         self.config.client_secret.clone()?,
-            //         *DEFAULT_TENANT_ID,
-            //     );
-            // let vault_url = self.config.vault_url.clone()?;
-            // self.client = Some(
-            //     azure_security_keyvault::KeyvaultClient::new(
-            //         &vault_url, std::sync::Arc::new(cred),
-            //     ),
-            // );
-            return Err(Error::NotImplemented {
-                what: "azure-keyvault client construction",
-            });
+    /// Build the Key Vault client on first use: a client-secret
+    /// credential (tenant_id + client_id + client_secret options,
+    /// or the AZURE_TENANT_ID / AZURE_CLIENT_ID / AZURE_CLIENT_SECRET
+    /// env vars via the config layer) against the vault_url option.
+    fn ensure_client(&self) -> Result<&azure_security_keyvault::KeyvaultClient> {
+        if let Some(client) = self.client.get() {
+            return Ok(client);
         }
-        Ok(self.client.as_ref().expect("client just constructed"))
+        let required = |v: &Option<String>, opt: &str| -> Result<String> {
+            v.clone().ok_or_else(|| Error::Wrapped {
+                message: format!("azure-keyvault: option '{opt}' is required"),
+            })
+        };
+        let tenant_id = required(&self.config.tenant_id, "tenant_id")?;
+        let client_id = required(&self.config.client_id, "client_id")?;
+        let client_secret = required(&self.config.client_secret, "client_secret")?;
+        let vault_url = required(&self.config.vault_url, "vault_url")?;
+
+        let authority =
+            azure_core::Url::parse("https://login.microsoftonline.com").map_err(|e| {
+                Error::Wrapped {
+                    message: format!("azure-keyvault authority host: {e}"),
+                }
+            })?;
+        let cred = azure_identity::ClientSecretCredential::new(
+            azure_core::new_http_client(),
+            authority,
+            tenant_id,
+            client_id,
+            client_secret,
+        );
+        let built =
+            azure_security_keyvault::KeyvaultClient::new(&vault_url, std::sync::Arc::new(cred))
+                .map_err(|e| Error::Wrapped {
+                    message: format!("azure-keyvault client: {e}"),
+                })?;
+        Ok(self.client.get_or_init(|| built))
     }
 }
 
@@ -139,7 +148,7 @@ impl StoreInstance for AzureKeyVaultInstance {
         _key_id: &str,
         _key: *mut c_void,
     ) -> Result<()> {
-        let _ = self.ensure_client()?;
+        self.ensure_client()?;
         // Key Vault keys are created via `CreateKey`. Deferred to the
         // post-TODO-#03 revision.
         Err(Error::NotImplemented {
@@ -161,7 +170,7 @@ impl StoreInstance for AzureKeyVaultInstance {
         _key: *mut c_void,
         _sig: &[u8],
     ) -> Result<()> {
-        let _ = self.ensure_client()?;
+        self.ensure_client()?;
         Err(Error::NotImplemented {
             what: "azure-keyvault put_public",
         })
@@ -221,11 +230,38 @@ mod tests {
         assert!(instance.put_secret("m", "a", "k", sentinel(1)).is_err());
     }
 
+    // Construction is real: missing required options surface as
+    // Wrapped errors naming the option; with all four provided the
+    // NotImplemented contract (pending the sign plugin contract) is
+    // what surfaces.
     #[test]
-    fn put_secret_is_not_implemented() {
+    fn put_secret_without_options_names_the_missing_option() {
         let mut instance = AzureKeyVaultBackend.open(&Options::new()).expect("open");
         let err = instance.put_secret("m", "a", "k", sentinel(1)).unwrap_err();
-        assert!(matches!(err, Error::NotImplemented { .. }));
+        match err {
+            Error::Wrapped { message } => {
+                assert!(message.contains("tenant_id"), "message: {message}");
+            }
+            other => panic!("expected Wrapped, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn put_secret_with_full_config_is_not_implemented() {
+        let mut opts = Options::new();
+        opts.insert(OPT_TENANT_ID.to_string(), "tenant".to_string());
+        opts.insert(OPT_CLIENT_ID.to_string(), "client".to_string());
+        opts.insert(OPT_CLIENT_SECRET.to_string(), "secret".to_string());
+        opts.insert(
+            OPT_VAULT_URL.to_string(),
+            "https://vault.vault.azure.net".to_string(),
+        );
+        let mut instance = AzureKeyVaultBackend.open(&opts).expect("open");
+        let err = instance.put_secret("m", "a", "k", sentinel(1)).unwrap_err();
+        assert!(
+            matches!(err, Error::NotImplemented { .. }),
+            "unexpected: {err:?}"
+        );
     }
 
     #[test]

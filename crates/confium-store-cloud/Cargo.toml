@@ -29,13 +29,13 @@ aws-kms = ["dep:aws-config", "dep:aws-sdk-kms"]
 # Google Cloud Key Management Service. Pulls `google-cloud-kms`, the
 # high-level async KMS client. The `google-cloud-gax` transport comes
 # transitively.
-gcp-kms = ["dep:google-cloud-kms"]
+gcp-kms = ["dep:google-cloud-kms", "dep:google-cloud-auth"]
 
 # Azure Key Vault. Pulls `azure_security_keyvault`; the shared
 # `azure_core` types it depends on come in transitively at the matching
 # 0.21.x version (the Azure SDK for Rust keeps the major version
 # aligned across its crates).
-azure-keyvault = ["dep:azure-security-keyvault"]
+azure-keyvault = ["dep:azure-security-keyvault", "dep:azure-identity", "dep:azure-core"]
 
 
 [package.metadata.docs.rs]
@@ -44,24 +44,29 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 confium-store = { workspace = true }
+tokio = { workspace = true }
 # Used by the `register_backend!` macro (absolute path).
 inventory = { workspace = true }
 
 # --- AWS KMS -------------------------------------------------------------
-aws-config = { version = "1.10", default-features = false, optional = true }
-aws-sdk-kms = { version = "1.114", default-features = false, optional = true }
+aws-config = { version = "1.10", default-features = false, features = ["behavior-version-latest", "rt-tokio"], optional = true }
+aws-sdk-kms = { version = "1.114", default-features = false, features = ["behavior-version-latest", "default-https-client"], optional = true }
 
 # --- Google Cloud KMS ----------------------------------------------------
-google-cloud-kms = { version = "0.6", default-features = false, optional = true }
+google-cloud-kms = { version = "0.6", default-features = false, features = ["auth"], optional = true }
+google-cloud-auth = { version = "0.17", default-features = false, optional = true }
 
 # --- Azure Key Vault -----------------------------------------------------
 # Renamed to `azure_security_keyvault` on crates.io; the local alias
 # avoids Rust's snake_case lints tripping on the underscore-heavy
 # upstream crate name when consumers reference it from feature flags.
 azure-security-keyvault = { version = "0.21", default-features = false, optional = true, package = "azure_security_keyvault" }
+azure-identity = { version = "0.21", default-features = false, optional = true, package = "azure_identity" }
+azure-core = { version = "0.21", default-features = false, optional = true, package = "azure_core" }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+wiremock = "0.6" 
 
 [package.metadata.cargo-machete]
 # `inventory` is consumed by a workspace macro (register_transport!,

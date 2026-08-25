@@ -21,13 +21,15 @@
 //!
 //! # KMS API status
 //!
-//! The SDK wiring is in place (config parsing, client construction,
-//! credential lookup) but the actual KMS REST/gRPC calls are stubbed to
-//! return [`confium_store::error::Error::NotImplemented`]. This lets the
-//! crate ship and build across all three providers today while the
-//! `cfmp_sign_with_handle` plugin contract from TODO #03 is finalised —
-//! that contract governs how a signature plugin invokes a remote HSM
-//! sign operation against the handle returned by `get_secret`.
+//! Client construction is real for all three providers (credentials,
+//! region/endpoint/project/vault resolution; lazy on first use).
+//! `aws-kms` additionally lists real KMS key IDs via `ListKeys` in
+//! `enumerate` (remote keys carry no local handle — the index string
+//! is the KMS key ID). Secret/public put/get remain
+//! [`confium_store::error::Error::NotImplemented`] pending the
+//! `cfmp_sign_with_handle` plugin contract from TODO #03 — cloud KMS
+//! providers never export private key material, so remote sign is the
+//! only path for KMS-held keys.
 
 pub mod backends;
 

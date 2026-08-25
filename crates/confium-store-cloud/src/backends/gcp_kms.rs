@@ -74,7 +74,13 @@ impl StoreBackend for GcpKmsBackend {
                 location: opts.get(OPT_LOCATION).cloned(),
                 key_ring: opts.get(OPT_KEY_RING).cloned(),
             },
-            client: None,
+            rt: tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .map_err(|e| Error::Wrapped {
+                    message: format!("gcp-kms tokio runtime: {e}"),
+                })?,
+            client: std::sync::OnceLock::new(),
         }))
     }
 }
@@ -82,7 +88,7 @@ impl StoreBackend for GcpKmsBackend {
 register_backend!(GcpKmsBackend);
 
 /// Resolved GCP-side configuration captured at `open` time. Read once
-/// `ensure_client` is un-stubbed (TODO #03).
+/// Held by the instance for the lazy client construction.
 #[allow(dead_code)]
 #[derive(Clone, Debug, Default)]
 struct GcpKmsConfig {
@@ -99,37 +105,62 @@ struct GcpKmsConfig {
 /// use — the SDK's auth chain is async and the trait is not. A
 /// per-instance tokio runtime drives the deferred load.
 ///
-/// `config` is read once `ensure_client` is un-stubbed (TODO #03).
-#[allow(dead_code)]
 pub struct GcpKmsInstance {
     config: GcpKmsConfig,
-    client: Option<google_cloud_kms::client::Client>,
+    rt: tokio::runtime::Runtime,
+    client: std::sync::OnceLock<google_cloud_kms::client::Client>,
 }
 
 impl GcpKmsInstance {
-    /// Lazily build the Cloud KMS client. Returns
-    /// [`Error::NotImplemented`] for now — the actual
-    /// `AsymmetricSign` / `GetPublicKey` calls depend on the
-    /// `cfmp_sign_with_handle` plugin contract (TODO #03).
-    fn ensure_client(&mut self) -> Result<&google_cloud_kms::client::Client> {
-        if self.client.is_none() {
-            // The real construction goes here once the plugin contract
-            // is finalised. Kept as a comment so the wiring is visible:
-            //
-            // let rt = tokio::runtime::Runtime::new()?;
-            // let mut cfg = google_cloud_kms::client::ClientConfig::default();
-            // if let Some(path) = &self.config.credentials {
-            //     let cred = google_cloud_auth::credentials::CredentialsFile::new(path).await?;
-            //     cfg = cfg.with_credentials(cred).await?;
-            // } else {
-            //     cfg = cfg.with_auth().await?;
-            // }
-            // self.client = Some(google_cloud_kms::client::Client::new(cfg));
-            return Err(Error::NotImplemented {
-                what: "gcp-kms client construction",
-            });
+    /// Build the Cloud KMS client on first use: an explicit
+    /// service-account file (`credentials`), or the default ADC chain
+    /// (GOOGLE_APPLICATION_CREDENTIALS / _JSON env vars, metadata
+    /// server). `OnceLock` lets read-side calls construct it too.
+    fn ensure_client(&self) -> Result<&google_cloud_kms::client::Client> {
+        if let Some(client) = self.client.get() {
+            return Ok(client);
         }
-        Ok(self.client.as_ref().expect("client just constructed"))
+        let cfg = google_cloud_kms::client::ClientConfig::default();
+        let cfg = if let Some(path) = &self.config.credentials {
+            let cred = self
+                .rt
+                .block_on(
+                    google_cloud_auth::credentials::CredentialsFile::new_from_file(path.clone()),
+                )
+                .map_err(|e| Error::Wrapped {
+                    message: format!("gcp-kms credentials file: {e}"),
+                })?;
+            self.rt
+                .block_on(cfg.with_credentials(cred))
+                .map_err(|e| Error::Wrapped {
+                    message: format!("gcp-kms credentials: {e}"),
+                })?
+        } else if let Some(json) = &self.config.credentials_json {
+            let cred = self
+                .rt
+                .block_on(google_cloud_auth::credentials::CredentialsFile::new_from_str(json))
+                .map_err(|e| Error::Wrapped {
+                    message: format!("gcp-kms credentials json: {e}"),
+                })?;
+            self.rt
+                .block_on(cfg.with_credentials(cred))
+                .map_err(|e| Error::Wrapped {
+                    message: format!("gcp-kms credentials: {e}"),
+                })?
+        } else {
+            self.rt
+                .block_on(cfg.with_auth())
+                .map_err(|e| Error::Wrapped {
+                    message: format!("gcp-kms application default credentials: {e}"),
+                })?
+        };
+        let built = self
+            .rt
+            .block_on(google_cloud_kms::client::Client::new(cfg))
+            .map_err(|e| Error::Wrapped {
+                message: format!("gcp-kms client: {e}"),
+            })?;
+        Ok(self.client.get_or_init(|| built))
     }
 }
 
@@ -141,7 +172,7 @@ impl StoreInstance for GcpKmsInstance {
         _key_id: &str,
         _key: *mut c_void,
     ) -> Result<()> {
-        let _ = self.ensure_client()?;
+        self.ensure_client()?;
         // Cloud KMS key rings / crypto keys are created via
         // `CreateKeyRing` / `CreateCryptoKey`. Deferred to the
         // post-TODO-#03 revision.
@@ -208,6 +239,29 @@ mod tests {
     // into `put_secret` without allocating real key material. The
     // backend treats it as an opaque token. Mirrors the same helper in
     // `confium_store::backends::memory`.
+    // Credential chain reads process env; pin it off for hermetic tests.
+    static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    struct EnvVarGuard(&'static str, Option<String>);
+
+    impl EnvVarGuard {
+        fn remove(name: &'static str) -> Self {
+            let prev = std::env::var(name).ok();
+            // SAFETY: every env-touching GCP test holds ENV_LOCK.
+            unsafe { std::env::remove_var(name) };
+            Self(name, prev)
+        }
+    }
+
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            if let Some(v) = &self.1 {
+                // SAFETY: as above.
+                unsafe { std::env::set_var(self.0, v) };
+            }
+        }
+    }
+
     fn sentinel(n: usize) -> *mut c_void {
         n as *mut c_void
     }
@@ -224,11 +278,39 @@ mod tests {
         assert!(instance.put_secret("m", "a", "k", sentinel(1)).is_err());
     }
 
+    // Client construction is real: with no credentials configured
+    // (and no ADC on the machine) the auth failure surfaces as a
+    // Wrapped error instead of the old NotImplemented stub.
     #[test]
-    fn put_secret_is_not_implemented() {
+    fn put_secret_without_credentials_surfaces_the_auth_error() {
+        let _env = ENV_LOCK.lock().unwrap();
+        let _g1 = EnvVarGuard::remove("GOOGLE_APPLICATION_CREDENTIALS");
+        let _g2 = EnvVarGuard::remove("GOOGLE_APPLICATION_CREDENTIALS_JSON");
         let mut instance = GcpKmsBackend.open(&Options::new()).expect("open");
         let err = instance.put_secret("m", "a", "k", sentinel(1)).unwrap_err();
-        assert!(matches!(err, Error::NotImplemented { .. }));
+        match err {
+            Error::Wrapped { message } => {
+                assert!(message.contains("gcp-kms"), "message: {message}");
+            }
+            other => panic!("expected Wrapped, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn put_secret_with_malformed_credentials_reports_the_parse_error() {
+        let _env = ENV_LOCK.lock().unwrap();
+        let _g1 = EnvVarGuard::remove("GOOGLE_APPLICATION_CREDENTIALS");
+        let _g2 = EnvVarGuard::remove("GOOGLE_APPLICATION_CREDENTIALS_JSON");
+        let mut opts = Options::new();
+        opts.insert(OPT_CREDENTIALS_JSON.to_string(), "not json".to_string());
+        let mut instance = GcpKmsBackend.open(&opts).expect("open");
+        let err = instance.put_secret("m", "a", "k", sentinel(1)).unwrap_err();
+        match err {
+            Error::Wrapped { message } => {
+                assert!(message.contains("credentials json"), "message: {message}");
+            }
+            other => panic!("expected Wrapped, got {other:?}"),
+        }
     }
 
     #[test]
