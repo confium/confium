@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Other
+
+- Update Cargo.toml dependencies by @[object]
+
 ### Added
 
 - Deep verification entry — one interface for every surface by @[object]
