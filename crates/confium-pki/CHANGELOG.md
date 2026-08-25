@@ -7,6 +7,10 @@ For cross-product changes, see the workspace CHANGELOG at <https://github.com/co
 
 ## [Unreleased]
 
+### Added
+
+- CertError::der_offset exposes the DER decode position by @[object]
+
 ### Other
 
 - Release v0.5.1 by @[object]

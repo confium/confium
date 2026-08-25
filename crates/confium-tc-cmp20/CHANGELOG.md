@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Zero the share vector with fill, not a manual loop by @[object]
+
 ### Other
 
 - Release v0.5.1 by @[object]
