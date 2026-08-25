@@ -103,6 +103,27 @@ pub trait StoreInstance: Send + Sync {
         app: &str,
         compartment: Compartment,
     ) -> Result<Vec<(*mut c_void, String)>>;
+
+    /// Sign `message` with the remote key named by `key_id`, using the
+    /// provider-specific `algorithm` name (e.g. `"ECDSA_SHA_256"` on
+    /// AWS KMS, `"EC_SIGN_P256_SHA256"` on Cloud KMS, `"ES256"` on Key
+    /// Vault). Input is the raw message — providers that sign digests
+    /// hash it themselves or the backend does. This is the remote-sign
+    /// half of the sign-with-handle contract: backends that hold keys
+    /// out-of-process (cloud KMS, PKCS#11, TPM) implement it; local
+    /// backends keep the default.
+    fn sign(
+        &self,
+        _module: &str,
+        _app: &str,
+        _key_id: &str,
+        _algorithm: &str,
+        _message: &[u8],
+    ) -> Result<Vec<u8>> {
+        Err(crate::error::Error::NotImplemented {
+            what: "sign (backend does not support remote signing)",
+        })
+    }
 }
 
 // --- link-time registry --------------------------------------------------

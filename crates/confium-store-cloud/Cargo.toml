@@ -35,7 +35,7 @@ gcp-kms = ["dep:google-cloud-kms", "dep:google-cloud-auth"]
 # `azure_core` types it depends on come in transitively at the matching
 # 0.21.x version (the Azure SDK for Rust keeps the major version
 # aligned across its crates).
-azure-keyvault = ["dep:azure-security-keyvault", "dep:azure-identity", "dep:azure-core"]
+azure-keyvault = ["dep:azure-security-keyvault", "dep:azure-identity", "dep:azure-core", "dep:sha2", "dep:base64"]
 
 
 [package.metadata.docs.rs]
@@ -63,6 +63,8 @@ google-cloud-auth = { version = "0.17", default-features = false, optional = tru
 azure-security-keyvault = { version = "0.21", default-features = false, optional = true, package = "azure_security_keyvault" }
 azure-identity = { version = "0.21", default-features = false, optional = true, package = "azure_identity" }
 azure-core = { version = "0.21", default-features = false, optional = true, package = "azure_core" }
+sha2 = { workspace = true, optional = true }
+base64 = { version = "0.22", optional = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

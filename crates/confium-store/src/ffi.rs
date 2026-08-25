@@ -238,6 +238,58 @@ pub extern "C" fn cfm_keystore_get_public(
     inner().map_or_else(|e| e.code(), |_| 0)
 }
 
+// --- remote signing -------------------------------------------------------
+
+/// Out-buffer convention for byte results: the caller passes a
+/// destination pointer plus its capacity; on success `out` receives a
+/// freshly heap-allocated buffer (freed with `CFM_FREE` semantics by
+/// the embedding engine) and `out_len` its length.
+#[allow(clippy::missing_safety_doc)]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn cfm_keystore_sign(
+    ks: *mut FFIKeystore,
+    module_id: *const c_char,
+    app_id: *const c_char,
+    key_id: *const c_char,
+    algorithm: *const c_char,
+    message: *const u8,
+    message_len: u32,
+    out: *mut *mut u8,
+    out_len: *mut u32,
+) -> u32 {
+    let inner = || -> Result<()> {
+        let ks = keystore_ref(ks)?;
+        let module = cstring(module_id, "module_id")?;
+        let app = cstring(app_id, "app_id")?;
+        let key_id = cstring(key_id, "key_id")?;
+        let algorithm = cstring(algorithm, "algorithm")?;
+        require(message, "message")?;
+        require(out, "out")?;
+        require(out_len, "out_len")?;
+        ensure!(
+            message_len > 0,
+            NullPointerSnafu {
+                param: "message_len"
+            }
+        );
+        // SAFETY: the caller guarantees `message` points to
+        // `message_len` readable bytes for the duration of the call.
+        let bytes = unsafe { std::slice::from_raw_parts(message, message_len as usize) };
+        let sig = ks.sign(&module, &app, &key_id, &algorithm, bytes)?;
+        let len = u32::try_from(sig.len()).map_err(|_| crate::error::Error::Wrapped {
+            message: "signature exceeds u32 length".to_string(),
+        })?;
+        // SAFETY: `out`/`out_len` are caller-provided writable slots;
+        // the buffer is released by the embedding engine's free.
+        unsafe {
+            *out = Box::into_raw(sig.into_boxed_slice()) as *mut u8;
+            *out_len = len;
+        }
+        Ok(())
+    };
+    inner().map_or_else(|e| e.code(), |_| 0)
+}
+
 // --- enumeration ----------------------------------------------------------
 
 /// Snapshot of one entry yielded by an iterator.

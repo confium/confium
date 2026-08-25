@@ -68,6 +68,12 @@ impl StoreBackend for AzureKeyVaultBackend {
                 client_id: opts.get(OPT_CLIENT_ID).cloned(),
                 client_secret: opts.get(OPT_CLIENT_SECRET).cloned(),
             },
+            rt: tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .map_err(|e| Error::Wrapped {
+                    message: format!("azure-keyvault tokio runtime: {e}"),
+                })?,
             client: std::sync::OnceLock::new(),
         }))
     }
@@ -96,6 +102,7 @@ struct AzureKeyVaultConfig {
 /// Read by the lazy client construction on first use.
 pub struct AzureKeyVaultInstance {
     config: AzureKeyVaultConfig,
+    rt: tokio::runtime::Runtime,
     client: std::sync::OnceLock<azure_security_keyvault::KeyvaultClient>,
 }
 
@@ -198,6 +205,51 @@ impl StoreInstance for AzureKeyVaultInstance {
             what: "azure-keyvault enumerate",
         })
     }
+    fn sign(
+        &self,
+        _module: &str,
+        _app: &str,
+        key_id: &str,
+        algorithm: &str,
+        message: &[u8],
+    ) -> Result<Vec<u8>> {
+        use azure_security_keyvault::prelude::SignatureAlgorithm;
+        use sha2::{Digest as _, Sha256};
+
+        let client = self.ensure_client()?;
+        let alg = match algorithm {
+            "ES256" | "ES256K" | "PS256" | "RS256" => {
+                SignatureAlgorithm::Custom(algorithm.to_string())
+            }
+            _ => {
+                return Err(Error::Wrapped {
+                    message: format!(
+                        "azure-keyvault sign: unsupported algorithm '{algorithm}' \
+                         (Key Vault signs digests; ES256/ES256K/PS256/RS256 hash with SHA-256)"
+                    ),
+                });
+            }
+        };
+        // Key Vault signs digests; the contract hands us the message,
+        // so hash it client-side. (ES384/RS384/PS384 and the 512
+        // families extend this match when needed.)
+        let digest: Vec<u8> = Sha256::digest(message).to_vec();
+        use base64::Engine as _;
+        let digest_b64 = base64::engine::general_purpose::STANDARD.encode(digest);
+
+        let result = self
+            .rt
+            .block_on(
+                client
+                    .key_client()
+                    .sign(key_id, alg, digest_b64)
+                    .into_future(),
+            )
+            .map_err(|e| Error::Wrapped {
+                message: format!("azure-keyvault sign: {e}"),
+            })?;
+        Ok(result.signature)
+    }
 }
 
 // SAFETY: `azure_security_keyvault::KeyvaultClient` wraps a `Pipeline`
@@ -262,6 +314,31 @@ mod tests {
             matches!(err, Error::NotImplemented { .. }),
             "unexpected: {err:?}"
         );
+    }
+
+    #[test]
+    fn sign_rejects_unsupported_algorithms_before_the_wire() {
+        let mut opts = Options::new();
+        opts.insert(OPT_TENANT_ID.to_string(), "tenant".to_string());
+        opts.insert(OPT_CLIENT_ID.to_string(), "client".to_string());
+        opts.insert(OPT_CLIENT_SECRET.to_string(), "secret".to_string());
+        opts.insert(
+            OPT_VAULT_URL.to_string(),
+            "https://vault.vault.azure.net".to_string(),
+        );
+        let instance = AzureKeyVaultBackend.open(&opts).expect("open");
+        let err = instance
+            .sign("m", "a", "my-key", "ECDSA_SHA_256", b"msg")
+            .unwrap_err();
+        match err {
+            Error::Wrapped { message } => {
+                assert!(
+                    message.contains("unsupported algorithm"),
+                    "message: {message}"
+                );
+            }
+            other => panic!("expected Wrapped, got {other:?}"),
+        }
     }
 
     #[test]
