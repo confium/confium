@@ -20,7 +20,6 @@
 //! the user-facing [`crate::rng::Rng`] wrapper lives in `src/rng.rs`.
 
 use std::any::Any;
-use std::ffi::c_void;
 use std::os::raw::c_char;
 use std::rc::Rc;
 
@@ -51,7 +50,7 @@ const RNG_ADD_ENTROPY_FN_V0_NAME: &[u8] = b"cfmp_rng_add_entropy\0";
 pub type RngGenerateFnV0 = extern "C" fn(*mut FFIRng, *mut u8, u32) -> u32;
 const RNG_GENERATE_FN_V0_NAME: &[u8] = b"cfmp_rng_generate\0";
 
-pub type RngDestroyFnV0 = extern "C" fn(*mut FFIRng) -> c_void;
+pub type RngDestroyFnV0 = extern "C" fn(*mut FFIRng);
 const RNG_DESTROY_FN_V0_NAME: &[u8] = b"cfmp_rng_destroy\0";
 
 #[derive(Debug)]
