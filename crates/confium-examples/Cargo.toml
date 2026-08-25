@@ -19,7 +19,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-confium_core = { package = "confium-core", path = "../confium-core", version = "0.5.6" }
+confium_core = { package = "confium-core", path = "../confium-core", version = "0.5.7" }
 confium-tc = { workspace = true }
 confium-tc-cmp20 = { workspace = true }
 confium-tc-frost-p256 = { workspace = true }
