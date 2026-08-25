@@ -28,7 +28,6 @@
 //! user-facing [`crate::kdf::Kdf`] wrapper lives in `src/kdf.rs`.
 
 use std::any::Any;
-use std::ffi::c_void;
 use std::os::raw::c_char;
 use std::rc::Rc;
 
@@ -68,7 +67,7 @@ const KDF_SET_HASH_FN_V0_NAME: &[u8] = b"cfmp_kdf_set_hash\0";
 pub type KdfDeriveFnV0 = extern "C" fn(*mut FFIKdf, *const u8, u32, *mut u8, u32) -> u32;
 const KDF_DERIVE_FN_V0_NAME: &[u8] = b"cfmp_kdf_derive\0";
 
-pub type KdfDestroyFnV0 = extern "C" fn(*mut FFIKdf) -> c_void;
+pub type KdfDestroyFnV0 = extern "C" fn(*mut FFIKdf);
 const KDF_DESTROY_FN_V0_NAME: &[u8] = b"cfmp_kdf_destroy\0";
 
 #[derive(Debug)]

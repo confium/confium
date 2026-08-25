@@ -98,7 +98,7 @@ const SIG_SIGNER_UPDATE_FN_V0_NAME: &[u8] = b"cfmp_sig_signer_update\0";
 pub type SigSignerFinalizeFnV0 = extern "C" fn(*mut FFISigner, *mut u8, u32, *mut u32) -> u32;
 const SIG_SIGNER_FINALIZE_FN_V0_NAME: &[u8] = b"cfmp_sig_signer_finalize\0";
 
-pub type SigSignerDestroyFnV0 = extern "C" fn(*mut FFISigner) -> c_void;
+pub type SigSignerDestroyFnV0 = extern "C" fn(*mut FFISigner);
 const SIG_SIGNER_DESTROY_FN_V0_NAME: &[u8] = b"cfmp_sig_signer_destroy\0";
 
 #[derive(Debug)]
@@ -143,7 +143,7 @@ const SIG_VERIFIER_UPDATE_FN_V0_NAME: &[u8] = b"cfmp_sig_verifier_update\0";
 pub type SigVerifierFinalizeFnV0 = extern "C" fn(*mut FFIVerifier, *const u8, u32) -> u32;
 const SIG_VERIFIER_FINALIZE_FN_V0_NAME: &[u8] = b"cfmp_sig_verifier_finalize\0";
 
-pub type SigVerifierDestroyFnV0 = extern "C" fn(*mut FFIVerifier) -> c_void;
+pub type SigVerifierDestroyFnV0 = extern "C" fn(*mut FFIVerifier);
 const SIG_VERIFIER_DESTROY_FN_V0_NAME: &[u8] = b"cfmp_sig_verifier_destroy\0";
 
 #[derive(Debug)]

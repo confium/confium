@@ -80,7 +80,7 @@ const CIPHER_FINALIZE_FN_V0_NAME: &[u8] = b"cfmp_cipher_finalize\0";
 pub type CipherResetFnV0 = extern "C" fn(*mut FFICipher) -> u32;
 const CIPHER_RESET_FN_V0_NAME: &[u8] = b"cfmp_cipher_reset\0";
 
-pub type CipherDestroyFnV0 = extern "C" fn(*mut FFICipher) -> c_void;
+pub type CipherDestroyFnV0 = extern "C" fn(*mut FFICipher);
 const CIPHER_DESTROY_FN_V0_NAME: &[u8] = b"cfmp_cipher_destroy\0";
 
 pub struct CipherInterfaceV0 {

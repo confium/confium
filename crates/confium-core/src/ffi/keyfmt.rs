@@ -34,7 +34,6 @@
 //! the user-facing [`crate::keyfmt::Key`] wrapper lives in `src/keyfmt.rs`.
 
 use std::any::Any;
-use std::ffi::c_void;
 use std::fmt;
 use std::os::raw::c_char;
 use std::rc::Rc;
@@ -77,7 +76,7 @@ const KEYFMT_ALGORITHM_FN_V0_NAME: &[u8] = b"cfmp_keyfmt_algorithm\0";
 pub type KeyfmtPublicFnV0 = extern "C" fn(*const FFIKey, *mut *mut FFIKey) -> u32;
 const KEYFMT_PUBLIC_FN_V0_NAME: &[u8] = b"cfmp_keyfmt_public\0";
 
-pub type KeyfmtDestroyFnV0 = extern "C" fn(*mut FFIKey) -> c_void;
+pub type KeyfmtDestroyFnV0 = extern "C" fn(*mut FFIKey);
 const KEYFMT_DESTROY_FN_V0_NAME: &[u8] = b"cfmp_keyfmt_destroy\0";
 
 pub struct KeyfmtInterfaceV0 {

@@ -78,7 +78,7 @@ const AEAD_FINALIZE_FN_V0_NAME: &[u8] = b"cfmp_aead_finalize\0";
 pub type AeadVerifyTagFnV0 = extern "C" fn(*mut FFIAead, *const u8, u32) -> u32;
 const AEAD_VERIFY_TAG_FN_V0_NAME: &[u8] = b"cfmp_aead_verify_tag\0";
 
-pub type AeadDestroyFnV0 = extern "C" fn(*mut FFIAead) -> c_void;
+pub type AeadDestroyFnV0 = extern "C" fn(*mut FFIAead);
 const AEAD_DESTROY_FN_V0_NAME: &[u8] = b"cfmp_aead_destroy\0";
 
 #[derive(Debug)]

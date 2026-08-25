@@ -1,5 +1,4 @@
 use std::any::Any;
-use std::ffi::c_void;
 use std::fmt;
 use std::os::raw::c_char;
 use std::rc::Rc;
@@ -41,7 +40,7 @@ const HASH_CLONE_FN_V0_NAME: &[u8] = b"cfmp_hash_clone\0";
 pub type HashFinalizeFnV0 = extern "C" fn(*mut FFIHash, *mut u8, u32) -> u32;
 const HASH_FINALIZE_FN_V0_NAME: &[u8] = b"cfmp_hash_finalize\0";
 
-pub type HashDestroyFnV0 = extern "C" fn(*mut FFIHash) -> c_void;
+pub type HashDestroyFnV0 = extern "C" fn(*mut FFIHash);
 const HASH_DESTROY_FN_V0_NAME: &[u8] = b"cfmp_hash_destroy\0";
 
 pub struct HashInterfaceV0 {

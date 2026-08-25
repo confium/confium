@@ -85,7 +85,7 @@ pub type KemEncapsulateFnV0 =
     extern "C" fn(*mut FFIKemEncapsulator, *mut u8, u32, *mut u32, *mut u8, u32, *mut u32) -> u32;
 const KEM_ENCAPSULATE_FN_V0_NAME: &[u8] = b"cfmp_kem_encapsulate\0";
 
-pub type KemEncapsulatorDestroyFnV0 = extern "C" fn(*mut FFIKemEncapsulator) -> c_void;
+pub type KemEncapsulatorDestroyFnV0 = extern "C" fn(*mut FFIKemEncapsulator);
 const KEM_ENCAPSULATOR_DESTROY_FN_V0_NAME: &[u8] = b"cfmp_kem_encapsulator_destroy\0";
 
 pub type KemDecapsulatorCreateFnV0 = extern "C" fn(
@@ -102,7 +102,7 @@ pub type KemDecapsulateFnV0 =
     extern "C" fn(*mut FFIKemDecapsulator, *const u8, u32, *mut u8, u32, *mut u32) -> u32;
 const KEM_DECAPSULATE_FN_V0_NAME: &[u8] = b"cfmp_kem_decapsulate\0";
 
-pub type KemDecapsulatorDestroyFnV0 = extern "C" fn(*mut FFIKemDecapsulator) -> c_void;
+pub type KemDecapsulatorDestroyFnV0 = extern "C" fn(*mut FFIKemDecapsulator);
 const KEM_DECAPSULATOR_DESTROY_FN_V0_NAME: &[u8] = b"cfmp_kem_decapsulator_destroy\0";
 
 pub type KemSharedSecretSizeFnV0 = extern "C" fn(*const Confium, *const c_char, *mut u32) -> u32;
