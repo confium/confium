@@ -7,7 +7,7 @@ audience: ca-operator, security-engineer
 > **⚠️ Implementation status:** Some CLI commands referenced in this
 > recipe (e.g., `threshold refresh`, `share-export`, `transparency ots`)
 > are not yet implemented. The underlying crate APIs exist; the CLI
-> wrappers are planned for a future release. Use the Rust API directly
+> wrappers are in progress for a future release. Use the Rust API directly
 > or wait for the CLI command.
 
 
@@ -120,7 +120,7 @@ openssl req -engine pkcs11 -keyform engine \
 
 - **Latency** — every PKCS#11 sign op now requires a threshold ceremony (~200ms-2s depending on scheme + network). Applications that sign thousands of ops per second will be slower.
 - **Key generation** — PKCS#11 `C_GenerateKeyPair` doesn't map cleanly to threshold DKG. Use `confium threshold dkg` separately, then register the resulting key as a token.
-- **Algorithm support** — Confium currently supports ECDSA-P256 and Ed25519 via PKCS#11. RSA support is on the roadmap.
+- **Algorithm support** — Confium currently supports ECDSA-P256 and Ed25519 via PKCS#11. RSA support follows in a later release.
 
 ## See also
 
