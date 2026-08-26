@@ -93,7 +93,7 @@ together form a self-identifying envelope.
   clear during signing. This leaks the joint nonce `k`, which is safe
   for a single signature but would be catastrophic across multiple
   signatures over the same secret. Production CMP20 hides `k` via
-  Paillier-based MtA — see `mta.rs` for the gap and the planned work.
+  Paillier-based MtA — see `mta.rs` for the gap and the in progress work.
 - **`#![forbid(unsafe_code)]`** — no unsafe blocks anywhere in the
   crate.
 - **Zeroize-on-drop** for share scalars. The `Cmp20Share::Drop` impl

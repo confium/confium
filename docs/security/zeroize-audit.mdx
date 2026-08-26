@@ -3,7 +3,7 @@ title: "Zeroize-on-drop audit"
 description: Inventory of secret-scalar memory hygiene across the threshold-cryptography crates and bindings.
 ---
 
-# Zeroize-on-drop audit (TODO 028)
+# Zeroize-on-drop audit
 
 Inventory of every secret-scalar storage site across the
 threshold-cryptography crates, with notes on how each is cleared on
@@ -38,11 +38,11 @@ scalar element is zeroized by `Scalar`'s Drop.
 
 | Secret site                | Type             | Zeroize mechanism              |
 |----------------------------|------------------|--------------------------------|
-| `DecryptionShare.bytes`    | `Vec<u8>`        | Explicit `Drop` impl that calls `bytes.zeroize()` (Aug 2026 — see [TODO.complete/54](../../TODO.complete/54-zeroize-remaining-shares.md)) |
+| `DecryptionShare.bytes`    | `Vec<u8>`        | Explicit `Drop` impl that calls `bytes.zeroize()` (Aug 2026 — see the upstream audit log) |
 | Internal scalar temporaries| `p256::Scalar`   | Implicit Drop                  |
 
 `DecryptionShare.bytes` previously leaked; the Aug 2026 sweep
-([TODO.complete/54](../../TODO.complete/54-zeroize-remaining-shares.md))
+(the upstream audit log)
 added an explicit `Drop` impl.
 
 ### `confium-tc-cmp20` / `confium-tc-gg18`
@@ -58,7 +58,7 @@ The explicit `Drop` impls in `share.rs` re-zeroize the `to_bytes()`
 allocation as defense-in-depth. See `crates/confium-tc-cmp20/src/share.rs:34-39`
 for the canonical pattern.
 
-The Aug 2026 zeroize sweep ([TODO.complete/54](../../TODO.complete/54-zeroize-remaining-shares.md))
+The Aug 2026 zeroize sweep (the upstream audit log)
 also added `Drop` impls to `confium-tc-bls::Share`, `confium-crypto-vss::PedersenShare`,
 `confium-crypto-vss::PartialSig`, and `confium-crypto-vss::NormalizedShare`. The
 workspace is now zeroize-clean for every secret-bearing type.
@@ -94,12 +94,12 @@ secret-scalar storage on this side.
 - `cargo test -p confium-tc-frost-p256` — exhaustive round-trip tests
   confirm secret scalars are not leaked via shared mutable state.
 
-## Planned work
+## in progress work
 
 - Add a `ZeroizingVec<u8>` newtype in `confium-api` for use across
   crates that handle raw secret bytes. Currently each crate invents
   its own pattern. The Aug 2026 sweep
-  ([TODO.complete/54](../../TODO.complete/54-zeroize-remaining-shares.md))
+  (the upstream audit log)
   closed the per-type zeroize gaps but didn't introduce the shared
   newtype.
 

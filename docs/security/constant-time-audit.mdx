@@ -39,7 +39,7 @@ For threshold cryptography, CT-safety matters most in:
 | GG18 signature combine | CT | `confium-tc-gg18::sign::combine` — same |
 | Feldman VSS verify | CT | `confium-crypto-vss::vss::verify` — CT scalar ops |
 | Lagrange interpolation | CT | `confium-tc-cmp20::lagrange` — CT scalar ops |
-| Merkle root / hash comparisons | CT | `confium-transparency`, `confium-wasm`, `confium-python`, `confium-log-monitor` — `subtle::ConstantTimeEq` (Aug 2026 audit, see [TODO.complete/57](../../TODO.complete/57-constant-time-comparison-audit.md)) |
+| Merkle root / hash comparisons | CT | `confium-transparency`, `confium-wasm`, `confium-python`, `confium-log-monitor` — `subtle::ConstantTimeEq` (Aug 2026 audit, see the upstream audit log) |
 
 ### CT-best-effort (not audited; treat as soft)
 
@@ -75,7 +75,7 @@ Use `subtle::ConstantTimeEq` / `subtle::ConditionallySelectable` instead. The `s
 
 ## Side-channel testing
 
-Confium's CI runs `dudect`-style statistical tests for the CT-claimed paths (planned for v0.5; tracked in TODO). Each test:
+Confium's CI runs `dudect`-style statistical tests for the CT-claimed paths (scheduled for v0.5; tracked upstream). Each test:
 
 1. Runs the operation N times with two different secret values.
 2. Measures wall-clock time for each.
@@ -85,7 +85,7 @@ Confium's CI runs `dudect`-style statistical tests for the CT-claimed paths (pla
 Current status: `confium-benchmarks` has timing infrastructure; CT-specific tests TBD.
 
 The August 2026 constant-time comparison audit (see
-[TODO.complete/57](../../TODO.complete/57-constant-time-comparison-audit.md))
+the upstream audit log)
 replaced every `==` on hash bytes with `subtle::ConstantTimeEq::ct_eq`
 across `confium-transparency`, `confium-wasm`, `confium-python`, and
 `confium-log-monitor`. The Ruby binding's transparency surface got
@@ -107,7 +107,7 @@ the same fix via [confium-ruby PR #50](https://github.com/confium/confium-ruby/p
 
 ## Future work
 
-- Formal verification of the CMP20 combine via hax/L°(unverified, planned for v0.5)
+- Formal verification of the CMP20 combine via hax/L°(unverified; scheduled for v0.5)
 - dudect-style CI on all CT-claimed paths
 - Switch `num-bigint` to a CT-safe bignum crate once one is production-ready
 - Constant-time Paillier (research-grade; currently active area)
