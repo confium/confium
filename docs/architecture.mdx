@@ -74,6 +74,29 @@ claimed publisher is trusted, and to resolve plugin dependencies.
 The registry is also published as a static site at the project root
 for human inspection.
 
+## Stores and remote signing
+
+`confium-store` is the keystore layer: a `StoreBackend` trait with
+link-time registry (`memory`, `filesystem`, and the hardware/cloud
+backends), a `Keystore` wrapper, and an FFI surface. Backends that
+hold keys out-of-process — cloud KMS, PKCS#11, TPM — never export
+private key material. Signing with such keys goes through the
+**sign-with-handle contract**:
+
+- `StoreInstance::sign(module, app, key_id, algorithm, message)` —
+  the Rust trait method backends implement;
+- `Keystore::sign` — the safe wrapper;
+- `cfm_keystore_sign` — the FFI entry point (out-buffer + length).
+
+The cloud KMS backends (`confium-store-cloud`) implement it against
+the real provider APIs: AWS KMS `Sign` (`MessageType::Raw`, provider
+algorithm names, wiremock-tested), Cloud KMS `AsymmetricSign` (bare
+key id resolved against project/location/key_ring options or a full
+cryptoKeyVersion path), and Azure Key Vault sign (ES256/ES256K/
+PS256/RS256 with client-side SHA-256, since Vault signs digests).
+`aws-kms` additionally lists real KMS key IDs via paginated
+`ListKeys`. Client construction is real for all three providers.
+
 ## The coordinator
 
 Threshold cryptography protocols (FROST, CMP20, GG18) require multiple
