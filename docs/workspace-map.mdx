@@ -101,7 +101,7 @@ deep dives, see [the crates subdirectory](./crates/index.mdx).
 | `confium-store` | Compartmentalized key and secret persistence for Confium. |
 | `confium-store-pkcs11` | PKCS#11 v3.0 wrapping backend for Confium key storage. |
 | `confium-store-tpm` | TPM 2.0 sealed storage backend for Confium. |
-| `confium-store-cloud` | AWS, GCP, and Azure cloud KMS storage backend for Confium. |
+| `confium-store-cloud` | AWS, GCP, and Azure cloud KMS backend: real clients (lazy credential chains), `ListKeys` enumeration (aws-kms), and the sign-with-handle contract over each provider's Sign API. |
 | `confium-store-openpgp-card` | OpenPGP card backend (YubiKey, Nitrokey) for Confium store. |
 
 ## Mode 2 / PKI replacement
