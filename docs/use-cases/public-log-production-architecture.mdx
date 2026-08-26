@@ -210,7 +210,7 @@ This gives:
 - Strong consistency on writes (single primary)
 - Cheap reads (CDN caching is ~$0.10/GB)
 
-## Implementation roadmap
+## Implementation long-term plan
 
 The `confium-log-server` codebase is structured so the storage
 backend is pluggable. Tier 1 (SQLite) ships today. Tier 2
@@ -219,8 +219,8 @@ configuration on top of Tier 2.
 
 | Step | What | Status |
 |---|---|---|
-| 1 | SQLite backend (Tier 1) | ✅ shipped (TODO 102) |
-| 2 | PostgreSQL backend (Tier 2) | ✅ scaffold (TODO 191) |
+| 1 | SQLite backend (Tier 1) | ✅ shipped |
+| 2 | PostgreSQL backend (Tier 2) | ✅ scaffold |
 | 3 | CDN caching layer | ⏳ operational config |
 | 4 | Multi-region read replicas | ⏳ operational config |
 | 5 | Lambda/Workers OTS anchor | ⏳ operational config |

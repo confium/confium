@@ -12,8 +12,8 @@ What Confium supports, on what, talking to what.
 | Confium version | Min Rust | Notes |
 |-----------------|----------|-------|
 | 0.3.x | 1.85 (edition 2024) | Current |
-| 0.4.x (planned) | 1.85 | No MSRV bump |
-| 1.0.0 (planned) | TBD | LTS |
+| 0.4.x (in progress) | 1.85 | No MSRV bump |
+| 1.0.0 (in progress) | TBD | LTS |
 
 We test against stable on Linux, macOS, Windows in CI. Nightly is not supported.
 
@@ -32,7 +32,7 @@ We test against stable on Linux, macOS, Windows in CI. Nightly is not supported.
 | WebAssembly (`wasm32-unknown-unknown`) | Tier 1 | For the Verify product only |
 | WASI (`wasm32-wasip1`) | Tier 3 | For Signer in edge workers |
 | FreeBSD / OpenBSD | Tier 3 | Community-supported; no CI |
-| Android / iOS | Tier 4 | Out of scope; see [ROADMAP](../../ROADMAP.md) |
+| Android / iOS | Tier 4 | Out of scope; see [long-term plan](../../long-term plan.md) |
 
 ## Language bindings
 
@@ -74,10 +74,10 @@ Share files, transparency logs, and other persistent formats are NOT compatible 
 |-----------|----------------|-------|
 | Ed25519 | `ed25519-dalek` | Tier 1 |
 | ECDSA-P256 | `p256` crate | Tier 1 |
-| BLS12-381 | `blst` (planned) | Tier 3 today |
+| BLS12-381 | `blst` (in progress) | Tier 3 today |
 | Paillier | `confium-crypto-vss` | 2048-4096 bit modulus |
-| ML-DSA-65 | `fips204` (planned) | Tier 3 today; threshold via FROST-ML-DSA |
-| ML-KEM-768 | `fips203` (planned) | Tier 3 today |
+| ML-DSA-65 | `fips204` (in progress) | Tier 3 today; threshold via FROST-ML-DSA |
+| ML-KEM-768 | `fips203` (in progress) | Tier 3 today |
 | SLH-DSA-SHA2-256 | TBD | Tier 4 (research) |
 
 See the [bindings parity matrix](../bindings/parity.mdx) for which algorithms are exposed per language.

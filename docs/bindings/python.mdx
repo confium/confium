@@ -192,13 +192,13 @@ pytest tests/
 Python now covers **verification, parsing, and signing** for composite +
 transparency + PKI. Remaining gaps (use Ruby for these):
 
-- TC sessions (FROST-P256, ElGamal-P256) — large API surface, planned for v0.4
+- TC sessions (FROST-P256, ElGamal-P256) — large API surface, in progress for v0.4
 - OTS / ERS archival exposure
 - Identity Actor / Config Manifest
 - **External proof-only consistency verification** — `MerkleTree.verify_consistency`
   is method-based (requires `&self`) because the proof-only algorithm is intricate.
   External auditors who only have `(old_root, new_root, proof)` and not the tree
-  itself need the standalone verifier — tracked as TODO 067.
+  itself need the standalone verifier — tracked as not yet implemented 067.
 
 See the [bindings parity matrix](parity.mdx) for the full breakdown.
 
