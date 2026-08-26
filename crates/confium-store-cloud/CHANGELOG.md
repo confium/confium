@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Other
+
+- Release v0.5.9 by @[object]
+
 ### Added
 
 - The sign-with-handle contract — remote signing for KMS backends by @[object]
