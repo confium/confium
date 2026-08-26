@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The sign-with-handle contract — remote signing for KMS backends by @[object]
 
+### Other
+
+- Release v0.5.8 by @[object]
+
+### Added
+
+- The sign-with-handle contract — remote signing for KMS backends by @[object]
+
 ### Added
 
 - Real KMS client construction for AWS, GCP, Azure by @[object]
