@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
+- Release v0.6.0 by @[object]
+- Gate experimental multi_sig behind opt-in feature (BREAKING) by @[object]
+- Gate experimental primitives; fix scalar reduction (BREAKING) by @[object]
+
+### Other
+
 - Gate experimental multi_sig behind opt-in feature (BREAKING) by @[object]
 - Gate experimental primitives; fix scalar reduction (BREAKING) by @[object]
 

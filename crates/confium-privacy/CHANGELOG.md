@@ -9,6 +9,11 @@ For cross-product changes, see the workspace CHANGELOG at <https://github.com/co
 
 ### Other
 
+- Release v0.6.0 by @[object]
+- Gate experimental multi_sig behind opt-in feature (BREAKING) by @[object]
+
+### Other
+
 - Gate experimental multi_sig behind opt-in feature (BREAKING) by @[object]
 
 ### Other
