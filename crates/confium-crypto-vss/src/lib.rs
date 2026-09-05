@@ -1,8 +1,14 @@
-#![allow(missing_docs)] // TODO: document before 1.0
 //! Verifiable secret sharing, Paillier, Schnorr, and NIZK primitives.
 //!
 //! Standalone cryptographic primitives with no dependency on the threshold
 //! session framework. Publishable to crates.io independently.
+//!
+//! # Audit status
+//!
+//! **Unaudited.** The default API surface (vss, pedersen_vss, schnorr,
+//! nizk, paillier) carries rejection-sampled reductions and paired
+//! rejects-forgery tests, but has had no external cryptographic review.
+//! Experimental modules compile only behind `unaudited-experimental`.
 
 #![forbid(unsafe_code)]
 

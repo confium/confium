@@ -231,3 +231,44 @@ mod tests {
         assert!(json.contains("commitment_hex"));
     }
 }
+
+#[cfg(test)]
+mod adversarial_tests {
+    //! Paired rejects-forgery tests for proof verification.
+
+    use super::*;
+    use p256::ecdsa::SigningKey;
+    use p256::ecdsa::signature::Signer;
+    use p256::elliptic_curve::Generate;
+
+    #[test]
+    fn verify_accepts_forged_response_demo_gap() {
+        // Live demonstration of why this module is gated: the shipped
+        // verify is a placeholder (challenge discarded; the final
+        // disjunction accepts any non-zero response). A tampered
+        // response VERIFIES. When a real ZK construction lands, this
+        // test flips to assert rejection — until then it documents
+        // the gap. See TODO.private-report/SEC-audit-notes.md.
+        let signing = SigningKey::generate();
+        let vk = signing.verifying_key();
+        let msg = b"authenticated message";
+        let sig: Signature = signing.sign(msg);
+        let mut proof = prove_possession(vk, msg, &sig).unwrap();
+
+        let mut resp = hex::decode(&proof.response_hex).unwrap();
+        resp[0] ^= 0x01;
+        proof.response_hex = resp.iter().map(|b| format!("{b:02x}")).collect();
+        assert!(verify_possession(&proof, msg));
+    }
+
+    #[test]
+    fn verify_rejects_proof_for_a_different_message() {
+        let signing = SigningKey::generate();
+        let vk = signing.verifying_key();
+        let msg = b"original";
+        let sig: Signature = signing.sign(msg);
+        let proof = prove_possession(vk, msg, &sig).unwrap();
+        // Valid proof, wrong statement.
+        assert!(!verify_possession(&proof, b"other message"));
+    }
+}

@@ -1,4 +1,10 @@
 //! OTS client — submit hash to calendar servers, verify proofs.
+//!
+//! **Status: mock.** `stamp()` returns a synthetic proof without
+//! contacting any calendar server, and `verify()` checks only the
+//! supplied merkle branch against the caller-provided block hash.
+//! Real OpenTimestamps wire-protocol support is not implemented yet;
+//! treat every "proof" from this client as unanchored.
 
 use crate::ots::proof::{OtsError, OtsProof, OtsVerification};
 use sha2::{Digest, Sha256};

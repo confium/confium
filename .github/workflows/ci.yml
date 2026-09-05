@@ -123,6 +123,21 @@ jobs:
           RUSTDOCFLAGS: "-D warnings"
 
   # ============================================================================
+  # Crypto Test Pairing — every default-API verify() in the crypto
+  # crates must carry paired adversarial (rejects-forgery) tests.
+  # ============================================================================
+  crypto-tests:
+    name: Crypto Adversarial Tests
+    runs-on: ubuntu-latest
+    needs: preflight
+    if: needs.preflight.outputs.should_run == 'true'
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check verify()/rejects-test pairing
+        run: ./scripts/check-crypto-tests.sh
+
+  # ============================================================================
   # Unused Dependencies
   # ============================================================================
   machete:
