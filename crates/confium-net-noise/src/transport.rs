@@ -263,8 +263,16 @@ impl NoiseTransport {
             .clone()
             .unwrap_or_else(NoiseIdentity::generate);
         let mut stream = std::net::TcpStream::connect(params.addr).context(IoSnafu)?;
+        // A non-noise peer accepts the TCP connection and then never
+        // speaks the handshake; without a deadline the client would
+        // block on the first read forever. 10s bounds a stalled or
+        // mismatched peer; established sessions are not affected.
+        stream
+            .set_read_timeout(Some(std::time::Duration::from_secs(10)))
+            .context(IoSnafu)?;
         let (state, remote) =
             handshake(&mut stream, &identity, true, params.pinned).context(IoSnafu)?;
+        stream.set_read_timeout(None).context(IoSnafu)?;
         Ok(Self {
             state,
             stream,

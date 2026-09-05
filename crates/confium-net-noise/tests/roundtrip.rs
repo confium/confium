@@ -200,6 +200,33 @@ fn tampered_handshake_frame_aborts() {
 }
 
 #[test]
+fn handshake_against_a_silent_peer_times_out() {
+    let _guard = serial();
+    // A TCP listener that accepts but never speaks the noise
+    // handshake: connect must fail within the deadline instead of
+    // blocking forever.
+    let silent = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = silent.local_addr().unwrap().port();
+    let holder = thread::spawn(move || {
+        let (_conn, _) = silent.accept().unwrap();
+        thread::sleep(std::time::Duration::from_secs(15));
+    });
+
+    let url = format!("noise://127.0.0.1:{port}");
+    let started = std::time::Instant::now();
+    match confium_net::connect(&url) {
+        Ok(_session) => panic!("silent peer produced a session"),
+        Err(e) => {
+            assert!(
+                started.elapsed() < std::time::Duration::from_secs(12),
+                "handshake took too long: {started:?}; error: {e}"
+            );
+        }
+    }
+    drop(holder);
+}
+
+#[test]
 fn provisioned_identity_is_stable() {
     let _guard = serial();
     let id = NoiseIdentity::from_hex(&NoiseIdentity::generate().to_hex()).unwrap();
