@@ -9,6 +9,10 @@ For cross-product changes, see the workspace CHANGELOG at <https://github.com/co
 
 ### Fixed
 
+- Gate unverifiable sig-possession; publication gates + adversarial pairing (BREAKING) by @[object]
+
+### Fixed
+
 - Rejection-sampled scalar reductions batch; OTS empty-branch rejection (BREAKING) by @[object]
 
 ### Other

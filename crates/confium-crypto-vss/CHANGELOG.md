@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Gate unverifiable sig-possession; publication gates + adversarial pairing (BREAKING) by @[object]
+
 ### Other
 
 - Gate experimental multi_sig behind opt-in feature (BREAKING) by @[object]
