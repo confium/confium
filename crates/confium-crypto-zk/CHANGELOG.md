@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Gate unverifiable sig-possession; publication gates + adversarial pairing (BREAKING) by @[object]
+
+### Fixed
+
 - Rejection-sampled scalar reductions batch; OTS empty-branch rejection (BREAKING) by @[object]
 
 ### Other
