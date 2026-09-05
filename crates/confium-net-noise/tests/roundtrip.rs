@@ -16,10 +16,7 @@ use confium_net_noise::keys::NoiseIdentity;
 fn serial() -> std::sync::MutexGuard<'static, ()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     let m = LOCK.get_or_init(|| Mutex::new(()));
-    match m.lock() {
-        Ok(g) => g,
-        Err(poisoned) => poisoned.into_inner(),
-    }
+    m.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 fn hex(bytes: &[u8]) -> String {
