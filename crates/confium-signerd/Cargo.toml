@@ -29,3 +29,8 @@ sha2 = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+
+# `confium-net-noise` is link-only: registering the noise:// transport
+# happens through `register_transport!` statics, not direct use.
+[package.metadata.cargo-machete]
+ignored = ["confium-net-noise"]
