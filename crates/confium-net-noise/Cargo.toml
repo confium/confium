@@ -17,8 +17,12 @@ snow = "0.10"
 inventory = { workspace = true }
 x25519-dalek = { version = "2", features = ["static_secrets"] }
 sha2 = { workspace = true }
-thiserror = { workspace = true }
 url = { workspace = true }
 
 [dev-dependencies]
 confium-net = { workspace = true }
+
+# `inventory` is consumed by the `register_transport!` macro via
+# absolute path `::inventory::submit!` — no `use inventory` in source.
+[package.metadata.cargo-machete]
+ignored = ["inventory"]
