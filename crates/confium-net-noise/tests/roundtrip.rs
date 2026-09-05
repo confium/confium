@@ -190,9 +190,10 @@ fn tampered_handshake_frame_aborts() {
     });
 
     let client_url = format!("noise://127.0.0.1:{tap_port}");
-    match confium_net::connect(&client_url) {
-        Ok(_session) => panic!("client completed a handshake over corrupted frames"),
-        Err(_) => {} // expected: AEAD failure or aborted stream
+    // Expected: AEAD failure or aborted stream. A completed handshake
+    // over corrupted frames would be the bug.
+    if confium_net::connect(&client_url).is_ok() {
+        panic!("client completed a handshake over corrupted frames");
     }
     tapper.join().unwrap();
     responder.join().unwrap();
