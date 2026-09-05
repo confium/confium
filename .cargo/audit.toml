@@ -1,0 +1,20 @@
+# cargo-audit configuration (the Security Audit CI job).
+# Mirrors deny.toml: informational advisories for transitive deps we
+# cannot fix without upstream changes are ignored with justification.
+# Actual CVEs are NOT ignored.
+
+[advisories]
+ignore = [
+    "RUSTSEC-2025-0057", # fxhash unmaintained (transitive)
+    "RUSTSEC-2024-0384", # instant unmaintained (transitive)
+    "RUSTSEC-2024-0436", # paste unmaintained (transitive)
+    "RUSTSEC-2025-0134", # rustls-pemfile unmaintained (transitive)
+    "RUSTSEC-2026-0174", # http-types ASCII invariant (transitive, not consumed)
+    # azure_core legacy SDK writes the authorization header to debug
+    # logs (local-only exposure, CVSS AV:L). MSRC closed it as not
+    # meeting their servicing bar; the legacy SDK is unsupported and
+    # the fix is the azure_core 1.x migration, tracked as a TODO.
+    # Consumed only via the opt-in azure-keyvault feature of
+    # confium-store-cloud.
+    "RUSTSEC-2026-0275",
+]
