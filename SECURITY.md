@@ -30,6 +30,28 @@ All reports are triaged by maintainers. We may request additional information
 or coordinate a joint disclosure timeline. Credit will be given in the release
 notes unless you prefer to remain anonymous.
 
+## Pre-Publication Checklist (new cryptographic primitives)
+
+Before a new public crypto primitive lands in a `confium-crypto-*`,
+`confium-privacy`, or `confium-tc-*` crate, the author answers, in the
+PR description:
+
+1. **What does `verify()` bind?** Name every public input the
+   verification consumes (statement, commitment, key, message). A
+   verify that binds nothing is the shipped-bug class of the 2026-09
+   advisory — self-consistency is not soundness.
+2. **Where does randomness come from?** Commitments must be
+   randomized from the OS RNG; deterministic hashes of the secret are
+   brute-force oracles.
+3. **Are scalar reductions constant-fallback-free?** Nonce and
+   challenge reductions use rejection sampling
+   (`confium-scalar-reduce-v1` pattern) — never `unwrap_or(ZERO)`.
+4. **Is there a paired rejects-forgery test?** CI enforces this
+   (`scripts/check-crypto-tests.sh`); name the test in the PR.
+5. **Audit-status marker present?** The crate's lib docs state
+   audited/unaudited; experimental modules compile only behind
+   `unaudited-experimental`.
+
 ## Supply Chain
 
 - All dependencies are pulled from crates.io. `cargo-deny` enforces license
