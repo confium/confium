@@ -13,6 +13,8 @@
 
 use p256::elliptic_curve::PrimeField;
 use p256::elliptic_curve::sec1::{FromSec1Point, ToSec1Point};
+use p256::FieldBytes;
+use sha2::{Digest as _, Sha256};
 use p256::{AffinePoint, ProjectivePoint, Scalar};
 
 /// Public commitments from a Feldman VSS deal.
@@ -89,9 +91,17 @@ impl VssCommitment {
 fn u64_to_scalar(v: u64) -> Scalar {
     let mut arr = [0u8; 32];
     arr[24..32].copy_from_slice(&v.to_be_bytes());
-    let fb = p256::FieldBytes::from(arr);
-    let ct = Scalar::from_repr(fb);
-    Option::<Scalar>::from(ct).unwrap_or(Scalar::ZERO)
+    loop {
+        if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(arr))) {
+            return s;
+        }
+        arr = {
+            let mut h = Sha256::new();
+            h.update(b"confium-scalar-reduce-v1");
+            h.update(arr);
+            h.finalize().into()
+        };
+    }
 }
 
 #[cfg(test)]

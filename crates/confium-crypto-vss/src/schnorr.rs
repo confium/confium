@@ -93,9 +93,18 @@ fn fiat_shamir_challenge(public: &AffinePoint, r: &AffinePoint, message: &[u8]) 
     hasher.update(message);
     let hash = hasher.finalize();
 
-    let fb = p256::FieldBytes::try_from(&hash[..]).expect("digest is 32 bytes");
-    let ct = Scalar::from_repr(fb);
-    Option::<Scalar>::from(ct).unwrap_or(Scalar::ZERO)
+    let mut fb: [u8; 32] = hash.into();
+    // Rejection sampling with re-hash: a zero challenge must be
+    // impossible by construction, not a fallback.
+    loop {
+        if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(p256::FieldBytes::from(fb))) {
+            return s;
+        }
+        let mut h = Sha256::new();
+        h.update(b"confium-scalar-reduce-v1");
+        h.update(fb);
+        fb = h.finalize().into();
+    }
 }
 
 fn decode_point(bytes: &[u8]) -> Result<AffinePoint, SchnorrError> {
@@ -114,7 +123,7 @@ fn decode_scalar(bytes: &[u8; 32]) -> Result<Scalar, SchnorrError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use p256::elliptic_curve::Field;
+    use p256::elliptic_curve::Field as _;
 
     fn random_keypair() -> (Scalar, AffinePoint) {
         let mut buf = [0u8; 32];
@@ -185,5 +194,48 @@ mod tests {
         assert_ne!(p1.r_hex, p2.r_hex);
         assert!(verify(&p1, &public, b"same message").unwrap());
         assert!(verify(&p2, &public, b"same message").unwrap());
+    }
+}
+
+#[cfg(test)]
+mod adversarial_tests {
+    //! Paired rejects-forgery tests for the Schnorr signature
+    //! interface.
+
+    use super::*;
+    use p256::elliptic_curve::Field as _;
+
+    fn keypair() -> (Scalar, AffinePoint) {
+        let sk = Scalar::random(&mut UnwrapErr(SysRng));
+        let pk = (ProjectivePoint::GENERATOR * sk).to_affine();
+        (sk, pk)
+    }
+
+    #[test]
+    fn rejects_signature_for_a_different_message() {
+        let (sk, pk) = keypair();
+        let sig = prove(&sk, &pk, b"original message");
+        // Valid signature, wrong statement.
+        assert!(!verify(&sig, &pk, b"other message").unwrap());
+    }
+
+    #[test]
+    fn rejects_tampered_signature() {
+        let (sk, pk) = keypair();
+        let sig = prove(&sk, &pk, b"message");
+        // Corrupt the scalar response.
+        let mut z = hex::decode(&sig.z_hex).unwrap();
+        z[0] ^= 0x01;
+        let mut forged = sig.clone();
+        forged.z_hex = z.iter().map(|b| format!("{b:02x}")).collect();
+        assert!(!verify(&forged, &pk, b"message").unwrap());
+    }
+
+    #[test]
+    fn rejects_signature_under_a_wrong_key() {
+        let (sk, _) = keypair();
+        let (_, other_pk) = keypair();
+        let sig = prove(&sk, &other_pk, b"message"); // prove against wrong pk
+        assert!(!verify(&sig, &other_pk, b"message").unwrap());
     }
 }

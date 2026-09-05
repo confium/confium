@@ -1,8 +1,10 @@
-//! Range proof — prove a committed value is in [0, 2^bits) without revealing it.
-//!
-//! Simple implementation using bit decomposition: decompose the value
-//! into bits, prove each bit is 0 or 1, and show the commitments
-//! combine to the original value.
+//! EXPERIMENTAL — NOT AUDITED — DOES NOT PROVE WHAT IT CLAIMS.
+//! This hash-based sketch verifies only internal self-consistency:
+//! it binds to no public statement, and its "commitments" are
+//! deterministic hashes of the value (guess-checkable). It is a
+//! placeholder for a real sigma-protocol/Bulletproofs range proof,
+//! compiled only behind the `unaudited-experimental` feature, and
+//! absent from the default public API.
 
 use num_bigint::BigUint;
 use num_traits::One;

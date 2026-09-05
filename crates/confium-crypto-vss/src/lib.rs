@@ -9,7 +9,13 @@
 pub mod nizk;
 pub mod paillier;
 pub mod pedersen_vss;
-pub mod range_proof;
 pub mod schnorr;
-pub mod threshold_schnorr;
 pub mod vss;
+
+/// Experimental demonstration primitives. NOT AUDITED — known gaps
+/// documented in each module; must never be used for real security.
+/// Compile the `unaudited-experimental` feature to include them.
+#[cfg(feature = "unaudited-experimental")]
+pub mod range_proof;
+#[cfg(feature = "unaudited-experimental")]
+pub mod threshold_schnorr;
