@@ -11,19 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Noise_XX encrypted transport for coordinator sessions (BREAKING) by @[object]
 
-### Other
+### Fixed
 
-- Release v0.5.1 by @[object]
-
-### Other
-
-- Release v0.5.1 by @[object]
-- Release v0.5.0 by @[object]
+- Correct unused-dependency findings by @[object]
 
 ### Other
 
-- Release v0.5.0 by @[object]
-
-### Other
-
-- Release v0.5.0 by @[object]
+- Clippy-clean tamper assertion by @[object]
+- Clippy-clean listen_url construction by @[object]
+- Clippy-clean lock handling in noise tests by @[object]
