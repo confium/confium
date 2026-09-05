@@ -26,6 +26,11 @@ pub mod differential;
 pub mod distributed_prf;
 pub mod distributed_prg;
 pub mod jsonld_signing;
+/// Experimental demonstration primitive — NOT AUDITED.
+/// verify_aggregate checks only structural validity; it does not
+/// bind the signature to the message (the message parameter is
+/// ignored). Must never be used for real security.
+#[cfg(feature = "unaudited-experimental")]
 pub mod multi_sig;
 pub mod oblivious_transfer;
 pub mod privacy_and_dist_patterns;

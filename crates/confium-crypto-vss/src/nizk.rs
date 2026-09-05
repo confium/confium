@@ -7,7 +7,6 @@ use p256::elliptic_curve::sec1::ToSec1Point;
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use sha2::{Digest, Sha256};
 
-
 /// Reduce 32 bytes to a scalar by rejection sampling with
 /// re-hashing. Never falls back to a constant: a zero nonce leaks
 /// the secret in the response, and a zero challenge accepts

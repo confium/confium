@@ -1,12 +1,12 @@
 //! Pedersen VSS — verifiable secret sharing with hiding commitments.
 
 use getrandom::SysRng;
-use sha2::{Digest as _, Sha256};
 use p256::elliptic_curve::rand_core::UnwrapErr;
 use p256::elliptic_curve::sec1::{FromSec1Point, ToSec1Point};
 use p256::elliptic_curve::{Field, PrimeField};
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest as _, Sha256};
 
 /// Pedersen VSS commitment: (C_i, D_i) = (g^{a_i} * h^{r_i}, h^{r_i}).
 #[derive(Debug, Clone, Serialize, Deserialize)]
