@@ -1,6 +1,7 @@
 //! Pedersen VSS — verifiable secret sharing with hiding commitments.
 
 use getrandom::SysRng;
+use sha2::{Digest as _, Sha256};
 use p256::elliptic_curve::rand_core::UnwrapErr;
 use p256::elliptic_curve::sec1::{FromSec1Point, ToSec1Point};
 use p256::elliptic_curve::{Field, PrimeField};
@@ -156,7 +157,17 @@ fn eval_poly(coeffs: &[Scalar], x: u32) -> Scalar {
 fn u32_to_scalar(v: u32) -> Scalar {
     let mut arr = [0u8; 32];
     arr[28..32].copy_from_slice(&v.to_be_bytes());
-    Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(arr))).unwrap_or(Scalar::ZERO)
+    loop {
+        if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(arr))) {
+            return s;
+        }
+        arr = {
+            let mut h = Sha256::new();
+            h.update(b"confium-scalar-reduce-v1");
+            h.update(arr);
+            h.finalize().into()
+        };
+    }
 }
 
 fn encode_point(p: &AffinePoint) -> String {

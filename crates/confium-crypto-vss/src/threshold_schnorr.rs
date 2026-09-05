@@ -1,4 +1,11 @@
-//! Threshold Schnorr (MuSig-style) — 2-round threshold signing.
+//! EXPERIMENTAL — NOT AUDITED — KNOWN-SOUND. Demo of a 2-round
+//! Schnorr multi-signature. This is a plain multi-signature sketch,
+//! not a secure MuSig: keys aggregate as a plain sum with no
+//! proof-of-possession, so it MUST NOT be used with keys from
+//! parties you do not fully control, and it is n-of-n only (the
+//! threshold field does not produce t-of-n security). Compiled only
+//! behind the `unaudited-experimental` feature; absent from the
+//! default public API.
 
 use getrandom::SysRng;
 use p256::elliptic_curve::rand_core::UnwrapErr;
@@ -83,8 +90,16 @@ impl MusigSession {
         hasher.update(r.to_sec1_point(true).as_bytes());
         hasher.update(pk_sum.to_sec1_point(true).as_bytes());
         hasher.update(message);
-        let fb = FieldBytes::try_from(&hasher.finalize()[..]).expect("digest is 32 bytes");
-        Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
+        let mut fb: [u8; 32] = hasher.finalize().into();
+        loop {
+            if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(fb))) {
+                return s;
+            }
+            let mut h = Sha256::new();
+            h.update(b"confium-scalar-reduce-v1");
+            h.update(fb);
+            fb = h.finalize().into();
+        }
     }
 
     /// Aggregate public key: sum of all PK_i.

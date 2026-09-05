@@ -15,6 +15,12 @@ keywords = ["crypto", "vss", "paillier", "schnorr", "confium"]
 [lib]
 crate-type = ["rlib"]
 
+[features]
+# Demo/experimental primitives with known soundness gaps. Off by
+# default; building them opts in explicitly and is a statement that
+# the consumer has reviewed the module docs.
+unaudited-experimental = []
+
 [dependencies]
 getrandom = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
