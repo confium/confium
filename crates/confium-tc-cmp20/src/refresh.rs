@@ -35,6 +35,7 @@ use elliptic_curve::rand_core::Rng;
 use elliptic_curve::rand_core::UnwrapErr;
 use getrandom::SysRng;
 use p256::{FieldBytes, Scalar, elliptic_curve::PrimeField};
+use sha2::{Digest as _, Sha256};
 
 /// One party's refresh contribution: `(source_party_index, target_party_index, refresh_scalar_bytes)`.
 #[derive(Debug, Clone)]
@@ -183,11 +184,24 @@ fn random_scalar() -> Scalar {
     }
 }
 
+/// Reduce 32 bytes to a scalar by rejection sampling with re-hash;
+/// never falls back to a constant.
+fn reduce_to_scalar(mut bytes: [u8; 32]) -> Scalar {
+    loop {
+        if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(bytes))) {
+            return s;
+        }
+        let mut h = Sha256::new();
+        h.update(b"confium-scalar-reduce-v1");
+        h.update(bytes);
+        bytes = h.finalize().into();
+    }
+}
+
 fn u32_to_scalar(v: u32) -> Scalar {
     let mut arr = [0u8; 32];
     arr[28..32].copy_from_slice(&v.to_be_bytes());
-    let fb = FieldBytes::from(arr);
-    Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
+    reduce_to_scalar(arr)
 }
 
 fn scalar_to_bytes(s: &Scalar) -> [u8; 32] {
@@ -197,8 +211,7 @@ fn scalar_to_bytes(s: &Scalar) -> [u8; 32] {
 }
 
 fn bytes_to_scalar(bytes: &[u8; 32]) -> Scalar {
-    let fb = FieldBytes::from(*bytes);
-    Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
+    reduce_to_scalar(*bytes)
 }
 
 #[cfg(test)]

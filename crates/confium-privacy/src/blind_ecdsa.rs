@@ -7,10 +7,12 @@
 //! Uses the multiplicative blinding technique adapted for ECDSA.
 
 use getrandom::SysRng;
+use p256::FieldBytes;
 use p256::Scalar;
 use p256::ecdsa::{Signature, SigningKey, signature::Signer};
 use p256::elliptic_curve::{Field, PrimeField, rand_core::UnwrapErr};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest as _, Sha256};
 
 /// A blind signature request (blinded hash sent to signer).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,9 +71,10 @@ pub fn unblind(raw: &RawSignature, factor: &BlindFactor) -> Signature {
     let s_bytes = hex::decode(&raw.s_hex).unwrap();
     let r_arr: [u8; 32] = r_bytes.as_slice().try_into().unwrap();
     let s_arr: [u8; 32] = s_bytes.as_slice().try_into().unwrap();
-    let r = Scalar::from_repr(r_arr.into()).unwrap_or(Scalar::ZERO);
-    let s = Scalar::from_repr(s_arr.into()).unwrap_or(Scalar::ZERO);
-    // s' = s * t^-1 (remove blinding)
+    let r = reduce_to_scalar(r_arr);
+    let s = reduce_to_scalar(s_arr);
+    // s' = s * t^-1 (remove blinding); zero t is caller error
+    // (sweep ledger: SEC-audit-notes).
     let t_inv = factor.t.invert().unwrap_or(Scalar::ZERO);
     let s_unblinded = s * t_inv;
     let r_bytes: [u8; 32] = r.to_repr().into();
@@ -79,9 +82,23 @@ pub fn unblind(raw: &RawSignature, factor: &BlindFactor) -> Signature {
     Signature::from_scalars(r_bytes, s_bytes).unwrap()
 }
 
+/// Reduce 32 bytes to a scalar by rejection sampling with re-hash.
+/// Never falls back to a constant: a zero nonce leaks the secret in
+/// the response and a zero challenge accepts forgeries.
+fn reduce_to_scalar(mut bytes: [u8; 32]) -> Scalar {
+    loop {
+        if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(bytes))) {
+            return s;
+        }
+        let mut h = Sha256::new();
+        h.update(b"confium-scalar-reduce-v1");
+        h.update(bytes);
+        bytes = h.finalize().into();
+    }
+}
+
 fn bytes_to_scalar(bytes: &[u8; 32]) -> Scalar {
-    let fb = p256::FieldBytes::from(*bytes);
-    Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
+    reduce_to_scalar(*bytes)
 }
 
 #[cfg(test)]

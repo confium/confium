@@ -6,6 +6,7 @@ use crate::paillier_mta;
 use confium_tc::paillier::{self, PaillierKeypair};
 use getrandom::SysRng;
 use num_bigint::BigUint;
+use p256::FieldBytes;
 use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
 use p256::elliptic_curve::rand_core::UnwrapErr;
 use p256::elliptic_curve::{Field, PrimeField};
@@ -111,14 +112,27 @@ fn scalar_to_biguint(s: &Scalar) -> BigUint {
     BigUint::from_bytes_be(&bytes)
 }
 
+/// Reduce 32 bytes to a scalar by rejection sampling with re-hash;
+/// never falls back to a constant.
+fn reduce_to_scalar(mut bytes: [u8; 32]) -> Scalar {
+    loop {
+        if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(bytes))) {
+            return s;
+        }
+        let mut h = Sha256::new();
+        h.update(b"confium-scalar-reduce-v1");
+        h.update(bytes);
+        bytes = h.finalize().into();
+    }
+}
+
 fn x_coordinate(point: &AffinePoint) -> Scalar {
     use p256::elliptic_curve::sec1::ToSec1Point;
     let encoded = point.to_sec1_point(false);
     if let Some(x_bytes) = encoded.x() {
         let mut arr = [0u8; 32];
         arr.copy_from_slice(x_bytes);
-        let fb = p256::FieldBytes::from(arr);
-        Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
+        reduce_to_scalar(arr)
     } else {
         Scalar::ZERO
     }
@@ -127,11 +141,13 @@ fn x_coordinate(point: &AffinePoint) -> Scalar {
 fn hash_to_scalar(message: &[u8]) -> Scalar {
     let mut hasher = Sha256::new();
     hasher.update(message);
-    let fb = p256::FieldBytes::try_from(&hasher.finalize()[..]).expect("digest is 32 bytes");
-    Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
+    let bytes: [u8; 32] = hasher.finalize().into();
+    reduce_to_scalar(bytes)
 }
 
 fn invert_scalar(s: &Scalar) -> Scalar {
+    // Garbage-in-garbage-out on zero input; protocol callers pass
+    // non-zero scalars (sweep ledger: SEC-audit-notes).
     Option::<Scalar>::from(s.invert()).unwrap_or(Scalar::ZERO)
 }
 

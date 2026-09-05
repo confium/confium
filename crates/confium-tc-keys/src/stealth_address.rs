@@ -96,12 +96,27 @@ pub fn scan_stealth_address(
     }
 }
 
+/// Reduce 32 bytes to a scalar by rejection sampling with re-hash.
+/// Never falls back to a constant: a zero result here would void the
+/// derivation or proof guarantees.
+fn reduce_to_scalar(mut bytes: [u8; 32]) -> Scalar {
+    loop {
+        if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(bytes))) {
+            return s;
+        }
+        let mut h = Sha256::new();
+        h.update(b"confium-scalar-reduce-v1");
+        h.update(bytes);
+        bytes = h.finalize().into();
+    }
+}
+
 fn hash_to_scalar(point: &AffinePoint) -> Scalar {
     let mut hasher = Sha256::new();
     hasher.update(b"stealth-hash");
     hasher.update(point.to_sec1_point(true).as_bytes());
-    let fb = FieldBytes::try_from(&hasher.finalize()[..]).expect("digest is 32 bytes");
-    Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
+    let bytes: [u8; 32] = hasher.finalize().into();
+    reduce_to_scalar(bytes)
 }
 
 #[cfg(test)]

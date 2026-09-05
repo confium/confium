@@ -1,5 +1,11 @@
 //! Privacy-preserving cryptographic primitives.
 //!
+//! # Audit status
+//!
+//! **Unaudited.** Several modules are research-grade sketches; the
+//! experimental ones (`multi_sig`) compile only behind
+//! `unaudited-experimental`. No external cryptographic review.
+//!
 //! # Example
 //!
 //! ```

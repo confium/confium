@@ -5,8 +5,10 @@
 //! interpolation.
 
 use crate::scalar;
+use p256::FieldBytes;
 use p256::Scalar;
 use p256::elliptic_curve::PrimeField;
+use sha2::{Digest as _, Sha256};
 
 /// A Shamir share: (x, y) where x is the party index and y is a scalar.
 /// The secret `y` field is zeroized on drop.
@@ -79,12 +81,24 @@ fn evaluate_polynomial(coeffs: &[Scalar], x: &Scalar) -> Scalar {
     result
 }
 
+/// Reduce 32 bytes to a scalar by rejection sampling with re-hash;
+/// never falls back to a constant.
+fn reduce_to_scalar(mut bytes: [u8; 32]) -> Scalar {
+    loop {
+        if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(bytes))) {
+            return s;
+        }
+        let mut h = Sha256::new();
+        h.update(b"confium-scalar-reduce-v1");
+        h.update(bytes);
+        bytes = h.finalize().into();
+    }
+}
+
 fn u32_to_scalar(v: u32) -> Scalar {
     let mut arr = [0u8; 32];
     arr[28..32].copy_from_slice(&v.to_be_bytes());
-    let fb = p256::FieldBytes::from(arr);
-    let ct: p256::elliptic_curve::subtle::CtOption<Scalar> = Scalar::from_repr(fb);
-    Option::<Scalar>::from(ct).unwrap_or(Scalar::ZERO)
+    reduce_to_scalar(arr)
 }
 
 /// Recover the secret (the polynomial evaluated at x=0) from at least

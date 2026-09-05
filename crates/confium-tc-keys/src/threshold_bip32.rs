@@ -47,6 +47,21 @@ impl Default for DerivationPath {
 
 /// Derive a child scalar from a parent scalar and path component.
 /// Uses HMAC-SHA256 based derivation (BIP-32 style adapted for P-256).
+/// Reduce 32 bytes to a scalar by rejection sampling with re-hash.
+/// Never falls back to a constant: a zero result here would void the
+/// derivation or proof guarantees.
+fn reduce_to_scalar(mut bytes: [u8; 32]) -> Scalar {
+    loop {
+        if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(bytes))) {
+            return s;
+        }
+        let mut h = Sha256::new();
+        h.update(b"confium-scalar-reduce-v1");
+        h.update(bytes);
+        bytes = h.finalize().into();
+    }
+}
+
 pub fn derive_child_scalar(parent: &Scalar, component: &PathIndex) -> Scalar {
     let parent_bytes = parent.to_repr();
     let mut hasher = Sha256::new();
@@ -60,9 +75,8 @@ pub fn derive_child_scalar(parent: &Scalar, component: &PathIndex) -> Scalar {
     hasher.update(component.index.to_be_bytes());
     let hash = hasher.finalize();
 
-    let fb = FieldBytes::try_from(&hash[..]).expect("digest is 32 bytes");
-    let ct = Scalar::from_repr(fb);
-    Option::<Scalar>::from(ct).unwrap_or(Scalar::ZERO)
+    let bytes: [u8; 32] = hash.into();
+    reduce_to_scalar(bytes)
 }
 
 /// Derive a scalar from a parent following a full path.

@@ -29,6 +29,21 @@ pub struct SignaturePossessionProof {
 
 /// Generate a proof that you hold a valid signature on `message`
 /// under `public_key`. The signature itself is NOT revealed.
+/// Reduce 32 bytes to a scalar by rejection sampling with re-hash.
+/// Never falls back to a constant: a zero nonce leaks the secret in
+/// the response and a zero challenge accepts forgeries.
+fn reduce_to_scalar(mut bytes: [u8; 32]) -> Scalar {
+    loop {
+        if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(bytes))) {
+            return s;
+        }
+        let mut h = Sha256::new();
+        h.update(b"confium-scalar-reduce-v1");
+        h.update(bytes);
+        bytes = h.finalize().into();
+    }
+}
+
 pub fn prove_possession(
     public_key: &VerifyingKey,
     message: &[u8],
@@ -59,8 +74,7 @@ pub fn prove_possession(
     // Pick random nonce
     let mut nonce_bytes = [0u8; 32];
     UnwrapErr(SysRng).fill_bytes(&mut nonce_bytes);
-    let nonce_fb = FieldBytes::from(nonce_bytes);
-    let nonce = Option::<Scalar>::from(Scalar::from_repr(nonce_fb)).unwrap_or(Scalar::ZERO);
+    let nonce = reduce_to_scalar(nonce_bytes);
 
     // Commitment: R = nonce * G
     let commitment = (ProjectivePoint::GENERATOR * nonce).to_affine();
@@ -75,8 +89,9 @@ pub fn prove_possession(
     challenge_hasher.update(commitment.to_sec1_point(true).as_bytes());
     challenge_hasher.update(r_bytes);
     let challenge_bytes = challenge_hasher.finalize();
-    let challenge_fb = FieldBytes::try_from(&challenge_bytes[..]).expect("digest is 32 bytes");
-    let challenge = Option::<Scalar>::from(Scalar::from_repr(challenge_fb)).unwrap_or(Scalar::ZERO);
+    let mut challenge_arr = [0u8; 32];
+    challenge_arr.copy_from_slice(&challenge_bytes);
+    let challenge = reduce_to_scalar(challenge_arr);
 
     // Response: response = nonce + challenge * s
     let response = nonce + challenge * s_scalar;

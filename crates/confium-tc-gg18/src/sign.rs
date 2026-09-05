@@ -23,6 +23,7 @@
 
 use elliptic_curve::Generate;
 use elliptic_curve::{PrimeField, ops::Invert, point::AffineCoordinates, sec1::ToSec1Point};
+use p256::FieldBytes;
 use p256::{AffinePoint, NonZeroScalar, ProjectivePoint, Scalar};
 use sha2::{Digest, Sha256};
 
@@ -327,16 +328,28 @@ fn reduce_x_mod_n(point: AffinePoint) -> Scalar {
     let mut arr = [0u8; 32];
     let n = x_bytes.len().min(32);
     arr[..n].copy_from_slice(&x_bytes[..n]);
-    let fb: p256::FieldBytes = arr.into();
-    Option::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
+    reduce_to_scalar(arr)
+}
+
+/// Reduce 32 bytes to a scalar by rejection sampling with re-hash;
+/// never falls back to a constant.
+fn reduce_to_scalar(mut bytes: [u8; 32]) -> Scalar {
+    loop {
+        if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(bytes))) {
+            return s;
+        }
+        let mut h = Sha256::new();
+        h.update(b"confium-scalar-reduce-v1");
+        h.update(bytes);
+        bytes = h.finalize().into();
+    }
 }
 
 fn hash_to_scalar(message: &[u8]) -> Scalar {
     let mut h = Sha256::new();
     h.update(message);
     let digest: [u8; 32] = h.finalize().into();
-    let fb: p256::FieldBytes = digest.into();
-    Option::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
+    reduce_to_scalar(digest)
 }
 
 fn normalize_s_low(s: Scalar) -> Scalar {
