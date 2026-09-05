@@ -29,9 +29,10 @@ fn free_port() -> u16 {
 }
 
 fn listen_url(port: u16, key: Option<&NoiseIdentity>) -> String {
-    match key {
-        Some(k) => format!("noise://127.0.0.1:{port}?key={}", k.to_hex()),
-        None => format!("noise://127.0.0.1:{port}"),
+    if let Some(k) = key {
+        format!("noise://127.0.0.1:{port}?key={}", k.to_hex())
+    } else {
+        format!("noise://127.0.0.1:{port}")
     }
 }
 
