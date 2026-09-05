@@ -15,6 +15,10 @@ keywords = ["crypto", "zk", "proof", "confium"]
 [lib]
 crate-type = ["rlib"]
 
+[features]
+# Demo/experimental primitives with known gaps. Off by default.
+unaudited-experimental = []
+
 [dependencies]
 getrandom = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }

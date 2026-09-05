@@ -210,3 +210,28 @@ mod tests {
         assert_eq!(p1, p2);
     }
 }
+
+#[cfg(test)]
+mod adversarial_tests {
+    //! Paired rejects-forgery tests for membership verification.
+
+    use super::*;
+
+    #[test]
+    fn verify_rejects_wrong_element() {
+        let mut acc = Accumulator::new();
+        acc.add(b"member-a");
+        let witness = acc.witness(b"member-a").unwrap();
+        // Valid witness, wrong statement: it must not verify.
+        assert!(!acc.verify(&witness, b"not-a-member"));
+    }
+
+    #[test]
+    fn verify_rejects_tampered_witness() {
+        let mut acc = Accumulator::new();
+        acc.add(b"member-a");
+        let mut witness = acc.witness(b"member-a").unwrap();
+        witness += BigUint::one();
+        assert!(!acc.verify(&witness, b"member-a"));
+    }
+}
