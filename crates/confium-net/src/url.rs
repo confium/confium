@@ -36,7 +36,7 @@ use crate::error::UnknownSchemeSnafu;
 /// appending to this list — a single-line edit, not a structural
 /// change to the parser.
 pub const KNOWN_SCHEMES: &[&str] = &[
-    "inproc", "mock", "tcp", "tcp+tls", "quic", "quic4", "quic6", "ws", "wss",
+    "inproc", "mock", "tcp", "tcp+tls", "noise", "quic", "quic4", "quic6", "ws", "wss",
 ];
 
 /// A parsed transport URL.

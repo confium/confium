@@ -16,6 +16,7 @@ keywords = ["crypto", "threshold", "coordinator", "confium"]
 crate-type = ["rlib"]
 
 [dependencies]
+confium-net = { workspace = true }
 getrandom = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
 serde = { workspace = true }

@@ -10,8 +10,7 @@
 
 use crate::coordinator::session::SignerId;
 use serde::{Deserialize, Serialize};
-use std::io::{self, Read, Write};
-use std::net::TcpStream;
+use std::io;
 
 /// Protocol message exchanged over TCP between coordinator, signers, and clients.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -138,8 +137,11 @@ pub enum ProtocolMessage {
     },
 }
 
-/// Send a protocol message over a TCP stream.
-pub fn send_message(stream: &mut TcpStream, msg: &ProtocolMessage) -> io::Result<()> {
+/// Send a protocol message over any writable stream.
+pub fn send_message<S: std::io::Write + ?Sized>(
+    stream: &mut S,
+    msg: &ProtocolMessage,
+) -> io::Result<()> {
     let json = serde_json::to_vec(msg)?;
     let len = json.len() as u32;
     stream.write_all(&len.to_be_bytes())?;
@@ -148,8 +150,8 @@ pub fn send_message(stream: &mut TcpStream, msg: &ProtocolMessage) -> io::Result
     Ok(())
 }
 
-/// Receive a protocol message from a TCP stream.
-pub fn recv_message(stream: &mut TcpStream) -> io::Result<ProtocolMessage> {
+/// Receive a protocol message from any readable stream.
+pub fn recv_message<S: std::io::Read + ?Sized>(stream: &mut S) -> io::Result<ProtocolMessage> {
     let mut len_buf = [0u8; 4];
     stream.read_exact(&mut len_buf)?;
     let len = u32::from_be_bytes(len_buf) as usize;

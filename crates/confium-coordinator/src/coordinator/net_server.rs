@@ -4,7 +4,28 @@
 //! Routes protocol messages to the Coordinator's API.
 
 use std::io;
-use std::net::{TcpListener, TcpStream};
+use std::net::TcpListener;
+use std::net::TcpStream;
+
+/// A byte-stream session: TCP directly, or any registry transport
+/// (e.g. noise) wrapped in [`confium_net::io::TransportIo`].
+pub trait SessionIo: std::io::Read + std::io::Write + Send {
+    /// Best-effort read timeout. Returns `false` when unsupported
+    /// (non-socket transports are message-framed and their `recv`
+    /// blocks only for the next message, which is the desired
+    /// behavior for a caller that previously set a socket timeout).
+    fn set_read_timeout(&mut self, _d: Option<std::time::Duration>) -> bool {
+        false
+    }
+}
+
+impl SessionIo for TcpStream {
+    fn set_read_timeout(&mut self, d: Option<std::time::Duration>) -> bool {
+        std::net::TcpStream::set_read_timeout(self, d).is_ok()
+    }
+}
+
+impl SessionIo for confium_net::io::TransportIo {}
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -51,7 +72,11 @@ impl CoordinatorServer {
                     Ok(stream) => {
                         let coord = Arc::clone(&coordinator);
                         thread::spawn(move || {
-                            let _ = handle_connection(stream, coord, start_time);
+                            let _ = handle_connection(
+                                Box::new(stream) as Box<dyn SessionIo>,
+                                coord,
+                                start_time,
+                            );
                         });
                     }
                     Err(e) => {
@@ -63,10 +88,44 @@ impl CoordinatorServer {
 
         Ok(bound_addr)
     }
+
+    /// Serve sessions over any registry transport URL (e.g.
+    /// `noise://0.0.0.0:18432?key=<hex>`). The scheme resolves at
+    /// link time; link `confium-net-noise` (or another transport
+    /// crate) into the binary to make it available.
+    pub fn start_url(&self, url: &str) -> io::Result<String> {
+        let mut listener =
+            confium_net::listen(url).map_err(|e| io::Error::other(format!("listen {url}: {e}")))?;
+        let coordinator = Arc::clone(&self.coordinator);
+        let start_time = self.start_time;
+
+        thread::spawn(move || {
+            loop {
+                match listener.accept() {
+                    Ok(transport) => {
+                        let coord = Arc::clone(&coordinator);
+                        thread::spawn(move || {
+                            let session = confium_net::io::TransportIo::new(transport);
+                            let _ = handle_connection(
+                                Box::new(session) as Box<dyn SessionIo>,
+                                coord,
+                                start_time,
+                            );
+                        });
+                    }
+                    Err(e) => {
+                        eprintln!("Coordinator: accept error: {e}");
+                    }
+                }
+            }
+        });
+
+        Ok(url.to_string())
+    }
 }
 
 fn handle_connection(
-    mut stream: TcpStream,
+    mut stream: Box<dyn SessionIo>,
     coordinator: SharedCoordinator,
     start_time: std::time::Instant,
 ) -> io::Result<()> {

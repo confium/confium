@@ -8,8 +8,14 @@ use std::path::Path;
 /// Top-level daemon configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DaemonConfig {
-    /// Coordinator TCP address (e.g., "127.0.0.1:18432").
+    /// Coordinator TCP address (e.g., "127.0.0.1:18432"). Ignored
+    /// when `coordinator_url` is set.
     pub coordinator_addr: String,
+    /// Coordinator transport URL — plain (`tcp://host:port`) or
+    /// encrypted (`noise://host:port?key=<hex>&pinned=<hex>`). Takes
+    /// precedence over `coordinator_addr`.
+    #[serde(default)]
+    pub coordinator_url: Option<String>,
     /// This signer's identity.
     pub signer_id: String,
     /// Quorum this signer belongs to.
@@ -52,7 +58,7 @@ impl DaemonConfig {
         if self.quorum_id.is_empty() {
             return Err(ConfigError::Invalid("quorum_id must not be empty".into()));
         }
-        if self.coordinator_addr.is_empty() {
+        if self.coordinator_url.is_none() && self.coordinator_addr.is_empty() {
             return Err(ConfigError::Invalid(
                 "coordinator_addr must not be empty".into(),
             ));
