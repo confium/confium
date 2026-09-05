@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Bound the handshake with a 10s read deadline by @[object]
+
 ### Added
 
 - Noise_XX encrypted transport for coordinator sessions (BREAKING) by @[object]
