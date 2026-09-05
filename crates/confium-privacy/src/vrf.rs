@@ -6,6 +6,7 @@
 //! verifiable randomness.
 
 use getrandom::SysRng;
+use p256::FieldBytes;
 use p256::elliptic_curve::PrimeField;
 use p256::elliptic_curve::rand_core::{Rng, UnwrapErr};
 use p256::elliptic_curve::sec1::{FromSec1Point, ToSec1Point};
@@ -103,6 +104,21 @@ pub fn verify(public: &AffinePoint, alpha: &[u8], output: &VrfOutput) -> bool {
     expected_output == output.output_hex
 }
 
+/// Reduce 32 bytes to a scalar by rejection sampling with re-hash.
+/// Never falls back to a constant: a zero nonce leaks the secret in
+/// the response and a zero challenge accepts forgeries.
+fn reduce_to_scalar(mut bytes: [u8; 32]) -> Scalar {
+    loop {
+        if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(bytes))) {
+            return s;
+        }
+        let mut h = Sha256::new();
+        h.update(b"confium-scalar-reduce-v1");
+        h.update(bytes);
+        bytes = h.finalize().into();
+    }
+}
+
 fn hash_to_curve(alpha: &[u8]) -> AffinePoint {
     let mut counter = 0u32;
     loop {
@@ -140,8 +156,8 @@ fn challenge(
     hasher.update(alpha);
     let hash = hasher.finalize();
 
-    let fb = p256::FieldBytes::try_from(&hash[..]).expect("digest is 32 bytes");
-    Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
+    let bytes: [u8; 32] = hash.into();
+    reduce_to_scalar(bytes)
 }
 
 fn hash_output(gamma: &AffinePoint) -> [u8; 32] {

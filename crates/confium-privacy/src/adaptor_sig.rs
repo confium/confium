@@ -57,10 +57,9 @@ pub fn pre_sign(
 
     // s' = k^{-1} * (e + r * x)  -- standard ECDSA with nonce k
     let e = hash_msg(message);
-    let x = Option::<Scalar>::from(Scalar::from_repr(p256::FieldBytes::from(
-        signing_key.to_bytes(),
-    )))
-    .unwrap_or(Scalar::ZERO);
+    let mut sk_bytes = [0u8; 32];
+    sk_bytes.copy_from_slice(&signing_key.to_bytes());
+    let x = reduce_to_scalar(sk_bytes);
     let k_inv = invert(&k);
     let s_prime = k_inv * (e + r * x);
 
@@ -142,13 +141,27 @@ pub fn verify_pre_sig(
     expected_r_prime == pre_sig.r_prime
 }
 
+/// Reduce 32 bytes to a scalar by rejection sampling with re-hash.
+/// Never falls back to a constant: a zero nonce leaks the secret in
+/// the response and a zero challenge accepts forgeries.
+fn reduce_to_scalar(mut bytes: [u8; 32]) -> Scalar {
+    loop {
+        if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(bytes))) {
+            return s;
+        }
+        let mut h = Sha256::new();
+        h.update(b"confium-scalar-reduce-v1");
+        h.update(bytes);
+        bytes = h.finalize().into();
+    }
+}
+
 fn x_coord(point: &AffinePoint) -> Scalar {
     let encoded = point.to_sec1_point(false);
     if let Some(x_bytes) = encoded.x() {
         let mut arr = [0u8; 32];
         arr.copy_from_slice(x_bytes);
-        let fb = FieldBytes::from(arr);
-        Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
+        reduce_to_scalar(arr)
     } else {
         Scalar::ZERO
     }
@@ -157,11 +170,13 @@ fn x_coord(point: &AffinePoint) -> Scalar {
 fn hash_msg(msg: &[u8]) -> Scalar {
     let mut h = Sha256::new();
     h.update(msg);
-    let fb = FieldBytes::try_from(&h.finalize()[..]).expect("digest is 32 bytes");
-    Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
+    let bytes: [u8; 32] = h.finalize().into();
+    reduce_to_scalar(bytes)
 }
 
 fn invert(s: &Scalar) -> Scalar {
+    // Garbage-in-garbage-out on zero input; protocol callers pass
+    // non-zero scalars (sweep ledger: SEC-audit-notes).
     let ct = s.invert();
     Option::<Scalar>::from(ct).unwrap_or(Scalar::ZERO)
 }

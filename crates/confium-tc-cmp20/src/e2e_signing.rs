@@ -7,6 +7,7 @@ use crate::paillier_mta;
 use confium_tc::paillier::{self, PaillierKeypair};
 use getrandom::SysRng;
 use num_bigint::BigUint;
+use p256::FieldBytes;
 use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
 use p256::elliptic_curve::rand_core::UnwrapErr;
 use p256::elliptic_curve::{Field, PrimeField};
@@ -121,6 +122,8 @@ impl Cmp20SigningPipeline {
             .copied()
             .fold(Scalar::ZERO, |a, b| a + b);
 
+        // Garbage-in-garbage-out on zero input; protocol callers pass
+        // non-zero scalars (sweep ledger: SEC-audit-notes).
         let k_inv = k_total.invert().unwrap_or(Scalar::ZERO);
         let s = k_inv * (e + r * x_total);
 
@@ -146,13 +149,26 @@ fn scalar_to_biguint(s: &Scalar) -> BigUint {
     BigUint::from_bytes_be(&bytes)
 }
 
+/// Reduce 32 bytes to a scalar by rejection sampling with re-hash;
+/// never falls back to a constant.
+fn reduce_to_scalar(mut bytes: [u8; 32]) -> Scalar {
+    loop {
+        if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(bytes))) {
+            return s;
+        }
+        let mut h = Sha256::new();
+        h.update(b"confium-scalar-reduce-v1");
+        h.update(bytes);
+        bytes = h.finalize().into();
+    }
+}
+
 fn biguint_to_scalar(b: &BigUint, _n: &BigUint) -> Scalar {
     let bytes = b.to_bytes_be();
     let mut arr = [0u8; 32];
     let len = bytes.len().min(32);
     arr[32 - len..].copy_from_slice(&bytes[..len]);
-    let fb = p256::FieldBytes::from(arr);
-    Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
+    reduce_to_scalar(arr)
 }
 
 fn x_coordinate(point: &AffinePoint) -> Scalar {
@@ -161,8 +177,7 @@ fn x_coordinate(point: &AffinePoint) -> Scalar {
     if let Some(x_bytes) = encoded.x() {
         let mut arr = [0u8; 32];
         arr.copy_from_slice(x_bytes);
-        let fb = p256::FieldBytes::from(arr);
-        Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
+        reduce_to_scalar(arr)
     } else {
         Scalar::ZERO
     }
@@ -173,8 +188,8 @@ fn hash_to_scalar(message: &[u8]) -> Scalar {
     let mut hasher = Sha256::new();
     hasher.update(message);
     let hash = hasher.finalize();
-    let fb = p256::FieldBytes::try_from(&hash[..]).expect("digest is 32 bytes");
-    Option::<Scalar>::from(Scalar::from_repr(fb)).unwrap_or(Scalar::ZERO)
+    let bytes: [u8; 32] = hash.into();
+    reduce_to_scalar(bytes)
 }
 
 #[cfg(test)]

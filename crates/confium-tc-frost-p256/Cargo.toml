@@ -19,6 +19,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
+sha2 = { workspace = true }
 getrandom = { workspace = true }
 thiserror = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }

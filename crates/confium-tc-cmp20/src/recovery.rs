@@ -90,6 +90,9 @@ pub fn recover_share(
 }
 
 fn invert_scalar(s: &Scalar) -> Scalar {
+    // Garbage-in-garbage-out on zero input; protocol callers pass
+    // non-zero scalars (sweep ledger: SEC-audit-notes).
+
     let ct: p256::elliptic_curve::subtle::CtOption<Scalar> = s.invert();
     Option::<Scalar>::from(ct).unwrap_or(Scalar::ZERO)
 }

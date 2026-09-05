@@ -82,7 +82,10 @@ impl OtsClient {
             current.copy_from_slice(&h2.finalize());
         }
 
-        let valid = current == proof.merkle_root || proof.merkle_branch.is_empty();
+        // An empty merkle branch proves nothing: without siblings the
+        // claimed root is unverifiable, so an empty branch must NOT
+        // verify (previously treated as valid).
+        let valid = !proof.merkle_branch.is_empty() && current == proof.merkle_root;
         Ok(OtsVerification {
             valid,
             bitcoin_height: proof.bitcoin_height,
@@ -117,11 +120,12 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn verify_empty_branch_is_valid() {
+    async fn verify_empty_branch_is_rejected() {
+        // An empty merkle branch proves nothing — it must NOT verify.
         let client = OtsClient::new();
         let hash = [1u8; 32];
         let proof = OtsProof::new(hash, 800_000);
         let result = client.verify(&proof, |_| Ok([0u8; 32])).await.unwrap();
-        assert!(result.valid);
+        assert!(!result.valid);
     }
 }

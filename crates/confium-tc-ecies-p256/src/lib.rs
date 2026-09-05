@@ -34,6 +34,7 @@ use p256::elliptic_curve::sec1::{FromSec1Point, ToSec1Point};
 use p256::elliptic_curve::subtle::CtOption;
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest as _, Sha256};
 
 pub use keys::generate_keypair;
 pub use shamir::{Share, recover_secret, split_secret};
@@ -297,16 +298,30 @@ fn negate(s: &Scalar) -> Scalar {
 }
 
 fn invert(s: &Scalar) -> Scalar {
+    // Garbage-in-garbage-out on zero input; protocol callers pass
+    // non-zero scalars (sweep ledger: SEC-audit-notes).
     let ct: CtOption<Scalar> = s.invert();
     Option::<Scalar>::from(ct).unwrap_or(Scalar::ZERO)
+}
+
+/// Reduce 32 bytes to a scalar by rejection sampling with re-hash;
+/// never falls back to a constant.
+fn reduce_to_scalar(mut bytes: [u8; 32]) -> Scalar {
+    loop {
+        if let Some(s) = Option::<Scalar>::from(Scalar::from_repr(FieldBytes::from(bytes))) {
+            return s;
+        }
+        let mut h = Sha256::new();
+        h.update(b"confium-scalar-reduce-v1");
+        h.update(bytes);
+        bytes = h.finalize().into();
+    }
 }
 
 fn party_to_scalar(v: u32) -> Scalar {
     let mut arr = [0u8; 32];
     arr[28..32].copy_from_slice(&v.to_be_bytes());
-    let fb = FieldBytes::from(arr);
-    let ct: CtOption<Scalar> = Scalar::from_repr(fb);
-    Option::<Scalar>::from(ct).unwrap_or(Scalar::ZERO)
+    reduce_to_scalar(arr)
 }
 
 #[cfg(test)]

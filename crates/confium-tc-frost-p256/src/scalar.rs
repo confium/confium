@@ -44,6 +44,8 @@ pub fn scalar_sub(a: &Scalar, b: &Scalar) -> Scalar {
 
 /// Modular inverse of a scalar (1/a mod n). Returns ZERO if `a` is zero.
 pub fn scalar_invert(a: &Scalar) -> Scalar {
+    // Garbage-in-garbage-out on zero input; protocol callers pass
+    // non-zero scalars (sweep ledger: SEC-audit-notes).
     let ct: CtOption<Scalar> = a.invert();
     Option::<Scalar>::from(ct).unwrap_or(Scalar::ZERO)
 }

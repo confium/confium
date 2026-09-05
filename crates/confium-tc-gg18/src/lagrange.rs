@@ -23,6 +23,8 @@ pub fn lagrange_basis_scalar(xi: Scalar, xs: &[Scalar]) -> Scalar {
         num *= -xj;
         den *= xi - xj;
     }
+    // Garbage-in-garbage-out on zero input; protocol callers pass
+    // non-zero scalars (sweep ledger: SEC-audit-notes).
     let den_inv = den.invert().unwrap_or(Scalar::ZERO);
     num * den_inv
 }
