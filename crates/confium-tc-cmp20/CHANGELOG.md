@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Rejection-sampled scalar reductions batch; OTS empty-branch rejection (BREAKING) by @[object]
+
+### Fixed
+
 - Zero the share vector with fill, not a manual loop by @[object]
 
 ### Other

@@ -7,6 +7,10 @@ For cross-product changes, see the workspace CHANGELOG at <https://github.com/co
 
 ## [Unreleased]
 
+### Fixed
+
+- Rejection-sampled scalar reductions batch; OTS empty-branch rejection (BREAKING) by @[object]
+
 ### Other
 
 - Gate experimental multi_sig behind opt-in feature (BREAKING) by @[object]
