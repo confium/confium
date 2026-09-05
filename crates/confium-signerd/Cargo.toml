@@ -17,6 +17,7 @@ name = "confium-signerd"
 path = "src/main.rs"
 
 [dependencies]
+confium-net-noise = { workspace = true }
 confium-coordinator = { workspace = true }
 serde = { workspace = true }
 toml = { workspace = true }

@@ -17,6 +17,7 @@ members = [
     "crates/confium-macros",
     "crates/confium-mock-plugin",
     "crates/confium-net",
+    "crates/confium-net-noise",
     "crates/confium-net-quic",
     "crates/confium-net-tcp",
     "crates/confium-net-ws",
@@ -95,6 +96,7 @@ confium-jce-provider = { path = "crates/confium-jce-provider", version = "0.5.9"
 confium-macros = { path = "crates/confium-macros", version = "0.5.9" }
 confium-mock-plugin = { path = "crates/confium-mock-plugin", version = "0.5.9" }
 confium-net = { path = "crates/confium-net", version = "0.5.9" }
+confium-net-noise = { path = "crates/confium-net-noise", version = "0.5.9" }
 confium-net-quic = { path = "crates/confium-net-quic", version = "0.5.9" }
 confium-net-tcp = { path = "crates/confium-net-tcp", version = "0.5.9" }
 confium-net-ws = { path = "crates/confium-net-ws", version = "0.5.9" }

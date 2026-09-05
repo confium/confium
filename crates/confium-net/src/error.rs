@@ -37,6 +37,15 @@ pub enum Error {
     #[snafu(display("Transport closed by peer"))]
     Closed { backtrace: Backtrace },
 
+    /// A transport implementation reported an I/O-level failure
+    /// (connect refused, handshake abort, mid-stream protocol error).
+    /// The transport is unusable after this.
+    #[snafu(display("Transport I/O error: {}", source))]
+    Io {
+        source: std::io::Error,
+        backtrace: Backtrace,
+    },
+
     /// The receive buffer was smaller than the next queued message.
     /// The caller should retry with a larger buffer. The required size
     /// is reported so the caller can size accordingly.

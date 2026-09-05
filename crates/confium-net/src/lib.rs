@@ -45,6 +45,7 @@
 //! See `TODO.roadmap/05-networking-primitives.md` for the design.
 
 pub mod error;
+pub mod io;
 pub mod registry;
 pub mod transports;
 pub mod url;

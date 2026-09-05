@@ -20,6 +20,9 @@ confium-transparency = { workspace = true }
 
 [dev-dependencies]
 chrono = { workspace = true }
+confium-coordinator = { workspace = true }
+confium-net = { workspace = true }
+confium-net-noise = { workspace = true }
 confium-api = { workspace = true }
 confium-core = { workspace = true } # exposes the lib under the name `confium`
 ed25519-dalek = { workspace = true }

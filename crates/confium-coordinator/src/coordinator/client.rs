@@ -21,18 +21,36 @@
 use std::io;
 use std::net::TcpStream;
 
-use crate::coordinator::net::{ProtocolMessage, recv_message, send_message};
+use crate::coordinator::net::ProtocolMessage;
+use crate::coordinator::net::recv_message;
+use crate::coordinator::net::send_message;
+use crate::coordinator::net_server::SessionIo;
 
 /// TCP signer client.
 pub struct SignerClient {
-    stream: TcpStream,
+    stream: Box<dyn SessionIo>,
 }
 
 impl SignerClient {
     /// Connect to coordinator at `addr` (e.g., "127.0.0.1:18432").
     pub fn connect(addr: &str) -> io::Result<Self> {
         let stream = TcpStream::connect(addr)?;
-        Ok(Self { stream })
+        Ok(Self {
+            stream: Box::new(stream),
+        })
+    }
+
+    /// Connect over any registry transport URL — plain
+    /// (`tcp://host:port`) or encrypted (`noise://host:port`, with
+    /// optional `key=`/`pinned=` parameters). Link the transport
+    /// crate (e.g. `confium-net-noise`) into the binary to enable
+    /// its scheme.
+    pub fn connect_url(url: &str) -> io::Result<Self> {
+        let transport = confium_net::connect(url)
+            .map_err(|e| io::Error::other(format!("connect {url}: {e}")))?;
+        Ok(Self {
+            stream: Box::new(confium_net::io::TransportIo::new(transport)),
+        })
     }
 
     /// Register this signer with the coordinator.
@@ -104,7 +122,7 @@ impl SignerClient {
         )?;
         // Wait for Ack or Error
         self.stream
-            .set_read_timeout(Some(std::time::Duration::from_secs(5)))?;
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)));
         match recv_message(&mut self.stream) {
             Ok(ProtocolMessage::Ack { .. }) => Ok(()),
             Ok(ProtocolMessage::Error { message }) => {
@@ -136,7 +154,7 @@ impl SignerClient {
         // Set a short read timeout — if coordinator doesn't respond (threshold
         // not met), the client gets WouldBlock instead of blocking forever.
         self.stream
-            .set_read_timeout(Some(std::time::Duration::from_secs(5)))?;
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)));
 
         match recv_message(&mut self.stream) {
             Ok(ProtocolMessage::Signature { bytes, .. }) => Ok(Some(bytes)),
@@ -172,9 +190,20 @@ impl SignerClient {
         }
     }
 
-    /// Get a mutable reference to the underlying TCP stream. Used by
-    /// the signer daemon for low-level protocol message handling.
-    pub fn stream(&mut self) -> &mut TcpStream {
+    /// Mutable access to the underlying session stream (TCP directly
+    /// or a registry transport). Used by the signer daemon for
+    /// low-level protocol message handling.
+    pub fn stream_mut(&mut self) -> &mut Box<dyn SessionIo> {
         &mut self.stream
+    }
+
+    /// Receive the next protocol message on the session stream.
+    pub fn recv(&mut self) -> io::Result<ProtocolMessage> {
+        recv_message(self.stream.as_mut())
+    }
+
+    /// Send a protocol message on the session stream.
+    pub fn send(&mut self, msg: &ProtocolMessage) -> io::Result<()> {
+        send_message(self.stream.as_mut(), msg)
     }
 }

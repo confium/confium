@@ -1,0 +1,24 @@
+[package]
+name = "confium-net-noise"
+description = "Noise_XX encrypted transport for Confium coordinator sessions"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+categories.workspace = true
+
+[dependencies]
+confium-net = { workspace = true }
+snafu = { workspace = true }
+snow = "0.10"
+# register_transport! expands to ::inventory::submit!
+inventory = { workspace = true }
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+url = { workspace = true }
+
+[dev-dependencies]
+confium-net = { workspace = true }

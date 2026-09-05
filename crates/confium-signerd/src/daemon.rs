@@ -24,7 +24,11 @@ impl SignerDaemon {
         let mut attempts = 0u32;
         loop {
             tracing::info!(
-                addr = %self.config.coordinator_addr,
+                addr = self
+                    .config
+                    .coordinator_url
+                    .as_deref()
+                    .unwrap_or(&self.config.coordinator_addr),
                 attempt = attempts,
                 "connecting to coordinator"
             );
@@ -47,14 +51,17 @@ impl SignerDaemon {
     }
 
     fn connect_and_serve(&self) -> io::Result<()> {
-        let mut client = SignerClient::connect(&self.config.coordinator_addr)?;
+        let mut client = match &self.config.coordinator_url {
+            Some(url) => SignerClient::connect_url(url)?,
+            None => SignerClient::connect(&self.config.coordinator_addr)?,
+        };
         client.register(&self.config.signer_id, &self.config.quorum_id)?;
         tracing::info!(signer_id = %self.config.signer_id, "registered with coordinator");
 
         let share_bytes = self.load_share()?;
 
         loop {
-            let msg = recv_message(client.stream())?;
+            let msg = client.recv()?;
             match msg {
                 ProtocolMessage::SessionPending {
                     session_id,
@@ -63,7 +70,7 @@ impl SignerDaemon {
                 } => {
                     tracing::info!(session = %session_id, "received signing request");
                     self.handle_signing_request(
-                        client.stream(),
+                        client.stream_mut(),
                         &session_id,
                         &message,
                         &share_bytes,
@@ -71,7 +78,7 @@ impl SignerDaemon {
                 }
                 ProtocolMessage::HealthCheck => {
                     send_message(
-                        client.stream(),
+                        client.stream_mut(),
                         &ProtocolMessage::HealthStatus {
                             alive: true,
                             ready: true,
@@ -89,7 +96,7 @@ impl SignerDaemon {
 
     fn handle_signing_request(
         &self,
-        stream: &mut std::net::TcpStream,
+        stream: &mut Box<dyn confium_coordinator::coordinator::net_server::SessionIo>,
         session_id: &str,
         _message: &[u8],
         share_bytes: &[u8],
@@ -174,6 +181,7 @@ mod tests {
 
     fn make_config() -> DaemonConfig {
         DaemonConfig {
+            coordinator_url: None,
             coordinator_addr: "127.0.0.1:0".into(),
             signer_id: "test-signer".into(),
             quorum_id: "test-quorum".into(),
