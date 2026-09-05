@@ -11,11 +11,11 @@
 //! for each coefficient. Each shareholder with index `j` receives
 //! share `f(j)`. They verify: `g^{f(j)} == product(C_i^{j^i})`.
 
+use p256::FieldBytes;
 use p256::elliptic_curve::PrimeField;
 use p256::elliptic_curve::sec1::{FromSec1Point, ToSec1Point};
-use p256::FieldBytes;
-use sha2::{Digest as _, Sha256};
 use p256::{AffinePoint, ProjectivePoint, Scalar};
+use sha2::{Digest as _, Sha256};
 
 /// Public commitments from a Feldman VSS deal.
 ///
