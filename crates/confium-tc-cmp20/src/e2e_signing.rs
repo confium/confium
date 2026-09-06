@@ -18,8 +18,12 @@ use sha2::{Digest, Sha256};
 pub struct Cmp20SigningPipeline {
     pub threshold: u32,
     pub party_count: u32,
-    /// Each party's Paillier keypair.
+    /// Each party's Paillier keypair. 642-bit primes (~1284-bit N):
+    /// the MtA proofs require N > q⁵ + q² for honest no-wrap shares.
     pub paillier_keys: Vec<PaillierKeypair>,
+    /// Each party's MtA commitment key (verifier-side; see
+    /// `mta_proofs` for the trust direction).
+    pub commitment_keys: Vec<crate::mta_proofs::CommitmentKey>,
     /// Each party's secret key share x_i.
     pub key_shares: Vec<Scalar>,
     /// Joint public key Y = sum(x_i * G).
@@ -30,7 +34,10 @@ impl Cmp20SigningPipeline {
     /// Create a pipeline with pre-generated shares (from DKG).
     pub fn new(threshold: u32, party_count: u32, key_shares: Vec<Scalar>) -> Self {
         let paillier_keys: Vec<PaillierKeypair> = (0..party_count)
-            .map(|_| paillier::generate_keypair(256))
+            .map(|_| paillier::generate_keypair(642))
+            .collect();
+        let commitment_keys: Vec<crate::mta_proofs::CommitmentKey> = (0..party_count)
+            .map(|_| crate::mta_proofs::generate_commitment_key(64))
             .collect();
 
         let public_key = {
@@ -45,6 +52,7 @@ impl Cmp20SigningPipeline {
             threshold,
             party_count,
             paillier_keys,
+            commitment_keys,
             key_shares,
             public_key,
         }
@@ -74,9 +82,15 @@ impl Cmp20SigningPipeline {
                 // Party i encrypts k_i under j's Paillier key
                 let k_i_big = scalar_to_biguint(&nonces[i]);
                 let x_j_big = scalar_to_biguint(&self.key_shares[j]);
-                let (alpha, beta) =
-                    paillier_mta::full_mta(&self.paillier_keys[j], &k_i_big, &x_j_big)
-                        .map_err(|e| format!("MtA failed: {e}"))?;
+                let (alpha, beta) = paillier_mta::full_mta_proved(
+                    &self.paillier_keys[j],
+                    &self.commitment_keys[i],
+                    &self.commitment_keys[j],
+                    &crate::mta_proofs::p256_order(),
+                    &k_i_big,
+                    &x_j_big,
+                )
+                .map_err(|e| format!("MtA failed: {e}"))?;
 
                 // alpha is held by party i, beta by party j
                 // delta_i += alpha (mod curve order)

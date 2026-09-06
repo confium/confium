@@ -1973,6 +1973,7 @@ dependencies = [
  "getrandom 0.4.3",
  "inventory",
  "num-bigint",
+ "num-traits",
  "p256",
  "proptest",
  "rand 0.8.8",

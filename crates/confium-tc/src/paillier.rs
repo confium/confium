@@ -104,21 +104,23 @@ pub fn scalar_mul(public: &PaillierPublicKey, c: &BigUint, k: &BigUint) -> BigUi
     c.modpow(k, &public.n_squared)
 }
 
-fn generate_prime(bits: u32) -> BigUint {
+/// Generate a random probable prime (Miller-Rabin, 20 rounds).
+pub fn generate_prime(bits: u32) -> BigUint {
     let mut rng = OsRng;
     loop {
-        let candidate = rng.gen_biguint(bits as u64);
-        if candidate < BigUint::from(2u32) {
+        if bits < 2 {
             continue;
         }
-        let candidate = candidate | BigUint::one();
+        let top = BigUint::one() << (bits - 1);
+        let candidate = rng.gen_biguint(bits as u64) | &top | BigUint::one();
         if miller_rabin(&candidate, 20) {
             return candidate;
         }
     }
 }
 
-fn miller_rabin(n: &BigUint, rounds: u32) -> bool {
+/// Miller-Rabin probable-prime test.
+pub fn miller_rabin(n: &BigUint, rounds: u32) -> bool {
     let two = BigUint::from(2u32);
     let three = BigUint::from(3u32);
     if n == &two || n == &three {
