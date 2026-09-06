@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
+- Release v0.8.2 by @[object]
+- Rustfmt by @[object]
+
+### Added
+
+- Real Pedersen range proof (sigma-protocol, OR-composition) by @[object]
+
+### Other
+
 - Rustfmt by @[object]
 
 ### Fixed
