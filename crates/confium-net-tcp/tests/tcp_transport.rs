@@ -196,3 +196,42 @@ fn missing_port_is_rejected() {
         "expected MalformedUrl, got {err:?}"
     );
 }
+
+#[test]
+fn bind_failure_reports_the_os_error() {
+    // The bind io error must survive as Error::Io (the previous
+    // MalformedUrl mapping discarded it — WSAENOTSOCK on Windows was
+    // invisible in gem CI logs, starving the diagnostic).
+    let holder = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = holder.local_addr().unwrap().port();
+    let err = match net::listen(&format!("tcp://127.0.0.1:{port}")) {
+        Ok(_) => panic!("expected bind failure, got Ok"),
+        Err(e) => e,
+    };
+    assert!(
+        matches!(err, net::Error::Io { .. }),
+        "expected Error::Io, got {err:?}"
+    );
+    assert!(
+        err.to_string().contains("os error"),
+        "OS error code missing from: {err}"
+    );
+}
+
+#[test]
+fn connect_failure_reports_the_os_error() {
+    // Nothing is listening on this port: connect must fail as Error::Io
+    // with the OS error intact.
+    let probe = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = probe.local_addr().unwrap().port();
+    drop(probe);
+
+    let err = match net::connect(&format!("tcp://127.0.0.1:{port}")) {
+        Ok(_) => panic!("expected connect failure, got Ok"),
+        Err(e) => e,
+    };
+    assert!(
+        matches!(err, net::Error::Io { .. }),
+        "expected Error::Io, got {err:?}"
+    );
+}

@@ -24,6 +24,9 @@ confium-net = { workspace = true }
 # `::inventory::submit!`), so it must be a direct dep even though no
 # `use inventory` appears in our source.
 inventory = { workspace = true }
+# Bind/connect io failures are chained into confium-net's Io variant
+# via IntoError (the OS error must survive for diagnostics).
+snafu = { workspace = true }
 url = { workspace = true }
 
 [dev-dependencies]

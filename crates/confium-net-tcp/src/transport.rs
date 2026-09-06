@@ -23,8 +23,10 @@ use confium_net::Listener;
 use confium_net::Result;
 use confium_net::Transport;
 use confium_net::error::ClosedSnafu;
+use confium_net::error::IoSnafu;
 use confium_net::error::MalformedUrlSnafu;
 use confium_net::registry::TransportKind;
+use snafu::IntoError;
 
 /// Maximum payload size for a single frame (8 MiB). Guards against a
 /// malicious or buggy peer sending a gigantic length prefix that would
@@ -252,12 +254,7 @@ impl TransportKind for TcpTransportKind {
         let (host, port) = host_port(url, scheme)?;
         match TcpTransport::connect(scheme, host, port) {
             Ok(t) => Ok(Box::new(t)),
-            Err(_) => MalformedUrlSnafu {
-                scheme,
-                url: url.to_string(),
-                reason: "could not connect to peer",
-            }
-            .fail(),
+            Err(e) => Err(IoSnafu.into_error(e)),
         }
     }
 
@@ -266,12 +263,7 @@ impl TransportKind for TcpTransportKind {
         let (host, port) = host_port(url, scheme)?;
         match crate::listener::TcpListener::bind(scheme, host, port) {
             Ok(l) => Ok(Box::new(l)),
-            Err(_) => MalformedUrlSnafu {
-                scheme,
-                url: url.to_string(),
-                reason: "could not bind to address",
-            }
-            .fail(),
+            Err(e) => Err(IoSnafu.into_error(e)),
         }
     }
 }
