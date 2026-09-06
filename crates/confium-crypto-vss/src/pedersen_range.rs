@@ -26,8 +26,8 @@
 //! docs — this construction follows the textbook composition but has
 //! had no external review.
 
-use p256::elliptic_curve::PrimeField;
 use p256::elliptic_curve::Field as _;
+use p256::elliptic_curve::PrimeField;
 use p256::elliptic_curve::sec1::FromSec1Point;
 use p256::elliptic_curve::sec1::ToSec1Point;
 use p256::{AffinePoint, FieldBytes, ProjectivePoint, Scalar};
