@@ -14,6 +14,7 @@
 
 pub mod nizk;
 pub mod paillier;
+pub mod pedersen_range;
 pub mod pedersen_vss;
 pub mod schnorr;
 pub mod vss;
