@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Range proofs on every MtA ciphertext (GG18 App. A) by @[object]
+
+### Fixed
+
+- Drop the pipeline commitment_keys field — semver additive by @[object]
+- Keep the legacy MtA API verbatim — semver-clean patch by @[object]
+
 ### Fixed
 
 - Rejection-sampled scalar reductions batch; OTS empty-branch rejection (BREAKING) by @[object]
