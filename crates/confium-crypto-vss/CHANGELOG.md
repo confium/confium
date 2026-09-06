@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Real Pedersen range proof (sigma-protocol, OR-composition) by @[object]
+
+### Other
+
+- Rustfmt by @[object]
+
 ### Fixed
 
 - Gate unverifiable sig-possession; publication gates + adversarial pairing (BREAKING) by @[object]
