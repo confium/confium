@@ -26,6 +26,7 @@ chrono = { workspace = true }
 sha2 = { workspace = true }
 subtle = { workspace = true }
 hex = { workspace = true }
+ureq = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true }
