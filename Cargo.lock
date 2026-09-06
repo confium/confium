@@ -1643,6 +1643,7 @@ version = "0.8.2"
 dependencies = [
  "confium-net",
  "inventory",
+ "snafu",
  "url",
 ]
 
