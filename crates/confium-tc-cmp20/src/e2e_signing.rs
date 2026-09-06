@@ -21,9 +21,6 @@ pub struct Cmp20SigningPipeline {
     /// Each party's Paillier keypair. 642-bit primes (~1284-bit N):
     /// the MtA proofs require N > q⁵ + q² for honest no-wrap shares.
     pub paillier_keys: Vec<PaillierKeypair>,
-    /// Each party's MtA commitment key (verifier-side; see
-    /// `mta_proofs` for the trust direction).
-    pub commitment_keys: Vec<crate::mta_proofs::CommitmentKey>,
     /// Each party's secret key share x_i.
     pub key_shares: Vec<Scalar>,
     /// Joint public key Y = sum(x_i * G).
@@ -35,9 +32,6 @@ impl Cmp20SigningPipeline {
     pub fn new(threshold: u32, party_count: u32, key_shares: Vec<Scalar>) -> Self {
         let paillier_keys: Vec<PaillierKeypair> = (0..party_count)
             .map(|_| paillier::generate_keypair(642))
-            .collect();
-        let commitment_keys: Vec<crate::mta_proofs::CommitmentKey> = (0..party_count)
-            .map(|_| crate::mta_proofs::generate_commitment_key(64))
             .collect();
 
         let public_key = {
@@ -52,7 +46,6 @@ impl Cmp20SigningPipeline {
             threshold,
             party_count,
             paillier_keys,
-            commitment_keys,
             key_shares,
             public_key,
         }
@@ -70,6 +63,12 @@ impl Cmp20SigningPipeline {
             .map(|_| Scalar::random(&mut UnwrapErr(SysRng)))
             .collect();
 
+        // Per-sign commitment keys (demo path — a deployment would
+        // generate these once per party at keygen).
+        let commitment_keys: Vec<crate::mta_proofs::CommitmentKey> = (0..n)
+            .map(|_| crate::mta_proofs::generate_commitment_key(64))
+            .collect();
+
         // Step 2: Run MtA for each pair (i, j) where i != j
         // Compute additive shares of k_i * x_j
         let mut delta_shares: Vec<Scalar> = Vec::with_capacity(n);
@@ -84,8 +83,8 @@ impl Cmp20SigningPipeline {
                 let x_j_big = scalar_to_biguint(&self.key_shares[j]);
                 let (alpha, beta) = paillier_mta::full_mta_proved(
                     &self.paillier_keys[j],
-                    &self.commitment_keys[i],
-                    &self.commitment_keys[j],
+                    &commitment_keys[i],
+                    &commitment_keys[j],
                     &crate::mta_proofs::p256_order(),
                     &k_i_big,
                     &x_j_big,

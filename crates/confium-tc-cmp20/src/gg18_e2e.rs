@@ -18,7 +18,6 @@ pub struct Gg18SigningPipeline {
     pub threshold: u32,
     pub party_count: u32,
     pub paillier_keys: Vec<PaillierKeypair>,
-    pub commitment_keys: Vec<crate::mta_proofs::CommitmentKey>,
     pub key_shares: Vec<Scalar>,
     pub public_key: AffinePoint,
 }
@@ -28,9 +27,6 @@ impl Gg18SigningPipeline {
         // 642-bit primes: the MtA proofs require N > q⁵ + q².
         let paillier_keys: Vec<PaillierKeypair> = (0..party_count)
             .map(|_| paillier::generate_keypair(642))
-            .collect();
-        let commitment_keys: Vec<crate::mta_proofs::CommitmentKey> = (0..party_count)
-            .map(|_| crate::mta_proofs::generate_commitment_key(64))
             .collect();
         let public_key = {
             let mut sum = ProjectivePoint::IDENTITY;
@@ -43,7 +39,6 @@ impl Gg18SigningPipeline {
             threshold,
             party_count,
             paillier_keys,
-            commitment_keys,
             key_shares,
             public_key,
         }
@@ -59,6 +54,12 @@ impl Gg18SigningPipeline {
             .map(|_| Scalar::random(&mut UnwrapErr(SysRng)))
             .collect();
 
+        // Per-sign commitment keys (demo path — a deployment would
+        // generate these once per party at keygen).
+        let commitment_keys: Vec<crate::mta_proofs::CommitmentKey> = (0..self.party_count as usize)
+            .map(|_| crate::mta_proofs::generate_commitment_key(64))
+            .collect();
+
         // Round 2: MtA for k_i * x_j (same as CMP20)
         for i in 0..n {
             for j in 0..n {
@@ -69,8 +70,8 @@ impl Gg18SigningPipeline {
                 let x_j_big = scalar_to_biguint(&self.key_shares[j]);
                 let _ = paillier_mta::full_mta_proved(
                     &self.paillier_keys[j],
-                    &self.commitment_keys[i],
-                    &self.commitment_keys[j],
+                    &commitment_keys[i],
+                    &commitment_keys[j],
                     &crate::mta_proofs::p256_order(),
                     &k_i_big,
                     &x_j_big,
