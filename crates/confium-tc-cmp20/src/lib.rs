@@ -58,6 +58,7 @@ pub mod inprocess;
 pub mod keygen;
 pub mod lagrange;
 pub mod mta;
+pub mod mta_proofs;
 pub mod paillier_mta;
 pub mod recovery;
 pub mod refresh;

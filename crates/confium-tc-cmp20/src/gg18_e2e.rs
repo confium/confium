@@ -18,14 +18,19 @@ pub struct Gg18SigningPipeline {
     pub threshold: u32,
     pub party_count: u32,
     pub paillier_keys: Vec<PaillierKeypair>,
+    pub commitment_keys: Vec<crate::mta_proofs::CommitmentKey>,
     pub key_shares: Vec<Scalar>,
     pub public_key: AffinePoint,
 }
 
 impl Gg18SigningPipeline {
     pub fn new(threshold: u32, party_count: u32, key_shares: Vec<Scalar>) -> Self {
+        // 642-bit primes: the MtA proofs require N > q⁵ + q².
         let paillier_keys: Vec<PaillierKeypair> = (0..party_count)
-            .map(|_| paillier::generate_keypair(256))
+            .map(|_| paillier::generate_keypair(642))
+            .collect();
+        let commitment_keys: Vec<crate::mta_proofs::CommitmentKey> = (0..party_count)
+            .map(|_| crate::mta_proofs::generate_commitment_key(64))
             .collect();
         let public_key = {
             let mut sum = ProjectivePoint::IDENTITY;
@@ -38,6 +43,7 @@ impl Gg18SigningPipeline {
             threshold,
             party_count,
             paillier_keys,
+            commitment_keys,
             key_shares,
             public_key,
         }
@@ -61,8 +67,15 @@ impl Gg18SigningPipeline {
                 }
                 let k_i_big = scalar_to_biguint(&nonces[i]);
                 let x_j_big = scalar_to_biguint(&self.key_shares[j]);
-                let _ = paillier_mta::full_mta(&self.paillier_keys[j], &k_i_big, &x_j_big)
-                    .map_err(|e| format!("MtA failed: {e}"))?;
+                let _ = paillier_mta::full_mta_proved(
+                    &self.paillier_keys[j],
+                    &self.commitment_keys[i],
+                    &self.commitment_keys[j],
+                    &crate::mta_proofs::p256_order(),
+                    &k_i_big,
+                    &x_j_big,
+                )
+                .map_err(|e| format!("MtA failed: {e}"))?;
             }
         }
 
