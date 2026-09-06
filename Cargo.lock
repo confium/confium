@@ -2163,6 +2163,7 @@ dependencies = [
  "subtle",
  "thiserror 2.0.20",
  "tokio",
+ "ureq",
 ]
 
 [[package]]

@@ -11,6 +11,7 @@
 
 mod client;
 mod proof;
+pub mod wire;
 
 pub use client::*;
 pub use proof::*;
