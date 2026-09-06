@@ -54,7 +54,7 @@ aws-sdk-kms = { version = "1.114", default-features = false, features = ["behavi
 
 # --- Google Cloud KMS ----------------------------------------------------
 google-cloud-kms = { version = "0.6", default-features = false, features = ["auth"], optional = true }
-google-cloud-auth = { version = "0.17", default-features = false, optional = true }
+google-cloud-auth = { version = "1.16", default-features = false, optional = true }
 
 # --- Azure Key Vault -----------------------------------------------------
 # Renamed to `azure_security_keyvault` on crates.io; the local alias
@@ -64,7 +64,7 @@ azure-security-keyvault = { version = "0.21", default-features = false, optional
 azure-identity = { version = "0.21", default-features = false, optional = true, package = "azure_identity" }
 azure-core = { version = "0.21", default-features = false, optional = true, package = "azure_core" }
 sha2 = { workspace = true, optional = true }
-base64 = { version = "0.22", optional = true }
+base64 = { version = "0.23", optional = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
