@@ -75,7 +75,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.8.4"
+version = "0.8.5"
 edition = "2024"
 rust-version = "1.85"
 authors = ["Ribose Open <open.source@ribose.com>"]
@@ -85,72 +85,72 @@ repository = "https://github.com/confium/confium"
 categories = ["authentication", "cryptography"]
 
 [workspace.dependencies]
-confium-api = { path = "crates/confium-api", version = "0.8.4" }
-confium-attributes = { path = "crates/confium-attributes", version = "0.8.4" }
-confium-signatif = { path = "crates/confium-signatif", version = "0.8.4" }
-confium-core = { path = "crates/confium-core", version = "0.8.4" }
-confium-composite = { path = "crates/confium-composite", version = "0.8.4" }
-confium-deployment = { path = "crates/confium-deployment", version = "0.8.4" }
-confium-daemon = { path = "crates/confium-daemon", version = "0.8.4" }
-confium-jce-provider = { path = "crates/confium-jce-provider", version = "0.8.4" }
-confium-macros = { path = "crates/confium-macros", version = "0.8.4" }
-confium-mock-plugin = { path = "crates/confium-mock-plugin", version = "0.8.4" }
-confium-net = { path = "crates/confium-net", version = "0.8.4" }
-confium-net-noise = { path = "crates/confium-net-noise", version = "0.8.4" }
-confium-net-quic = { path = "crates/confium-net-quic", version = "0.8.4" }
-confium-net-tcp = { path = "crates/confium-net-tcp", version = "0.8.4" }
-confium-net-ws = { path = "crates/confium-net-ws", version = "0.8.4" }
-confium-openssl-provider = { path = "crates/confium-openssl-provider", version = "0.8.4" }
-confium-patterns = { path = "crates/confium-patterns", version = "0.8.4" }
-confium-pki = { path = "crates/confium-pki", version = "0.8.4" }
-confium-pkcs11-server = { path = "crates/confium-pkcs11-server", version = "0.8.4" }
-confium-registry = { path = "crates/confium-registry", version = "0.8.4" }
-confium-ring = { path = "crates/confium-ring", version = "0.8.4" }
-confium-sandbox-process = { path = "crates/confium-sandbox-process", version = "0.8.4" }
-confium-sandbox-wasm = { path = "crates/confium-sandbox-wasm", version = "0.8.4" }
-confium-store = { path = "crates/confium-store", version = "0.8.4" }
-confium-store-cloud = { path = "crates/confium-store-cloud", version = "0.8.4" }
-confium-store-openpgp-card = { path = "crates/confium-store-openpgp-card", version = "0.8.4" }
-confium-store-pkcs11 = { path = "crates/confium-store-pkcs11", version = "0.8.4" }
-confium-store-tpm = { path = "crates/confium-store-tpm", version = "0.8.4" }
-confium-tc = { path = "crates/confium-tc", version = "0.8.4" }
-confium-tc-bls = { path = "crates/confium-tc-bls", version = "0.8.4" }
-confium-tc-cmp20 = { path = "crates/confium-tc-cmp20", version = "0.8.4" }
-confium-tc-ecies-p256 = { path = "crates/confium-tc-ecies-p256", version = "0.8.4" }
-confium-tc-elgamal-p256 = { path = "crates/confium-tc-elgamal-p256", version = "0.8.4" }
-confium-tc-fhe-bfv = { path = "crates/confium-tc-fhe-bfv", version = "0.8.4" }
-confium-tc-frost-ed25519 = { path = "crates/confium-tc-frost-ed25519", version = "0.8.4" }
-confium-tc-frost-ml-dsa-65 = { path = "crates/confium-tc-frost-ml-dsa-65", version = "0.8.4" }
-confium-tc-frost-p256 = { path = "crates/confium-tc-frost-p256", version = "0.8.4" }
-confium-tc-gg18 = { path = "crates/confium-tc-gg18", version = "0.8.4" }
-confium-tc-ml-kem = { path = "crates/confium-tc-ml-kem", version = "0.8.4" }
-confium-test-harness = { path = "crates/confium-test-harness", version = "0.8.4" }
-confium-tls-signer = { path = "crates/confium-tls-signer", version = "0.8.4" }
-confium-transparency = { path = "crates/confium-transparency", version = "0.8.4" }
-confium-wasm = { path = "crates/confium-wasm", version = "0.8.4" }
+confium-api = { path = "crates/confium-api", version = "0.8.5" }
+confium-attributes = { path = "crates/confium-attributes", version = "0.8.5" }
+confium-signatif = { path = "crates/confium-signatif", version = "0.8.5" }
+confium-core = { path = "crates/confium-core", version = "0.8.5" }
+confium-composite = { path = "crates/confium-composite", version = "0.8.5" }
+confium-deployment = { path = "crates/confium-deployment", version = "0.8.5" }
+confium-daemon = { path = "crates/confium-daemon", version = "0.8.5" }
+confium-jce-provider = { path = "crates/confium-jce-provider", version = "0.8.5" }
+confium-macros = { path = "crates/confium-macros", version = "0.8.5" }
+confium-mock-plugin = { path = "crates/confium-mock-plugin", version = "0.8.5" }
+confium-net = { path = "crates/confium-net", version = "0.8.5" }
+confium-net-noise = { path = "crates/confium-net-noise", version = "0.8.5" }
+confium-net-quic = { path = "crates/confium-net-quic", version = "0.8.5" }
+confium-net-tcp = { path = "crates/confium-net-tcp", version = "0.8.5" }
+confium-net-ws = { path = "crates/confium-net-ws", version = "0.8.5" }
+confium-openssl-provider = { path = "crates/confium-openssl-provider", version = "0.8.5" }
+confium-patterns = { path = "crates/confium-patterns", version = "0.8.5" }
+confium-pki = { path = "crates/confium-pki", version = "0.8.5" }
+confium-pkcs11-server = { path = "crates/confium-pkcs11-server", version = "0.8.5" }
+confium-registry = { path = "crates/confium-registry", version = "0.8.5" }
+confium-ring = { path = "crates/confium-ring", version = "0.8.5" }
+confium-sandbox-process = { path = "crates/confium-sandbox-process", version = "0.8.5" }
+confium-sandbox-wasm = { path = "crates/confium-sandbox-wasm", version = "0.8.5" }
+confium-store = { path = "crates/confium-store", version = "0.8.5" }
+confium-store-cloud = { path = "crates/confium-store-cloud", version = "0.8.5" }
+confium-store-openpgp-card = { path = "crates/confium-store-openpgp-card", version = "0.8.5" }
+confium-store-pkcs11 = { path = "crates/confium-store-pkcs11", version = "0.8.5" }
+confium-store-tpm = { path = "crates/confium-store-tpm", version = "0.8.5" }
+confium-tc = { path = "crates/confium-tc", version = "0.8.5" }
+confium-tc-bls = { path = "crates/confium-tc-bls", version = "0.8.5" }
+confium-tc-cmp20 = { path = "crates/confium-tc-cmp20", version = "0.8.5" }
+confium-tc-ecies-p256 = { path = "crates/confium-tc-ecies-p256", version = "0.8.5" }
+confium-tc-elgamal-p256 = { path = "crates/confium-tc-elgamal-p256", version = "0.8.5" }
+confium-tc-fhe-bfv = { path = "crates/confium-tc-fhe-bfv", version = "0.8.5" }
+confium-tc-frost-ed25519 = { path = "crates/confium-tc-frost-ed25519", version = "0.8.5" }
+confium-tc-frost-ml-dsa-65 = { path = "crates/confium-tc-frost-ml-dsa-65", version = "0.8.5" }
+confium-tc-frost-p256 = { path = "crates/confium-tc-frost-p256", version = "0.8.5" }
+confium-tc-gg18 = { path = "crates/confium-tc-gg18", version = "0.8.5" }
+confium-tc-ml-kem = { path = "crates/confium-tc-ml-kem", version = "0.8.5" }
+confium-test-harness = { path = "crates/confium-test-harness", version = "0.8.5" }
+confium-tls-signer = { path = "crates/confium-tls-signer", version = "0.8.5" }
+confium-transparency = { path = "crates/confium-transparency", version = "0.8.5" }
+confium-wasm = { path = "crates/confium-wasm", version = "0.8.5" }
 # Layer 0: Shared crypto (publishable).
-confium-crypto-vss = { path = "crates/confium-crypto-vss", version = "0.8.4" }
-confium-crypto-zk = { path = "crates/confium-crypto-zk", version = "0.8.4" }
-confium-privacy = { path = "crates/confium-privacy", version = "0.8.4" }
-confium-observability = { path = "crates/confium-observability", version = "0.8.4" }
+confium-crypto-vss = { path = "crates/confium-crypto-vss", version = "0.8.5" }
+confium-crypto-zk = { path = "crates/confium-crypto-zk", version = "0.8.5" }
+confium-privacy = { path = "crates/confium-privacy", version = "0.8.5" }
+confium-observability = { path = "crates/confium-observability", version = "0.8.5" }
 # Layer 3: Threshold core + components.
-confium-tc-core = { path = "crates/confium-tc-core", version = "0.8.4" }
-confium-tc-keys = { path = "crates/confium-tc-keys", version = "0.8.4" }
-confium-coordinator = { path = "crates/confium-coordinator", version = "0.8.4" }
-confium-pki-tc = { path = "crates/confium-pki-tc", version = "0.8.4" }
+confium-tc-core = { path = "crates/confium-tc-core", version = "0.8.5" }
+confium-tc-keys = { path = "crates/confium-tc-keys", version = "0.8.5" }
+confium-coordinator = { path = "crates/confium-coordinator", version = "0.8.5" }
+confium-pki-tc = { path = "crates/confium-pki-tc", version = "0.8.5" }
 # Deployable surfaces.
 confium-signerd = { path = "crates/confium-signerd", version = "0.4.0" }
-confium-log-server = { path = "crates/confium-log-server", version = "0.8.4" }
-confium-log-monitor = { path = "crates/confium-log-monitor", version = "0.8.4" }
-confium-verify-server = { path = "crates/confium-verify-server", version = "0.8.4" }
-confium-operator = { path = "crates/confium-operator", version = "0.8.4" }
-confium-oidc = { path = "crates/confium-oidc", version = "0.8.4" }
-confium-node = { path = "crates/confium-node", version = "0.8.4" }
+confium-log-server = { path = "crates/confium-log-server", version = "0.8.5" }
+confium-log-monitor = { path = "crates/confium-log-monitor", version = "0.8.5" }
+confium-verify-server = { path = "crates/confium-verify-server", version = "0.8.5" }
+confium-operator = { path = "crates/confium-operator", version = "0.8.5" }
+confium-oidc = { path = "crates/confium-oidc", version = "0.8.5" }
+confium-node = { path = "crates/confium-node", version = "0.8.5" }
 confium-fuzz = { path = "crates/confium-fuzz", version = "0.4.0" }
 # Product facade crates (Layer 3 entry points).
-confium-threshold = { path = "crates/confium-threshold", version = "0.8.4" }
-confium-keyless = { path = "crates/confium-keyless", version = "0.8.4" }
-confium-verify = { path = "crates/confium-verify", version = "0.8.4" }
+confium-threshold = { path = "crates/confium-threshold", version = "0.8.5" }
+confium-keyless = { path = "crates/confium-keyless", version = "0.8.5" }
+confium-verify = { path = "crates/confium-verify", version = "0.8.5" }
 
 libloading = "0.9"
 snafu = "0.9"
