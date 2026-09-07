@@ -254,10 +254,12 @@ mod tests {
     /// The local-socket stub tests flake when run in parallel (same
     /// class of port/handler races the net-noise roundtrip tests
     /// hit); serialize them.
+    #[cfg(feature = "calendar")]
     static STUB_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
     /// Minimal HTTP calendar stub: serves one POST /timestamp and
     /// replies with a canned, valid partial proof.
+    #[cfg(feature = "calendar")]
     fn calendar_stub(port: u16, digest: [u8; 32]) -> std::thread::JoinHandle<()> {
         use std::io::{Read as _, Write as _};
         std::thread::spawn(move || {
@@ -292,6 +294,7 @@ mod tests {
         })
     }
 
+    #[cfg(feature = "calendar")]
     fn find_headers_end(buf: &[u8]) -> Result<usize, ()> {
         buf.windows(4)
             .position(|w| w == b"\r\n\r\n")
@@ -299,6 +302,7 @@ mod tests {
             .ok_or(())
     }
 
+    #[cfg(feature = "calendar")]
     fn content_length(headers: &[u8]) -> usize {
         let text = String::from_utf8_lossy(headers);
         for line in text.lines() {
@@ -309,6 +313,7 @@ mod tests {
         0
     }
 
+    #[cfg(feature = "calendar")]
     fn canned_proof(digest: &[u8; 32], port: u16) -> Vec<u8> {
         let file = crate::ots::wire::OtsFile {
             digest: digest.to_vec(),
