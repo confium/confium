@@ -15,7 +15,7 @@ snafu = { workspace = true }
 snow = "0.10"
 # register_transport! expands to ::inventory::submit!
 inventory = { workspace = true }
-x25519-dalek = { version = "2", features = ["static_secrets"] }
+x25519-dalek = { version = "3", features = ["static_secrets"] }
 sha2 = { workspace = true }
 url = { workspace = true }
 
