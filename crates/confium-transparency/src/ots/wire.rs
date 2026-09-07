@@ -10,7 +10,10 @@
 //! Wire details (pinned from the reference; see the audit ledger's
 //! OTS item for the full table):
 //!
-//! - file magic: `\\0OpenTimestamps\\0\\0Proof\\0` + 8 salt bytes, then
+//! - file magic: `\\0OpenTimestamps\\0\\0Proof\\0` + 8 salt bytes
+//!   (bf 89 e2 e8 84 e8 92 94 — the final two were dropped in the
+//!   first transcription; caught by the gem's cross-checked Ruby
+//!   spec), then
 //!   major version `0x01`
 //! - `0xFF` separators precede every tag except the last sibling
 //! - tag `0x00` introduces an attestation: 8-byte tag + payload
@@ -32,10 +35,10 @@ pub const MAX_RESULT_LENGTH: usize = 8192;
 const RECURSION_LIMIT: u32 = 256;
 
 /// File header magic: `\0OpenTimestamps\0\0Proof\0` + 8 salt bytes.
-pub const FILE_MAGIC: [u8; 29] = [
+pub const FILE_MAGIC: [u8; 31] = [
     0x00, 0x4f, 0x70, 0x65, 0x6e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, //
     0x61, 0x6d, 0x70, 0x73, 0x00, 0x00, 0x50, 0x72, 0x6f, 0x6f, 0x66, //
-    0x00, 0xbf, 0x89, 0xe2, 0xe8, 0x84, 0xe8,
+    0x00, 0xbf, 0x89, 0xe2, 0xe8, 0x84, 0xe8, 0x92, 0x94,
 ];
 
 const MAJOR_VERSION: u8 = 0x01;
@@ -598,6 +601,17 @@ mod tests {
         let mut expected = vec![0x01];
         expected.extend(digest(2));
         assert_eq!(hex_msg, hex::encode(expected).as_bytes());
+    }
+
+    #[test]
+    fn file_magic_is_the_canonical_31_bytes() {
+        // python-opentimestamps HEADER_MAGIC:
+        // b'\0OpenTimestamps\0\0Proof\0\xbf\x89\xe2\xe8\x84\xe8\x92\x94'
+        assert_eq!(FILE_MAGIC.len(), 31);
+        assert_eq!(
+            &FILE_MAGIC[23..],
+            &[0xbf, 0x89, 0xe2, 0xe8, 0x84, 0xe8, 0x92, 0x94]
+        );
     }
 
     #[test]
