@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Update Cargo.lock dependencies by @[object]
 
+### Other
+
+- Update Cargo.lock dependencies by @[object]
+
 ### Added
 
 - Anchor-release GitHub Action + log-server proof fixes by @[object]
