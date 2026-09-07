@@ -44,6 +44,7 @@
 //!
 //! See `TODO.roadmap/05-networking-primitives.md` for the design.
 
+pub mod deadline;
 pub mod error;
 pub mod io;
 pub mod registry;

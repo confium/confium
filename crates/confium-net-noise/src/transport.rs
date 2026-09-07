@@ -267,12 +267,17 @@ impl NoiseTransport {
         // speaks the handshake; without a deadline the client would
         // block on the first read forever. 10s bounds a stalled or
         // mismatched peer; established sessions are not affected.
-        stream
-            .set_read_timeout(Some(std::time::Duration::from_secs(10)))
+        // DeadlineStream polls instead of using SO_RCVTIMEO: under
+        // MRI Ruby on windows-gnu the first recv on a timeout'd
+        // socket fails WSAENOTSOCK (audit ledger).
+        let (state, remote) = {
+            let mut bounded = confium_net::deadline::DeadlineStream::new(
+                &mut stream,
+                std::time::Duration::from_secs(10),
+            )
             .context(IoSnafu)?;
-        let (state, remote) =
-            handshake(&mut stream, &identity, true, params.pinned).context(IoSnafu)?;
-        stream.set_read_timeout(None).context(IoSnafu)?;
+            handshake(&mut bounded, &identity, true, params.pinned).context(IoSnafu)?
+        };
         Ok(Self {
             state,
             stream,
