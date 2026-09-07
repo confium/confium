@@ -14,7 +14,17 @@ pub trait SessionIo: std::io::Read + std::io::Write + Send {
     /// (non-socket transports are message-framed and their `recv`
     /// blocks only for the next message, which is the desired
     /// behavior for a caller that previously set a socket timeout).
+    ///
+    /// Prefer the polling deadline adapter over this hook: under MRI
+    /// Ruby on windows-gnu the first recv on a socket carrying
+    /// SO_RCVTIMEO fails WSAENOTSOCK (audit ledger).
     fn set_read_timeout(&mut self, _d: Option<std::time::Duration>) -> bool {
+        false
+    }
+
+    /// Best-effort non-blocking toggle for the polling deadline
+    /// adapter. Returns `false` when unsupported.
+    fn set_nonblocking(&mut self, _on: bool) -> bool {
         false
     }
 }
@@ -22,6 +32,10 @@ pub trait SessionIo: std::io::Read + std::io::Write + Send {
 impl SessionIo for TcpStream {
     fn set_read_timeout(&mut self, d: Option<std::time::Duration>) -> bool {
         std::net::TcpStream::set_read_timeout(self, d).is_ok()
+    }
+
+    fn set_nonblocking(&mut self, on: bool) -> bool {
+        std::net::TcpStream::set_nonblocking(self, on).is_ok()
     }
 }
 

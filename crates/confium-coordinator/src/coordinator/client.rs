@@ -31,6 +31,74 @@ pub struct SignerClient {
     stream: Box<dyn SessionIo>,
 }
 
+/// Polling read deadline over a session — see the SessionIo docs for
+/// why SO_RCVTIMEO is avoided. When the underlying session cannot be
+/// switched to non-blocking this degrades to the legacy socket
+/// timeout hook (unchanged behavior for exotic transports).
+struct Bounded<'a> {
+    session: &'a mut Box<dyn crate::coordinator::net_server::SessionIo>,
+    deadline: std::time::Instant,
+    nonblocking: bool,
+}
+
+impl<'a> Bounded<'a> {
+    fn new(
+        session: &'a mut Box<dyn crate::coordinator::net_server::SessionIo>,
+        timeout: std::time::Duration,
+    ) -> Self {
+        let nonblocking = session.set_nonblocking(true);
+        if !nonblocking {
+            let _ = session.set_read_timeout(Some(timeout));
+        }
+        Self {
+            session,
+            deadline: std::time::Instant::now() + timeout,
+            nonblocking,
+        }
+    }
+
+    fn expired(&self) -> bool {
+        std::time::Instant::now() >= self.deadline
+    }
+}
+
+impl std::io::Read for Bounded<'_> {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        if !self.nonblocking {
+            return self.session.read(buf);
+        }
+        loop {
+            match self.session.read(buf) {
+                Ok(n) => return Ok(n),
+                Err(ref e)
+                    if e.kind() == io::ErrorKind::WouldBlock
+                        || e.kind() == io::ErrorKind::TimedOut =>
+                {
+                    if self.expired() {
+                        return Err(io::Error::new(
+                            io::ErrorKind::TimedOut,
+                            "coordinator response deadline exceeded",
+                        ));
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(2));
+                }
+                Err(ref e) if e.kind() == io::ErrorKind::Interrupted => {}
+                Err(e) => return Err(e),
+            }
+        }
+    }
+}
+
+impl Drop for Bounded<'_> {
+    fn drop(&mut self) {
+        if self.nonblocking {
+            self.session.set_nonblocking(false);
+        } else {
+            self.session.set_read_timeout(None);
+        }
+    }
+}
+
 impl SignerClient {
     /// Connect to coordinator at `addr` (e.g., "127.0.0.1:18432").
     pub fn connect(addr: &str) -> io::Result<Self> {
@@ -120,10 +188,11 @@ impl SignerClient {
                 signature: vec![0u8; 64],
             },
         )?;
-        // Wait for Ack or Error
-        self.stream
-            .set_read_timeout(Some(std::time::Duration::from_secs(5)));
-        match recv_message(&mut self.stream) {
+        // Wait for Ack or Error, under a polled deadline — NOT
+        // SO_RCVTIMEO: under MRI Ruby on windows-gnu the first recv on
+        // a timeout'd socket fails WSAENOTSOCK (audit ledger).
+        let mut bounded = Bounded::new(&mut self.stream, std::time::Duration::from_secs(5));
+        match recv_message(&mut bounded) {
             Ok(ProtocolMessage::Ack { .. }) => Ok(()),
             Ok(ProtocolMessage::Error { message }) => {
                 Err(io::Error::other(format!("coordinator error: {message}")))
@@ -151,12 +220,12 @@ impl SignerClient {
             },
         )?;
 
-        // Set a short read timeout — if coordinator doesn't respond (threshold
-        // not met), the client gets WouldBlock instead of blocking forever.
-        self.stream
-            .set_read_timeout(Some(std::time::Duration::from_secs(5)));
+        // Short read deadline — if the coordinator doesn't respond
+        // (threshold not met), the client errors instead of blocking
+        // forever. Polling, not SO_RCVTIMEO (see above).
+        let mut bounded = Bounded::new(&mut self.stream, std::time::Duration::from_secs(5));
 
-        match recv_message(&mut self.stream) {
+        match recv_message(&mut bounded) {
             Ok(ProtocolMessage::Signature { bytes, .. }) => Ok(Some(bytes)),
             Ok(ProtocolMessage::Ack { .. }) => Ok(None),
             Ok(ProtocolMessage::Error { message }) => {
