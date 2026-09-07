@@ -3,27 +3,10 @@
 //! GG20 (the improved GG18) uses the same MtA sub-protocol as CMP20.
 //! This module re-exports the CMP20 Paillier MtA for GG20's use.
 
-// Legacy surface re-exported for source compatibility.
-#[allow(deprecated)]
-pub use crate::paillier_mta::{
-    self, MtaError, MtaMessage1, MtaMessage2, full_mta, party_i_finish, party_i_init,
-    party_j_respond,
-};
 pub use crate::paillier_mta::{
     MtaProofError, ProvedMessage1, ProvedMessage2, full_mta_proved, party_i_finish_proved,
     party_i_init_proved, party_j_respond_proved,
 };
-
-/// GG18-specific MtA — the LEGACY demonstration path (no proofs).
-#[deprecated(since = "0.8.4", note = "no proofs — use gg18_mta_proved")]
-pub fn gg18_mta(
-    j_keypair: &confium_tc::paillier::PaillierKeypair,
-    k_i: &num_bigint::BigUint,
-    x_j: &num_bigint::BigUint,
-) -> Result<(num_bigint::BigUint, num_bigint::BigUint), MtaError> {
-    #[allow(deprecated)]
-    full_mta(j_keypair, k_i, x_j)
-}
 
 /// GG18-specific MtA with the Appendix A proofs on every ciphertext
 /// (identical sub-protocol to CMP20 — both per Gennaro-Goldfeder).
