@@ -62,6 +62,7 @@ impl OtsClient {
     ///
     /// The result carries a Pending attestation — Bitcoin confirmation
     /// arrives hours later; poll with [`Self::upgrade`].
+    #[cfg(feature = "calendar")]
     pub fn stamp_wire(&self, hash: [u8; 32]) -> Result<crate::ots::wire::OtsFile, OtsError> {
         let agent = calendar_agent();
         let mut last_err = None;
@@ -101,6 +102,7 @@ impl OtsClient {
     /// Fetch a more complete proof for a pending attestation: GET
     /// `{calendar}/timestamp/{digest-hex}`. The returned file replaces
     /// the pending one (it is a superset by construction).
+    #[cfg(feature = "calendar")]
     pub fn upgrade(
         &self,
         file: &crate::ots::wire::OtsFile,
@@ -150,6 +152,7 @@ impl OtsClient {
     /// reported as such; a Bitcoin attestation reports its height and
     /// the committed terminal message (the caller checks that against
     /// the block header's merkle-committed data).
+    #[cfg(feature = "calendar")]
     pub fn verify_wire(
         &self,
         file: &crate::ots::wire::OtsFile,
@@ -213,6 +216,7 @@ impl OtsClient {
     }
 }
 
+#[cfg(feature = "calendar")]
 fn calendar_agent() -> ureq::Agent {
     let config = ureq::config::Config::builder()
         .user_agent("confium-ots/0.8")
@@ -281,6 +285,10 @@ mod tests {
             );
             stream.write_all(response.as_bytes()).unwrap();
             stream.write_all(&proof).unwrap();
+            // Let the client read before the socket closes: dropping
+            // immediately can race into an RST on Windows and surface
+            // as a client-side "peer disconnected" transport error.
+            std::thread::sleep(std::time::Duration::from_millis(150));
         })
     }
 
@@ -320,6 +328,7 @@ mod tests {
         crate::ots::wire::serialize(&file).unwrap()
     }
 
+    #[cfg(feature = "calendar")]
     #[test]
     fn stamp_wire_round_trips_against_local_calendar() {
         let _guard = STUB_LOCK.lock().unwrap();
@@ -349,6 +358,7 @@ mod tests {
         assert_eq!(msg, &h.finalize().to_vec());
     }
 
+    #[cfg(feature = "calendar")]
     #[test]
     fn stamp_wire_rejects_garbage_response() {
         let _guard = STUB_LOCK.lock().unwrap();
@@ -385,6 +395,7 @@ mod tests {
             );
             stream.write_all(response.as_bytes()).unwrap();
             stream.write_all(body).unwrap();
+            std::thread::sleep(std::time::Duration::from_millis(150));
         });
         let client = OtsClient::with_servers(vec![format!("http://127.0.0.1:{port}")]);
         let result = client.stamp_wire([9u8; 32]);
