@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Other
+
+- Chore(deps)(deps): bump the cargo-dependencies group across 1 directory with 3 updates by @[object]
+
 ### Added
 
 - The sign-with-handle contract — remote signing for KMS backends by @[object]

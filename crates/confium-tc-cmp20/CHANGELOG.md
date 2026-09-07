@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Other
+
+- Remove the deprecated MtA demo path and fabricated stamp (BREAKING) by @[object]
+
 ### Added
 
 - Range proofs on every MtA ciphertext (GG18 App. A) by @[object]
