@@ -35,6 +35,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Run release-plz
-        uses: MarcoIeni/release-plz-action@v0.5.131
+        uses: MarcoIeni/release-plz-action@v0.5.132
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
