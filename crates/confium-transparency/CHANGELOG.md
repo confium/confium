@@ -7,6 +7,15 @@ For cross-product changes, see the workspace CHANGELOG at <https://github.com/co
 
 ## [Unreleased]
 
+### Added
+
+- Real OpenTimestamps wire protocol by @[object]
+
+### Fixed
+
+- Cfg-gate the calendar stub helpers (workspace -D warnings) by @[object]
+- Calendar HTTP behind a feature; Windows stub close race by @[object]
+
 ### Fixed
 
 - Gate unverifiable sig-possession; publication gates + adversarial pairing (BREAKING) by @[object]
