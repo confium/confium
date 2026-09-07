@@ -26,7 +26,12 @@ chrono = { workspace = true }
 sha2 = { workspace = true }
 subtle = { workspace = true }
 hex = { workspace = true }
-ureq = { workspace = true }
+ureq = { workspace = true, optional = true }
+
+[features]
+# Calendar-server HTTP (ureq): off by default so wasm32 and minimal
+# builds stay dependency-free.
+calendar = ["ureq"]
 
 [dev-dependencies]
 tokio = { workspace = true }
