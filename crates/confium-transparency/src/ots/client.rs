@@ -13,8 +13,6 @@
 //! callback-based: confirming a Bitcoin attestation needs a block
 //! header source the caller supplies.
 //!
-//! The deprecated [`OtsClient::stamp`] previously returned a
-//! synthetic "proof"; it now refuses — no fabricated anchors.
 
 use crate::ots::proof::{OtsError, OtsProof, OtsVerification};
 use sha2::{Digest, Sha256};
@@ -160,17 +158,6 @@ impl OtsClient {
         crate::ots::wire::verify(file).map_err(|e| OtsError::InvalidProof(e.to_string()))
     }
 
-    /// Deprecated former entry point. It fabricated a synthetic
-    /// "proof" anchored at a fixed height — exactly the footgun the
-    /// audit notes flagged — so it now refuses instead.
-    #[deprecated(since = "0.8.5", note = "fabricated proofs removed — use stamp_wire")]
-    pub async fn stamp(&self, hash: [u8; 32]) -> Result<OtsProof, OtsError> {
-        let _ = hash;
-        Err(OtsError::CalendarUnreachable(
-            "mock stamp removed: use stamp_wire for real calendar proofs".into(),
-        ))
-    }
-
     /// Verify a proof against Bitcoin block headers.
     ///
     /// Caller provides a `bitcoin_block_header_hash` callback that returns
@@ -239,16 +226,6 @@ mod tests {
     fn client_has_default_servers() {
         let client = OtsClient::new();
         assert!(!client.calendar_servers().is_empty());
-    }
-
-    #[tokio::test]
-    #[allow(deprecated)]
-    async fn deprecated_stamp_refuses() {
-        // The fabricated-proof footgun is gone: the old entry point
-        // must refuse rather than return a fake anchor.
-        let client = OtsClient::new();
-        let result = client.stamp([42u8; 32]).await;
-        assert!(result.is_err());
     }
 
     /// The local-socket stub tests flake when run in parallel (same

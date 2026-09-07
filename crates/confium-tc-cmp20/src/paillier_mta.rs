@@ -2,10 +2,6 @@
 //!
 //! Two surfaces:
 //!
-//! - The **legacy** functions ([`full_mta`] and friends): the
-//!   demonstration path exactly as shipped in 0.8.x — no proofs, the
-//!   mask sampled mod N. Deprecated: it cannot detect a misbehaving
-//!   peer. Real deployments use the proved path.
 //! - The **proved** functions ([`full_mta_proved`] and friends): the
 //!   GG18/GG20 §3 + Appendix A protocol, which spec 70-cmp20
 //!   requires — every ciphertext carries a zero-knowledge proof, the
@@ -32,107 +28,6 @@ use crate::mta_proofs::prove_range;
 use crate::mta_proofs::prove_respondent;
 use crate::mta_proofs::verify_range;
 use crate::mta_proofs::verify_respondent;
-
-// ---- legacy (deprecated) demonstration path ---------------------------
-
-/// Message from party i to party j (round 1 of MtA).
-#[derive(Debug, Clone)]
-pub struct MtaMessage1 {
-    /// Encrypted k_i under j's Paillier public key.
-    pub ciphertext: BigUint,
-}
-
-/// Message from party j to party i (round 2 of MtA).
-#[derive(Debug, Clone)]
-pub struct MtaMessage2 {
-    /// Encrypted k_i * x_j − β_ji under j's Paillier public key.
-    pub ciphertext: BigUint,
-    /// The mask β_ji that party j keeps (as additive share).
-    pub beta: BigUint,
-}
-
-/// Errors during MtA.
-#[derive(Debug)]
-pub enum MtaError {
-    Paillier(PaillierError),
-    ValueTooLarge,
-}
-
-impl std::fmt::Display for MtaError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Paillier(e) => write!(f, "paillier error: {e}"),
-            Self::ValueTooLarge => write!(f, "value too large for Paillier modulus"),
-        }
-    }
-}
-
-impl std::error::Error for MtaError {}
-
-impl From<PaillierError> for MtaError {
-    fn from(e: PaillierError) -> Self {
-        Self::Paillier(e)
-    }
-}
-
-/// Party i initiates the (legacy, unproved) MtA.
-#[deprecated(since = "0.8.4", note = "no proofs — use party_i_init_proved")]
-pub fn party_i_init(j_public: &PaillierPublicKey, k_i: &BigUint) -> Result<MtaMessage1, MtaError> {
-    let r = random_below(&j_public.n);
-    let ciphertext = paillier_encrypt(j_public, k_i, &r)?;
-    Ok(MtaMessage1 { ciphertext })
-}
-
-/// Party j responds in the (legacy, unproved) MtA.
-#[deprecated(since = "0.8.4", note = "no proofs — use party_j_respond_proved")]
-pub fn party_j_respond(
-    j_keypair: &PaillierKeypair,
-    msg: &MtaMessage1,
-    x_j: &BigUint,
-) -> Result<(MtaMessage2, BigUint), MtaError> {
-    let beta = random_below(&j_keypair.public.n);
-    let c_mul = paillier_scalar_mul(&j_keypair.public, &msg.ciphertext, x_j);
-    let neg_beta = &j_keypair.public.n - &beta;
-    let r_prime = random_below(&j_keypair.public.n);
-    let c_beta = paillier_encrypt(&j_keypair.public, &neg_beta, &r_prime)?;
-    let c_prime = paillier_add(&j_keypair.public, &c_mul, &c_beta);
-    Ok((
-        MtaMessage2 {
-            ciphertext: c_prime,
-            beta: beta.clone(),
-        },
-        beta,
-    ))
-}
-
-/// Party i finishes the (legacy, unproved) MtA.
-#[deprecated(since = "0.8.4", note = "no proofs — use party_i_finish_proved")]
-pub fn party_i_finish(
-    j_public: &PaillierPublicKey,
-    j_private: &PaillierPrivateKey,
-    msg: &MtaMessage2,
-) -> Result<BigUint, MtaError> {
-    let alpha = paillier_decrypt(j_private, j_public, &msg.ciphertext)?;
-    Ok(alpha)
-}
-
-/// Run the full (legacy, unproved) MtA between party i and party j.
-///
-/// Returns `(α_ij, β_ji)` with `α_ij + β_ji ≡ k_i * x_j (mod N)`.
-#[deprecated(since = "0.8.4", note = "no proofs — use full_mta_proved")]
-pub fn full_mta(
-    j_keypair: &PaillierKeypair,
-    k_i: &BigUint,
-    x_j: &BigUint,
-) -> Result<(BigUint, BigUint), MtaError> {
-    #[allow(deprecated)]
-    let msg1 = party_i_init(&j_keypair.public, k_i)?;
-    #[allow(deprecated)]
-    let (msg2, beta) = party_j_respond(j_keypair, &msg1, x_j)?;
-    #[allow(deprecated)]
-    let alpha = party_i_finish(&j_keypair.public, &j_keypair.private, &msg2)?;
-    Ok((alpha, beta))
-}
 
 // ---- proved path (GG18 §3 + Appendix A) --------------------------------
 
@@ -409,20 +304,6 @@ mod tests {
         let (_, beta1) = full_mta_proved(kp, ck_i, ck_j, q, &k_i, &x_j).unwrap();
         let (_, beta2) = full_mta_proved(kp, ck_i, ck_j, q, &k_i, &x_j).unwrap();
         assert_ne!(beta1, beta2);
-    }
-
-    #[test]
-    #[allow(deprecated)]
-    fn legacy_mta_still_adds_to_product() {
-        // The deprecated demo path keeps its historical contract.
-        let kp = generate_keypair(128);
-        let k_i = BigUint::from(42u32);
-        let x_j = BigUint::from(17u32);
-        let (alpha, beta) = full_mta(&kp, &k_i, &x_j).unwrap();
-        assert_eq!(
-            (&alpha + &beta) % &kp.public.n,
-            (&k_i * &x_j) % &kp.public.n
-        );
     }
 }
 
