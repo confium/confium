@@ -7,6 +7,10 @@ For cross-product changes, see the workspace CHANGELOG at <https://github.com/co
 
 ## [Unreleased]
 
+### Other
+
+- Remove the deprecated MtA demo path and fabricated stamp (BREAKING) by @[object]
+
 ### Added
 
 - Real OpenTimestamps wire protocol by @[object]
