@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
+- Release v0.9.1 by @[object]
+
+### Other
+
 - Release v0.8.6 by @[object]
 - Chore(deps)(deps): bump the cargo-dependencies group across 1 directory with 3 updates by @[object]
 
