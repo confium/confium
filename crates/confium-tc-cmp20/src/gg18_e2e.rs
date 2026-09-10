@@ -69,7 +69,7 @@ impl Gg18SigningPipeline {
                 let k_i_big = scalar_to_biguint(&nonces[i]);
                 let x_j_big = scalar_to_biguint(&self.key_shares[j]);
                 let _ = paillier_mta::full_mta_proved(
-                    &self.paillier_keys[j],
+                    &self.paillier_keys[i],
                     &commitment_keys[i],
                     &commitment_keys[j],
                     &crate::mta_proofs::p256_order(),

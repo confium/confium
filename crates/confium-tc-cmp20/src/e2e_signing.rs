@@ -78,11 +78,12 @@ impl Cmp20SigningPipeline {
                 if i == j {
                     continue;
                 }
-                // Party i encrypts k_i under j's Paillier key
+                // Party i encrypts k_i under i's OWN Paillier key —
+                // the exchange runs under the initiator's key.
                 let k_i_big = scalar_to_biguint(&nonces[i]);
                 let x_j_big = scalar_to_biguint(&self.key_shares[j]);
                 let (alpha, beta) = paillier_mta::full_mta_proved(
-                    &self.paillier_keys[j],
+                    &self.paillier_keys[i],
                     &commitment_keys[i],
                     &commitment_keys[j],
                     &crate::mta_proofs::p256_order(),
@@ -93,8 +94,8 @@ impl Cmp20SigningPipeline {
 
                 // alpha is held by party i, beta by party j
                 // delta_i += alpha (mod curve order)
-                let alpha_mod = biguint_to_scalar(&alpha, &self.paillier_keys[j].public.n);
-                let beta_mod = biguint_to_scalar(&beta, &self.paillier_keys[j].public.n);
+                let alpha_mod = biguint_to_scalar(&alpha, &self.paillier_keys[i].public.n);
+                let beta_mod = biguint_to_scalar(&beta, &self.paillier_keys[i].public.n);
 
                 delta += alpha_mod;
                 // Party j would add beta to its delta, but since we're
