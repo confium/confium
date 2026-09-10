@@ -72,7 +72,7 @@ fn challenge(public_key: &[u8], context_hash: &[u8; 32], commitment: &[u8]) -> S
     hasher.update(public_key);
     hasher.update(context_hash);
     hasher.update(commitment);
-    let mut bytes: [u8; 32] = hasher.finalize().into();
+    let bytes: [u8; 32] = hasher.finalize().into();
     reduce_to_scalar(bytes)
 }
 
@@ -90,7 +90,7 @@ pub fn prove_key_possession(
 
     // to_bytes returns the raw scalar — always canonical, no
     // reduction path to get wrong.
-    let x = Option::<Scalar>::from(Scalar::from_repr(signing_key.to_bytes().into()))
+    let x = Option::<Scalar>::from(Scalar::from_repr(signing_key.to_bytes()))
         .expect("signing key encodes a canonical scalar");
 
     loop {
@@ -190,7 +190,7 @@ mod tests {
         let signing = SigningKey::generate();
         let vk = signing.verifying_key();
         let proof = prove_key_possession(&signing, b"enroll signer 7").unwrap();
-        assert!(verify_key_possession(&proof, b"enroll signer 7", &vk));
+        assert!(verify_key_possession(&proof, b"enroll signer 7", vk));
     }
 
     #[test]
@@ -228,7 +228,7 @@ mod adversarial_tests {
         let mut resp = hex::decode(&proof.response_hex).unwrap();
         resp[0] ^= 0x01;
         proof.response_hex = resp.iter().map(|b| format!("{b:02x}")).collect();
-        assert!(!verify_key_possession(&proof, b"ctx", &vk));
+        assert!(!verify_key_possession(&proof, b"ctx", vk));
     }
 
     #[test]
@@ -243,7 +243,7 @@ mod adversarial_tests {
         let other_key = SigningKey::generate();
         let other = other_key.verifying_key();
         proof.commitment_hex = hex::encode(other.as_affine().to_sec1_point(true).as_bytes());
-        assert!(!verify_key_possession(&proof, b"ctx", &vk));
+        assert!(!verify_key_possession(&proof, b"ctx", vk));
     }
 
     #[test]
@@ -252,7 +252,7 @@ mod adversarial_tests {
         let vk = signing.verifying_key();
         let proof = prove_key_possession(&signing, b"original").unwrap();
         // Valid proof, wrong statement.
-        assert!(!verify_key_possession(&proof, b"other", &vk));
+        assert!(!verify_key_possession(&proof, b"other", vk));
     }
 
     #[test]
@@ -273,6 +273,6 @@ mod adversarial_tests {
         let vk = signing.verifying_key();
         let mut proof = prove_key_possession(&signing, b"ctx").unwrap();
         proof.response_hex = hex::encode([0u8; 32]);
-        assert!(!verify_key_possession(&proof, b"ctx", &vk));
+        assert!(!verify_key_possession(&proof, b"ctx", vk));
     }
 }
