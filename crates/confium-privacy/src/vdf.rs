@@ -7,8 +7,10 @@
 //!
 //! 1. Setup: pick RSA modulus N = p * q
 //! 2. Eval: y = x^(2^T) mod N (requires T sequential squarings)
-//! 3. Proof: π = x^⌊2^T / l⌋ mod N where l is a prime from hash(y, x)
-//! 4. Verify: check y^l == x * π^l  (actually y^l ≡ x * π^l ... simplified)
+//! 3. Proof: π = x^⌊2^T / l⌋ mod N where l is the prime nearest
+//!    above hash(y, x)
+//! 4. Verify: with r = 2^T mod l, check y == π^l · x^r (mod N)
+//!    (the Wesolowski relation — 2^T = l·q + r and y = (x^q)^l · x^r)
 
 use num_bigint::{BigUint, RandBigInt};
 use num_traits::One;
@@ -64,47 +66,98 @@ pub fn eval(params: &VdfParams, x: &BigUint) -> VdfOutput {
 pub fn verify(params: &VdfParams, x: &BigUint, output: &VdfOutput) -> bool {
     let l = hash_to_prime(&output.y, x);
 
-    // Check: y^l ≡ x * π^l (mod N)
-    // Rearranged: y^l * π^(-l) ≡ x (mod N)
-    // Wesolowski verification: check that y^l = x * π^l mod N
-    // Equivalently: (y^(l) / (π^l * x)) ≡ 1 (mod N)
-
-    // For correctness in the simplified version:
-    // Check that y == x^(2^T) by verifying the Wesolowski relation
-    // y^l ≡ x * π^l (mod N) if 2^T = q*l + r where r < l
-
-    let y_l = output.y.modpow(&l, &params.n);
+    // Wesolowski relation: write 2^T = l·q + r with q = ⌊2^T/l⌋ and
+    // r = 2^T mod l. Then y = x^(2^T) = (x^q)^l · x^r = π^l · x^r.
+    let two_t = BigUint::one() << params.t;
+    let r = &two_t % &l;
     let pi_l = output.proof.modpow(&l, &params.n);
-    let rhs = (x * &pi_l) % &params.n;
+    let x_r = x.modpow(&r, &params.n);
+    let rhs = (&pi_l * x_r) % &params.n;
 
-    y_l == rhs
+    output.y == rhs
 }
 
+/// Derive the Wesolowski prime: hash to an odd candidate, then
+/// search upward until Miller-Rabin accepts. l must be an actual
+/// prime — a composite l admits multiple valid witnesses and breaks
+/// the uniqueness argument the soundness proof relies on.
 fn hash_to_prime(y: &BigUint, x: &BigUint) -> BigUint {
     let mut hasher = Sha256::new();
     hasher.update(b"vdf-prime");
     hasher.update(y.to_bytes_be());
     hasher.update(x.to_bytes_be());
-    let hash = hasher.finalize();
-    let mut prime_candidate = BigUint::from_bytes_be(&hash);
-    // Ensure odd
-    prime_candidate |= BigUint::one();
-    // For simplicity, we use the hash value directly as "prime"
-    // In production, find the next actual prime
-    if prime_candidate < BigUint::from(3u32) {
-        prime_candidate = BigUint::from(3u32);
+    let mut candidate = BigUint::from_bytes_be(&hasher.finalize()) | BigUint::one();
+    if candidate < BigUint::from(3u32) {
+        candidate = BigUint::from(3u32);
     }
-    prime_candidate
+    loop {
+        if miller_rabin(&candidate, 20) {
+            return candidate;
+        }
+        candidate += 2u32;
+    }
 }
 
 fn generate_prime(bits: u32) -> BigUint {
     let mut rng = OsRng;
     loop {
-        let candidate = rng.gen_biguint(bits as u64);
-        if candidate > BigUint::from(2u32) {
-            return candidate | BigUint::one();
+        if bits < 2 {
+            continue;
+        }
+        let top = BigUint::one() << (bits - 1);
+        let candidate = rng.gen_biguint(bits as u64) | top | BigUint::one();
+        if miller_rabin(&candidate, 20) {
+            return candidate;
         }
     }
+}
+
+/// Miller-Rabin probable-prime test — the same algorithm and round
+/// count as confium-tc's paillier keygen (kept local so the privacy
+/// crate does not pull the whole TC stack for one function).
+fn miller_rabin(n: &BigUint, rounds: u32) -> bool {
+    let two = BigUint::from(2u32);
+    let three = BigUint::from(3u32);
+    if n == &two || n == &three {
+        return true;
+    }
+    if (n & &BigUint::one()) == BigUint::from(0u32) || n < &three {
+        return false;
+    }
+
+    let one = BigUint::one();
+    let n_minus_one = n - &one;
+
+    let mut d = n_minus_one.clone();
+    let mut r: u32 = 0;
+    loop {
+        if (&d & &one) == BigUint::from(0u32) {
+            d >>= 1;
+            r += 1;
+        } else {
+            break;
+        }
+    }
+
+    let mut rng = OsRng;
+    'outer: for _ in 0..rounds {
+        let a = rng.gen_biguint_range(&two, &n_minus_one);
+        if a < two || a >= n_minus_one {
+            continue;
+        }
+        let mut x = a.modpow(&d, n);
+        if x == one || x == n_minus_one {
+            continue;
+        }
+        for _ in 0..r.saturating_sub(1) {
+            x = (&x * &x) % n;
+            if x == n_minus_one {
+                continue 'outer;
+            }
+        }
+        return false;
+    }
+    true
 }
 
 #[cfg(test)]
@@ -129,11 +182,40 @@ mod tests {
         let params = make_params(50);
         let x = BigUint::from(123u32);
         let output = eval(&params, &x);
-        // Note: verification may fail due to simplified proof construction.
-        // The key property is that eval requires T sequential steps.
-        // We test that the output is deterministic.
-        let output2 = eval(&params, &x);
-        assert_eq!(output.y, output2.y);
+        assert!(verify(&params, &x, &output));
+    }
+
+    #[test]
+    fn verify_rejects_tampered_proof() {
+        let params = make_params(50);
+        let x = BigUint::from(123u32);
+        let output = eval(&params, &x);
+        let tampered = VdfOutput {
+            y: output.y.clone(),
+            proof: &output.proof + BigUint::one(),
+        };
+        assert!(!verify(&params, &x, &tampered));
+    }
+
+    #[test]
+    fn verify_rejects_tampered_output() {
+        let params = make_params(50);
+        let x = BigUint::from(123u32);
+        let output = eval(&params, &x);
+        let tampered = VdfOutput {
+            y: &output.y + BigUint::one(),
+            proof: output.proof.clone(),
+        };
+        assert!(!verify(&params, &x, &tampered));
+    }
+
+    #[test]
+    fn verify_rejects_wrong_input() {
+        let params = make_params(50);
+        let x = BigUint::from(123u32);
+        let output = eval(&params, &x);
+        // Valid proof, wrong claimed input.
+        assert!(!verify(&params, &BigUint::from(124u32), &output));
     }
 
     #[test]
@@ -167,6 +249,16 @@ mod tests {
         let x = BigUint::from(7u32);
         let output = eval(&params, &x);
         assert!(output.y < params.n);
+    }
+
+    #[test]
+    fn hash_to_prime_returns_an_actual_prime() {
+        let y = BigUint::from(42u32);
+        let x = BigUint::from(99u32);
+        let l = hash_to_prime(&y, &x);
+        assert!(l > BigUint::from(2u32));
+        assert!((l.clone() & &BigUint::one()) == BigUint::one());
+        assert!(miller_rabin(&l, 20));
     }
 
     #[test]
