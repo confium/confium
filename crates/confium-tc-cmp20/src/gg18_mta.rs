@@ -11,14 +11,14 @@ pub use crate::paillier_mta::{
 /// GG18-specific MtA with the Appendix A proofs on every ciphertext
 /// (identical sub-protocol to CMP20 — both per Gennaro-Goldfeder).
 pub fn gg18_mta_proved(
-    j_keypair: &confium_tc::paillier::PaillierKeypair,
+    i_keypair: &confium_tc::paillier::PaillierKeypair,
     ck_i: &crate::mta_proofs::CommitmentKey,
     ck_j: &crate::mta_proofs::CommitmentKey,
     q: &num_bigint::BigUint,
     k_i: &num_bigint::BigUint,
     x_j: &num_bigint::BigUint,
 ) -> Result<(num_bigint::BigUint, num_bigint::BigUint), MtaProofError> {
-    full_mta_proved(j_keypair, ck_i, ck_j, q, k_i, x_j)
+    full_mta_proved(i_keypair, ck_i, ck_j, q, k_i, x_j)
 }
 
 #[cfg(test)]
