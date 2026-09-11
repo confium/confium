@@ -31,3 +31,4 @@ documentation = "https://www.confium.org/docs/"
 [tool.maturin]
 features = ["pyo3/extension-module"]
 module-name = "confium"
+python-source = "python"

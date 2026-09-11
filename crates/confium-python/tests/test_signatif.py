@@ -30,8 +30,9 @@ def test_rejects_missing_required_inputs():
 
 
 def test_default_registry_used_when_omitted():
-    # A malformed graph must error on the graph, not the registry.
-    with pytest.raises(ValueError, match="graph"):
+    # A malformed graph must error on the graph/artifact, not the
+    # registry (the artifact bundle parses before the node map).
+    with pytest.raises(ValueError, match="graph|artifact"):
         signatif.verify_trusted_artifact(
             {"artifact_id": "x"},
             {"bundle_version": "1"},
