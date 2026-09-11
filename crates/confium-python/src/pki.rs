@@ -73,12 +73,12 @@ impl PyCertificate {
 
     /// Serialize back to DER bytes.
     fn to_der<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
-        PyBytes::new_bound(py, &self.inner.to_der())
+        PyBytes::new(py, &self.inner.to_der())
     }
 
     /// Serialize back to PEM text.
     fn to_pem<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyString>> {
-        Ok(PyString::new_bound(py, &self.inner.to_pem()))
+        Ok(PyString::new(py, &self.inner.to_pem()))
     }
 
     /// SHA-256 fingerprint as a lowercase hex string.
@@ -90,7 +90,7 @@ impl PyCertificate {
     /// Serial number bytes.
     #[getter]
     fn serial_bytes<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
-        PyBytes::new_bound(py, self.inner.serial_bytes())
+        PyBytes::new(py, self.inner.serial_bytes())
     }
 
     /// Not-before validity bound as an ISO 8601 string.
@@ -127,7 +127,7 @@ impl PyCertificate {
     /// Raw subject public key bytes from the SPKI.
     #[getter]
     fn public_key_bytes<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
-        PyBytes::new_bound(py, self.inner.public_key_bytes())
+        PyBytes::new(py, self.inner.public_key_bytes())
     }
 
     fn __repr__(&self) -> String {
@@ -157,12 +157,12 @@ impl PyCsr {
 
     /// Serialize back to DER bytes.
     fn to_der<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
-        PyBytes::new_bound(py, &self.inner.to_der())
+        PyBytes::new(py, &self.inner.to_der())
     }
 
     /// Serialize back to PEM text.
     fn to_pem<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyString>> {
-        Ok(PyString::new_bound(py, &self.inner.to_pem()))
+        Ok(PyString::new(py, &self.inner.to_pem()))
     }
 
     fn __repr__(&self) -> String {
@@ -211,16 +211,16 @@ impl PySignedData {
     /// standards-compliant CMS consumer.
     fn to_der<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
         let der = py
-            .allow_threads(|| encode_signed_data_der(&self.inner))
+            .detach(|| encode_signed_data_der(&self.inner))
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
-        Ok(PyBytes::new_bound(py, &der))
+        Ok(PyBytes::new(py, &der))
     }
 
     /// Serialize back to a JSON string.
     fn to_json<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyString>> {
         let s = serde_json::to_string(&self.inner)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
-        Ok(PyString::new_bound(py, &s))
+        Ok(PyString::new(py, &s))
     }
 
     /// CMS version (typically 1).
@@ -259,12 +259,12 @@ impl PySignedData {
         let msg = message.as_bytes().to_vec();
         let callback = verifier.clone();
         let result = verify_signed_data(&self.inner, &msg, |idx, pk, signed, sig| {
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 let args = (
                     idx,
-                    PyBytes::new_bound(py, pk),
-                    PyBytes::new_bound(py, signed),
-                    PyBytes::new_bound(py, sig),
+                    PyBytes::new(py, pk),
+                    PyBytes::new(py, signed),
+                    PyBytes::new(py, sig),
                 );
                 match callback.call1(args) {
                     Ok(out) => {
@@ -301,7 +301,7 @@ impl PySignedData {
         let msg = message.as_bytes().to_vec();
         let inner = self.inner.clone();
         let result = py
-            .allow_threads(move || {
+            .detach(move || {
                 verify_signed_data(&inner, &msg, |_idx, pk, signed, sig| {
                     // Try Ed25519 first (32-byte key, 64-byte sig), then ECDSA-P256 (DER sig).
                     if pk.len() == 32 && sig.len() == 64 {
@@ -335,9 +335,9 @@ impl PyCmsVerificationResult {
     /// `verified`, `error` (str | None), `cert_index` (int | None).
     #[getter]
     fn per_signer<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
-        let list = PyList::empty_bound(py);
+        let list = PyList::empty(py);
         for s in &self.per_signer {
-            let dict = PyDict::new_bound(py);
+            let dict = PyDict::new(py);
             dict.set_item("signer_index", s.signer_index)?;
             dict.set_item("verified", s.verified)?;
             match &s.error {
@@ -364,7 +364,7 @@ impl PyCmsVerificationResult {
 
 /// Register the `pki` submodule.
 pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
-    let m = PyModule::new_bound(py, "pki")?;
+    let m = PyModule::new(py, "pki")?;
     m.add_class::<PyCertificate>()?;
     m.add_class::<PyCsr>()?;
     m.add_class::<PySignedData>()?;

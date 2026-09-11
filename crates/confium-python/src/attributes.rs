@@ -119,7 +119,7 @@ impl PySignerAttributes {
 
     /// Values for `key` as a list (may be empty).
     fn values<'py>(&self, py: Python<'py>, key: &str) -> PyResult<Bound<'py, PyList>> {
-        let list = PyList::empty_bound(py);
+        let list = PyList::empty(py);
         for v in self.inner.values(key) {
             list.append(v)?;
         }
@@ -148,7 +148,7 @@ impl PySignerAttributes {
 // Test-only helper exposed for the test suite; not part of the public API.
 /// Register the `attributes` submodule.
 pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
-    let m = PyModule::new_bound(py, "attributes")?;
+    let m = PyModule::new(py, "attributes")?;
     m.add_class::<PyPredicate>()?;
     m.add_class::<PySignerAttributes>()?;
     // Examples table — mirrors the DSL grammar in the Rust crate.
@@ -167,9 +167,9 @@ pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> P
     ]
     .into_iter()
     .collect();
-    let ex_dict = PyDict::new_bound(py);
+    let ex_dict = PyDict::new(py);
     for (k, v) in examples {
-        ex_dict.set_item(k, PyString::new_bound(py, v))?;
+        ex_dict.set_item(k, PyString::new(py, v))?;
     }
     m.add("EXAMPLES", ex_dict)?;
     parent.add_submodule(&m)?;

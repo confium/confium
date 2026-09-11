@@ -96,11 +96,11 @@ impl PyFrostP256 {
             )
         })?;
         let shares = split_secret(&scalar, threshold, party_count);
-        let list = PyList::empty_bound(py);
+        let list = PyList::empty(py);
         for s in shares {
-            let dict = PyDict::new_bound(py);
+            let dict = PyDict::new(py);
             dict.set_item("x", s.x)?;
-            dict.set_item("y_bytes", PyBytes::new_bound(py, &scalar_to_bytes(&s.y)))?;
+            dict.set_item("y_bytes", PyBytes::new(py, &scalar_to_bytes(&s.y)))?;
             list.append(dict)?;
         }
         Ok(list)
@@ -129,7 +129,7 @@ impl PyFrostP256 {
         let secret = recover_secret(&refs).map_err(|e| {
             pyo3::exceptions::PyRuntimeError::new_err(format!("recover_secret: {e}"))
         })?;
-        Ok(PyBytes::new_bound(py, &scalar_to_bytes(&secret)))
+        Ok(PyBytes::new(py, &scalar_to_bytes(&secret)))
     }
 
     /// Generate a fresh P-256 keypair. Returns `{"private_key": bytes,
@@ -137,14 +137,14 @@ impl PyFrostP256 {
     #[staticmethod]
     fn generate_keypair<'py>(py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
         let kp = generate_keypair();
-        let d = PyDict::new_bound(py);
+        let d = PyDict::new(py);
         d.set_item(
             "private_key",
-            PyBytes::new_bound(py, &kp.to_signing_key().to_bytes()),
+            PyBytes::new(py, &kp.to_signing_key().to_bytes()),
         )?;
         d.set_item(
             "public_key",
-            PyBytes::new_bound(py, &kp.to_verifying_key().to_sec1_bytes()),
+            PyBytes::new(py, &kp.to_verifying_key().to_sec1_bytes()),
         )?;
         Ok(d)
     }
@@ -170,9 +170,9 @@ impl PyFrostP256 {
         };
         let signed = sign_message(&kp, &msg_b)
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("sign_message: {e}")))?;
-        let d = PyDict::new_bound(py);
-        d.set_item("der", PyBytes::new_bound(py, &signed.der_bytes))?;
-        d.set_item("fixed", PyBytes::new_bound(py, &signed.fixed_bytes))?;
+        let d = PyDict::new(py);
+        d.set_item("der", PyBytes::new(py, &signed.der_bytes))?;
+        d.set_item("fixed", PyBytes::new(py, &signed.fixed_bytes))?;
         Ok(d)
     }
 }
@@ -195,12 +195,12 @@ impl PyElGamalP256 {
         let pk = ElGamalPublicKey { bytes: pk_b };
         let (ct, ss) = elgamal_encapsulate(&pk)
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("encapsulate: {e}")))?;
-        let ct_dict = PyDict::new_bound(py);
-        ct_dict.set_item("c1", PyBytes::new_bound(py, &ct.c1))?;
-        ct_dict.set_item("c2", PyBytes::new_bound(py, &ct.c2))?;
-        let d = PyDict::new_bound(py);
+        let ct_dict = PyDict::new(py);
+        ct_dict.set_item("c1", PyBytes::new(py, &ct.c1))?;
+        ct_dict.set_item("c2", PyBytes::new(py, &ct.c2))?;
+        let d = PyDict::new(py);
         d.set_item("ciphertext", ct_dict)?;
-        d.set_item("shared_secret", PyBytes::new_bound(py, &ss))?;
+        d.set_item("shared_secret", PyBytes::new(py, &ss))?;
         Ok(d)
     }
 
@@ -224,9 +224,9 @@ impl PyElGamalP256 {
         let partial = elgamal_partial_decrypt(&share, &ct).map_err(|e| {
             pyo3::exceptions::PyRuntimeError::new_err(format!("partial_decrypt: {e}"))
         })?;
-        let d = PyDict::new_bound(py);
+        let d = PyDict::new(py);
         d.set_item("party_index", partial.party_index)?;
-        d.set_item("bytes", PyBytes::new_bound(py, &partial.bytes))?;
+        d.set_item("bytes", PyBytes::new(py, &partial.bytes))?;
         Ok(d)
     }
 
@@ -254,7 +254,7 @@ impl PyElGamalP256 {
         let ss = elgamal_aggregate(&owned, threshold, &ct).map_err(|e| {
             pyo3::exceptions::PyRuntimeError::new_err(format!("aggregate_partials: {e}"))
         })?;
-        Ok(PyBytes::new_bound(py, &ss))
+        Ok(PyBytes::new(py, &ss))
     }
 }
 
@@ -282,13 +282,13 @@ impl PyCmp20 {
                 threshold as usize,
             )
         })?;
-        let shares = PyList::empty_bound(py);
+        let shares = PyList::empty(py);
         for s in kg.shares {
-            shares.append(PyBytes::new_bound(py, &s))?;
+            shares.append(PyBytes::new(py, &s))?;
         }
-        let d = PyDict::new_bound(py);
+        let d = PyDict::new(py);
         d.set_item("shares", shares)?;
-        d.set_item("public_key", PyBytes::new_bound(py, &kg.public_key))?;
+        d.set_item("public_key", PyBytes::new(py, &kg.public_key))?;
         Ok(d)
     }
 
@@ -311,7 +311,7 @@ impl PyCmp20 {
         let sig = cmp20_inprocess::sign(&share_bytes, threshold, &msg).map_err(|e| {
             threshold_err("Cmp20.sign", &e.to_string(), supplied, threshold as usize)
         })?;
-        Ok(PyBytes::new_bound(py, &sig))
+        Ok(PyBytes::new(py, &sig))
     }
 }
 
@@ -337,13 +337,13 @@ impl PyGg18 {
                 threshold as usize,
             )
         })?;
-        let shares = PyList::empty_bound(py);
+        let shares = PyList::empty(py);
         for s in kg.shares {
-            shares.append(PyBytes::new_bound(py, &s))?;
+            shares.append(PyBytes::new(py, &s))?;
         }
-        let d = PyDict::new_bound(py);
+        let d = PyDict::new(py);
         d.set_item("shares", shares)?;
-        d.set_item("public_key", PyBytes::new_bound(py, &kg.public_key))?;
+        d.set_item("public_key", PyBytes::new(py, &kg.public_key))?;
         Ok(d)
     }
 
@@ -365,7 +365,7 @@ impl PyGg18 {
         let sig = gg18_inprocess::sign(&share_bytes, threshold, &msg).map_err(|e| {
             threshold_err("Gg18.sign", &e.to_string(), supplied, threshold as usize)
         })?;
-        Ok(PyBytes::new_bound(py, &sig))
+        Ok(PyBytes::new(py, &sig))
     }
 }
 
@@ -389,7 +389,7 @@ fn threshold_err(operation: &str, human_msg: &str, have: usize, need: usize) -> 
 
 /// Register the `tc` submodule.
 pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
-    let m = PyModule::new_bound(py, "tc")?;
+    let m = PyModule::new(py, "tc")?;
     m.add_class::<PyFrostP256>()?;
     m.add_class::<PyElGamalP256>()?;
     m.add_class::<PyCmp20>()?;
