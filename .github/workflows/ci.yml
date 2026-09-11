@@ -172,6 +172,8 @@ jobs:
         # gate it so package exports and behavior stay honest.
         working-directory: crates/confium-python
         run: |
+          python -m venv .venv
+          . .venv/bin/activate
           pip install maturin pytest ecdsa cryptography
           maturin develop --release
           python -m pytest tests/ -q
