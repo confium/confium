@@ -69,7 +69,7 @@ impl PyEvidenceRecord {
 }
 
 pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
-    let m = PyModule::new_bound(py, "ers")?;
+    let m = PyModule::new(py, "ers")?;
     m.add_class::<PyEvidenceRecord>()?;
     parent.add_submodule(&m)?;
     Ok(())

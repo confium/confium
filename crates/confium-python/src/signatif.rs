@@ -20,6 +20,7 @@
 //!   ```
 
 use pyo3::prelude::*;
+use pyo3::types::PyBool;
 use pyo3::types::PyDict;
 
 use confium_signatif::artifact::TrustedArtifact;
@@ -55,6 +56,7 @@ use confium_signatif::verify::VerifyOptions;
     multi_log_quorum = false,
     accepted_labels = None,
 ))]
+#[allow(clippy::too_many_arguments)]
 pub fn verify_trusted_artifact(
     py: Python<'_>,
     artifact: &Bound<'_, PyDict>,
@@ -66,10 +68,8 @@ pub fn verify_trusted_artifact(
     time_attested_at: Option<String>,
     multi_log_quorum: bool,
     accepted_labels: Option<Vec<String>>,
-) -> PyResult<PyObject> {
-    let to_value = |d: &Bound<'_, PyDict>| -> PyResult<serde_json::Value> {
-        pythonize_dict(d)
-    };
+) -> PyResult<Py<PyAny>> {
+    let to_value = |d: &Bound<'_, PyDict>| -> PyResult<serde_json::Value> { pythonize_dict(d) };
     let artifact_v = to_value(artifact)?;
     let bundle_v = to_value(bundle)?;
     let graph_v = to_value(graph)?;
@@ -94,41 +94,41 @@ pub fn verify_trusted_artifact(
         ..VerifyOptions::default()
     };
     let verdict = confium_signatif::verify::verify_trusted_artifact(
-        &artifact,
-        &bundle,
-        &graph,
-        &registry,
-        &options,
+        &artifact, &bundle, &graph, &registry, &options,
     )
-        .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("{e}")))?;
+    .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("{e}")))?;
     let verdict_json = serde_json::to_value(&verdict)
         .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("encode: {e}")))?;
-    Ok(json_to_py(py, &verdict_json)?)
+    json_to_py(py, &verdict_json)
 }
 
 /// JSON value -> Python object.
-fn json_to_py(py: Python<'_>, v: &serde_json::Value) -> PyResult<PyObject> {
+fn json_to_py(py: Python<'_>, v: &serde_json::Value) -> PyResult<Py<PyAny>> {
     use pyo3::types::PyList;
-    let out: PyObject = match v {
+    let out: Py<PyAny> = match v {
         serde_json::Value::Null => py.None().into(),
-        serde_json::Value::Bool(b) => b.to_object(py),
+        serde_json::Value::Bool(b) => PyBool::new(py, *b).to_owned().into_any().unbind(),
         serde_json::Value::Number(n) => {
             if let Some(i) = n.as_i64() {
-                i.to_object(py)
+                i.into_pyobject(py)?.into_any().unbind()
             } else {
-n.as_f64().unwrap_or_default().to_object(py)
+                n.as_f64()
+                    .unwrap_or_default()
+                    .into_pyobject(py)?
+                    .into_any()
+                    .unbind()
             }
         }
-        serde_json::Value::String(s) => s.to_object(py),
+        serde_json::Value::String(s) => s.as_str().into_pyobject(py)?.into_any().unbind(),
         serde_json::Value::Array(arr) => {
-            let list = PyList::empty_bound(py);
+            let list = PyList::empty(py);
             for item in arr {
                 list.append(json_to_py(py, item)?)?;
             }
             list.into_any().unbind().into()
         }
         serde_json::Value::Object(map) => {
-            let dict = PyDict::new_bound(py);
+            let dict = PyDict::new(py);
             for (k, val) in map {
                 dict.set_item(k, json_to_py(py, val)?)?;
             }
@@ -169,14 +169,14 @@ fn pyobject_to_json(v: &Bound<'_, pyo3::types::PyAny>) -> PyResult<serde_json::V
     if let Ok(s) = v.extract::<String>() {
         return Ok(serde_json::Value::String(s));
     }
-    if let Ok(list) = v.downcast::<pyo3::types::PyList>() {
+    if let Ok(list) = v.cast::<pyo3::types::PyList>() {
         let mut arr = Vec::with_capacity(list.len());
         for item in list.iter() {
             arr.push(pyobject_to_json(&item)?);
         }
         return Ok(serde_json::Value::Array(arr));
     }
-    if let Ok(dict) = v.downcast::<PyDict>() {
+    if let Ok(dict) = v.cast::<PyDict>() {
         let mut map = serde_json::Map::new();
         for (k, val) in dict.iter() {
             let key: String = k
@@ -193,8 +193,7 @@ fn pyobject_to_json(v: &Bound<'_, pyo3::types::PyAny>) -> PyResult<serde_json::V
 
 /// Register the `confium.signatif` submodule.
 pub fn register_module(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
-    let sub = PyModule::new_bound(py, "signatif")?;
+    let sub = PyModule::new(py, "signatif")?;
     sub.add_function(wrap_pyfunction!(verify_trusted_artifact, &sub)?)?;
     m.add_submodule(&sub)
 }
-

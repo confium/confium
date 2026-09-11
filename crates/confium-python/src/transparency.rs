@@ -117,7 +117,7 @@ impl MerkleTree {
     /// Current root hash (32 bytes). Empty tree returns all-zeros.
     #[getter]
     fn root<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
-        PyBytes::new_bound(py, &self.inner.root())
+        PyBytes::new(py, &self.inner.root())
     }
 
     /// Number of entries in the tree.
@@ -157,9 +157,9 @@ impl MerkleTree {
             .inner
             .consistency_proof(old_size)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
-        let list = PyList::empty_bound(py);
+        let list = PyList::empty(py);
         for hash in proof {
-            list.append(PyBytes::new_bound(py, &hash))?;
+            list.append(PyBytes::new(py, &hash))?;
         }
         Ok(list)
     }
@@ -173,11 +173,11 @@ impl MerkleTree {
             .inner
             .entry(sequence)
             .map_err(|e| pyo3::exceptions::PyIndexError::new_err(e.to_string()))?;
-        let dict = PyDict::new_bound(py);
+        let dict = PyDict::new(py);
         dict.set_item("sequence", e.sequence)?;
         dict.set_item("timestamp", e.timestamp.to_rfc3339())?;
         dict.set_item("artifact_type", artifact_type_str(e.artifact_type))?;
-        dict.set_item("artifact_hash", PyBytes::new_bound(py, &e.artifact_hash))?;
+        dict.set_item("artifact_hash", PyBytes::new(py, &e.artifact_hash))?;
         Ok(dict)
     }
 
@@ -270,10 +270,10 @@ impl PyInclusionProof {
     /// Steps as a list of dicts: `{"sibling": bytes(32), "side": "left"|"right"}`.
     #[getter]
     fn steps<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
-        let list = PyList::empty_bound(py);
+        let list = PyList::empty(py);
         for step in &self.inner.steps {
-            let dict = PyDict::new_bound(py);
-            dict.set_item("sibling", PyBytes::new_bound(py, &step.sibling))?;
+            let dict = PyDict::new(py);
+            dict.set_item("sibling", PyBytes::new(py, &step.sibling))?;
             let side_str = match step.side {
                 Side::Left => "left",
                 Side::Right => "right",
@@ -326,7 +326,7 @@ fn compute_leaf_hash<'py>(
     let mut entry_hash = [0u8; 32];
     entry_hash.copy_from_slice(&entry_hasher.finalize());
 
-    Ok(PyBytes::new_bound(py, &hash_leaf(entry_hash)))
+    Ok(PyBytes::new(py, &hash_leaf(entry_hash)))
 }
 
 /// Verify an inclusion proof given a precomputed leaf hash.
@@ -364,13 +364,13 @@ fn verify_inclusion_with_leaf(
 
 /// Register the `transparency` submodule.
 pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
-    let m = PyModule::new_bound(py, "transparency")?;
+    let m = PyModule::new(py, "transparency")?;
     m.add_class::<MerkleTree>()?;
     m.add_class::<PyInclusionProof>()?;
     m.add_function(wrap_pyfunction!(compute_leaf_hash, &m)?)?;
     m.add_function(wrap_pyfunction!(verify_inclusion_with_leaf, &m)?)?;
 
-    let artifact_types = PyList::empty_bound(py);
+    let artifact_types = PyList::empty(py);
     for name in [
         "certificate_issuance",
         "certificate_revocation",

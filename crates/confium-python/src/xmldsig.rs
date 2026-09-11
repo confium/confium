@@ -32,12 +32,12 @@ fn canonicalize_exclusive(xml: &str) -> PyResult<String> {
 /// Convenience function for XMLDSig reference digest calculation.
 #[pyfunction]
 fn sha256_digest<'py>(py: Python<'py>, data: &[u8]) -> Bound<'py, pyo3::types::PyBytes> {
-    pyo3::types::PyBytes::new_bound(py, &confium_pki::xmldsig::sha256_digest(data))
+    pyo3::types::PyBytes::new(py, &confium_pki::xmldsig::sha256_digest(data))
 }
 
 /// Register the `xmldsig` submodule.
 pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
-    let m = PyModule::new_bound(py, "xmldsig")?;
+    let m = PyModule::new(py, "xmldsig")?;
     m.add_function(wrap_pyfunction!(canonicalize, &m)?)?;
     m.add_function(wrap_pyfunction!(canonicalize_exclusive, &m)?)?;
     m.add_function(wrap_pyfunction!(sha256_digest, &m)?)?;

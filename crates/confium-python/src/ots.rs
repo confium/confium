@@ -47,7 +47,7 @@ impl PyOtsClient {
 
     #[getter]
     fn calendar_servers<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
-        let list = PyList::empty_bound(py);
+        let list = PyList::empty(py);
         for s in self.inner.calendar_servers() {
             list.append(s)?;
         }
@@ -69,7 +69,7 @@ impl PyOtsClient {
 impl PyOtsProof {
     #[getter]
     fn hash<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
-        PyBytes::new_bound(py, &self.inner.hash)
+        PyBytes::new(py, &self.inner.hash)
     }
 
     #[getter]
@@ -97,7 +97,7 @@ impl PyOtsVerification {
 }
 
 pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
-    let m = PyModule::new_bound(py, "ots")?;
+    let m = PyModule::new(py, "ots")?;
     m.add_class::<PyOtsClient>()?;
     m.add_class::<PyOtsProof>()?;
     m.add_class::<PyOtsVerification>()?;

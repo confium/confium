@@ -75,13 +75,13 @@ impl ComponentSignature {
     /// Public key bytes.
     #[getter]
     fn public_key<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
-        PyBytes::new_bound(py, &self.inner.public_key)
+        PyBytes::new(py, &self.inner.public_key)
     }
 
     /// Signature bytes.
     #[getter]
     fn signature<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
-        PyBytes::new_bound(py, &self.inner.signature)
+        PyBytes::new(py, &self.inner.signature)
     }
 }
 
@@ -123,7 +123,7 @@ impl CompositeSignature {
         let signing = ed25519_dalek::SigningKey::from_bytes(&seed);
         let msg = message.as_bytes().to_vec();
         let component = py
-            .allow_threads(move || confium_composite::build_ed25519_component(&signing, &msg))
+            .detach(move || confium_composite::build_ed25519_component(&signing, &msg))
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
         Ok(Self {
             inner: confium_composite::CompositeSignature::new(vec![component]),
@@ -147,16 +147,15 @@ impl CompositeSignature {
                 pk_bytes.len()
             )));
         }
-        let pk_array: [u8; 32] = pk_bytes
-            .try_into()
-            .map_err(|_| pyo3::exceptions::PyValueError::new_err("P-256 private key must be 32 bytes"))?;
-        let signing = p256::ecdsa::SigningKey::from_bytes(&pk_array.into())
-            .map_err(|e| {
-                pyo3::exceptions::PyValueError::new_err(format!("invalid P-256 key: {e}"))
-            })?;
+        let pk_array: [u8; 32] = pk_bytes.try_into().map_err(|_| {
+            pyo3::exceptions::PyValueError::new_err("P-256 private key must be 32 bytes")
+        })?;
+        let signing = p256::ecdsa::SigningKey::from_bytes(&pk_array.into()).map_err(|e| {
+            pyo3::exceptions::PyValueError::new_err(format!("invalid P-256 key: {e}"))
+        })?;
         let msg = message.as_bytes().to_vec();
         let component = py
-            .allow_threads(move || confium_composite::build_p256_component(&signing, &msg))
+            .detach(move || confium_composite::build_p256_component(&signing, &msg))
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
         Ok(Self {
             inner: confium_composite::CompositeSignature::new(vec![component]),
@@ -181,7 +180,7 @@ impl CompositeSignature {
     fn to_json<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyString>> {
         let s = serde_json::to_string(&self.inner)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
-        Ok(PyString::new_bound(py, &s))
+        Ok(PyString::new(py, &s))
     }
 
     /// Number of components.
@@ -191,7 +190,7 @@ impl CompositeSignature {
 
     /// List the algorithm identifiers present in this composite.
     fn algorithms<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
-        let list = PyList::empty_bound(py);
+        let list = PyList::empty(py);
         for alg in self.inner.algorithms() {
             list.append(alg)?;
         }
@@ -211,7 +210,7 @@ impl CompositeSignature {
         let msg = message.as_bytes().to_vec();
         let inner = self.inner.clone();
         let result = py
-            .allow_threads(move || {
+            .detach(move || {
                 inner.verify(&msg, |alg, pk, m, sig| match alg {
                     confium_composite::ED25519 => {
                         confium_composite::ed25519_verifier(alg, pk, m, sig)
@@ -245,12 +244,12 @@ impl CompositeSignature {
         let result = self
             .inner
             .verify(msg, |alg, pk, m, sig| {
-                Python::with_gil(|py| {
+                Python::attach(|py| {
                     let args = (
                         alg.to_string(),
-                        PyBytes::new_bound(py, pk),
-                        PyBytes::new_bound(py, m),
-                        PyBytes::new_bound(py, sig),
+                        PyBytes::new(py, pk),
+                        PyBytes::new(py, m),
+                        PyBytes::new(py, sig),
                     );
                     match callback.call1(args) {
                         Ok(out) => {
@@ -284,9 +283,9 @@ impl VerificationResult {
     /// `index`, `algorithm`, `verified`, `error` (str or None).
     #[getter]
     fn per_component<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
-        let list = PyList::empty_bound(py);
+        let list = PyList::empty(py);
         for c in &self.inner.per_component {
-            let dict = PyDict::new_bound(py);
+            let dict = PyDict::new(py);
             dict.set_item("index", c.index)?;
             dict.set_item("algorithm", &c.algorithm)?;
             dict.set_item("verified", c.verified)?;
@@ -344,7 +343,7 @@ fn verify_ecdsa_p256(
 
 /// Register the `composite` submodule.
 pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
-    let m = PyModule::new_bound(py, "composite")?;
+    let m = PyModule::new(py, "composite")?;
     m.add_class::<ComponentSignature>()?;
     m.add_class::<CompositeSignature>()?;
     m.add_class::<VerificationResult>()?;

@@ -36,14 +36,14 @@ impl PyManifest {
     fn to_toml<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyString>> {
         let s = rust_to_toml(&self.inner)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
-        Ok(PyString::new_bound(py, &s))
+        Ok(PyString::new(py, &s))
     }
 
     /// Validate this manifest's internal consistency. Returns a list
     /// of warning/error messages (empty if valid).
     fn validate<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
         let report = rust_validate(&self.inner);
-        let list = PyList::empty_bound(py);
+        let list = PyList::empty(py);
         for msg in &report.warnings {
             list.append(format!("WARNING: {msg}"))?;
         }
@@ -80,7 +80,7 @@ impl PyManifest {
 
 /// Register the `deployment` submodule.
 pub(crate) fn register_module(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
-    let m = PyModule::new_bound(py, "deployment")?;
+    let m = PyModule::new(py, "deployment")?;
     m.add_class::<PyManifest>()?;
     parent.add_submodule(&m)?;
     Ok(())
