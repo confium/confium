@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- MtA runs under the initiators Paillier key (BREAKING) by @[object]
+
 ### Other
 
 - Remove the deprecated MtA demo path and fabricated stamp (BREAKING) by @[object]

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Sound Schnorr key-possession proof (rogue-key defense) by @[object]
+
+### Other
+
+- Clippy --fix (needless borrows, mut, conversion) in zk_key_possession by @[object]
+
 ### Fixed
 
 - Gate unverifiable sig-possession; publication gates + adversarial pairing (BREAKING) by @[object]
