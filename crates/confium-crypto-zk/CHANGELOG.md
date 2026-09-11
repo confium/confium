@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
+- Release v0.10.0 by @[object]
+- Clippy --fix (needless borrows, mut, conversion) in zk_key_possession by @[object]
+
+### Added
+
+- Sound Schnorr key-possession proof (rogue-key defense) by @[object]
+
+### Other
+
 - Clippy --fix (needless borrows, mut, conversion) in zk_key_possession by @[object]
 
 ### Fixed

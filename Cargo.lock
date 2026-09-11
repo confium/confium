@@ -1311,7 +1311,7 @@ dependencies = [
 
 [[package]]
 name = "confium-api"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-macros",
  "inventory",
@@ -1319,14 +1319,14 @@ dependencies = [
 
 [[package]]
 name = "confium-attributes"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "thiserror 2.0.20",
 ]
 
 [[package]]
 name = "confium-benchmarks"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "chrono",
  "confium-composite",
@@ -1342,7 +1342,7 @@ dependencies = [
 
 [[package]]
 name = "confium-cli"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "clap",
  "clap_complete",
@@ -1365,7 +1365,7 @@ dependencies = [
 
 [[package]]
 name = "confium-composite"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "ed25519-dalek",
  "getrandom 0.4.3",
@@ -1384,7 +1384,7 @@ dependencies = [
 
 [[package]]
 name = "confium-coordinator"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "chrono",
  "confium-net",
@@ -1404,7 +1404,7 @@ dependencies = [
 
 [[package]]
 name = "confium-core"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "aes-gcm 0.11.1",
  "inventory",
@@ -1416,7 +1416,7 @@ dependencies = [
 
 [[package]]
 name = "confium-crypto-vss"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "getrandom 0.4.3",
  "hex",
@@ -1434,7 +1434,7 @@ dependencies = [
 
 [[package]]
 name = "confium-crypto-zk"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "getrandom 0.4.3",
  "hex",
@@ -1449,7 +1449,7 @@ dependencies = [
 
 [[package]]
 name = "confium-daemon"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "base64 0.23.1",
  "clap",
@@ -1469,7 +1469,7 @@ dependencies = [
 
 [[package]]
 name = "confium-deployment"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "chrono",
  "confium-signatif",
@@ -1484,7 +1484,7 @@ dependencies = [
 
 [[package]]
 name = "confium-examples"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "chrono",
  "confium-core",
@@ -1502,7 +1502,7 @@ dependencies = [
 
 [[package]]
 name = "confium-fuzz"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-attributes",
  "confium-composite",
@@ -1514,7 +1514,7 @@ dependencies = [
 
 [[package]]
 name = "confium-it"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "chrono",
  "confium-api",
@@ -1540,7 +1540,7 @@ dependencies = [
 
 [[package]]
 name = "confium-jce-provider"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "serde",
  "thiserror 2.0.20",
@@ -1548,7 +1548,7 @@ dependencies = [
 
 [[package]]
 name = "confium-keyless"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-composite",
  "confium-oidc",
@@ -1557,7 +1557,7 @@ dependencies = [
 
 [[package]]
 name = "confium-log-monitor"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -1574,7 +1574,7 @@ dependencies = [
 
 [[package]]
 name = "confium-log-server"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "anyhow",
  "axum",
@@ -1599,7 +1599,7 @@ dependencies = [
 
 [[package]]
 name = "confium-macros"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1608,7 +1608,7 @@ dependencies = [
 
 [[package]]
 name = "confium-mock-plugin"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-api",
  "confium-macros",
@@ -1616,7 +1616,7 @@ dependencies = [
 
 [[package]]
 name = "confium-net"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "inventory",
  "snafu",
@@ -1625,7 +1625,7 @@ dependencies = [
 
 [[package]]
 name = "confium-net-noise"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-net",
  "inventory",
@@ -1638,7 +1638,7 @@ dependencies = [
 
 [[package]]
 name = "confium-net-quic"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-net",
  "inventory",
@@ -1651,7 +1651,7 @@ dependencies = [
 
 [[package]]
 name = "confium-net-tcp"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-net",
  "inventory",
@@ -1661,7 +1661,7 @@ dependencies = [
 
 [[package]]
 name = "confium-net-ws"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-net",
  "inventory",
@@ -1671,7 +1671,7 @@ dependencies = [
 
 [[package]]
 name = "confium-node"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-tc-cmp20",
  "confium-tc-frost-p256",
@@ -1683,7 +1683,7 @@ dependencies = [
 
 [[package]]
 name = "confium-observability"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "chrono",
  "hex",
@@ -1697,7 +1697,7 @@ dependencies = [
 
 [[package]]
 name = "confium-oidc"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "jsonwebtoken 11.0.0",
  "reqwest 0.12.28",
@@ -1709,14 +1709,14 @@ dependencies = [
 
 [[package]]
 name = "confium-openssl-provider"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "confium-operator"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -1732,7 +1732,7 @@ dependencies = [
 
 [[package]]
 name = "confium-patterns"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "chrono",
  "serde",
@@ -1743,7 +1743,7 @@ dependencies = [
 
 [[package]]
 name = "confium-pkcs11-server"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "serde",
  "thiserror 2.0.20",
@@ -1751,7 +1751,7 @@ dependencies = [
 
 [[package]]
 name = "confium-pki"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "chrono",
  "confium-attributes",
@@ -1774,7 +1774,7 @@ dependencies = [
 
 [[package]]
 name = "confium-pki-tc"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "chrono",
  "hex",
@@ -1785,7 +1785,7 @@ dependencies = [
 
 [[package]]
 name = "confium-privacy"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "chrono",
  "getrandom 0.4.3",
@@ -1803,7 +1803,7 @@ dependencies = [
 
 [[package]]
 name = "confium-publish"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "clap",
  "hex",
@@ -1816,7 +1816,7 @@ dependencies = [
 
 [[package]]
 name = "confium-registry"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "libloading 0.9.0",
  "serde",
@@ -1828,7 +1828,7 @@ dependencies = [
 
 [[package]]
 name = "confium-ring"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "serde",
  "thiserror 2.0.20",
@@ -1836,7 +1836,7 @@ dependencies = [
 
 [[package]]
 name = "confium-sandbox-process"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -1845,7 +1845,7 @@ dependencies = [
 
 [[package]]
 name = "confium-sandbox-wasm"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "snafu",
  "wasmtime",
@@ -1854,7 +1854,7 @@ dependencies = [
 
 [[package]]
 name = "confium-signatif"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "base64ct",
  "chrono",
@@ -1873,7 +1873,7 @@ dependencies = [
 
 [[package]]
 name = "confium-signerd"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "clap",
  "confium-coordinator",
@@ -1889,7 +1889,7 @@ dependencies = [
 
 [[package]]
 name = "confium-store"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "inventory",
  "snafu",
@@ -1898,7 +1898,7 @@ dependencies = [
 
 [[package]]
 name = "confium-store-cloud"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "aws-config",
  "aws-sdk-kms",
@@ -1918,7 +1918,7 @@ dependencies = [
 
 [[package]]
 name = "confium-store-openpgp-card"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "rnp-rs",
  "serde",
@@ -1927,7 +1927,7 @@ dependencies = [
 
 [[package]]
 name = "confium-store-pkcs11"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-store",
  "cryptoki",
@@ -1937,7 +1937,7 @@ dependencies = [
 
 [[package]]
 name = "confium-store-tpm"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-store",
  "inventory",
@@ -1947,7 +1947,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "chrono",
  "confium-tc-core",
@@ -1968,7 +1968,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-bls"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "serde",
  "thiserror 2.0.20",
@@ -1977,7 +1977,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-cmp20"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-tc",
  "crypto-bigint 0.7.5",
@@ -1996,7 +1996,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-core"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "chrono",
  "getrandom 0.4.3",
@@ -2017,7 +2017,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-ecies-p256"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "aes-gcm 0.11.1",
  "getrandom 0.4.3",
@@ -2029,7 +2029,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-elgamal-p256"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "getrandom 0.4.3",
  "p256",
@@ -2042,7 +2042,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-fhe-bfv"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "serde",
  "thiserror 2.0.20",
@@ -2050,7 +2050,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-frost-ed25519"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-tc",
  "curve25519-dalek 5.0.0",
@@ -2064,7 +2064,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-frost-ml-dsa-65"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "serde",
  "thiserror 2.0.20",
@@ -2072,7 +2072,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-frost-p256"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "elliptic-curve 0.14.1",
  "getrandom 0.4.3",
@@ -2085,7 +2085,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-gg18"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-tc",
  "crypto-bigint 0.7.5",
@@ -2101,7 +2101,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-keys"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "chrono",
  "confium-tc-core",
@@ -2117,7 +2117,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-ml-kem"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "serde",
  "thiserror 2.0.20",
@@ -2125,7 +2125,7 @@ dependencies = [
 
 [[package]]
 name = "confium-test-harness"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-core",
  "confium-tc",
@@ -2140,7 +2140,7 @@ dependencies = [
 
 [[package]]
 name = "confium-threshold"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-coordinator",
  "confium-tc-bls",
@@ -2155,7 +2155,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tls-signer"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "serde",
  "thiserror 2.0.20",
@@ -2163,7 +2163,7 @@ dependencies = [
 
 [[package]]
 name = "confium-transparency"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "chrono",
  "criterion",
@@ -2180,7 +2180,7 @@ dependencies = [
 
 [[package]]
 name = "confium-verify"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "confium-attributes",
  "confium-composite",
@@ -2192,7 +2192,7 @@ dependencies = [
 
 [[package]]
 name = "confium-verify-server"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "axum",
  "chrono",
@@ -2213,7 +2213,7 @@ dependencies = [
 
 [[package]]
 name = "confium-wasm"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "chrono",
  "confium-attributes",
@@ -4449,9 +4449,9 @@ checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
 
 [[package]]
 name = "libredox"
-version = "0.1.23"
+version = "0.1.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d8f1ea3f21fd3405dcaf6c9b5c1630af9afc422d9073ea39c5f6d6c772e08ed"
+checksum = "6480ccc157a1389bb2e4891b24751b0f798ba640d22386f23143fbcc89da195a"
 dependencies = [
  "libc",
 ]
@@ -4661,9 +4661,9 @@ checksum = "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d"
 
 [[package]]
 name = "napi"
-version = "3.12.3"
+version = "3.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2862d9586f6afe036f7f7fd03d017d3c11d948a4e34702c212dd9ef62ed98b58"
+checksum = "3d2c1d080c842ec1347ebf3cfb9347c15f8c2262f143cc30eea41ddf1c7da720"
 dependencies = [
  "bitflags 2.13.2",
  "ctor",
@@ -4683,9 +4683,9 @@ checksum = "860e7c40864f95cfb83cde99f9ebadd88ef3d9bdccd7dd2cee0cc96a2dd4ffa7"
 
 [[package]]
 name = "napi-derive"
-version = "3.6.4"
+version = "3.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3be5cc49fdef0239132348d2a2991d4e24b643ff6976ada349b20823b161ab28"
+checksum = "350057056a30368aa76c11a0d406b0aa61321710be2c36656ab4f6efe0b785a2"
 dependencies = [
  "convert_case",
  "ctor",
@@ -6517,9 +6517,9 @@ dependencies = [
 
 [[package]]
 name = "smallvec"
-version = "1.16.0"
+version = "1.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9be42f50aa861c555654aa3a37f52f4b1074bacf4e48fe0ef7fa584e80f1f0f"
+checksum = "ba467056f1b547ed52077911161fc86985becbc60e8e1857c8a144dab0def891"
 dependencies = [
  "serde",
 ]
