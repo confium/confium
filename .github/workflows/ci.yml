@@ -162,6 +162,20 @@ jobs:
         # skip it. Check it explicitly so it cannot rot silently.
         run: cargo check --manifest-path crates/confium-python/Cargo.toml --all-targets
 
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Run the Python binding test suite
+        # The suite drifted while nothing gated it; build the wheel and
+        # gate it so package exports and behavior stay honest.
+        working-directory: crates/confium-python
+        run: |
+          pip install maturin pytest ecdsa cryptography
+          maturin develop --release
+          python -m pytest tests/ -q
+
   # ============================================================================
   # Publish Check (Dry Run)
   # ============================================================================

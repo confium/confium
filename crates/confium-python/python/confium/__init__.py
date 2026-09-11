@@ -16,16 +16,35 @@ from __future__ import annotations
 
 from .confium import (  # type: ignore[attr-defined]
     __version__,
+    attributes,
     composite,
     core_version,
+    deployment,
+    ers,
+    ots,
+    pki,
+    signatif,
+    tc,
     transparency,
     version,
+    xmldsig,
 )
+from .tc_share_file import ShareFile
 
 __all__ = [
+    "ShareFile",
     "__version__",
+    "attributes",
     "composite",
     "core_version",
+    "deployment",
+    "errors",
+    "ers",
+    "ots",
+    "pki",
+    "signatif",
+    "tc",
     "transparency",
     "version",
+    "xmldsig",
 ]
