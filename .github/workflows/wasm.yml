@@ -49,7 +49,7 @@ jobs:
           # Unpinned "latest" resolves tags LEXICALLY (0.9.1 > 0.15.0)
           # and intermittently installs ancient versions that reject
           # --no-default-features. Pin the known-good release.
-          version: "0.15.0"
+          version: v0.15.0
 
       # Build the bundler target — produces ESM + CJS + .d.ts that npm
       # consumers can use regardless of their bundler.
