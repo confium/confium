@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Other
+
+- Release v0.10.1 by @[object]
+
 ### Added
 
 - Sound Schnorr key-possession proof (rogue-key defense) by @[object]

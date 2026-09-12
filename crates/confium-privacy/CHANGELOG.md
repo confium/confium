@@ -7,6 +7,10 @@ For cross-product changes, see the workspace CHANGELOG at <https://github.com/co
 
 ## [Unreleased]
 
+### Other
+
+- Release v0.10.1 by @[object]
+
 ### Fixed
 
 - Vdf derives actual primes and verifies the true Wesolowski relation (BREAKING) by @[object]
