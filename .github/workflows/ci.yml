@@ -344,6 +344,11 @@ jobs:
 
       - name: Install wasm-pack
         uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          # Unpinned "latest" resolves tags LEXICALLY (0.9.1 > 0.15.0)
+          # and intermittently installs ancient versions that reject
+          # --no-default-features. Pin the known-good release.
+          version: "0.15.0"
 
       - name: Build wasm-pack — target=web (browser)
         run: wasm-pack build crates/confium-wasm --target web --release --scope confium --no-default-features
