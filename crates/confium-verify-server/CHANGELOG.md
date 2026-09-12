@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
+- Release v0.10.2 by @[object]
+
+### Fixed
+
+- Apt upgrade in the runtime stage for a stable Trivy gate by @[object]
+
+### Other
+
 - Update Cargo.lock dependencies by @[object]
 
 ### Other
