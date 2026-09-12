@@ -25,7 +25,11 @@ RUN cargo build --release -p confium-signerd
 FROM debian:bookworm-slim
 
 # Install just the runtime libs the binary needs (libssl, libgcc).
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# `upgrade` first so the Trivy CRITICAL gate does not depend on the
+# mutable bookworm-slim tag being fresh: the findings it fails on
+# are fixed-upstream packages older than the tag's pull date.
+RUN apt-get update && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends \
         libssl3 ca-certificates tini \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --system --uid 65532 --no-create-home --shell /usr/sbin/nologin confium
