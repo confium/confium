@@ -1,0 +1,86 @@
+name: python-publish
+
+# Publishes the confium Python binding (crates/confium-python) to
+# PyPI via PyPI TRUSTED PUBLISHING (OIDC) — no API tokens.
+#
+# One-time OWNER setup at https://pypi.org/manage/account/publishing
+# (add a pending publisher; it creates the `confium` project on the
+# first publish):
+#   PyPI project name: confium
+#   owner:  confium    repository: confium
+#   workflow name: python-publish.yml
+#   environment: pypi
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  sdist:
+    name: Build sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: crates/confium-python
+          command: sdist
+          args: --out dist
+      - uses: actions/upload-artifact@v8
+        with:
+          name: sdist
+          path: crates/confium-python/dist/*.tar.gz
+
+  wheels:
+    name: wheels — ${{ matrix.os }}/${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-latest, target: aarch64-apple-darwin }
+          - { os: macos-latest, target: x86_64-apple-darwin }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc }
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu }
+          - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      # abi3-py310: one wheel per platform covers every CPython >= 3.10.
+      - name: Build wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: crates/confium-python
+          target: ${{ matrix.target }}
+          args: --release --out dist
+          manylinux: auto
+      - uses: actions/upload-artifact@v8
+        with:
+          name: wheels-${{ matrix.target }}
+          path: crates/confium-python/dist/*.whl
+
+  publish:
+    name: Publish to PyPI
+    needs: [sdist, wheels]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      # PyPI trusted publishing exchanges this repository's OIDC token
+      # for an upload credential — no API token anywhere.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: '{sdist,wheels-*}'
+          path: dist
+          merge-multiple: true
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
