@@ -35,7 +35,12 @@ inventory = { workspace = true }
 # and passes all workspace gates without a TPM toolchain installed. Flip
 # the feature on in any environment that has the TSS2 libraries available
 # (Linux with `tpm2-tss` installed, or CI with `swtpm`).
-tss-esapi = { version = "8.0.0-alpha.2", optional = true }
+# `tss-esapi` 8.0.0-alpha pins elliptic-curve ^0.13, which drags
+# crypto-bigint 0.5.5 into the resolution and trips the security-audit
+# gate (RUSTSEC-2026-0387). The 7.7.0 stable line has no elliptic-curve
+# dependency at all; switch back to the alpha line once upstream moves
+# to elliptic-curve 0.14. Nothing in this skeleton calls the API yet.
+tss-esapi = { version = "7.7.0", optional = true }
 
 [features]
 default = []
