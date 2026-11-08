@@ -19,6 +19,7 @@
 //!
 //! Algorithms the plugin may advertise (case-sensitive ASCII):
 //! - `AES-128-GCM`, `AES-192-GCM`, `AES-256-GCM`
+//! - `AES-128-GCM-SIV`, `AES-256-GCM-SIV` (RFC 8452; requires Botan >= 3.13)
 //! - `AES-128-OCB`, `AES-192-OCB`, `AES-256-OCB` (RFC 9580 default)
 //! - `AES-128-EAX`, `AES-192-EAX`, `AES-256-EAX`
 //! - `ChaCha20-Poly1305`
