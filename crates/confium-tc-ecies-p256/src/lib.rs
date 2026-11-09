@@ -4,8 +4,9 @@
 //!
 //! - Encryptor generates ephemeral scalar `r`, computes `R = r * G`
 //! - Encryptor computes ECDH shared secret `K = r * recipient_pubkey`
-//! - Encryptor derives AEAD key from `K` via HKDF-SHA256
-//! - Encryptor encrypts plaintext with AES-256-GCM
+//! - Encryptor derives AEAD key from `K` via a domain-separated hash
+//! - Encryptor encrypts plaintext with the selected AEAD
+//!   (AES-256-GCM by default; AES-256-GCM-SIV selectable — RFC 8452)
 //! - Output: `(R, ciphertext, nonce, tag)`
 //!
 //! Threshold variant: recipient's private scalar `x` is Shamir-shared
@@ -26,6 +27,7 @@ pub mod shamir;
 use aes_gcm::aead::AeadInOut;
 use aes_gcm::aead::inout::InOutBuf;
 use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
+use aes_gcm_siv::Aes256GcmSiv;
 use p256::elliptic_curve::PrimeField;
 use p256::elliptic_curve::rand_core;
 use p256::elliptic_curve::rand_core::Rng;
@@ -41,6 +43,34 @@ pub use shamir::{Share, recover_secret, split_secret};
 
 /// Algorithm identifier.
 pub const ALGORITHM: &str = "ECIES-P256-threshold";
+
+/// AEAD used to protect the ECIES payload.
+///
+/// The default remains [`AeadAlgorithm::Aes256Gcm`]. Every ECIES
+/// ephemeral key is fresh, so nonce-misuse resistance matters little
+/// here; GCM-SIV (RFC 8452) is offered for deployments that standardize
+/// on it across long-lived protocol artifacts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum AeadAlgorithm {
+    /// AES-256-GCM (the historical default).
+    #[default]
+    Aes256Gcm,
+    /// AES-256-GCM-SIV (RFC 8452, nonce-misuse resistant).
+    Aes256GcmSiv,
+}
+
+impl AeadAlgorithm {
+    /// Domain-separation label mixed into the AEAD key derivation.
+    ///
+    /// The GCM label is byte-identical to the pre-agility derivation so
+    /// existing ciphertexts keep decrypting.
+    fn domain_label(self) -> &'static [u8] {
+        match self {
+            Self::Aes256Gcm => b"confium-ecies-p256-v1",
+            Self::Aes256GcmSiv => b"confium-ecies-p256-v1-gcm-siv",
+        }
+    }
+}
 
 /// Threshold ECIES public key.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -159,12 +189,12 @@ fn x_coordinate(point: &ProjectivePoint) -> [u8; 32] {
     }
 }
 
-fn derive_aead_key(shared: &[u8; 32]) -> [u8; 32] {
+fn derive_aead_key(shared: &[u8; 32], algorithm: AeadAlgorithm) -> [u8; 32] {
     use sha2::Digest;
-    // Simple HKDF-like derivation: SHA-256(shared || domain-sep).
+    // Simple HKDF-like derivation: SHA-256(domain-sep || shared).
     // Real HKDF would use extract+expand; this is sufficient for ECIES on P-256.
     let mut h = sha2::Sha256::new();
-    h.update(b"confium-ecies-p256-v1");
+    h.update(algorithm.domain_label());
     h.update(shared);
     let out = h.finalize();
     let mut key = [0u8; 32];
@@ -174,6 +204,15 @@ fn derive_aead_key(shared: &[u8; 32]) -> [u8; 32] {
 
 /// Encrypt `plaintext` to `recipient` using ECIES-P256 + AES-256-GCM.
 pub fn encrypt(recipient: &PublicKey, plaintext: &[u8]) -> Result<EncryptedBlob, EciesError> {
+    encrypt_with(recipient, plaintext, AeadAlgorithm::default())
+}
+
+/// Encrypt `plaintext` to `recipient` with an explicit AEAD choice.
+pub fn encrypt_with(
+    recipient: &PublicKey,
+    plaintext: &[u8],
+    algorithm: AeadAlgorithm,
+) -> Result<EncryptedBlob, EciesError> {
     let recipient_pt = decode_point(&recipient.bytes)?;
 
     // Ephemeral scalar
@@ -196,19 +235,34 @@ pub fn encrypt(recipient: &PublicKey, plaintext: &[u8]) -> Result<EncryptedBlob,
     let shared = x_coordinate(&shared_point);
 
     // Derive AEAD key
-    let key = derive_aead_key(&shared);
-    let cipher = Aes256Gcm::new_from_slice(&key).map_err(|e| EciesError::Aead(e.to_string()))?;
-
-    // Generate nonce
-    let mut nonce_bytes = [0u8; 12];
-    rand_core::UnwrapErr(getrandom::SysRng).fill_bytes(&mut nonce_bytes);
+    let key = derive_aead_key(&shared, algorithm);
+    let nonce_bytes: [u8; 12] = {
+        let mut nb = [0u8; 12];
+        rand_core::UnwrapErr(getrandom::SysRng).fill_bytes(&mut nb);
+        nb
+    };
     let nonce = Nonce::from(nonce_bytes);
 
     // Encrypt
     let mut buffer = plaintext.to_vec();
-    let tag = cipher
-        .encrypt_inout_detached(&nonce, b"", InOutBuf::from(buffer.as_mut_slice()))
-        .map_err(|e| EciesError::Aead(e.to_string()))?;
+    let tag: Vec<u8> = match algorithm {
+        AeadAlgorithm::Aes256Gcm => {
+            let cipher =
+                Aes256Gcm::new_from_slice(&key).map_err(|e| EciesError::Aead(e.to_string()))?;
+            cipher
+                .encrypt_inout_detached(&nonce, b"", InOutBuf::from(buffer.as_mut_slice()))
+                .map_err(|e| EciesError::Aead(e.to_string()))?
+                .to_vec()
+        }
+        AeadAlgorithm::Aes256GcmSiv => {
+            let cipher =
+                Aes256GcmSiv::new_from_slice(&key).map_err(|e| EciesError::Aead(e.to_string()))?;
+            cipher
+                .encrypt_inout_detached(&nonce, b"", InOutBuf::from(buffer.as_mut_slice()))
+                .map_err(|e| EciesError::Aead(e.to_string()))?
+                .to_vec()
+        }
+    };
 
     Ok(EncryptedBlob {
         ephemeral_public,
@@ -240,6 +294,19 @@ pub fn aggregate_partials(
     partials: &[PartialDecryption],
     threshold: u32,
     blob: &EncryptedBlob,
+) -> Result<Vec<u8>, EciesError> {
+    aggregate_partials_with(partials, threshold, blob, AeadAlgorithm::default())
+}
+
+/// Aggregate T partial decryptions with an explicit AEAD choice.
+///
+/// Must match the algorithm used at encryption time; the derivation is
+/// domain-separated per algorithm, so the mismatch fails at AEAD.
+pub fn aggregate_partials_with(
+    partials: &[PartialDecryption],
+    threshold: u32,
+    blob: &EncryptedBlob,
+    algorithm: AeadAlgorithm,
 ) -> Result<Vec<u8>, EciesError> {
     if (partials.len() as u32) < threshold {
         return Err(EciesError::ThresholdNotMet {
@@ -279,16 +346,30 @@ pub fn aggregate_partials(
 
     // Derive AEAD key from X-coordinate of combined
     let shared = x_coordinate(&combined);
-    let key = derive_aead_key(&shared);
-    let cipher = Aes256Gcm::new_from_slice(&key).map_err(|e| EciesError::Aead(e.to_string()))?;
+    let key = derive_aead_key(&shared, algorithm);
 
     // AEAD decrypt
     let nonce = Nonce::from(slice_to_array::<12>(&blob.nonce)?);
-    let tag = aes_gcm::Tag::from(slice_to_array::<16>(&blob.tag)?);
+    let tag_bytes = slice_to_array::<16>(&blob.tag)?;
     let mut buffer = blob.ciphertext.clone();
-    cipher
-        .decrypt_inout_detached(&nonce, b"", InOutBuf::from(buffer.as_mut_slice()), &tag)
-        .map_err(|e| EciesError::Aead(format!("decrypt: {e}")))?;
+    match algorithm {
+        AeadAlgorithm::Aes256Gcm => {
+            let cipher =
+                Aes256Gcm::new_from_slice(&key).map_err(|e| EciesError::Aead(e.to_string()))?;
+            let tag = aes_gcm::Tag::from(tag_bytes);
+            cipher
+                .decrypt_inout_detached(&nonce, b"", InOutBuf::from(buffer.as_mut_slice()), &tag)
+                .map_err(|e| EciesError::Aead(format!("decrypt: {e}")))?;
+        }
+        AeadAlgorithm::Aes256GcmSiv => {
+            let cipher =
+                Aes256GcmSiv::new_from_slice(&key).map_err(|e| EciesError::Aead(e.to_string()))?;
+            let tag = aes_gcm_siv::Tag::from(tag_bytes);
+            cipher
+                .decrypt_inout_detached(&nonce, b"", InOutBuf::from(buffer.as_mut_slice()), &tag)
+                .map_err(|e| EciesError::Aead(format!("decrypt: {e}")))?;
+        }
+    }
 
     Ok(buffer)
 }
@@ -397,6 +478,64 @@ mod tests {
 
         assert_eq!(recovered_a.as_slice(), plaintext);
         assert_eq!(recovered_b.as_slice(), plaintext);
+    }
+
+    #[test]
+    fn gcm_siv_round_trip() {
+        let keypair = generate_keypair();
+        let pk = PublicKey::from_affine(keypair.public_key);
+        let shares = split_secret(&keypair.secret_scalar, 2, 3);
+
+        let plaintext = b"gcm-siv protected escrow payload";
+        let blob = encrypt_with(&pk, plaintext, AeadAlgorithm::Aes256GcmSiv).unwrap();
+
+        let decryption_shares: Vec<DecryptionShare> = shares
+            .iter()
+            .map(|s| DecryptionShare {
+                party_index: s.x,
+                bytes: {
+                    let fb: FieldBytes = s.y.to_bytes();
+                    let arr: [u8; 32] = fb.into();
+                    arr.to_vec()
+                },
+            })
+            .collect();
+        let partials: Vec<PartialDecryption> = decryption_shares[0..2]
+            .iter()
+            .map(|ds| partial_decrypt(ds, &blob).unwrap())
+            .collect();
+
+        let recovered =
+            aggregate_partials_with(&partials, 2, &blob, AeadAlgorithm::Aes256GcmSiv).unwrap();
+        assert_eq!(recovered.as_slice(), plaintext);
+    }
+
+    #[test]
+    fn algorithm_mismatch_fails() {
+        let keypair = generate_keypair();
+        let pk = PublicKey::from_affine(keypair.public_key);
+        let shares = split_secret(&keypair.secret_scalar, 2, 3);
+        let blob = encrypt_with(&pk, b"x", AeadAlgorithm::Aes256GcmSiv).unwrap();
+
+        let decryption_shares: Vec<DecryptionShare> = shares
+            .iter()
+            .map(|s| DecryptionShare {
+                party_index: s.x,
+                bytes: {
+                    let fb: FieldBytes = s.y.to_bytes();
+                    let arr: [u8; 32] = fb.into();
+                    arr.to_vec()
+                },
+            })
+            .collect();
+        let partials: Vec<PartialDecryption> = decryption_shares[0..2]
+            .iter()
+            .map(|ds| partial_decrypt(ds, &blob).unwrap())
+            .collect();
+
+        // decrypting a SIV blob as GCM must fail (domain-separated keys)
+        let result = aggregate_partials_with(&partials, 2, &blob, AeadAlgorithm::Aes256Gcm);
+        assert!(matches!(result, Err(EciesError::Aead(_))));
     }
 
     #[test]

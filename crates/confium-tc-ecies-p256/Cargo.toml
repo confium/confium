@@ -25,6 +25,7 @@ thiserror = { workspace = true }
 p256 = { workspace = true, features = ["ecdsa", "arithmetic"] }
 sha2 = { workspace = true }
 aes-gcm = { workspace = true }
+aes-gcm-siv = { workspace = true }
 
 [lib]
 crate-type = ["rlib"]
