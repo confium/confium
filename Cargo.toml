@@ -188,6 +188,7 @@ rnp = { package = "rnp-rs", version = "0.1.10" }
 ed25519-dalek = "3"
 rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
 aes-gcm = "0.11"
+aes-gcm-siv = "0.12"
 rand = { version = "0.8", default-features = false, features = ["std", "getrandom"] }
 hex = "0.4"
 tokio-util = { version = "0.7", features = ["codec"] }
