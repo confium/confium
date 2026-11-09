@@ -173,7 +173,7 @@ rcgen = "0.14"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "net", "sync", "macros", "time", "io-util"] }
 criterion = { version = "0.8", default-features = false, features = ["plotters", "cargo_bench_support"] }
 tungstenite = { version = "0.30", default-features = false, features = ["handshake", "url", "rustls-tls-native-roots"] }
-wasmtime = "48"
+wasmtime = "50"
 # Shared by extracted crates (Layer 0/3).
 subtle = "2"
 num-bigint = { version = "0.4", features = ["rand"] }
@@ -212,7 +212,7 @@ chrono = { version = "0.4", features = ["serde"] }
 axum = "0.8"
 tower = "0.5"
 tower-http = { version = "0.6", features = ["trace"] }
-rusqlite = { version = "0.40", features = ["bundled"] }
+rusqlite = { version = "0.41", features = ["bundled"] }
 async-trait = "0.1"
 pyo3 = { version = "0.22", features = ["extension-module"] }
 tracing = "0.1"
