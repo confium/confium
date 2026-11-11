@@ -1,0 +1,57 @@
+# Plugin manifest: botan 3.13.0
+#
+# This file is published once and then IMMUTABLE. The directory
+# plugins/botan/3.13.0/ is never edited; if a vulnerability is found, the
+# version is removed via a takedown PR and the `latest` pointer in
+# plugins/botan/index.toml is updated.
+#
+# Schema per TODO.roadmap/06-module-registry.md. Multi-platform release:
+# the optional [artifact.platforms] table lists one entry per platform
+# (see the schema's "Multi-platform artifacts" section); the single-file
+# [artifact] form is not used for this release.
+#
+# SIGNATURE PENDING: the detached publisher signature has not been added
+# yet (publisher-key step deferred by the owner, 2026-11-11). This
+# manifest MUST NOT be trusted until sigs/ contains the publisher
+# signature.
+
+[plugin]
+name = "botan"
+version = "3.13.0"
+publisher = "ribose"
+license = "BSD-2-Clause"
+homepage = "https://botan.randombit.net"
+source = "https://github.com/confium/confium-plugin-botan/tree/v3.13.0"
+
+[confium]
+contract-version = 0                   # cfmp_interface_version
+min-runtime = "0.3.0"                  # minimum Confium runtime version (contract v0 is stable across 0.x)
+
+# Which Confium interfaces this plugin implements, and at which interface
+# version. Interface names match the keys in the global interface registry
+# (see TODO.finalize/02-plugin-interface-registry.md).
+[interfaces]
+hash = 0
+aead = 0
+
+# Algorithms supported per interface. Names follow the registry's canonical
+# algorithm identifiers (uppercase, hyphenated). GCM-SIV requires
+# Botan >= 3.13 (RFC 8452, botan#5770).
+[algorithms]
+hash = ["SHA-256", "SHA-384", "SHA-512", "SHA3-256", "SHA3-512"]
+aead = ["AES-128-GCM-SIV", "AES-256-GCM-SIV", "AES-256-GCM", "ChaCha20-Poly1305"]
+
+[artifact.platforms.darwin-aarch64]
+url = "https://github.com/confium/confium-plugin-botan/releases/download/v3.13.0/libcfm-botan-3.13.0.dylib"
+size = 104240
+sha256 = "176b106b82d8743f2c28098ee1cafbdde6fb8ee40162bf39e2fb838a39be7c53"
+
+[artifact.platforms.linux-x86_64]
+url = "https://github.com/confium/confium-plugin-botan/releases/download/v3.13.0/libcfm-botan-3.13.0.so"
+size = 108232
+sha256 = "1c133da3b3287799fe7bf372dee2f426d7efce5ff43c71b92d4dc758a28f3d08"
+
+[artifact.platforms.windows-x86_64]
+url = "https://github.com/confium/confium-plugin-botan/releases/download/v3.13.0/libcfm-botan-3.13.0.dll"
+size = 208804
+sha256 = "c04e723bda9cbc5b34ae502b85a1e1c68e557ea310b39b0c0a2e63117acf3b32"
