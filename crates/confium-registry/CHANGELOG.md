@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Track the 3.13.0 release; bump rusqlite to 0.41 by @[object]
+
 ### Other
 
 - Update Cargo.toml dependencies by @[object]
