@@ -31,7 +31,7 @@ chrono = { workspace = true }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 clap = { workspace = true }
-parking_lot = "0.12"
+parking_lot = "0.13"
 base64 = "0.23"
 
 # PostgreSQL backend (Tier 2/3 production). Off by default; opt in
