@@ -204,9 +204,9 @@ checksum = "3bc62ac97cc33321f50863d514c3bc38a453947a8f9e781137e47c7401020aed"
 
 [[package]]
 name = "arc-swap"
-version = "1.9.4"
+version = "1.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db4c94f57a570fce5d381be3289b3f79aef6332d72948fe82ab5772e423ccf92"
+checksum = "84a22b5d51209f6de83d37a0b33d320acb8da88823e42a94c075140708f032a5"
 dependencies = [
  "rustversion",
 ]
@@ -362,7 +362,7 @@ checksum = "82f6aeea286b8eb4dd3431a1be1b59d290ace00f5bfd8e2a159bc2a05e2c1667"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -379,9 +379,9 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
 name = "aws-config"
-version = "1.13.0"
+version = "1.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "939e256cfe0ed68e96d32f194339d88210d5c10685cff0787400158f852c6819"
+checksum = "16ec023cac0d0c0432e606a2d14f04eb70d09c71a739a406141e7be6b923ab95"
 dependencies = [
  "aws-credential-types",
  "aws-runtime",
@@ -440,9 +440,9 @@ dependencies = [
 
 [[package]]
 name = "aws-runtime"
-version = "1.10.2"
+version = "1.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a0cc2144962cc5e358467b16e3d82981b1d424a7c3d34602be0036103814a1a"
+checksum = "de8930c11353c72ae54aa24dc94d692df74d59814839cbaf8069d63dbcb4c519"
 dependencies = [
  "aws-credential-types",
  "aws-sigv4",
@@ -465,9 +465,9 @@ dependencies = [
 
 [[package]]
 name = "aws-sdk-kms"
-version = "1.129.0"
+version = "1.131.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c5cdb29ad25d71c9ee54c408a672c98d90a24a0ea6eb063025483e0e894b411"
+checksum = "4c6309b510ca62e64bafb147a08413d81665fdcaa2b607423d348c576b5d4a89"
 dependencies = [
  "arc-swap",
  "aws-credential-types",
@@ -481,18 +481,16 @@ dependencies = [
  "aws-smithy-schema",
  "aws-smithy-types",
  "aws-types",
- "bytes",
  "fastrand 2.5.0",
- "http 1.5.0",
  "regex-lite",
  "tracing",
 ]
 
 [[package]]
 name = "aws-sdk-sts"
-version = "1.124.0"
+version = "1.126.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f8a0dd8fbde04ba58ad722113c7addb11bf94cf549b1ea0eb9ea427fb87198a"
+checksum = "c667da7839295125cfe23280f798c07ba694a9fed191af804edb4bda09ac7f10"
 dependencies = [
  "arc-swap",
  "aws-credential-types",
@@ -516,9 +514,9 @@ dependencies = [
 
 [[package]]
 name = "aws-sigv4"
-version = "1.6.4"
+version = "1.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f385da9b7757ed4c8214797ad663ff534fb622006143530aa80e21f8e06ff85c"
+checksum = "57a4393e6addc3380632887b0998d06ad5f099ab5c478be0a3eeedecf8604161"
 dependencies = [
  "aws-credential-types",
  "aws-smithy-http",
@@ -627,9 +625,9 @@ dependencies = [
 
 [[package]]
 name = "aws-smithy-runtime"
-version = "1.16.2"
+version = "1.16.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cb80fb19c084da5fca9d797845735e184445e5b958599440d67529bf6ef1b64"
+checksum = "5bc688673e282f42d3152dcd9cacc1a9a75734d7cd39d02e58989276fc750f3c"
 dependencies = [
  "aws-smithy-async",
  "aws-smithy-http",
@@ -650,9 +648,9 @@ dependencies = [
 
 [[package]]
 name = "aws-smithy-runtime-api"
-version = "1.20.0"
+version = "1.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d06a8615310f03c73ea8eea607ee1a9cb17b7ebe055b9152feda1d86831c215c"
+checksum = "0467a2414e84b1b01e37452896fb3562b93926e81c619eba6ecf27ce9e682a0e"
 dependencies = [
  "aws-smithy-async",
  "aws-smithy-runtime-api-macros",
@@ -689,9 +687,9 @@ dependencies = [
 
 [[package]]
 name = "aws-smithy-types"
-version = "1.9.3"
+version = "1.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c3a040d8b963838a01d7d239b0118357388d0ab881857bb5fc2dd780bb87957"
+checksum = "aff4bf014c512840b2bba80a20417b723cbd6a0a65c02e2d81f50b4268aedfc7"
 dependencies = [
  "base64-simd",
  "bytes",
@@ -917,7 +915,7 @@ version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56d87354e4229f54a44f7bf2435906a4656dba36026ab6eaca629a2c436a691c"
 dependencies = [
- "bit-vec 0.10.1",
+ "bit-vec 0.10.2",
 ]
 
 [[package]]
@@ -931,9 +929,9 @@ dependencies = [
 
 [[package]]
 name = "bit-vec"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5727b15fa97d4f4fee0a3b7c3d550ed0269f54329207b86388de918604e31269"
+checksum = "72503af1e72be411d74ca45cd6b309878fcb35354e252fc2a3a8bda3a97082a0"
 dependencies = [
  "borsh",
  "serde",
@@ -956,7 +954,7 @@ checksum = "c0cb6f3d4773a2107b94cbeccaa5b5f0b35a88389b5d522d13d659f64317b22d"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -1032,7 +1030,7 @@ dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -1277,7 +1275,7 @@ dependencies = [
  "heck",
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -1337,7 +1335,7 @@ dependencies = [
 
 [[package]]
 name = "confium-api"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-macros",
  "inventory",
@@ -1345,14 +1343,14 @@ dependencies = [
 
 [[package]]
 name = "confium-attributes"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "thiserror 2.0.21",
 ]
 
 [[package]]
 name = "confium-benchmarks"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "chrono",
  "confium-composite",
@@ -1368,7 +1366,7 @@ dependencies = [
 
 [[package]]
 name = "confium-cli"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "clap",
  "clap_complete",
@@ -1391,7 +1389,7 @@ dependencies = [
 
 [[package]]
 name = "confium-composite"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "ed25519-dalek",
  "getrandom 0.4.3",
@@ -1410,7 +1408,7 @@ dependencies = [
 
 [[package]]
 name = "confium-coordinator"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "chrono",
  "confium-net",
@@ -1430,7 +1428,7 @@ dependencies = [
 
 [[package]]
 name = "confium-core"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "aes-gcm 0.11.1",
  "inventory",
@@ -1442,7 +1440,7 @@ dependencies = [
 
 [[package]]
 name = "confium-crypto-vss"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "getrandom 0.4.3",
  "hex",
@@ -1460,7 +1458,7 @@ dependencies = [
 
 [[package]]
 name = "confium-crypto-zk"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "getrandom 0.4.3",
  "hex",
@@ -1475,7 +1473,7 @@ dependencies = [
 
 [[package]]
 name = "confium-daemon"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "base64 0.23.1",
  "clap",
@@ -1495,7 +1493,7 @@ dependencies = [
 
 [[package]]
 name = "confium-deployment"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "chrono",
  "confium-signatif",
@@ -1510,7 +1508,7 @@ dependencies = [
 
 [[package]]
 name = "confium-examples"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "chrono",
  "confium-core",
@@ -1528,7 +1526,7 @@ dependencies = [
 
 [[package]]
 name = "confium-fuzz"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-attributes",
  "confium-composite",
@@ -1540,7 +1538,7 @@ dependencies = [
 
 [[package]]
 name = "confium-it"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "chrono",
  "confium-api",
@@ -1566,7 +1564,7 @@ dependencies = [
 
 [[package]]
 name = "confium-jce-provider"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "serde",
  "thiserror 2.0.21",
@@ -1574,7 +1572,7 @@ dependencies = [
 
 [[package]]
 name = "confium-keyless"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-composite",
  "confium-oidc",
@@ -1583,7 +1581,7 @@ dependencies = [
 
 [[package]]
 name = "confium-log-monitor"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "anyhow",
  "clap",
@@ -1600,7 +1598,7 @@ dependencies = [
 
 [[package]]
 name = "confium-log-server"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "anyhow",
  "axum",
@@ -1625,16 +1623,16 @@ dependencies = [
 
 [[package]]
 name = "confium-macros"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
 name = "confium-mock-plugin"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-api",
  "confium-macros",
@@ -1642,7 +1640,7 @@ dependencies = [
 
 [[package]]
 name = "confium-net"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "inventory",
  "snafu",
@@ -1651,7 +1649,7 @@ dependencies = [
 
 [[package]]
 name = "confium-net-noise"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-net",
  "inventory",
@@ -1664,7 +1662,7 @@ dependencies = [
 
 [[package]]
 name = "confium-net-quic"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-net",
  "inventory",
@@ -1677,7 +1675,7 @@ dependencies = [
 
 [[package]]
 name = "confium-net-tcp"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-net",
  "inventory",
@@ -1687,7 +1685,7 @@ dependencies = [
 
 [[package]]
 name = "confium-net-ws"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-net",
  "inventory",
@@ -1697,7 +1695,7 @@ dependencies = [
 
 [[package]]
 name = "confium-node"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-tc-cmp20",
  "confium-tc-frost-p256",
@@ -1709,7 +1707,7 @@ dependencies = [
 
 [[package]]
 name = "confium-observability"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "chrono",
  "hex",
@@ -1723,7 +1721,7 @@ dependencies = [
 
 [[package]]
 name = "confium-oidc"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "jsonwebtoken 11.1.0",
  "reqwest 0.12.28",
@@ -1735,14 +1733,14 @@ dependencies = [
 
 [[package]]
 name = "confium-openssl-provider"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "confium-operator"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "anyhow",
  "clap",
@@ -1758,7 +1756,7 @@ dependencies = [
 
 [[package]]
 name = "confium-patterns"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "chrono",
  "serde",
@@ -1769,7 +1767,7 @@ dependencies = [
 
 [[package]]
 name = "confium-pkcs11-server"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "serde",
  "thiserror 2.0.21",
@@ -1777,7 +1775,7 @@ dependencies = [
 
 [[package]]
 name = "confium-pki"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "chrono",
  "confium-attributes",
@@ -1800,7 +1798,7 @@ dependencies = [
 
 [[package]]
 name = "confium-pki-tc"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "chrono",
  "hex",
@@ -1811,7 +1809,7 @@ dependencies = [
 
 [[package]]
 name = "confium-privacy"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "chrono",
  "getrandom 0.4.3",
@@ -1829,7 +1827,7 @@ dependencies = [
 
 [[package]]
 name = "confium-publish"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "clap",
  "hex",
@@ -1842,7 +1840,7 @@ dependencies = [
 
 [[package]]
 name = "confium-registry"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "libloading 0.9.0",
  "serde",
@@ -1854,7 +1852,7 @@ dependencies = [
 
 [[package]]
 name = "confium-ring"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "serde",
  "thiserror 2.0.21",
@@ -1862,7 +1860,7 @@ dependencies = [
 
 [[package]]
 name = "confium-sandbox-process"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "serde",
  "serde_json",
@@ -1871,7 +1869,7 @@ dependencies = [
 
 [[package]]
 name = "confium-sandbox-wasm"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "snafu",
  "wasmtime",
@@ -1880,7 +1878,7 @@ dependencies = [
 
 [[package]]
 name = "confium-signatif"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "base64ct",
  "chrono",
@@ -1899,7 +1897,7 @@ dependencies = [
 
 [[package]]
 name = "confium-signerd"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "clap",
  "confium-coordinator",
@@ -1915,7 +1913,7 @@ dependencies = [
 
 [[package]]
 name = "confium-store"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "inventory",
  "snafu",
@@ -1924,7 +1922,7 @@ dependencies = [
 
 [[package]]
 name = "confium-store-cloud"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "aws-config",
  "aws-sdk-kms",
@@ -1944,7 +1942,7 @@ dependencies = [
 
 [[package]]
 name = "confium-store-openpgp-card"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "rnp-rs",
  "serde",
@@ -1953,7 +1951,7 @@ dependencies = [
 
 [[package]]
 name = "confium-store-pkcs11"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-store",
  "cryptoki",
@@ -1963,7 +1961,7 @@ dependencies = [
 
 [[package]]
 name = "confium-store-tpm"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-store",
  "inventory",
@@ -1973,7 +1971,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "chrono",
  "confium-tc-core",
@@ -1994,7 +1992,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-bls"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "serde",
  "thiserror 2.0.21",
@@ -2003,7 +2001,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-cmp20"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-tc",
  "crypto-bigint",
@@ -2022,7 +2020,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-core"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "chrono",
  "getrandom 0.4.3",
@@ -2043,7 +2041,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-ecies-p256"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "aes-gcm 0.11.1",
  "aes-gcm-siv",
@@ -2056,7 +2054,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-elgamal-p256"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "getrandom 0.4.3",
  "p256",
@@ -2069,7 +2067,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-fhe-bfv"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "serde",
  "thiserror 2.0.21",
@@ -2077,7 +2075,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-frost-ed25519"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-tc",
  "curve25519-dalek 5.0.0",
@@ -2091,7 +2089,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-frost-ml-dsa-65"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "serde",
  "thiserror 2.0.21",
@@ -2099,7 +2097,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-frost-p256"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "elliptic-curve",
  "getrandom 0.4.3",
@@ -2112,7 +2110,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-gg18"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-tc",
  "crypto-bigint",
@@ -2128,7 +2126,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-keys"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "chrono",
  "confium-tc-core",
@@ -2144,7 +2142,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tc-ml-kem"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "serde",
  "thiserror 2.0.21",
@@ -2152,7 +2150,7 @@ dependencies = [
 
 [[package]]
 name = "confium-test-harness"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-core",
  "confium-tc",
@@ -2167,7 +2165,7 @@ dependencies = [
 
 [[package]]
 name = "confium-threshold"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-coordinator",
  "confium-tc-bls",
@@ -2182,7 +2180,7 @@ dependencies = [
 
 [[package]]
 name = "confium-tls-signer"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "serde",
  "thiserror 2.0.21",
@@ -2190,7 +2188,7 @@ dependencies = [
 
 [[package]]
 name = "confium-transparency"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "chrono",
  "criterion",
@@ -2207,7 +2205,7 @@ dependencies = [
 
 [[package]]
 name = "confium-verify"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "confium-attributes",
  "confium-composite",
@@ -2219,7 +2217,7 @@ dependencies = [
 
 [[package]]
 name = "confium-verify-server"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "axum",
  "chrono",
@@ -2240,7 +2238,7 @@ dependencies = [
 
 [[package]]
 name = "confium-wasm"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "chrono",
  "confium-attributes",
@@ -2268,9 +2266,9 @@ dependencies = [
 
 [[package]]
 name = "const-oid"
-version = "0.10.2"
+version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
+checksum = "be95d4a884358a21a199689323c29e9256b4a1b315e22f183d155422041d3a9a"
 
 [[package]]
 name = "convert_case"
@@ -2499,9 +2497,9 @@ checksum = "217698eaf96b4a3f0bc4f3662aaa55bdf913cd54d7204591faa790070c6d0853"
 
 [[package]]
 name = "crc32fast"
-version = "1.5.4"
+version = "1.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f97d3416d5337d15c4b0d78c8c91df922ca143f57ec20e2d1c188333047ef04"
+checksum = "2b929dd2a135771f40afabd1073f85eed59c800b7c61901e5c254270497dad64"
 dependencies = [
  "cfg-if",
 ]
@@ -2573,9 +2571,9 @@ checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
 
 [[package]]
 name = "crypto-bigint"
-version = "0.7.10"
+version = "0.7.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c035cb64cba03dad2fb921f3e218785e8cf9a41790da5eb3a1400f62fa2be11"
+checksum = "914c195c4d7fbc5ed7f88d14cbf85914d5c664967658d43404b263913a477e82"
 dependencies = [
  "cpubits",
  "ctutils",
@@ -2726,7 +2724,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "strsim",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -2737,7 +2735,7 @@ checksum = "2ac7135c3ef02b2f7833bbeb1be5ba7f966dcde8a87c6b87f65a778d71a02785"
 dependencies = [
  "darling_core",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -2872,7 +2870,7 @@ checksum = "c6232dd377dcc64799954cbd3a9bb882e9cdc1308ccd87b1c098f1fb2eaf82a8"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -3270,7 +3268,7 @@ checksum = "9fb9654ba8355388abeb8dcb4fc62f511300867002afc858860463bdd9fe0c44"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -3636,9 +3634,6 @@ name = "hashbrown"
 version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100"
-dependencies = [
- "foldhash",
-]
 
 [[package]]
 name = "hashbrown"
@@ -3826,7 +3821,7 @@ dependencies = [
  "tokio",
  "tokio-rustls",
  "tower-service",
- "webpki-roots 1.0.11",
+ "webpki-roots 1.0.12",
 ]
 
 [[package]]
@@ -4103,9 +4098,9 @@ dependencies = [
 
 [[package]]
 name = "itoa"
-version = "1.0.18"
+version = "1.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
+checksum = "3bd1574e617a9a6c1f8f8181bd7e841e1f20e4277607ef28945765188d6284d4"
 
 [[package]]
 name = "ittapi"
@@ -4129,9 +4124,9 @@ dependencies = [
 
 [[package]]
 name = "jiff"
-version = "0.2.40"
+version = "0.2.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14ed8250fe4472173a765b89fea4b46f2c4aa12adc12a3e310f1dc6c108e041b"
+checksum = "fefca06093eeaed707a905795e68206da0edca4edef23d2a3997a3ddbee462aa"
 dependencies = [
  "jiff-core",
  "jiff-static",
@@ -4145,18 +4140,18 @@ dependencies = [
 
 [[package]]
 name = "jiff-core"
-version = "0.1.3"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ecfc96f3a325d3a9b0ee6db9a81a83b40b94e781021c044a0a7f4c4630a1e482"
+checksum = "77a24020db0ee88d1c681d677681bd31f9f4ea189a455425223d52ce4f1508aa"
 dependencies = [
  "log",
 ]
 
 [[package]]
 name = "jiff-static"
-version = "0.2.40"
+version = "0.2.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9522de39a5298859d9e844b660eb7d5e6fd1b63b9953f51535408a62f2d31b3"
+checksum = "41d3213549742662eea1a18e6c5af9be5dfbabeb7611ab71356a54928ec398f0"
 dependencies = [
  "jiff-core",
  "proc-macro2",
@@ -4532,9 +4527,9 @@ checksum = "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d"
 
 [[package]]
 name = "napi"
-version = "3.16.1"
+version = "3.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "907ff7366fb7182e28edd0f08ef8ac5d6b13b8d65a3c0b3a10bf3ac092437d6b"
+checksum = "567c62b9c2d0fae123713f766686ad66a2c75b45ba3ee01ed8b06a7e99bc435b"
 dependencies = [
  "bitflags 2.13.2",
  "ctor",
@@ -4554,29 +4549,29 @@ checksum = "b899b545d3aa6dca985939059f258c5488d34e4ecf39c274e20009748f4b846d"
 
 [[package]]
 name = "napi-derive"
-version = "3.7.0"
+version = "3.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d32eb00f92f84cf462fc328f49082b29c2a7d2eebeb1d447d19c1f9fdd9f89ee"
+checksum = "94c8098ed9d61a1bbd019519c637817531b0e24023ef4b5678f2f0cbe24bed9c"
 dependencies = [
  "convert_case",
  "ctor",
  "napi-derive-backend",
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
 name = "napi-derive-backend"
-version = "7.0.0"
+version = "7.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1fe28c64d8fc12e69f9b817d0febdbe7914555760f1e353106281b8ff99cc90"
+checksum = "314cd6ca42bd978fd8bae84b4137e1322bbf3e83552fca8dbd7d18034188ff3a"
 dependencies = [
  "convert_case",
  "proc-macro2",
  "quote",
  "semver",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -5227,7 +5222,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b8530004ccb15eae51c7e40009fbe317f341f804db54dc033eec1c50be28cfa0"
 dependencies = [
  "bit-set",
- "bit-vec 0.10.1",
+ "bit-vec 0.10.2",
  "bitflags 2.13.2",
  "chacha20 0.10.2",
  "core_detect",
@@ -5572,7 +5567,7 @@ checksum = "92ecd8964f8453721699a1ed72037b0db49ce2f5a5138486ee89bed6f67cdf3a"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -5664,7 +5659,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
- "webpki-roots 1.0.11",
+ "webpki-roots 1.0.12",
 ]
 
 [[package]]
@@ -5763,11 +5758,10 @@ dependencies = [
 
 [[package]]
 name = "rsqlite-vfs"
-version = "0.1.1"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c51c9ae4df8a7fba42103df5c621fa3c37eccf3a3c650879e90fc48b11cc192c"
+checksum = "353b74f9810d5b085b6c42c9d86a5f0fdb795553235cdd48753b32e3809d18a7"
 dependencies = [
- "hashbrown 0.16.1",
  "thiserror 2.0.21",
 ]
 
@@ -5868,9 +5862,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-pki-types"
-version = "1.15.1"
+version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f4925028c7eb5d1fcdaf196971378ed9d2c1c4efc7dc5d011256f76c99c0a96"
+checksum = "102f35f7de7b06d8c61f1cff6592f5253e0dea431c74867aad5dfd70f44663fb"
 dependencies = [
  "web-time",
  "zeroize",
@@ -6081,7 +6075,7 @@ checksum = "e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -6170,7 +6164,7 @@ dependencies = [
  "darling",
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -6456,14 +6450,12 @@ checksum = "3a0219bd7d979d58245a4f41f695e1ac9f8befdffadd7f61f1bae9e39abc6620"
 
 [[package]]
 name = "sqlite-wasm-rs"
-version = "0.5.5"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc3efc0da82635d7e1ced0053bbbfa8c7ab9645d0bf36ceb4f7127bb85315d75"
+checksum = "a6cd504cecbfe7eef649988840f9a6cb768d11085efec138f8e99f160632d867"
 dependencies = [
  "cc",
- "js-sys",
  "rsqlite-vfs",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -6508,9 +6500,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "3.0.9"
+version = "3.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d78c8dee4c7bf0e14673097256fed6142ce9d3b85a408189d07482442145823b"
+checksum = "4ae9ccbea3a7b0b09443036490c8f34a8b1b760fd345e5c0dae0aac718faea79"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6545,7 +6537,7 @@ checksum = "901704edd0dfe137f1987838ee4f259e4e063c31371bdb423f7ae38ec6f77f02"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -6630,7 +6622,7 @@ checksum = "fe5197923287db20a58125f0bc85c062f7f2c892de97b18c356f9efb14b28524"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -6745,7 +6737,7 @@ checksum = "78773a2a397f451582ce068015985c33193cf6dea8b74d2a639fe457b2f07b0e"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -7209,7 +7201,7 @@ dependencies = [
  "rustls-pki-types",
  "ureq-proto",
  "utf8-zero",
- "webpki-roots 1.0.11",
+ "webpki-roots 1.0.12",
 ]
 
 [[package]]
@@ -7272,9 +7264,9 @@ checksum = "3a3b425286980a367278453f3b6d28cdcb134b574e5a35824a6ff5eebad50bb6"
 
 [[package]]
 name = "uuid"
-version = "1.29.1"
+version = "1.29.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a06f08a856b009bc7bbaf7d3e79808595d032dd19074c0c2ef26e49e03e6bdc"
+checksum = "bed99139f7dac9b5cfe5f17be4d66dc7079a34dee1d74bcc77217119240e267c"
 dependencies = [
  "getrandom 0.4.3",
  "js-sys",
@@ -7420,7 +7412,7 @@ dependencies = [
  "bumpalo",
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
  "wasm-bindgen-shared",
 ]
 
@@ -7462,7 +7454,7 @@ checksum = "238071aa4c5b268e57d21018621a2e2403c29dd11c55dbdf790ed47fdb9241c0"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -7835,9 +7827,9 @@ dependencies = [
 
 [[package]]
 name = "webpki-root-certs"
-version = "1.0.11"
+version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e49d0e65abc00c142e8f9428da991da9f1a250c39be97459901eb12b9b49f62a"
+checksum = "293198dcebfb821155b5092ab94b5a82ff180eddd7241df3bd6e66a4ffd1a585"
 dependencies = [
  "rustls-pki-types",
 ]
@@ -7848,14 +7840,14 @@ version = "0.26.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "521bc38abb08001b01866da9f51eb7c5d647a19260e00054a8c7fd5f9e57f7a9"
 dependencies = [
- "webpki-roots 1.0.11",
+ "webpki-roots 1.0.12",
 ]
 
 [[package]]
 name = "webpki-roots"
-version = "1.0.11"
+version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5f280bbb2b287bc8e7de7e3852945a0ff50d1bbcb5ed42b6c7a568c546df171"
+checksum = "7265c9301c16a8711c992c2d8da90ee77ef54b1ed51482d6dfeb00dc756b1297"
 dependencies = [
  "rustls-pki-types",
 ]
@@ -8233,7 +8225,7 @@ checksum = "ec8ebde2db3681e8c9980cc27822030e68752690ddfa9473e739aeb4dbde6d71"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
  "synstructure 0.14.0",
 ]
 
@@ -8274,7 +8266,7 @@ checksum = "f75b4683f6c7f45248d4d64056a24298c6281e0993356d7d1b4a1a962ef10d4a"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
  "synstructure 0.14.0",
 ]
 
@@ -8328,7 +8320,7 @@ checksum = "c3743ddbf47738d929cd1ae2e199d40d0162979dfe31aef8ae646d2bf00bf97a"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
