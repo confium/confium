@@ -6,12 +6,12 @@
 # value and is updated by takedown or new-release PRs.
 
 name = "botan"
-latest = "3.2.0"
+latest = "3.13.0"
 description = "Botan crypto provider plugin"
 
 # Each [[version]] entry records the version string and the path to its
 # manifest. The manifest carries the artifact hash, signatures, and
 # algorithm/interface metadata; this file just resolves versions to paths.
 [[version]]
-version = "3.2.0"
-manifest-url = "/plugins/botan/3.2.0/manifest.toml"
+version = "3.13.0"
+manifest-url = "/plugins/botan/3.13.0/manifest.toml"

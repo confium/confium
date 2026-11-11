@@ -100,6 +100,33 @@ mirrors = [
 ]
 ```
 
+### Multi-platform artifacts
+
+The single-file `[artifact]` form above covers one binary. A release
+that ships per-platform builds uses the optional `[artifact.platforms]`
+table instead (the top-level `url`/`size`/`sha256` are then omitted);
+each key is `<os>-<arch>` with `os` ∈ {`darwin`, `linux`, `windows`}
+and `arch` ∈ {`aarch64`, `x86_64`}:
+
+```toml
+[artifact.platforms.darwin-aarch64]
+url = "https://github.com/confium/confium-plugin-botan/releases/download/v3.13.0/libcfm-botan-3.13.0.dylib"
+size = 104240
+sha256 = "..."
+mirrors = []
+
+[artifact.platforms.linux-x86_64]
+url = "https://github.com/confium/confium-plugin-botan/releases/download/v3.13.0/libcfm-botan-3.13.0.so"
+size = 108232
+sha256 = "..."
+```
+
+Installers select the entry matching the running platform and refuse
+with `Error::UnsupportedPlatform` when no entry matches. Mirrors are
+optional per platform. The version directory may carry one
+`artifact.<platform>.sha256` file per platform alongside the manifest
+for offline verification.
+
 ## Trust model
 
 - **Publisher identity** = PGP key registered in `publishers/`. Each publisher's pubkey is in `publishers/<name>.asc`.
