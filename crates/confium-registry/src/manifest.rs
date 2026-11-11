@@ -229,7 +229,7 @@ key-url = "/publishers/ribose.asc"
             .iter()
             .find(|p| p.name == "botan")
             .expect("botan entry present in fixture");
-        assert_eq!(botan.latest, "3.2.0");
+        assert_eq!(botan.latest, "3.13.0");
         assert_eq!(botan.publishers, vec!["ribose", "ni4"]);
         assert_eq!(botan.versions_url, "/plugins/botan/index.toml");
     }
@@ -238,11 +238,11 @@ key-url = "/publishers/ribose.asc"
     fn real_plugin_fixture_parses() {
         let idx: PluginIndex = toml::from_str(PLUGIN_FIXTURE).expect("plugin fixture parses");
         assert_eq!(idx.name, "botan");
-        assert_eq!(idx.latest, "3.2.0");
+        assert_eq!(idx.latest, "3.13.0");
         assert_eq!(idx.versions.len(), 1);
         assert_eq!(
             idx.versions[0].manifest_url,
-            "/plugins/botan/3.2.0/manifest.toml"
+            "/plugins/botan/3.13.0/manifest.toml"
         );
     }
 
@@ -255,6 +255,6 @@ key-url = "/publishers/ribose.asc"
             .find(|v| v.version == idx.latest)
             .map(|v| v.manifest_url.as_str())
             .expect("latest resolves");
-        assert_eq!(target, "/plugins/botan/3.2.0/manifest.toml");
+        assert_eq!(target, "/plugins/botan/3.13.0/manifest.toml");
     }
 }

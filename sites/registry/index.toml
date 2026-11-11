@@ -17,7 +17,7 @@
 
 [[plugin]]
 name = "botan"
-latest = "3.2.0"
+latest = "3.13.0"
 description = "Botan crypto provider plugin"
 publishers = ["ribose", "ni4"]
 versions-url = "/plugins/botan/index.toml"
