@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Selectable AEAD with AES-256-GCM-SIV support by @[object]
+
 ### Fixed
 
 - Rejection-sampled scalar reductions batch; OTS empty-branch rejection (BREAKING) by @[object]

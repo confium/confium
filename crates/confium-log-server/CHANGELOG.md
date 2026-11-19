@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Track the 3.13.0 release; bump rusqlite to 0.41 by @[object]
+
+### Fixed
+
 - Apt upgrade in the runtime stage for a stable Trivy gate by @[object]
 
 ### Other

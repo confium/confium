@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Other
+
+- Advertise AES-GCM-SIV for the AEAD interface and botan plugin by @[object]
+
 ### Fixed
 
 - Destroy-fn type aliases return () not c_void by @[object]
